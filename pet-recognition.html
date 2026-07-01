@@ -6,18 +6,19 @@
     <title>宠物图片识别总览</title>
     <style>
       :root {
-        --bg: #eef5fb;
+        --bg: #f4f7fb;
         --surface: #ffffff;
-        --surface-strong: #f7fbff;
-        --text: #142232;
-        --muted: #66788d;
-        --line: #d9e6f2;
+        --surface-strong: #f8fafc;
+        --text: #172233;
+        --muted: #64748b;
+        --line: #dce5ef;
         --blue: #2f86d9;
-        --blue-strong: #1267ba;
+        --blue-strong: #174a7c;
         --green: #2f9a69;
         --gold: #b87916;
         --red: #bd4545;
-        --shadow: 0 18px 45px rgba(35, 76, 120, 0.12);
+        --shadow: 0 12px 28px rgba(25, 47, 72, 0.08);
+        --soft-shadow: 0 1px 2px rgba(22, 35, 52, 0.06);
       }
 
       * {
@@ -28,22 +29,24 @@
         margin: 0;
         min-height: 100vh;
         color: var(--text);
-        background: radial-gradient(circle at 18% 8%, #d9ecff 0, transparent 30%), var(--bg);
+        background:
+          linear-gradient(180deg, #e8f3ff 0, #f5f8fc 240px, #f4f7fb 100%),
+          var(--bg);
         font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
       }
 
       .page {
-        width: min(1440px, calc(100% - 36px));
+        width: min(1560px, calc(100% - 40px));
         margin: 0 auto;
-        padding: 28px 0 40px;
+        padding: 24px 0 40px;
       }
 
       .topbar {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
         gap: 18px;
-        align-items: end;
-        margin-bottom: 20px;
+        align-items: center;
+        margin-bottom: 14px;
       }
 
       h1,
@@ -53,62 +56,78 @@
       }
 
       h1 {
-        font-size: 30px;
+        font-size: 32px;
         line-height: 1.2;
+        letter-spacing: 0;
       }
 
       .lead {
         margin-top: 8px;
         color: var(--muted);
-        line-height: 1.7;
+        line-height: 1.55;
+        font-size: 14px;
       }
 
       .toolbar {
         display: flex;
         gap: 10px;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: stretch;
         flex-wrap: wrap;
       }
 
       .search {
-        width: 280px;
-        height: 42px;
-        padding: 0 12px;
+        width: 100%;
+        height: 46px;
+        padding: 0 16px;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: 8px;
         background: var(--surface);
         color: var(--text);
         font: inherit;
+        box-shadow: var(--soft-shadow);
+        outline: none;
+      }
+
+      .search:focus {
+        border-color: #8dbce8;
+        box-shadow: 0 0 0 3px rgba(47, 134, 217, 0.14);
       }
 
       .stats {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-        margin-bottom: 18px;
+        gap: 10px;
+        min-width: min(760px, 100%);
       }
 
       .stat {
-        padding: 16px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 74px;
+        padding: 14px 16px;
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.82);
-        box-shadow: var(--shadow);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--soft-shadow);
       }
 
       .stat strong {
         display: block;
-        font-size: 28px;
+        order: 2;
+        font-size: 30px;
         line-height: 1;
       }
 
       .stat span {
         display: block;
-        margin-top: 8px;
+        margin-top: 0;
         color: var(--muted);
         font-size: 13px;
         font-weight: 700;
+        line-height: 1.35;
       }
 
       .notice {
@@ -121,33 +140,73 @@
         line-height: 1.7;
       }
 
+      .workspace {
+        border: 1px solid #d4e0eb;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.7);
+        box-shadow: var(--soft-shadow);
+        overflow: visible;
+      }
+
+      .workspace-nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 12px 14px;
+        border-bottom: 1px solid #dbe7f1;
+        background: rgba(247, 251, 255, 0.96);
+        backdrop-filter: blur(10px);
+      }
+
       .tabs {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
-        margin-bottom: 18px;
+        margin-bottom: 0;
+        padding: 4px;
+        border: 1px solid #d7e3ee;
+        border-radius: 10px;
+        background: #fff;
+        width: fit-content;
+        max-width: 100%;
       }
 
       .basic-tabs {
-        margin-top: -8px;
+        justify-self: end;
       }
 
       .tab {
-        height: 38px;
-        padding: 0 14px;
-        border: 1px solid #c8ddec;
+        height: 34px;
+        padding: 0 12px;
+        border: 1px solid transparent;
         border-radius: 6px;
         color: #285275;
-        background: #fff;
+        background: transparent;
         font: inherit;
+        font-size: 14px;
         font-weight: 800;
         cursor: pointer;
       }
 
       .tab.active {
-        border-color: #153b61;
+        border-color: #174a7c;
         color: #fff;
-        background: #153b61;
+        background: #174a7c;
+      }
+
+      .tab.active::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-right: 7px;
+        border-radius: 999px;
+        background: currentColor;
+        vertical-align: 1px;
       }
 
       .tab span {
@@ -156,9 +215,38 @@
         opacity: 0.78;
       }
 
+      .workspace-body {
+        padding: 14px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(247, 250, 253, 0.7));
+      }
+
+      .view-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: end;
+        margin-bottom: 14px;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .view-head h2 {
+        font-size: 20px;
+        line-height: 1.25;
+      }
+
+      .view-head p {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
       .grid {
         display: grid;
-        gap: 16px;
+        gap: 14px;
       }
 
       .empty-state {
@@ -178,13 +266,13 @@
 
       .record {
         display: grid;
-        grid-template-columns: minmax(420px, 560px) minmax(0, 1fr);
-        gap: 16px;
-        padding: 16px;
+        grid-template-columns: minmax(340px, 500px) minmax(0, 1fr);
+        gap: 14px;
+        padding: 14px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--surface);
-        box-shadow: var(--shadow);
+        box-shadow: var(--soft-shadow);
       }
 
       .shots {
@@ -381,15 +469,29 @@
 
       .compare-view {
         display: grid;
-        gap: 16px;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 14px;
       }
 
       .compare-section {
-        padding: 16px;
-        border: 1px solid var(--line);
+        grid-column: 1 / -1;
+        padding: 22px 24px 24px;
+        border: 1px solid #e5e7eb;
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.88);
-        box-shadow: var(--shadow);
+        background: #fff;
+        box-shadow: var(--soft-shadow);
+      }
+
+      .compare-section:nth-child(1) {
+        grid-column: span 5;
+      }
+
+      .compare-section:nth-child(2) {
+        grid-column: span 7;
+      }
+
+      .compare-section:only-child {
+        grid-column: 1 / -1;
       }
 
       .compare-head {
@@ -397,11 +499,13 @@
         align-items: flex-start;
         justify-content: space-between;
         gap: 14px;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #eef0f3;
       }
 
       .compare-head h2 {
-        font-size: 20px;
+        font-size: 19px;
         line-height: 1.25;
       }
 
@@ -414,16 +518,16 @@
 
       .compare-cards {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
 
       .compare-card {
-        min-height: 112px;
-        padding: 13px;
+        min-height: 106px;
+        padding: 12px;
         border: 1px solid #d3e3f1;
         border-radius: 8px;
-        background: #fbfdff;
+        background: linear-gradient(180deg, #ffffff 0, #f8fbff 100%);
       }
 
       .compare-card strong {
@@ -455,12 +559,12 @@
 
       .insight {
         display: grid;
-        grid-template-columns: 120px minmax(0, 1fr);
-        gap: 10px;
-        padding: 10px 0;
+        grid-template-columns: 112px minmax(0, 1fr);
+        gap: 12px;
+        padding: 11px 0;
         border-top: 1px solid #edf3f9;
         font-size: 13px;
-        line-height: 1.55;
+        line-height: 1.5;
       }
 
       .insight:first-child {
@@ -473,9 +577,11 @@
 
       .table-wrap {
         overflow-x: auto;
-        border: 1px solid var(--line);
+        padding: 12px;
+        border: 1px solid #e5e7eb;
         border-radius: 8px;
-        background: #fff;
+        background: #fafafa;
+        box-shadow: none;
       }
 
       .compare-table {
@@ -487,7 +593,7 @@
 
       .compare-table th,
       .compare-table td {
-        padding: 10px;
+        padding: 11px 12px;
         border-bottom: 1px solid #edf3f9;
         text-align: left;
         vertical-align: top;
@@ -497,10 +603,14 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        color: #285275;
-        background: #f5fbff;
+        color: #23445f;
+        background: #eef6fd;
         font-size: 12px;
         white-space: nowrap;
+      }
+
+      .compare-table tbody tr:hover {
+        background: #fbfdff;
       }
 
       .compare-table tr:last-child td {
@@ -577,7 +687,7 @@
       }
 
       .key-skills {
-        max-width: 340px;
+        max-width: 360px;
         color: #334960;
         line-height: 1.5;
       }
@@ -590,79 +700,381 @@
       .matrix-table {
         width: 100%;
         min-width: var(--matrix-min-width, 720px);
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         table-layout: fixed;
+        font-size: 13px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .matrix-table.compact {
+        font-size: 12px;
+      }
+
+      .matrix-table.comfortable {
         font-size: 13px;
       }
 
       .matrix-table th,
       .matrix-table td {
         min-width: 92px;
-        height: 76px;
-        padding: 8px;
-        border: 1px solid #1f2d3a;
+        height: auto;
+        padding: 9px 8px;
+        border-right: 1px solid #e5e7eb;
+        border-bottom: 1px solid #edf0f2;
         text-align: center;
         vertical-align: middle;
       }
 
       .matrix-table th {
-        color: #142232;
-        background: #f7fbff;
+        color: #111827;
+        background: #f7f7f8;
         font-weight: 800;
         white-space: nowrap;
       }
 
+      .matrix-table thead th {
+        position: static;
+        top: auto;
+        z-index: 1;
+        height: 42px;
+        border-top: 0;
+        color: #111827;
+        background: #f3f4f6;
+        box-shadow: none;
+      }
+
+      .matrix-table th:first-child,
+      .matrix-table td:first-child {
+        border-left: 0;
+      }
+
+      .matrix-table tbody tr:hover th,
+      .matrix-table tbody tr:hover td {
+        background-color: #f9fafb;
+      }
+
       .matrix-group-head {
         height: 40px;
-        color: #153b61;
-        background: #eaf4ff;
+        color: #111827;
+        background: #f3f4f6;
         font-size: 13px;
       }
 
       .matrix-sections {
         display: grid;
-        gap: 14px;
+        gap: 16px;
+      }
+
+      .matrix-section {
+        min-width: 0;
+        padding-top: 2px;
+      }
+
+      .matrix-tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        padding: 4px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #f9fafb;
+      }
+
+      .matrix-tab {
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        color: #374151;
+        background: transparent;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .matrix-tab.active {
+        border-color: #111827;
+        color: #fff;
+        background: #111827;
+        box-shadow: none;
+      }
+
+      .matrix-tab:not(.active):hover,
+      .matrix-density button:not(.active):hover,
+      .matrix-toggle:hover {
+        border-color: #d1d5db;
+        background: #fff;
+      }
+
+      .matrix-tab span {
+        margin-left: 6px;
+        font-size: 12px;
+        opacity: 0.78;
+      }
+
+      .matrix-toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .matrix-toggles {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .matrix-density {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #f9fafb;
+      }
+
+      .matrix-density button {
+        height: 26px;
+        padding: 0 9px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        color: #374151;
+        background: transparent;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .matrix-density button.active {
+        border-color: #111827;
+        color: #fff;
+        background: #111827;
+      }
+
+      .matrix-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 34px;
+        padding: 0 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        color: #374151;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .matrix-toggle input {
+        width: 15px;
+        height: 15px;
+        accent-color: #111827;
       }
 
       .matrix-section-title {
         display: inline-flex;
         align-items: center;
-        min-height: 28px;
-        margin: 0 0 8px;
-        padding: 0 10px;
-        border: 1px solid #c9ddec;
-        border-radius: 6px;
-        color: #153b61;
-        background: #f3f9ff;
+        min-height: 30px;
+        margin: 0 0 10px;
+        padding: 0 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 7px;
+        color: #111827;
+        background: #fff;
         font-size: 15px;
         line-height: 1.3;
+        box-shadow: none;
       }
 
       .matrix-row-head {
         position: sticky;
         left: 0;
-        z-index: 1;
-        width: 82px;
-        color: #153b61;
-        background: #fbfdff;
+        z-index: 4;
+        width: 92px;
+        color: #111827;
+        background: #f3f4f6;
         font-weight: 900;
+        font-size: 14px;
+      }
+
+      .matrix-field-head {
+        position: sticky;
+        left: 92px;
+        z-index: 4;
+        min-width: 112px;
+        color: #374151;
+        background: #fafafa;
+        font-weight: 800;
+        text-align: left;
+        padding-left: 12px;
+      }
+
+      .matrix-data-cell {
+        min-height: 26px;
+        color: #1f2937;
+        font-weight: 700;
+        background: #fff;
+      }
+
+      .matrix-skill-value {
+        display: inline-grid;
+        place-items: center;
+        width: min(100%, 190px);
+        min-height: 22px;
+        padding: 2px 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        color: #1f2937;
+        background: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+        box-shadow: none;
+      }
+
+      .matrix-category-start th,
+      .matrix-category-start td {
+        border-top: 2px solid #d1d5db;
+      }
+
+      .matrix-block-start th,
+      .matrix-block-start td {
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .matrix-stat-row .matrix-field-head::before,
+      .matrix-aptitude-row .matrix-field-head::before,
+      .matrix-skill-row .matrix-field-head::before {
+        content: none;
+      }
+
+      .matrix-stat-row .matrix-data-cell {
+        background: #fff;
+      }
+
+      .matrix-aptitude-row .matrix-data-cell {
+        background: #fff;
+      }
+
+      .matrix-skill-row .matrix-data-cell {
+        background: #fff;
       }
 
       .matrix-cell {
         display: grid;
-        gap: 5px;
-        justify-items: center;
+        gap: 7px;
+        justify-items: stretch;
         line-height: 1.25;
       }
 
-      .matrix-main {
+      .matrix-block {
+        display: grid;
+        gap: 4px;
+        width: 100%;
+      }
+
+      .matrix-block-title {
         color: #142232;
+        font-size: 12px;
         font-weight: 900;
       }
 
-      .matrix-sub {
+      .matrix-items {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 3px;
+        width: 100%;
+      }
+
+      .matrix-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        width: 100%;
+        min-height: 18px;
+        padding: 1px 6px;
+        border: 1px solid #d7e5f0;
+        border-radius: 5px;
+        color: #244861;
+        background: #f7fbff;
+        font-size: 11px;
+        line-height: 1.25;
+        text-align: left;
+        overflow-wrap: anywhere;
+      }
+
+      .matrix-item span:first-child {
         color: #53687e;
-        font-size: 12px;
+      }
+
+      .matrix-item b {
+        color: #142232;
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .matrix-skill-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 3px;
+        width: 100%;
+      }
+
+      .matrix-skill-cell {
+        display: grid;
+        place-items: center;
+        min-height: 20px;
+        padding: 2px 6px;
+        border: 1px solid #d7e5f0;
+        border-radius: 5px;
+        color: #244861;
+        background: #f7fbff;
+        font-size: 11px;
+        line-height: 1.25;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+
+      .matrix-skill-cell.empty {
+        visibility: hidden;
+        border-color: transparent;
+        background: transparent;
+      }
+
+      .matrix-table.compact td,
+      .matrix-table.compact th {
+        padding: 8px 8px;
+      }
+
+      .matrix-table.compact .matrix-item,
+      .matrix-table.compact .matrix-skill-cell {
+        min-height: 17px;
+        padding: 1px 5px;
+        font-size: 10.5px;
+      }
+
+      .matrix-table.compact .matrix-skill-value {
+        min-height: 20px;
+        padding: 1px 7px;
+        font-size: 10.5px;
       }
 
       .matrix-empty {
@@ -677,6 +1089,15 @@
       }
 
       @media (max-width: 1080px) {
+        .compare-section:nth-child(1),
+        .compare-section:nth-child(2) {
+          grid-column: 1 / -1;
+        }
+
+        .matrix-sections {
+          grid-template-columns: 1fr;
+        }
+
         .record {
           grid-template-columns: 1fr;
         }
@@ -693,8 +1114,14 @@
         }
 
         .topbar,
-        .stats {
+        .stats,
+        .workspace-nav,
+        .view-head {
           grid-template-columns: 1fr;
+        }
+
+        .topbar {
+          gap: 14px;
         }
 
         .toolbar {
@@ -721,6 +1148,15 @@
         .insight {
           grid-template-columns: 1fr;
         }
+
+        .workspace-nav,
+        .workspace-body {
+          padding: 10px;
+        }
+
+        .basic-tabs {
+          justify-self: start;
+        }
       }
     </style>
   </head>
@@ -736,19 +1172,31 @@
         </div>
       </header>
 
-      <nav id="tabs" class="tabs" aria-label="页面视图"></nav>
-      <nav id="basicTabs" class="tabs basic-tabs" aria-label="基础资料目录"></nav>
+      <section class="workspace">
+        <div class="workspace-nav">
+          <nav id="tabs" class="tabs" aria-label="页面视图"></nav>
+          <nav id="basicTabs" class="tabs basic-tabs" aria-label="基础资料目录"></nav>
+        </div>
 
-      <section class="stats" aria-label="统计">
-        <div class="stat"><strong id="groupCount">11</strong><span id="groupLabel">宠物记录组</span></div>
-        <div class="stat"><strong id="shotCount">22</strong><span id="shotLabel">截图来源</span></div>
-        <div class="stat"><strong id="pendingCount">0</strong><span id="pendingLabel">含待确认记录组</span></div>
-        <div class="stat"><strong id="folderName">FC</strong><span id="folderLabel">当前目录</span></div>
+        <div class="workspace-body">
+          <section class="view-head" aria-label="当前页面">
+            <div>
+              <h2 id="viewTitle">横向对比</h2>
+              <p id="viewDescription">跨目录汇总定位、技能、面板和资质，适合先筛出值得继续看的宝宝。</p>
+            </div>
+            <section class="stats" aria-label="统计">
+              <div class="stat"><strong id="groupCount">11</strong><span id="groupLabel">宠物记录组</span></div>
+              <div class="stat"><strong id="shotCount">22</strong><span id="shotLabel">截图来源</span></div>
+              <div class="stat"><strong id="pendingCount">0</strong><span id="pendingLabel">含待确认记录组</span></div>
+              <div class="stat"><strong id="folderName">FC</strong><span id="folderLabel">当前目录</span></div>
+            </section>
+          </section>
+
+          <p id="notice" class="notice" hidden></p>
+
+          <section id="records" class="grid" aria-live="polite"></section>
+        </div>
       </section>
-
-      <p id="notice" class="notice" hidden></p>
-
-      <section id="records" class="grid" aria-live="polite"></section>
     </main>
 
     <script>
@@ -1805,6 +2253,34 @@
       const basicKey = "BASIC";
       let activeKey = compareKey;
       let activeFolderKey = "FC";
+      let activeMatrixSectionKey = "daily";
+      let matrixDensity = "compact";
+      const matrixDisplay = {
+        stats: true,
+        aptitude: true,
+        skills: true,
+      };
+
+      const viewCopy = {
+        [compareKey]: {
+          title: "横向对比",
+          description: "跨目录汇总定位、技能、面板和资质，适合先筛出值得继续看的宝宝。",
+        },
+        [matrixKey]: {
+          title: "矩阵对比",
+          description: "按目录和固定宝宝类型铺开，适合快速看每个账号/目录缺什么、强在哪。",
+        },
+        [basicKey]: {
+          title: "基础资料",
+          description: "按原始目录查看识别记录、截图来源、面板、资质和完整技能列表。",
+        },
+      };
+
+      function setViewCopy(key) {
+        const copy = viewCopy[key] || viewCopy[compareKey];
+        document.getElementById("viewTitle").textContent = key === basicKey ? `${copy.title}：${(datasets.find((item) => item.key === activeFolderKey) || datasets[0]).label}` : copy.title;
+        document.getElementById("viewDescription").textContent = copy.description;
+      }
 
       const inheritedSkills = (record, allRecords) => {
         if (record.skills) return record.skills;
@@ -2248,6 +2724,7 @@
       }
 
       function renderCompare() {
+        setViewCopy(compareKey);
         const allRows = buildComparisonRows();
         const query = document.getElementById("searchInput").value.trim();
         const queryLower = query.toLowerCase();
@@ -2326,13 +2803,68 @@
       ];
 
       const matrixSections = [
-        { title: "日常", columns: matrixColumns.filter((column) => column.group === "日常") },
-        { title: "PK：神兽蛇 / 小马", columns: matrixColumns.filter((column) => ["swordSnake", "stealthSnake", "magicSnake", "horse"].includes(column.key)) },
-        { title: "PK：法系 / 特殊", columns: matrixColumns.filter((column) => ["hanling", "princess"].includes(column.key)) },
-        { title: "PK：物理 / 速度", columns: matrixColumns.filter((column) => ["mingwei", "lobster", "yunluo", "tongzi", "taohua", "child"].includes(column.key)) },
+        { key: "daily", title: "日常", columns: matrixColumns.filter((column) => column.group === "日常") },
+        { key: "beast", title: "PK：神兽蛇 / 小马", columns: matrixColumns.filter((column) => ["swordSnake", "stealthSnake", "magicSnake", "horse"].includes(column.key)) },
+        { key: "pkCore", title: "PK：法系 / 特殊 / 物理", columns: matrixColumns.filter((column) => ["hanling", "princess", "lobster", "yunluo", "child"].includes(column.key)) },
+        { key: "speed", title: "PK：速度", columns: matrixColumns.filter((column) => ["mingwei", "tongzi", "taohua"].includes(column.key)) },
       ];
 
       const matrixOrder = ["FC", "LG1", "PT", "LG2", "MYT"];
+      const matrixSkillOrder = [
+        "高级法术暴击",
+        "高级法术连击",
+        "高级法术波动",
+        "高级灵蕴",
+        "高级强壮",
+        "高级抵御",
+        "高级凝气",
+        "涡轮火",
+        "雷利风行",
+        "分水神剑",
+        "山崩地倾",
+        "红莲业火",
+        "葫芦仙法",
+        "高级必杀",
+        "高级连击",
+        "高级强力",
+        "高级吸血",
+        "高级偷袭",
+        "高级夜战",
+        "高级追击",
+        "高级气势",
+        "高级反震",
+        "高级报复",
+        "高级攻坚",
+        "高级隐身",
+        "高级感知",
+        "高级敏捷",
+        "高级防御",
+        "高级勇敢",
+        "高级幸运",
+        "高级神佑复生",
+        "高级再生",
+        "高级凝神",
+        "高级飞行",
+        "高级审判",
+        "高级狂暴",
+        "高级冲击",
+        "高级保命",
+        "高级毒",
+        "高级自愈",
+        "高级先驱",
+        "高级水系吸收",
+        "高级火系吸收",
+        "水刃斩",
+        "生死相依",
+        "幽冥之佑",
+        "一马当先",
+        "物抗强化",
+        "感知强化",
+        "隐身强化",
+        "法连强化",
+        "双抗之心",
+        "抵御强化",
+      ];
 
       function matrixScore(row, columnKey) {
         if (["huodou", "magicSnake", "jiutou", "jingluan"].includes(columnKey) || row.analysis.primary.includes("法")) return row.spirit || 0;
@@ -2341,7 +2873,91 @@
         return row.attack || row.talent || 0;
       }
 
-      function renderMatrixCell(rows, column) {
+      function renderMatrixBlock(title, items) {
+        const visibleItems = items.filter((item) => item.value);
+        if (!visibleItems.length) return "";
+        return `<div class="matrix-block">
+          <div class="matrix-block-title">${title}</div>
+          <div class="matrix-items">
+            ${visibleItems.map((item) => `<div class="matrix-item"><span>${item.label}</span><b>${item.value}</b></div>`).join("")}
+          </div>
+        </div>`;
+      }
+
+      function matrixVisibleSkill(skill) {
+        return skill !== "空" && !skill.includes("(驭)") && !skill.startsWith("觉醒");
+      }
+
+      function normalizeMatrixSkill(skill) {
+        const base = skill
+          .replace(/[（(]符[）)]/g, "")
+          .replace(/^高级法爆$/, "高级法术暴击")
+          .replace(/^小法爆$/, "小法术暴击")
+          .replace(/^高级法连$/, "高级法术连击")
+          .replace(/^小法连$/, "小法术连击")
+          .trim();
+        const aliases = {
+          小法术暴击: "高级法术暴击",
+          小法术连击: "高级法术连击",
+          小灵蕴: "高级灵蕴",
+          小强壮: "高级强壮",
+          小抵御: "高级抵御",
+          小凝神: "高级凝神",
+          小幸运: "高级幸运",
+          小再生: "高级再生",
+          小敏捷: "高级敏捷",
+          小神佑: "高级神佑复生",
+          小吸血: "高级吸血",
+          小夜战: "高级夜战",
+          小偷袭: "高级偷袭",
+          小感知: "高级感知",
+          小审判: "高级审判",
+          小报复: "高级报复",
+          小追击: "高级追击",
+          小气势: "高级气势",
+          小水吸收: "高级水系吸收",
+          小火吸收: "高级火系吸收",
+          小反震: "高级反震",
+        };
+        return aliases[base] || base;
+      }
+
+      function matrixSkillRank(skill) {
+        const normalized = normalizeMatrixSkill(skill);
+        const index = matrixSkillOrder.indexOf(normalized);
+        return index === -1 ? 1000 + normalized.charCodeAt(0) : index;
+      }
+
+      function buildMatrixSkillSlots(rows, section) {
+        const skills = rows
+          .filter((row) => section.columns.some((column) => column.match(row)))
+          .flatMap((row) => row.skills)
+          .filter(matrixVisibleSkill)
+          .map(normalizeMatrixSkill);
+        return unique(skills).sort((a, b) => matrixSkillRank(a) - matrixSkillRank(b) || a.localeCompare(b, "zh-Hans-CN"));
+      }
+
+      function renderMatrixSkillBlock(best, skillSlots) {
+        if (!skillSlots.length) return "";
+        const bySlot = new Map();
+        best.skills.filter(matrixVisibleSkill).forEach((skill) => {
+          const normalized = normalizeMatrixSkill(skill);
+          if (!bySlot.has(normalized)) bySlot.set(normalized, skill);
+        });
+        return `<div class="matrix-block">
+          <div class="matrix-block-title">技能</div>
+          <div class="matrix-skill-grid">
+            ${skillSlots
+              .map((slot) => {
+                const skill = bySlot.get(slot);
+                return `<div class="matrix-skill-cell${skill ? "" : " empty"}">${skill || "-"}</div>`;
+              })
+              .join("")}
+          </div>
+        </div>`;
+      }
+
+      function renderMatrixCell(rows, column, skillSlots) {
         if (!rows.length) return `<span class="matrix-empty">-</span>`;
         const best = [...rows].sort((a, b) => matrixScore(b, column.key) - matrixScore(a, column.key) || b.talent - a.talent)[0];
         if (best.analysis.primary === "待打书") {
@@ -2349,55 +2965,185 @@
             <div class="matrix-main">待打书</div>
           </div>`;
         }
-        const mainMetric = best.analysis.primary.includes("法") ? `灵 ${best.spirit || "-"}` : best.analysis.primary.includes("速") ? `速 ${best.speed || "-"}` : `攻 ${best.attack || "-"}`;
+        const statItems = [
+          { label: "心", value: best.heart || "未记" },
+          { label: "阶段", value: best.beastStage },
+          { label: "气血", value: best.hp || "-" },
+          { label: "攻击", value: best.attack || "-" },
+          { label: "防御", value: best.defense || "-" },
+          { label: "速度", value: best.speed || "-" },
+          { label: "灵力", value: best.spirit || "-" },
+        ];
+        const aptitudeItems = [
+          { label: "攻资", value: best.attackApt || "-" },
+          { label: "防资", value: best.defenseApt || "-" },
+          { label: "体资", value: best.staminaApt || "-" },
+          { label: "法资", value: best.magicApt || "-" },
+          { label: "速资", value: best.speedApt || "-" },
+          { label: "寿命", value: best.life || "-" },
+        ];
         return `<div class="matrix-cell">
-          <div class="matrix-main">${best.analysis.primary}</div>
-          <div class="matrix-sub">${best.heart || "未记心色"}</div>
-          ${best.beastStage ? `<div class="matrix-sub">${best.beastStage}</div>` : ""}
-          <div class="matrix-sub">血 ${best.hp || "-"} / 防 ${best.defense || "-"}</div>
-          <div class="matrix-sub">${mainMetric}</div>
+          ${matrixDisplay.stats ? renderMatrixBlock("属性", statItems) : ""}
+          ${matrixDisplay.aptitude ? renderMatrixBlock("资质", aptitudeItems) : ""}
+          ${matrixDisplay.skills ? renderMatrixSkillBlock(best, skillSlots) : ""}
         </div>`;
       }
 
+      function pickMatrixBest(rows, column) {
+        if (!rows.length) return null;
+        return [...rows].sort((a, b) => matrixScore(b, column.key) - matrixScore(a, column.key) || b.talent - a.talent)[0];
+      }
+
+      function matrixRecordByFolder(rows, column) {
+        return new Map(
+          matrixOrder.map((folderKey) => [
+            folderKey,
+            pickMatrixBest(rows.filter((row) => row.datasetKey === folderKey && column.match(row)), column),
+          ])
+        );
+      }
+
+      function matrixSkillMap(record) {
+        const bySlot = new Map();
+        if (!record) return bySlot;
+        record.skills.filter(matrixVisibleSkill).forEach((skill) => {
+          const normalized = normalizeMatrixSkill(skill);
+          if (!bySlot.has(normalized)) bySlot.set(normalized, skill);
+        });
+        return bySlot;
+      }
+
+      function renderMatrixDetailRow(label, recordsByFolder, valueGetter, rowHeader, rowSpan, className = "") {
+        return `<tr class="${className}">
+          ${rowHeader ? `<th class="matrix-row-head" rowspan="${rowSpan}">${rowHeader}</th>` : ""}
+          <th class="matrix-field-head">${label}</th>
+          ${matrixOrder
+            .map((folderKey) => {
+              const record = recordsByFolder.get(folderKey);
+              const value = record ? valueGetter(record, folderKey) : "";
+              return `<td class="matrix-data-cell">${value || '<span class="matrix-empty">-</span>'}</td>`;
+            })
+            .join("")}
+        </tr>`;
+      }
+
+      function renderMatrixSkillRow(slot, recordsByFolder, rowHeader, rowSpan, className = "") {
+        return `<tr class="${className}">
+          ${rowHeader ? `<th class="matrix-row-head" rowspan="${rowSpan}">${rowHeader}</th>` : ""}
+          <th class="matrix-field-head">${slot}</th>
+          ${matrixOrder
+            .map((folderKey) => {
+              const skill = matrixSkillMap(recordsByFolder.get(folderKey)).get(slot);
+              return `<td class="matrix-data-cell">${skill ? `<span class="matrix-skill-value">${skill}</span>` : '<span class="matrix-empty">-</span>'}</td>`;
+            })
+            .join("")}
+        </tr>`;
+      }
+
+      function aptitudeLimit(value) {
+        if (!value) return "";
+        return String(value).split("/").pop();
+      }
+
+      function renderMatrixCategoryRows(rows, column) {
+        const recordsByFolder = matrixRecordByFolder(rows, column);
+        const statRows = matrixDisplay.stats
+          ? [
+              ["阶段", (record) => record.beastStage],
+              ["气血", (record) => record.hp],
+              ["攻击", (record) => record.attack],
+              ["防御", (record) => record.defense],
+              ["速度", (record) => record.speed],
+              ["灵力", (record) => record.spirit],
+            ]
+          : [];
+        const aptitudeRows = matrixDisplay.aptitude
+          ? [
+              ["心", (record) => record.heart || "未记"],
+              ["攻资", (record) => aptitudeLimit(record.attackApt)],
+              ["防资", (record) => aptitudeLimit(record.defenseApt)],
+              ["体资", (record) => aptitudeLimit(record.staminaApt)],
+              ["法资", (record) => aptitudeLimit(record.magicApt)],
+              ["速资", (record) => aptitudeLimit(record.speedApt)],
+              ["寿命", (record) => record.life],
+            ]
+          : [];
+        const skillSlots = matrixDisplay.skills ? buildMatrixSkillSlots(rows.filter(column.match), { columns: [column] }) : [];
+        const rowSpan = Math.max(1, statRows.length + aptitudeRows.length + skillSlots.length);
+        const outputRows = [];
+        let isFirst = true;
+
+        statRows.forEach(([label, getter], index) => {
+          outputRows.push(renderMatrixDetailRow(label, recordsByFolder, getter, isFirst ? column.label : "", rowSpan, `matrix-stat-row ${isFirst ? "matrix-category-start" : index === 0 ? "matrix-block-start" : ""}`));
+          isFirst = false;
+        });
+        aptitudeRows.forEach(([label, getter], index) => {
+          outputRows.push(renderMatrixDetailRow(label, recordsByFolder, getter, isFirst ? column.label : "", rowSpan, `matrix-aptitude-row ${isFirst ? "matrix-category-start" : index === 0 ? "matrix-block-start" : ""}`));
+          isFirst = false;
+        });
+        skillSlots.forEach((slot, index) => {
+          outputRows.push(renderMatrixSkillRow(slot, recordsByFolder, isFirst ? column.label : "", rowSpan, `matrix-skill-row ${isFirst ? "matrix-category-start" : index === 0 ? "matrix-block-start" : ""}`));
+          isFirst = false;
+        });
+
+        if (!outputRows.length) {
+          outputRows.push(renderMatrixDetailRow("内容", recordsByFolder, () => "", column.label, 1, "matrix-category-start"));
+        }
+        return outputRows.join("");
+      }
+
       function renderMatrixSection(rows, section) {
-        const minWidth = Math.max(360, 104 + section.columns.length * 118);
+        const minWidth = Math.max(760, 204 + matrixOrder.length * 148);
         return `<div class="table-wrap">
-          <table class="matrix-table" style="--matrix-min-width: ${minWidth}px">
+          <table class="matrix-table ${matrixDensity}" style="--matrix-min-width: ${minWidth}px">
             <thead>
               <tr>
-                <th></th>
-                ${section.columns.map((column) => `<th>${column.label}</th>`).join("")}
+                <th>类型</th>
+                <th>项目</th>
+                ${matrixOrder.map((folderKey) => `<th>${folderKey}</th>`).join("")}
               </tr>
             </thead>
             <tbody>
-              ${matrixOrder
-                .map((folderKey) => {
-                  const folderRows = rows.filter((row) => row.datasetKey === folderKey);
-                  return `<tr>
-                    <th class="matrix-row-head">${folderKey}</th>
-                    ${section.columns
-                      .map((column) => `<td>${renderMatrixCell(folderRows.filter(column.match), column)}</td>`)
-                      .join("")}
-                  </tr>`;
-                })
-                .join("")}
+              ${section.columns.map((column) => renderMatrixCategoryRows(rows, column)).join("")}
             </tbody>
           </table>
         </div>`;
       }
 
       function renderMatrixTable(rows) {
+        const activeSection = matrixSections.find((section) => section.key === activeMatrixSectionKey) || matrixSections[0];
+        activeMatrixSectionKey = activeSection.key;
         return `<div class="matrix-sections">
-          ${matrixSections
-            .map((section) => `<section class="matrix-section">
-              <h3 class="matrix-section-title">${section.title}</h3>
-              ${renderMatrixSection(rows, section)}
-            </section>`)
-            .join("")}
+          <div class="matrix-toolbar">
+            <div class="matrix-tabs" role="tablist" aria-label="矩阵分组">
+              ${matrixSections
+                .map((section) => {
+                  const active = section.key === activeSection.key ? " active" : "";
+                  return `<button class="matrix-tab${active}" type="button" role="tab" data-matrix-section="${section.key}" aria-selected="${section.key === activeSection.key}">
+                    ${section.title}<span>${section.columns.length}</span>
+                  </button>`;
+                })
+                .join("")}
+            </div>
+            <div class="matrix-toggles" aria-label="矩阵显示开关">
+              <label class="matrix-toggle"><input type="checkbox" data-matrix-toggle="stats" ${matrixDisplay.stats ? "checked" : ""} />属性</label>
+              <label class="matrix-toggle"><input type="checkbox" data-matrix-toggle="aptitude" ${matrixDisplay.aptitude ? "checked" : ""} />资质</label>
+              <label class="matrix-toggle"><input type="checkbox" data-matrix-toggle="skills" ${matrixDisplay.skills ? "checked" : ""} />技能</label>
+            </div>
+            <div class="matrix-density" aria-label="矩阵密度">
+              <button class="${matrixDensity === "compact" ? "active" : ""}" type="button" data-matrix-density="compact">紧凑</button>
+              <button class="${matrixDensity === "comfortable" ? "active" : ""}" type="button" data-matrix-density="comfortable">舒展</button>
+            </div>
+          </div>
+          <section class="matrix-section">
+            <h3 class="matrix-section-title">${activeSection.title}</h3>
+            ${renderMatrixSection(rows, activeSection)}
+          </section>
         </div>`;
       }
 
       function renderMatrix() {
+        setViewCopy(matrixKey);
         const allRows = buildComparisonRows();
         const query = document.getElementById("searchInput").value.trim();
         const queryLower = query.toLowerCase();
@@ -2410,7 +3156,7 @@
                 <div class="compare-head">
                   <div>
                     <h2>矩阵对比</h2>
-                    <p>按目录和固定宝宝类型铺开，格子内显示该目录最优候选的定位、心、神兽阶段、气血、防御和关键面板。</p>
+                    <p>按目录和固定宝宝类型铺开，属性、资质、技能分行对齐，方便直接横向比较每个账号的差异。</p>
                   </div>
                 </div>
                 ${renderMatrixTable(visible)}
@@ -2591,6 +3337,7 @@
           renderMatrix();
           return;
         }
+        setViewCopy(basicKey);
         const dataset = datasets.find((item) => item.key === activeFolderKey) || datasets[0];
         const groups = buildGroups(dataset.records);
         const query = document.getElementById("searchInput").value.trim();
@@ -2638,6 +3385,20 @@
         activeFolderKey = tab.dataset.basicFolder;
         document.getElementById("searchInput").value = "";
         render();
+      });
+      document.getElementById("records").addEventListener("click", (event) => {
+        const tab = event.target.closest("[data-matrix-section]");
+        const density = event.target.closest("[data-matrix-density]");
+        if (!tab && !density) return;
+        if (tab) activeMatrixSectionKey = tab.dataset.matrixSection;
+        if (density) matrixDensity = density.dataset.matrixDensity;
+        renderMatrix();
+      });
+      document.getElementById("records").addEventListener("change", (event) => {
+        const toggle = event.target.closest("[data-matrix-toggle]");
+        if (!toggle) return;
+        matrixDisplay[toggle.dataset.matrixToggle] = toggle.checked;
+        renderMatrix();
       });
       render();
     </script>
