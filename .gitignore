@@ -1,0 +1,13 @@
+.codex-tmp/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# Dependency/build output
+node_modules/
+dist/
+build/
+coverage/

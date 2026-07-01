@@ -1,0 +1,2645 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>宠物图片识别总览</title>
+    <style>
+      :root {
+        --bg: #eef5fb;
+        --surface: #ffffff;
+        --surface-strong: #f7fbff;
+        --text: #142232;
+        --muted: #66788d;
+        --line: #d9e6f2;
+        --blue: #2f86d9;
+        --blue-strong: #1267ba;
+        --green: #2f9a69;
+        --gold: #b87916;
+        --red: #bd4545;
+        --shadow: 0 18px 45px rgba(35, 76, 120, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        background: radial-gradient(circle at 18% 8%, #d9ecff 0, transparent 30%), var(--bg);
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      }
+
+      .page {
+        width: min(1440px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 28px 0 40px;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: end;
+        margin-bottom: 20px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 30px;
+        line-height: 1.2;
+      }
+
+      .lead {
+        margin-top: 8px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+
+      .search {
+        width: 280px;
+        height: 42px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .stat {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: var(--shadow);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .notice {
+        padding: 14px 16px;
+        margin-bottom: 18px;
+        border: 1px solid #ead19b;
+        border-radius: 8px;
+        background: #fff9e8;
+        color: #76500b;
+        line-height: 1.7;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+
+      .basic-tabs {
+        margin-top: -8px;
+      }
+
+      .tab {
+        height: 38px;
+        padding: 0 14px;
+        border: 1px solid #c8ddec;
+        border-radius: 6px;
+        color: #285275;
+        background: #fff;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .tab.active {
+        border-color: #153b61;
+        color: #fff;
+        background: #153b61;
+      }
+
+      .tab span {
+        margin-left: 6px;
+        font-size: 12px;
+        opacity: 0.78;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .empty-state {
+        padding: 28px;
+        border: 1px dashed #bdd3e7;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.76);
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .empty-state h2 {
+        margin-bottom: 8px;
+        color: var(--text);
+        font-size: 22px;
+      }
+
+      .record {
+        display: grid;
+        grid-template-columns: minmax(420px, 560px) minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .shots {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        align-content: start;
+      }
+
+      .shot {
+        position: relative;
+        display: grid;
+        gap: 6px;
+        align-content: start;
+      }
+
+      .shot img {
+        width: 100%;
+        border: 1px solid #bcd6ec;
+        border-radius: 6px;
+        background: #d7ecff;
+        image-rendering: auto;
+      }
+
+      .shot-id {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        display: inline-grid;
+        place-items: center;
+        min-width: 30px;
+        height: 26px;
+        padding: 0 7px;
+        border-radius: 6px;
+        color: #fff;
+        background: rgba(21, 59, 97, 0.92);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .file {
+        color: var(--muted);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+
+      .info {
+        display: grid;
+        align-content: start;
+        gap: 12px;
+      }
+
+      .record-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .index {
+        display: inline-grid;
+        place-items: center;
+        min-width: 34px;
+        height: 30px;
+        padding: 0 8px;
+        border-radius: 6px;
+        color: #fff;
+        background: #153b61;
+        font-weight: 800;
+      }
+
+      .pet h2 {
+        font-size: 22px;
+        line-height: 1.25;
+      }
+
+      .pet p {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 8px;
+        border: 1px solid #c8ddec;
+        border-radius: 6px;
+        color: #285275;
+        background: #f5fbff;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .tag.warning {
+        border-color: #e7b4a9;
+        color: #9d3f33;
+        background: #fff3ef;
+      }
+
+      .skill-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .numbers {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .number-panel {
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fbfdff;
+      }
+
+      .number-panel h3 {
+        margin: 0 0 8px;
+        color: #285275;
+        font-size: 13px;
+      }
+
+      .number-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 4px 0;
+        border-top: 1px solid #edf3f9;
+        font-size: 12px;
+        line-height: 1.25;
+      }
+
+      .number-row:first-of-type {
+        border-top: 0;
+      }
+
+      .number-row span:first-child {
+        color: var(--muted);
+      }
+
+      .number-row span:last-child {
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .skills {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .skill {
+        min-height: 42px;
+        padding: 9px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface-strong);
+        font-size: 13px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+
+      .skill.empty {
+        color: #8aa0b6;
+        background: #eef5fb;
+      }
+
+      .skill.pending {
+        border-color: #edc4ba;
+        color: #8f352b;
+        background: #fff6f3;
+        font-weight: 700;
+      }
+
+      .same {
+        padding: 12px;
+        border: 1px dashed #c5d9ea;
+        border-radius: 8px;
+        color: var(--muted);
+        background: #f8fcff;
+        line-height: 1.6;
+      }
+
+      .sources {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .compare-view {
+        display: grid;
+        gap: 16px;
+      }
+
+      .compare-section {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: var(--shadow);
+      }
+
+      .compare-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 12px;
+      }
+
+      .compare-head h2 {
+        font-size: 20px;
+        line-height: 1.25;
+      }
+
+      .compare-head p {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .compare-cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .compare-card {
+        min-height: 112px;
+        padding: 13px;
+        border: 1px solid #d3e3f1;
+        border-radius: 8px;
+        background: #fbfdff;
+      }
+
+      .compare-card strong {
+        display: block;
+        margin-bottom: 6px;
+        color: #153b61;
+        font-size: 22px;
+        line-height: 1.15;
+      }
+
+      .compare-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .compare-card p {
+        margin-top: 8px;
+        color: #334960;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .insight-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .insight {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 10px;
+        padding: 10px 0;
+        border-top: 1px solid #edf3f9;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .insight:first-child {
+        border-top: 0;
+      }
+
+      .insight b {
+        color: #285275;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .compare-table {
+        width: 100%;
+        min-width: 1120px;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .compare-table th,
+      .compare-table td {
+        padding: 10px;
+        border-bottom: 1px solid #edf3f9;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .compare-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        color: #285275;
+        background: #f5fbff;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .compare-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .pet-name {
+        font-weight: 800;
+        color: var(--text);
+      }
+
+      .metric-line {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .metric-line span {
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .metric-line b {
+        color: var(--text);
+      }
+
+      .role-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .role-tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 2px 7px;
+        border: 1px solid #c8ddec;
+        border-radius: 6px;
+        color: #285275;
+        background: #f5fbff;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .role-tag.magic {
+        border-color: #b9d3f0;
+        color: #1267ba;
+        background: #eff7ff;
+      }
+
+      .role-tag.physical {
+        border-color: #e2c48c;
+        color: #8a580a;
+        background: #fff8e8;
+      }
+
+      .role-tag.speed {
+        border-color: #aacfbf;
+        color: #24714d;
+        background: #f1fbf6;
+      }
+
+      .role-tag.beast {
+        border-color: #c9b4e8;
+        color: #5a3f8f;
+        background: #f8f3ff;
+      }
+
+      .role-tag.pending-book {
+        border-color: #e7b4a9;
+        color: #9d3f33;
+        background: #fff3ef;
+      }
+
+      .key-skills {
+        max-width: 340px;
+        color: #334960;
+        line-height: 1.5;
+      }
+
+      .advice {
+        color: #334960;
+        line-height: 1.5;
+      }
+
+      .matrix-table {
+        width: 100%;
+        min-width: var(--matrix-min-width, 720px);
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 13px;
+      }
+
+      .matrix-table th,
+      .matrix-table td {
+        min-width: 92px;
+        height: 76px;
+        padding: 8px;
+        border: 1px solid #1f2d3a;
+        text-align: center;
+        vertical-align: middle;
+      }
+
+      .matrix-table th {
+        color: #142232;
+        background: #f7fbff;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .matrix-group-head {
+        height: 40px;
+        color: #153b61;
+        background: #eaf4ff;
+        font-size: 13px;
+      }
+
+      .matrix-sections {
+        display: grid;
+        gap: 14px;
+      }
+
+      .matrix-section-title {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        margin: 0 0 8px;
+        padding: 0 10px;
+        border: 1px solid #c9ddec;
+        border-radius: 6px;
+        color: #153b61;
+        background: #f3f9ff;
+        font-size: 15px;
+        line-height: 1.3;
+      }
+
+      .matrix-row-head {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        width: 82px;
+        color: #153b61;
+        background: #fbfdff;
+        font-weight: 900;
+      }
+
+      .matrix-cell {
+        display: grid;
+        gap: 5px;
+        justify-items: center;
+        line-height: 1.25;
+      }
+
+      .matrix-main {
+        color: #142232;
+        font-weight: 900;
+      }
+
+      .matrix-sub {
+        color: #53687e;
+        font-size: 12px;
+      }
+
+      .matrix-empty {
+        color: #9aadbf;
+      }
+
+      mark {
+        padding: 0 3px;
+        border-radius: 4px;
+        color: inherit;
+        background: #ffef9d;
+      }
+
+      @media (max-width: 1080px) {
+        .record {
+          grid-template-columns: 1fr;
+        }
+
+        .shot img {
+          max-width: 560px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          width: min(100% - 24px, 1440px);
+          padding-top: 18px;
+        }
+
+        .topbar,
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar {
+          justify-content: stretch;
+        }
+
+        .search {
+          width: 100%;
+        }
+
+        .skills {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .numbers {
+          grid-template-columns: 1fr;
+        }
+
+        .compare-cards {
+          grid-template-columns: 1fr;
+        }
+
+        .compare-head,
+        .insight {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <div>
+          <h1>宠物图片识别总览</h1>
+          <p class="lead">按文件夹切换查看，也可横向对比各目录成品。汇总只基于现有识别记录，不重新识别图片。</p>
+        </div>
+        <div class="toolbar">
+          <input id="searchInput" class="search" type="search" placeholder="搜索宠物、技能、定位" />
+        </div>
+      </header>
+
+      <nav id="tabs" class="tabs" aria-label="页面视图"></nav>
+      <nav id="basicTabs" class="tabs basic-tabs" aria-label="基础资料目录"></nav>
+
+      <section class="stats" aria-label="统计">
+        <div class="stat"><strong id="groupCount">11</strong><span id="groupLabel">宠物记录组</span></div>
+        <div class="stat"><strong id="shotCount">22</strong><span id="shotLabel">截图来源</span></div>
+        <div class="stat"><strong id="pendingCount">0</strong><span id="pendingLabel">含待确认记录组</span></div>
+        <div class="stat"><strong id="folderName">FC</strong><span id="folderLabel">当前目录</span></div>
+      </section>
+
+      <p id="notice" class="notice" hidden></p>
+
+      <section id="records" class="grid" aria-live="polite"></section>
+    </main>
+
+    <script>
+      const records = [
+        {
+          id: "01",
+          file: "ScreenShot_2026-07-01_145504_244.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16945)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "4004/4004"], ["魔法", "3682/3682"], ["攻击", "1012"], ["防御", "822"], ["速度", "470"], ["灵力", "1473"]],
+            points: [["体质", "155"], ["魔力", "961"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1446/1446"], ["防御资质", "1426/1426"], ["体力资质", "1560/1560"], ["法力资质", "1615/1615"], ["速度资质", "1620/1620"], ["寿命", "15961"]],
+            growth: [["已使用元宵数量", "46/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "46"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术暴击", "高级灵蕴", "高级强壮", "高级抵御", "涡轮火", "高级法术连击(符)", "高级凝气(符)", "护盾(驭)", "混沌(驭)", "围剿(驭)", "觉醒 1/5", "空"],
+        },
+        {
+          id: "02",
+          file: "ScreenShot_2026-07-01_145519_057.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16945)｜血脉：125级血脉",
+          same: "同 01。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "03",
+          file: "ScreenShot_2026-07-01_145543_975.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16774)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3571/3571"], ["魔法", "3620/3620"], ["攻击", "2136"], ["防御", "809"], ["速度", "509"], ["灵力", "782"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "930"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1619/1619"], ["防御资质", "1403/1403"], ["体力资质", "1451/1452"], ["法力资质", "1351/1351"], ["速度资质", "1623/1623"], ["寿命", "6423"]],
+            growth: [["已使用元宵数量", "18/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "18"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级吸血", "高级抵御", "高级狂暴", "小神佑(符)", "高级夜战(符)", "连环(驭)", "围剿(驭)", "恃势(驭)", "觉醒 5/5", "空"],
+        },
+        {
+          id: "04",
+          file: "ScreenShot_2026-07-01_145554_583.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16774)｜血脉：125级血脉",
+          same: "同 03。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "05",
+          file: "ScreenShot_2026-07-01_145609_627.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16189)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "4420/4420"], ["魔法", "3644/3644"], ["攻击", "2156"], ["防御", "801"], ["速度", "511"], ["灵力", "746"]],
+            points: [["体质", "318"], ["魔力", "155"], ["力量", "782"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1632/1632"], ["防御资质", "1379/1379"], ["体力资质", "1411/1411"], ["法力资质", "1400/1400"], ["速度资质", "1648/1648"], ["寿命", "6197"]],
+            growth: [["已使用元宵数量", "19/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "19"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级强力", "高级吸血", "高级夜战", "水刃斩", "小反震(符)", "高级必杀(符)", "护盾(驭)", "先锋(驭)", "升龙(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "06",
+          file: "ScreenShot_2026-07-01_145620_725.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16189)｜血脉：125级血脉",
+          same: "同 05。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "07",
+          file: "ScreenShot_2026-07-01_145631_852.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(15976)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3507/3507"], ["魔法", "3751/3751"], ["攻击", "896"], ["防御", "829"], ["速度", "461"], ["灵力", "1431"]],
+            points: [["体质", "155"], ["魔力", "930"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1199/1199"], ["防御资质", "1440/1440"], ["体力资质", "1499/1499"], ["法力资质", "1620/1620"], ["速度资质", "1597/1597"], ["寿命", "9280"]],
+            growth: [["已使用元宵数量", "21/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "21"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级神佑复生", "高级法术连击", "高级灵蕴", "分水神剑", "小感知(符)", "高级法爆(符)", "护盾(驭)", "混沌(驭)", "刺杀(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "08",
+          file: "ScreenShot_2026-07-01_145638_727.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(15976)｜血脉：125级血脉",
+          same: "同 07。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "09",
+          file: "ScreenShot_2026-07-01_145650_492.png",
+          pet: "赤炎童子(145)",
+          meta: "天资：极(16529)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "5873/5873"], ["魔法", "2755/2755"], ["攻击", "954"], ["防御", "1067"], ["速度", "1077"], ["灵力", "392"]],
+            points: [["体质", "539"], ["魔力", "156"], ["力量", "155"], ["耐力", "190"], ["敏捷", "525"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1349/1465"], ["防御资质", "1510/1510"], ["体力资质", "1491/1491"], ["法力资质", "1429/1429"], ["速度资质", "1632/1632"], ["寿命", "8460"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "1/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级幸运", "高级敏捷", "高级勇敢", "高级火系吸收", "葫芦仙法", "小再生(符)", "高级防御(符)", "顺闪(驭)", "护盾(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "10",
+          file: "ScreenShot_2026-07-01_145659_473.png",
+          pet: "赤炎童子(145)",
+          meta: "天资：极(16529)｜血脉：125级血脉",
+          same: "同 09。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "11",
+          file: "ScreenShot_2026-07-01_145711_916.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(16611)｜血脉：85级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3658/3658"], ["魔法", "3796/3796"], ["攻击", "961"], ["防御", "856"], ["速度", "450"], ["灵力", "1445"]],
+            points: [["体质", "155"], ["魔力", "951"], ["力量", "155"], ["耐力", "155"], ["敏捷", "156"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1377/1377"], ["防御资质", "1556/1556"], ["体力资质", "1436/1436"], ["法力资质", "1645/1645"], ["速度资质", "1572/1572"], ["寿命", "1962"]],
+            growth: [["已使用元宵数量", "42/50"], ["已使用兽魂果数量", "7/31"], ["可重置元宵数量", "42"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "0"]],
+          },
+          skills: ["高级法术暴击", "高级法术波动", "高级灵蕴", "高级抵御", "雷利风行", "小法术连击(符)", "高级强壮(符)", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 5/5", "空"],
+        },
+        {
+          id: "12",
+          file: "ScreenShot_2026-07-01_145719_250.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(16611)｜血脉：85级血脉",
+          same: "同 11。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "13",
+          file: "ScreenShot_2026-07-01_145729_307.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3166/3166"], ["魔法", "3682/3682"], ["攻击", "2183"], ["防御", "859"], ["速度", "463"], ["灵力", "927"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "961"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1570/1570"], ["防御资质", "1520/1520"], ["体力资质", "1520/1520"], ["法力资质", "1570/1570"], ["速度资质", "1470/1470"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "0"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级隐身", "高级偷袭", "生死相依", "小夜战(符)", "高级追击(符)", "物抗强化", "乘胜(驭)", "恃势(驭)", "刺杀(驭)", "觉醒 5/5"],
+        },
+        {
+          id: "14",
+          file: "ScreenShot_2026-07-01_145736_171.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          same: "同 13。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "15",
+          file: "ScreenShot_2026-07-01_145744_251.png",
+          pet: "荧火(145)",
+          meta: "天资：优(14987)｜血脉：125级血脉",
+          skipped: true,
+          note: "用户确认这个宝宝不用继续处理。",
+        },
+        {
+          id: "16",
+          file: "ScreenShot_2026-07-01_145752_964.png",
+          pet: "荧火(145)",
+          meta: "天资：优(14987)｜血脉：125级血脉",
+          skipped: true,
+          same: "同 15。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "17",
+          file: "ScreenShot_2026-07-01_145803_353.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3690/3690"], ["魔法", "3712/3712"], ["攻击", "1066"], ["防御", "848"], ["速度", "433"], ["灵力", "1441"]],
+            points: [["体质", "155"], ["魔力", "976"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1570/1570"], ["防御资质", "1520/1520"], ["体力资质", "1520/1520"], ["法力资质", "1570/1570"], ["速度资质", "1470/1470"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术连击", "高级法术暴击", "高级灵蕴", "高级攻坚", "生死相依", "高级强壮(符)", "山崩地倾(符)", "物抗强化", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 5/5"],
+        },
+        {
+          id: "18",
+          file: "ScreenShot_2026-07-01_145811_242.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          same: "同 17。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "19",
+          file: "ScreenShot_2026-07-01_145820_617.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16626)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "6596/6596"], ["魔法", "2184/2184"], ["攻击", "939"], ["防御", "1013"], ["速度", "1050"], ["灵力", "411"]],
+            points: [["体质", "563"], ["魔力", "155"], ["力量", "155"], ["耐力", "155"], ["敏捷", "522"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1301/1301"], ["防御资质", "1482/1482"], ["体力资质", "1571/1571"], ["法力资质", "1426/1426"], ["速度资质", "1572/1572"], ["寿命", "8195"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级再生", "高级防御", "高级勇敢", "高级强壮", "幽冥之佑", "小凝神(符)", "高级敏捷(符)", "顺闪(驭)", "护盾(驭)", "觉醒 3/5", "空", "空"],
+        },
+        {
+          id: "20",
+          file: "ScreenShot_2026-07-01_145828_355.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16626)｜血脉：125级血脉",
+          same: "同 19。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "21",
+          file: "ScreenShot_2026-07-01_145840_928.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2331/2331"], ["魔法", "2110/2110"], ["攻击", "1042"], ["防御", "800"], ["速度", "323"], ["灵力", "350"]],
+            points: [["体质", "165"], ["魔力", "165"], ["力量", "165"], ["耐力", "165"], ["敏捷", "165"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1500/1500"], ["体力资质", "1450/1450"], ["法力资质", "1450/1450"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小气势", "高级飞行", "高级勇敢", "一马当先", "空", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        {
+          id: "22",
+          file: "ScreenShot_2026-07-01_145846_942.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          same: "同 21。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "23",
+          file: "ScreenShot_2026-07-01_145855_922.png",
+          pet: "龙虾骑士(145)",
+          meta: "天资：极(16377)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3316/3316"], ["魔法", "3844/3844"], ["攻击", "2056"], ["防御", "807"], ["速度", "512"], ["灵力", "696"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "906"], ["耐力", "155"], ["敏捷", "179"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1574/1574"], ["防御资质", "1409/1409"], ["体力资质", "1450/1450"], ["法力资质", "1238/1238"], ["速度资质", "1580/1580"], ["寿命", "7258"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级连击", "高级隐身", "高级感知", "高级偷袭", "高级冲击", "高级气势", "小报复(符)", "高级审判(符)", "护盾(驭)", "先锋(驭)", "刺杀(驭)", "觉醒 3/5"],
+        },
+        {
+          id: "24",
+          file: "ScreenShot_2026-07-01_145902_264.png",
+          pet: "龙虾骑士(145)",
+          meta: "天资：极(16377)｜血脉：125级血脉",
+          same: "同 23。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+      ];
+
+      const lg1Records = [
+        {
+          id: "01",
+          file: "ScreenShot_2026-07-01_150139_981.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(15900)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "4134/4134"], ["魔法", "3710/3710"], ["攻击", "937"], ["防御", "840"], ["速度", "465"], ["灵力", "1530"]],
+            points: [["体质", "155"], ["魔力", "975"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1308/1308"], ["防御资质", "1452/1452"], ["体力资质", "1517/1517"], ["法力资质", "1665/1665"], ["速度资质", "1595/1595"], ["寿命", "1044"]],
+            growth: [["已使用元宵数量", "35/50"], ["已使用兽魂果数量", "30/31"], ["可重置元宵数量", "35"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级灵蕴", "高级强壮", "高级抵御", "涡轮火", "小法术暴击(符)", "高级法术连击(符)", "护盾(驭)", "混沌(驭)", "围剿(驭)", "觉醒 5/5", "空", "空"],
+        },
+        {
+          id: "02",
+          file: "ScreenShot_2026-07-01_150153_396.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(15900)｜血脉：125级血脉",
+          same: "同 01。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "03",
+          file: "ScreenShot_2026-07-01_150203_944.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16484)｜血脉：125级血脉",
+          heart: "绿心",
+          stats: {
+            panel: [["气血", "3751/3751"], ["魔法", "3650/3650"], ["攻击", "2090"], ["防御", "811"], ["速度", "475"], ["灵力", "757"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "945"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1594/1594"], ["防御资质", "1427/1428"], ["体力资质", "1427/1428"], ["法力资质", "1322/1322"], ["速度资质", "1545/1545"], ["寿命", "3936"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级连击", "高级吸血", "高级夜战", "高级强壮", "高级抵御", "高级狂暴", "小神佑(符)", "高级必杀(符)", "连环(驭)", "围剿(驭)", "升龙(驭)", "觉醒 4/5"],
+        },
+        {
+          id: "04",
+          file: "ScreenShot_2026-07-01_150213_141.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16484)｜血脉：125级血脉",
+          same: "同 03。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "05",
+          file: "ScreenShot_2026-07-01_150224_606.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16411)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "4578/4578"], ["魔法", "3286/3286"], ["攻击", "2044"], ["防御", "836"], ["速度", "539"], ["灵力", "741"]],
+            points: [["体质", "322"], ["魔力", "155"], ["力量", "763"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1571/1571"], ["防御资质", "1422/1422"], ["体力资质", "1416/1416"], ["法力资质", "1421/1421"], ["速度资质", "1673/1673"], ["寿命", "6459"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "0"]],
+          },
+          skills: ["高级强力", "高级反震", "高级吸血", "高级偷袭", "水刃斩", "小感知(符)", "小夜战(符)", "护盾(驭)", "剑锋(驭)", "升龙(驭)", "觉醒 5/5", "空"],
+        },
+        {
+          id: "06",
+          file: "ScreenShot_2026-07-01_150232_900.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16411)｜血脉：125级血脉",
+          same: "同 05。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "07",
+          file: "ScreenShot_2026-07-01_150244_045.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(16231)｜血脉：125级血脉",
+          heart: "橙心",
+          stats: {
+            panel: [["气血", "3397/3397"], ["魔法", "3620/3620"], ["攻击", "870"], ["防御", "785"], ["速度", "478"], ["灵力", "1336"]],
+            points: [["体质", "155"], ["魔力", "930"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1199/1365"], ["防御资质", "1332/1332"], ["体力资质", "1443/1443"], ["法力资质", "1573/1573"], ["速度资质", "1675/1675"], ["寿命", "8892"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级神佑复生", "高级法术连击", "高级法术暴击", "高级审判", "分水神剑", "小感知(符)", "高级灵蕴(符)", "护盾(驭)", "混沌(驭)", "迁怒(驭)", "觉醒 4/5", "空"],
+        },
+        {
+          id: "08",
+          file: "ScreenShot_2026-07-01_150252_822.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(16231)｜血脉：125级血脉",
+          same: "同 07。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "09",
+          file: "ScreenShot_2026-07-01_150307_386.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16395)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3935/3935"], ["魔法", "3682/3682"], ["攻击", "2164"], ["防御", "849"], ["速度", "568"], ["灵力", "915"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "961"], ["耐力", "155"], ["敏捷", "170"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1550/1550"], ["防御资质", "1500/1500"], ["体力资质", "1500/1500"], ["法力资质", "1550/1550"], ["速度资质", "1450/1450"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级敏捷", "高级强壮", "高级攻坚", "生死相依", "小夜战(符)", "剑气四射(符)", "双抗之心", "顺闪(驭)", "护盾(驭)", "升龙(驭)", "觉醒 4/5"],
+        },
+        {
+          id: "10",
+          file: "ScreenShot_2026-07-01_150315_217.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16395)｜血脉：125级血脉",
+          same: "同 09。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "11",
+          file: "ScreenShot_2026-07-01_150324_652.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16546)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3164/3164"], ["魔法", "3682/3682"], ["攻击", "2139"], ["防御", "840"], ["速度", "449"], ["灵力", "898"]],
+            points: [["体质", "155"], ["魔力", "156"], ["力量", "960"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1520/1520"], ["防御资质", "1470/1470"], ["体力资质", "1470/1470"], ["法力资质", "1520/1520"], ["速度资质", "1420/1420"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级隐身", "高级感知", "生死相依", "小夜战(符)", "高级偷袭(符)", "感知强化", "护盾(驭)", "围剿(驭)", "迁怒(驭)", "觉醒 4/5"],
+        },
+        {
+          id: "12",
+          file: "ScreenShot_2026-07-01_150334_401.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16546)｜血脉：125级血脉",
+          same: "同 11。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "13",
+          file: "ScreenShot_2026-07-01_150407_478.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(15777)｜血脉：85级血脉",
+          heart: "橙心",
+          stats: {
+            panel: [["气血", "3325/3325"], ["魔法", "3908/3908"], ["攻击", "1016"], ["防御", "850"], ["速度", "473"], ["灵力", "1414"]],
+            points: [["体质", "155"], ["魔力", "954"], ["力量", "156"], ["耐力", "156"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1492/1492"], ["防御资质", "1580/1580"], ["体力资质", "1416/1416"], ["法力资质", "1620/1620"], ["速度资质", "1645/1645"], ["寿命", "1619"]],
+            growth: [["已使用元宵数量", "6/50"], ["已使用兽魂果数量", "11/31"], ["可重置元宵数量", "6"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术连击", "高级法术波动", "高级抵御", "雷利风行", "小法术暴击(符)", "小灵蕴(符)", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 5/5", "空", "空"],
+        },
+        {
+          id: "14",
+          file: "ScreenShot_2026-07-01_150414_155.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(15777)｜血脉：85级血脉",
+          same: "同 13。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "15",
+          file: "ScreenShot_2026-07-01_150422_737.png",
+          pet: "赤炎童子(145)",
+          meta: "天资：优(14988)｜血脉：无血脉",
+          heart: "蓝心",
+          stats: {
+            panel: [["气血", "2280/2280"], ["魔法", "2090/2090"], ["攻击", "920"], ["防御", "817"], ["速度", "418"], ["灵力", "310"]],
+            points: [["体质", "174"], ["魔力", "155"], ["力量", "165"], ["耐力", "157"], ["敏捷", "174"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1282/1422"], ["防御资质", "1625/1625"], ["体力资质", "1386/1386"], ["法力资质", "1345/1345"], ["速度资质", "1638/1638"], ["寿命", "6834"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小抵御", "高级自愈", "高级敏捷", "红莲业火", "葫芦仙法", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        {
+          id: "16",
+          file: "ScreenShot_2026-07-01_150428_735.png",
+          pet: "赤炎童子(145)",
+          meta: "天资：优(14988)｜血脉：无血脉",
+          same: "同 15。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "17",
+          file: "ScreenShot_2026-07-01_150442_052.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16687)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "6475/6475"], ["魔法", "2070/2070"], ["攻击", "991"], ["防御", "1052"], ["速度", "1040"], ["灵力", "381"]],
+            points: [["体质", "587"], ["魔力", "155"], ["力量", "155"], ["耐力", "155"], ["敏捷", "513"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1394/1394"], ["防御资质", "1485/1485"], ["体力资质", "1571/1571"], ["法力资质", "1364/1364"], ["速度资质", "1599/1599"], ["寿命", "6834"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级再生", "高级防御", "高级敏捷", "高级勇敢", "幽冥之佑", "小强壮(符)", "高级水吸收(符)", "顺闪(驭)", "护盾(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "18",
+          file: "ScreenShot_2026-07-01_150500_940.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16687)｜血脉：125级血脉",
+          same: "同 17。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "19",
+          file: "ScreenShot_2026-07-01_145840_928.png",
+          sourceFolder: "FC",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2331/2331"], ["魔法", "2110/2110"], ["攻击", "1042"], ["防御", "800"], ["速度", "323"], ["灵力", "350"]],
+            points: [["体质", "165"], ["魔力", "165"], ["力量", "165"], ["耐力", "165"], ["敏捷", "165"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1500/1500"], ["体力资质", "1450/1450"], ["法力资质", "1450/1450"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小气势", "高级飞行", "高级勇敢", "一马当先", "空", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        {
+          id: "20",
+          file: "ScreenShot_2026-07-01_145846_942.png",
+          sourceFolder: "FC",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          same: "同 19。引用 FC 同款神兽小马补录数据。",
+        },
+      ];
+
+      const lg2Records = [
+        {
+          id: "01",
+          file: "ScreenShot_2026-07-01_155248_247.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16219)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "4064/4064"], ["魔法", "3958/3958"], ["攻击", "933"], ["防御", "855"], ["速度", "463"], ["灵力", "1500"]],
+            points: [["体质", "155"], ["魔力", "976"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1308/1308"], ["防御资质", "1539/1539"], ["体力资质", "1575/1575"], ["法力资质", "1640/1640"], ["速度资质", "1595/1595"], ["寿命", "2715"]],
+            growth: [["已使用元宵数量", "32/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "32"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级灵蕴", "高级强壮", "高级抵御", "涡轮火", "小法术暴击(符)", "高级法术连击(符)", "护盾(驭)", "混沌(驭)", "围剿(驭)", "觉醒 5/5", "空", "空"],
+        },
+        {
+          id: "02",
+          file: "ScreenShot_2026-07-01_155301_234.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16219)｜血脉：125级血脉",
+          same: "同 01。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "03",
+          file: "ScreenShot_2026-07-01_155314_128.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16406)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3652/3652"], ["魔法", "3620/3620"], ["攻击", "2300"], ["防御", "820"], ["速度", "528"], ["灵力", "773"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "930"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1616/1619"], ["防御资质", "1407/1407"], ["体力资质", "1422/1422"], ["法力资质", "1343/1343"], ["速度资质", "1700/1700"], ["寿命", "5282"]],
+            growth: [["已使用元宵数量", "24/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "24"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级连击", "高级强力", "高级吸血", "高级夜战", "高级狂暴", "小抵御(符)", "高级必杀(符)", "连环(驭)", "围剿(驭)", "升龙(驭)", "觉醒 3/5", "空"],
+        },
+        {
+          id: "04",
+          file: "ScreenShot_2026-07-01_155321_183.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16406)｜血脉：125级血脉",
+          same: "同 03。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "05",
+          file: "ScreenShot_2026-07-01_155413_924.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16696)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3836/3836"], ["魔法", "3712/3712"], ["攻击", "1056"], ["防御", "849"], ["速度", "420"], ["灵力", "1405"]],
+            points: [["体质", "155"], ["魔力", "976"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1550/1550"], ["防御资质", "1500/1500"], ["体力资质", "1500/1500"], ["法力资质", "1550/1550"], ["速度资质", "1450/1450"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术连击", "高级法术暴击", "高级灵蕴", "高级强壮", "生死相依", "高级抵御(符)", "山崩地倾(符)", "法连强化", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 3/5"],
+        },
+        {
+          id: "06",
+          file: "ScreenShot_2026-07-01_155420_842.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16696)｜血脉：125级血脉",
+          same: "同 05。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "07",
+          file: "ScreenShot_2026-07-01_155429_678.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16546)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3370/3370"], ["魔法", "3723/3723"], ["攻击", "2142"], ["防御", "832"], ["速度", "448"], ["灵力", "897"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "961"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1520/1520"], ["防御资质", "1470/1470"], ["体力资质", "1470/1470"], ["法力资质", "1520/1520"], ["速度资质", "1420/1420"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "0"]],
+          },
+          skills: ["高级连击", "高级隐身", "高级夜战", "高级偷袭", "生死相依", "小追击(符)", "高级必杀(符)", "隐身强化", "连环(驭)", "围剿(驭)", "刺杀(驭)", "觉醒 5/5"],
+        },
+        {
+          id: "08",
+          file: "ScreenShot_2026-07-01_155435_773.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16546)｜血脉：125级血脉",
+          same: "同 07。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "09",
+          file: "ScreenShot_2026-07-01_155444_762.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16665)｜血脉：125级血脉",
+          heart: "蓝心",
+          stats: {
+            panel: [["气血", "3210/3210"], ["魔法", "3739/3739"], ["攻击", "2009"], ["防御", "797"], ["速度", "506"], ["灵力", "774"]],
+            points: [["体质", "184"], ["魔力", "155"], ["力量", "876"], ["耐力", "155"], ["敏捷", "180"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1573/1574"], ["防御资质", "1428/1428"], ["体力资质", "1401/1401"], ["法力资质", "1411/1411"], ["速度资质", "1571/1571"], ["寿命", "7705"]],
+            growth: [["已使用元宵数量", "13/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "13"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级感知", "高级神佑复生", "高级夜战", "高级审判", "小偷袭(符)", "高级隐身(符)", "护盾(驭)", "连环(驭)", "刺杀(驭)", "觉醒 5/5"],
+        },
+        {
+          id: "10",
+          file: "ScreenShot_2026-07-01_155452_405.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16665)｜血脉：125级血脉",
+          same: "同 09。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "11",
+          file: "ScreenShot_2026-07-01_155724_837.png",
+          pet: "桃花精灵(145)",
+          meta: "天资：极(16204)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "5410/5410"], ["魔法", "2329/2329"], ["攻击", "956"], ["防御", "851"], ["速度", "1499"], ["灵力", "354"]],
+            points: [["体质", "357"], ["魔力", "155"], ["力量", "155"], ["耐力", "155"], ["敏捷", "728"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1373/1373"], ["防御资质", "1580/1580"], ["体力资质", "1520/1520"], ["法力资质", "1421/1421"], ["速度资质", "1574/1574"], ["寿命", "4941"]],
+            growth: [["已使用元宵数量", "44/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "44"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级飞行", "高级敏捷", "高级勇敢", "高级水系吸收", "高级强壮", "小幸运(符)", "高级隐身(符)", "顺闪(驭)", "护盾(驭)", "刺杀(驭)", "觉醒 4/5", "空"],
+        },
+        {
+          id: "12",
+          file: "ScreenShot_2026-07-01_155731_904.png",
+          pet: "桃花精灵(145)",
+          meta: "天资：极(16204)｜血脉：125级血脉",
+          same: "同 11。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "13",
+          file: "ScreenShot_2026-07-01_155740_887.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(15881)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3345/3345"], ["魔法", "3650/3650"], ["攻击", "883"], ["防御", "798"], ["速度", "466"], ["灵力", "1468"]],
+            points: [["体质", "155"], ["魔力", "945"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1199/1199"], ["防御资质", "1344/1344"], ["体力资质", "1475/1475"], ["法力资质", "1620/1620"], ["速度资质", "1623/1623"], ["寿命", "8481"]],
+            growth: [["已使用元宵数量", "28/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "28"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级感知", "高级法术暴击", "高级灵蕴", "分水神剑", "小审判(符)", "高级法术连击(符)", "护盾(驭)", "混沌(驭)", "刺杀(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "14",
+          file: "ScreenShot_2026-07-01_155747_020.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(15881)｜血脉：125级血脉",
+          same: "同 13。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "15",
+          file: "ScreenShot_2026-07-01_155825_483.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(15768)｜血脉：125级血脉",
+          heart: "橙心",
+          stats: {
+            panel: [["气血", "3599/3599"], ["魔法", "3792/3792"], ["攻击", "981"], ["防御", "837"], ["速度", "467"], ["灵力", "1444"]],
+            points: [["体质", "155"], ["魔力", "942"], ["力量", "156"], ["耐力", "155"], ["敏捷", "156"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1423/1423"], ["防御资质", "1556/1556"], ["体力资质", "1475/1475"], ["法力资质", "1645/1645"], ["速度资质", "1645/1645"], ["寿命", "681"]],
+            growth: [["已使用元宵数量", "15/50"], ["已使用兽魂果数量", "14/31"], ["可重置元宵数量", "15"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术波动", "高级灵蕴", "高级抵御", "雷利风行", "小法术连击(符)", "小强壮(符)", "顺闪(驭)", "混沌(驭)", "围剿(驭)", "觉醒 5/5", "空", "空"],
+        },
+        {
+          id: "16",
+          file: "ScreenShot_2026-07-01_155831_267.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(15768)｜血脉：125级血脉",
+          same: "同 15。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "17",
+          file: "ScreenShot_2026-07-01_155843_508.png",
+          pet: "赤炎童子(139)",
+          meta: "天资：优(14549)｜血脉：125级血脉",
+          heart: "橙心",
+          stats: {
+            panel: [["气血", "2521/2521"], ["魔法", "2028/2028"], ["攻击", "946"], ["防御", "787"], ["速度", "338"], ["灵力", "295"]],
+            points: [["体质", "168"], ["魔力", "155"], ["力量", "164"], ["耐力", "151"], ["敏捷", "157"], ["潜力", "695"]],
+            aptitude: [["攻击资质", "1375/1375"], ["防御资质", "1450/1450"], ["体力资质", "1298/1298"], ["法力资质", "1200/1200"], ["速度资质", "1404/1404"], ["寿命", "7283"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/29"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小抵御", "高级感知", "高级敏捷", "红莲业火", "葫芦仙法", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        {
+          id: "18",
+          file: "ScreenShot_2026-07-01_155850_358.png",
+          pet: "赤炎童子(139)",
+          meta: "天资：优(14549)｜血脉：125级血脉",
+          same: "同 17。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "19",
+          file: "ScreenShot_2026-07-01_155917_325.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16550)｜血脉：125级血脉",
+          heart: "蓝心",
+          stats: {
+            panel: [["气血", "6650/6650"], ["魔法", "2240/2240"], ["攻击", "966"], ["防御", "1091"], ["速度", "1050"], ["灵力", "400"]],
+            points: [["体质", "609"], ["魔力", "155"], ["力量", "155"], ["耐力", "155"], ["敏捷", "491"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1394/1394"], ["防御资质", "1521/1521"], ["体力资质", "1573/1573"], ["法力资质", "1453/1453"], ["速度资质", "1678/1678"], ["寿命", "6692"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级防御", "高级敏捷", "高级勇敢", "高级强壮", "幽冥之佑", "小幸运(符)", "高级火系吸收(符)", "顺闪(驭)", "护盾(驭)", "坚守(驭)", "觉醒 4/5", "空"],
+        },
+        {
+          id: "20",
+          file: "ScreenShot_2026-07-01_155924_934.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16550)｜血脉：125级血脉",
+          same: "同 19。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "21",
+          file: "ScreenShot_2026-07-01_155937_912.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2331/2331"], ["魔法", "2110/2110"], ["攻击", "1042"], ["防御", "800"], ["速度", "323"], ["灵力", "350"]],
+            points: [["体质", "165"], ["魔力", "165"], ["力量", "165"], ["耐力", "165"], ["敏捷", "165"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1500/1500"], ["体力资质", "1450/1450"], ["法力资质", "1450/1450"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小气势", "高级飞行", "高级勇敢", "一马当先", "空", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        {
+          id: "22",
+          file: "ScreenShot_2026-07-01_155943_155.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          same: "同 21。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+      ];
+
+      const ptRecords = [
+        {
+          id: "01",
+          file: "ScreenShot_2026-07-01_150806_591.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16025)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3973/3973"], ["魔法", "3712/3712"], ["攻击", "944"], ["防御", "854"], ["速度", "477"], ["灵力", "1525"]],
+            points: [["体质", "155"], ["魔力", "976"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1331/1492"], ["防御资质", "1548/1548"], ["体力资质", "1575/1575"], ["法力资质", "1665/1665"], ["速度资质", "1645/1645"], ["寿命", "1061"]],
+            growth: [["已使用元宵数量", "29/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "29"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术暴击", "高级强壮", "高级抵御", "涡轮火", "小法连(符)", "小灵蕴(符)", "护盾(驭)", "混沌(驭)", "围剿(驭)", "觉醒 1/5", "空", "空"],
+        },
+        { id: "02", file: "ScreenShot_2026-07-01_150818_494.png", pet: "祸斗(145)", meta: "天资：极(16025)｜血脉：125级血脉", same: "同 01。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "03",
+          file: "ScreenShot_2026-07-01_150834_968.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16764)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3798/3798"], ["魔法", "3954/3954"], ["攻击", "2326"], ["防御", "787"], ["速度", "486"], ["灵力", "779"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "945"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1572/1572"], ["防御资质", "1340/1340"], ["体力资质", "1442/1442"], ["法力资质", "1338/1338"], ["速度资质", "1554/1554"], ["寿命", "4637"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级强力", "高级夜战", "高级强壮", "高级抵御", "小吸血(符)", "高级偷袭(符)", "连环(驭)", "围剿(驭)", "升龙(驭)", "觉醒 4/5"],
+        },
+        { id: "04", file: "ScreenShot_2026-07-01_150842_420.png", pet: "雷司(145)", meta: "天资：极(16764)｜血脉：125级血脉", same: "同 03。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "05",
+          file: "ScreenShot_2026-07-01_150851_215.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16377)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "4499/4499"], ["魔法", "3260/3260"], ["攻击", "2045"], ["防御", "888"], ["速度", "508"], ["灵力", "713"]],
+            points: [["体质", "350"], ["魔力", "155"], ["力量", "750"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1575/1575"], ["防御资质", "1353/1353"], ["体力资质", "1407/1407"], ["法力资质", "1389/1389"], ["速度资质", "1673/1673"], ["寿命", "7210"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "1/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级吸血", "高级保命", "高级攻坚", "水刃斩", "小夜战(符)", "高级强力(符)", "护盾(驭)", "坚守(驭)", "升龙(驭)", "觉醒 3/5", "空"],
+        },
+        { id: "06", file: "ScreenShot_2026-07-01_150858_814.png", pet: "沧海公主(145)", meta: "天资：极(16377)｜血脉：125级血脉", same: "同 05。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "07",
+          file: "ScreenShot_2026-07-01_150907_573.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(16181)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3413/3413"], ["魔法", "3650/3650"], ["攻击", "893"], ["防御", "854"], ["速度", "543"], ["灵力", "1422"]],
+            points: [["体质", "155"], ["魔力", "945"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1220/1344"], ["防御资质", "1398/1398"], ["体力资质", "1490/1490"], ["法力资质", "1575/1575"], ["速度资质", "1575/1575"], ["寿命", "8617"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级神佑复生", "高级法术暴击", "高级灵蕴", "高级敏捷", "分水神剑", "小感知(符)", "小法连(符)", "护盾(驭)", "混沌(驭)", "刺杀(驭)", "觉醒 1/5", "空"],
+        },
+        { id: "08", file: "ScreenShot_2026-07-01_150914_945.png", pet: "寒翎(145)", meta: "天资：极(16181)｜血脉：125级血脉", same: "同 07。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "09",
+          file: "ScreenShot_2026-07-01_151032_693.png",
+          pet: "云萝仙子(145)",
+          meta: "天资：极(16306)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3100/3100"], ["魔法", "3654/3654"], ["攻击", "2135"], ["防御", "810"], ["速度", "491"], ["灵力", "824"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "930"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1574/1574"], ["防御资质", "1308/1308"], ["体力资质", "1429/1429"], ["法力资质", "1397/1397"], ["速度资质", "1573/1573"], ["寿命", "7135"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级隐身", "高级感知", "高级偷袭", "小夜战(符)", "高级审判(符)", "护盾(驭)", "连环(驭)", "刺杀(驭)", "觉醒 4/5", "空"],
+        },
+        { id: "10", file: "ScreenShot_2026-07-01_151040_916.png", pet: "云萝仙子(145)", meta: "天资：极(16306)｜血脉：125级血脉", same: "同 09。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "11",
+          file: "ScreenShot_2026-07-01_151050_487.png",
+          pet: "桃花精灵(145)",
+          meta: "天资：极(16001)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "4845/4845"], ["魔法", "2389/2389"], ["攻击", "962"], ["防御", "747"], ["速度", "1566"], ["灵力", "334"]],
+            points: [["体质", "311"], ["魔力", "155"], ["力量", "155"], ["耐力", "155"], ["敏捷", "774"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1348/1348"], ["防御资质", "1316/1316"], ["体力资质", "1462/1462"], ["法力资质", "1364/1364"], ["速度资质", "1550/1550"], ["寿命", "4542"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级飞行", "高级隐身", "高级敏捷", "高级勇敢", "高级水系吸收", "小神佑(符)", "高级强壮(符)", "顺闪(驭)", "护盾(驭)", "刺杀(驭)", "觉醒 4/5", "空"],
+        },
+        { id: "12", file: "ScreenShot_2026-07-01_151058_004.png", pet: "桃花精灵(145)", meta: "天资：极(16001)｜血脉：125级血脉", same: "同 11。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "13",
+          file: "ScreenShot_2026-07-01_151109_774.png",
+          pet: "九头鸟(145)",
+          meta: "天资：优(15378)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "2729/2729"], ["魔法", "4183/4183"], ["攻击", "911"], ["防御", "847"], ["速度", "510"], ["灵力", "1415"]],
+            points: [["体质", "156"], ["魔力", "941"], ["力量", "155"], ["耐力", "156"], ["敏捷", "156"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1262/1354"], ["防御资质", "1483/1556"], ["体力资质", "1335/1335"], ["法力资质", "1595/1595"], ["速度资质", "1570/1570"], ["寿命", "728"]],
+            growth: [["已使用元宵数量", "8/50"], ["已使用兽魂果数量", "14/31"], ["可重置元宵数量", "8"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术暴击", "高级法术波动", "高级灵蕴", "雷利风行", "小神佑(符)", "小敏捷(符)", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 5/5", "空", "空"],
+        },
+        { id: "14", file: "ScreenShot_2026-07-01_151120_378.png", pet: "九头鸟(145)", meta: "天资：优(15378)｜血脉：125级血脉", same: "同 13。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "15",
+          file: "ScreenShot_2026-07-01_151130_853.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：优(14939)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2880/2880"], ["魔法", "2132/2132"], ["攻击", "1053"], ["防御", "793"], ["速度", "305"], ["灵力", "374"]],
+            points: [["体质", "173"], ["魔力", "168"], ["力量", "173"], ["耐力", "171"], ["敏捷", "171"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1450/1450"], ["体力资质", "1450/1450"], ["法力资质", "1500/1500"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小幸运", "小气势", "高级夜战", "高级毒", "生死相依", "隐身强化", "顺闪(驭)", "护盾(驭)", "升龙(驭)", "空", "空", "空"],
+        },
+        { id: "16", file: "ScreenShot_2026-07-01_151145_662.png", pet: "神兽青蛇(145)", meta: "天资：优(14939)｜血脉：无血脉", same: "同 15。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "17",
+          file: "ScreenShot_2026-07-01_151155_005.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16696)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3880/3880"], ["魔法", "3771/3771"], ["攻击", "2305"], ["防御", "840"], ["速度", "457"], ["灵力", "904"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "945"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1550/1550"], ["防御资质", "1500/1500"], ["体力资质", "1500/1500"], ["法力资质", "1550/1550"], ["速度资质", "1450/1450"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级强力", "高级强壮", "高级攻坚", "生死相依", "高级勇敢(符)", "剑气四射(符)", "双抗之心", "顺闪(驭)", "护盾(驭)", "升龙(驭)", "觉醒 2/5"],
+        },
+        { id: "18", file: "ScreenShot_2026-07-01_151200_360.png", pet: "神兽青蛇(145)", meta: "天资：极(16696)｜血脉：125级血脉", same: "同 17。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "19",
+          file: "ScreenShot_2026-07-01_151310_550.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2331/2331"], ["魔法", "2110/2110"], ["攻击", "1042"], ["防御", "800"], ["速度", "323"], ["灵力", "350"]],
+            points: [["体质", "165"], ["魔力", "165"], ["力量", "165"], ["耐力", "165"], ["敏捷", "165"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1500/1500"], ["体力资质", "1450/1450"], ["法力资质", "1450/1450"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小气势", "高级飞行", "高级勇敢", "一马当先", "空", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        { id: "20", file: "ScreenShot_2026-07-01_151315_788.png", pet: "神兽龙马(145)", meta: "天资：优(14638)｜血脉：无血脉", same: "同 19。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+      ];
+
+      const mytRecords = [
+        {
+          id: "01",
+          file: "ScreenShot_2026-07-01_161828_968.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16843)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "4055/4055"], ["魔法", "3712/3712"], ["攻击", "965"], ["防御", "847"], ["速度", "457"], ["灵力", "1532"]],
+            points: [["体质", "155"], ["魔力", "976"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1371/1377"], ["防御资质", "1496/1496"], ["体力资质", "1571/1571"], ["法力资质", "1665/1665"], ["速度资质", "1575/1575"], ["寿命", "1916"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "1/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术连击", "高级灵蕴", "高级强壮", "高级抵御", "涡轮火", "小法术暴击(符)", "高级凝气(符)", "护盾(驭)", "混沌(驭)", "围剿(驭)", "觉醒 3/5", "空"],
+        },
+        { id: "02", file: "ScreenShot_2026-07-01_161837_233.png", pet: "祸斗(145)", meta: "天资：极(16843)｜血脉：125级血脉", same: "同 01。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "03",
+          file: "ScreenShot_2026-07-01_161848_974.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16872)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3975/3975"], ["魔法", "3650/3650"], ["攻击", "2322"], ["防御", "769"], ["速度", "518"], ["灵力", "772"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "945"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1571/1571"], ["防御资质", "1275/1275"], ["体力资质", "1428/1428"], ["法力资质", "1318/1318"], ["速度资质", "1649/1649"], ["寿命", "5115"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级强力", "高级吸血", "高级偷袭", "高级强壮", "小夜战(符)", "高级抵御(符)", "连环(驭)", "围剿(驭)", "升龙(驭)", "觉醒 4/5"],
+        },
+        { id: "04", file: "ScreenShot_2026-07-01_161904_006.png", pet: "雷司(145)", meta: "天资：极(16872)｜血脉：125级血脉", same: "同 03。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "05",
+          file: "ScreenShot_2026-07-01_161912_541.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16761)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "4743/4743"], ["魔法", "3619/3619"], ["攻击", "2093"], ["防御", "822"], ["速度", "468"], ["灵力", "714"]],
+            points: [["体质", "362"], ["魔力", "155"], ["力量", "723"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1632/1632"], ["防御资质", "1421/1421"], ["体力资质", "1454/1454"], ["法力资质", "1398/1398"], ["速度资质", "1526/1526"], ["寿命", "7730"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级强力", "高级吸血", "高级保命", "高级攻坚", "水刃斩", "小夜战(符)", "高级必杀(符)", "护盾(驭)", "围剿(驭)", "升龙(驭)", "觉醒 4/5", "空"],
+        },
+        { id: "06", file: "ScreenShot_2026-07-01_161918_230.png", pet: "沧海公主(145)", meta: "天资：极(16761)｜血脉：125级血脉", same: "同 05。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "07",
+          file: "ScreenShot_2026-07-01_161927_596.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(16463)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3314/3314"], ["魔法", "3620/3620"], ["攻击", "842"], ["防御", "810"], ["速度", "464"], ["灵力", "1419"]],
+            points: [["体质", "170"], ["魔力", "930"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1137/1137"], ["防御资质", "1419/1419"], ["体力资质", "1546/1546"], ["法力资质", "1620/1620"], ["速度资质", "1623/1623"], ["寿命", "9280"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级感知", "高级法术暴击", "高级灵蕴", "高级保命", "分水神剑", "小法术连击(符)", "高级攻坚(符)", "混沌(驭)", "围剿(驭)", "刺杀(驭)", "觉醒 5/5", "空"],
+        },
+        { id: "08", file: "ScreenShot_2026-07-01_161933_979.png", pet: "寒翎(145)", meta: "天资：极(16463)｜血脉：125级血脉", same: "同 07。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "09",
+          file: "ScreenShot_2026-07-01_162006_538.png",
+          pet: "赤炎童子(145)",
+          meta: "天资：极(16483)｜血脉：125级血脉",
+          heart: "蓝心",
+          stats: {
+            panel: [["气血", "6100/6100"], ["魔法", "2288/2288"], ["攻击", "905"], ["防御", "1249"], ["速度", "990"], ["灵力", "437"]],
+            points: [["体质", "568"], ["魔力", "155"], ["力量", "155"], ["耐力", "233"], ["敏捷", "454"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1279/1419"], ["防御资质", "1620/1620"], ["体力资质", "1535/1535"], ["法力资质", "1455/1455"], ["速度资质", "1710/1710"], ["寿命", "7632"]],
+            growth: [["已使用元宵数量", "35/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "35"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级幸运", "高级防御", "高级敏捷", "高级先驱", "葫芦仙法", "小再生(符)", "高级勇敢(符)", "顺闪(驭)", "护盾(驭)", "乘胜(驭)", "觉醒 5/5", "空"],
+        },
+        { id: "10", file: "ScreenShot_2026-07-01_162012_633.png", pet: "赤炎童子(145)", meta: "天资：极(16483)｜血脉：125级血脉", same: "同 09。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "11",
+          file: "ScreenShot_2026-07-01_162022_195.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16445)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3858/3858"], ["魔法", "3815/3815"], ["攻击", "2335"], ["防御", "834"], ["速度", "441"], ["灵力", "886"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "961"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1450/1450"], ["体力资质", "1450/1450"], ["法力资质", "1500/1500"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级强力", "高级夜战", "高级毒", "生死相依", "高级强壮(符)", "剑气四射(符)", "抵御强化", "顺闪(驭)", "护盾(驭)", "升龙(驭)", "觉醒 3/5"],
+        },
+        { id: "12", file: "ScreenShot_2026-07-01_162030_801.png", pet: "神兽青蛇(145)", meta: "天资：极(16445)｜血脉：125级血脉", same: "同 11。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "13",
+          file: "ScreenShot_2026-07-01_162041_169.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(15694)｜血脉：85级血脉",
+          heart: "橙心",
+          stats: {
+            panel: [["气血", "3367/3367"], ["魔法", "3784/3784"], ["攻击", "993"], ["防御", "819"], ["速度", "474"], ["灵力", "1426"]],
+            points: [["体质", "155"], ["魔力", "957"], ["力量", "156"], ["耐力", "155"], ["敏捷", "156"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1446/1446"], ["防御资质", "1484/1484"], ["体力资质", "1473/1473"], ["法力资质", "1620/1620"], ["速度资质", "1645/1645"], ["寿命", "418"]],
+            growth: [["已使用元宵数量", "9/50"], ["已使用兽魂果数量", "14/31"], ["可重置元宵数量", "9"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术连击", "高级法术波动", "高级抵御", "雷利风行", "小法术暴击(符)", "小灵蕴(符)", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 5/5", "空", "空"],
+        },
+        { id: "14", file: "ScreenShot_2026-07-01_162046_518.png", pet: "九头鸟(145)", meta: "天资：极(15694)｜血脉：85级血脉", same: "同 13。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "15",
+          file: "ScreenShot_2026-07-01_162054_072.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：优(14939)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2843/2843"], ["魔法", "2126/2126"], ["攻击", "1045"], ["防御", "790"], ["速度", "302"], ["灵力", "372"]],
+            points: [["体质", "167"], ["魔力", "171"], ["力量", "167"], ["耐力", "169"], ["敏捷", "170"], ["潜力", "737"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1450/1450"], ["体力资质", "1450/1450"], ["法力资质", "1500/1500"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小气势", "小幸运", "高级夜战", "高级毒", "生死相依", "护盾(驭)", "连环(驭)", "升龙(驭)", "空", "空", "空", "空"],
+        },
+        { id: "16", file: "ScreenShot_2026-07-01_162059_490.png", pet: "神兽青蛇(145)", meta: "天资：优(14939)｜血脉：无血脉", same: "同 15。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "17",
+          file: "ScreenShot_2026-07-01_162108_568.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16699)｜血脉：125级血脉",
+          heart: "蓝心",
+          stats: {
+            panel: [["气血", "6600/6600"], ["魔法", "2391/2391"], ["攻击", "930"], ["防御", "1186"], ["速度", "1048"], ["灵力", "433"]],
+            points: [["体质", "593"], ["魔力", "155"], ["力量", "155"], ["耐力", "180"], ["敏捷", "482"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1324/1487"], ["防御资质", "1632/1632"], ["体力资质", "1571/1571"], ["法力资质", "1565/1565"], ["速度资质", "1678/1678"], ["寿命", "7278"]],
+            growth: [["已使用元宵数量", "49/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "49"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级再生", "高级防御", "高级飞行", "高级强壮", "幽冥之佑", "小幸运(符)", "高级敏捷(符)", "顺闪(驭)", "护盾(驭)", "乘胜(驭)", "觉醒 4/5", "空"],
+        },
+        { id: "18", file: "ScreenShot_2026-07-01_162114_954.png", pet: "冥卫(145)", meta: "天资：极(16699)｜血脉：125级血脉", same: "同 17。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+        {
+          id: "19",
+          file: "ScreenShot_2026-07-01_162138_270.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2331/2331"], ["魔法", "2110/2110"], ["攻击", "1042"], ["防御", "800"], ["速度", "323"], ["灵力", "350"]],
+            points: [["体质", "165"], ["魔力", "165"], ["力量", "165"], ["耐力", "165"], ["敏捷", "165"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1500/1500"], ["体力资质", "1450/1450"], ["法力资质", "1450/1450"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["小气势", "高级飞行", "高级勇敢", "一马当先", "空", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        { id: "20", file: "ScreenShot_2026-07-01_162143_059.png", pet: "神兽龙马(145)", meta: "天资：优(14638)｜血脉：无血脉", same: "同 19。截图带养成情况悬浮窗，但技能区未被遮挡。" },
+      ];
+
+      const datasets = [
+        {
+          key: "FC",
+          label: "FC",
+          imageCount: 22,
+          source: "图片/FC/识别记录.md",
+          records,
+          note: "FC 已完成识别校对。黄色底为小技能；技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
+        },
+        {
+          key: "LG1",
+          label: "LG1",
+          imageCount: 20,
+          source: "图片/LG1/识别记录.md",
+          records: lg1Records,
+          note: "LG1 已补录同款神兽小马，合并为 10 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
+        },
+        {
+          key: "LG2",
+          label: "LG2",
+          imageCount: 22,
+          source: "图片/LG2/识别记录.md",
+          records: lg2Records,
+          note: "LG2 已按 22 张截图逐张识别，合并为 11 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
+        },
+        {
+          key: "PT",
+          label: "PT",
+          imageCount: 20,
+          source: "图片/PT/识别记录.md",
+          records: ptRecords,
+          note: "PT 已按 20 张截图逐张识别，合并为 10 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
+        },
+        {
+          key: "MYT",
+          label: "MYT",
+          imageCount: 20,
+          source: "图片/MYT/识别记录.md",
+          records: mytRecords,
+          note: "MYT 已按 20 张截图逐张识别，合并为 10 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
+        },
+      ];
+
+      const compareKey = "COMPARE";
+      const matrixKey = "MATRIX";
+      const basicKey = "BASIC";
+      let activeKey = compareKey;
+      let activeFolderKey = "FC";
+
+      const inheritedSkills = (record, allRecords) => {
+        if (record.skills) return record.skills;
+        const sourceId = record.same.match(/同\s+(\d+)/)?.[1];
+        return allRecords.find((item) => item.id === sourceId)?.skills || [];
+      };
+
+      const isPending = (text) => text.includes("待确认") || text.includes("疑似");
+      const imagePath = (file, folder = activeFolderKey) => `./图片/${folder}/${file}`;
+      const isCountedSkill = (skill) =>
+        skill !== "空" &&
+        !skill.includes("(符)") &&
+        !skill.includes("(驭)") &&
+        !skill.includes("强化") &&
+        !skill.includes("之心") &&
+        !skill.startsWith("觉醒");
+
+      const getRowValue = (rows = [], label) => rows.find(([name]) => name.includes(label))?.[1] || "";
+      const parseFirstNumber = (value) => Number(String(value || "").match(/\d+/)?.[0] || 0);
+      const cleanPetName = (pet) => pet.replace(/\(\d+\)/g, "");
+      const unique = (items) => [...new Set(items.filter(Boolean))];
+
+      function panelNumber(group, label) {
+        return parseFirstNumber(getRowValue(group.stats?.panel, label));
+      }
+
+      function aptitudeValue(group, label) {
+        return getRowValue(group.stats?.aptitude, label);
+      }
+
+      function currentAptitudeValue(value) {
+        return String(value || "").split("/")[0] || "";
+      }
+
+      function currentAptitudeNumber(value) {
+        return Number(currentAptitudeValue(value) || 0);
+      }
+
+      const beastBaseAptitudes = {
+        神兽青蛇: { attack: 1500, defense: 1450, stamina: 1450, magic: 1500, speed: 1400 },
+        神兽龙马: { attack: 1500, defense: 1500, stamina: 1450, magic: 1450, speed: 1400 },
+      };
+
+      function beastStage(row) {
+        const base = beastBaseAptitudes[row.cleanName];
+        if (!base) return "";
+        const deltas = [
+          currentAptitudeNumber(row.attackApt) - base.attack,
+          currentAptitudeNumber(row.defenseApt) - base.defense,
+          currentAptitudeNumber(row.staminaApt) - base.stamina,
+          currentAptitudeNumber(row.magicApt) - base.magic,
+          currentAptitudeNumber(row.speedApt) - base.speed,
+        ];
+        const minDelta = Math.min(...deltas);
+        if (minDelta >= 70) return "进阶2";
+        if (minDelta >= 50) return "进阶1";
+        return "有饰品";
+      }
+
+      function talentNumber(meta = "") {
+        return parseFirstNumber(meta.match(/[优极]\((\d+)\)/)?.[1]);
+      }
+
+      function bloodlineText(meta = "") {
+        return meta.match(/血脉：([^｜]+)/)?.[1] || "";
+      }
+
+      function keySkillText(skills) {
+        const keywords = [
+          "剑气",
+          "高级必杀",
+          "高级连击",
+          "高级吸血",
+          "高级偷袭",
+          "高级强力",
+          "高级夜战",
+          "高级攻坚",
+          "高级隐身",
+          "法术",
+          "法爆",
+          "法连",
+          "灵蕴",
+          "涡轮火",
+          "分水神剑",
+          "雷利风行",
+          "山崩地倾",
+          "红莲业火",
+          "葫芦仙法",
+          "水刃斩",
+          "生死相依",
+          "幽冥之佑",
+          "高级敏捷",
+          "高级强壮",
+          "高级防御",
+        ];
+        const picked = skills.filter((skill) => skill !== "空" && keywords.some((keyword) => skill.includes(keyword)));
+        return unique(picked).slice(0, 7).join("、") || unique(skills.filter((skill) => skill !== "空")).slice(0, 5).join("、");
+      }
+
+      function isBookPending(row) {
+        return row.skills.filter((skill) => skill === "空").length >= 4;
+      }
+
+      function classifyComparisonRow(row) {
+        const text = row.skills.join("、");
+        const isBeast = row.pet.includes("神兽") || aptitudeValue(row, "寿命") === "永生";
+        const petName = cleanPetName(row.pet);
+        if (isBookPending(row)) {
+          return {
+            primary: "待打书",
+            tone: "pending",
+            tags: unique(["待打书", isBeast ? "神兽" : ""]),
+            advice: "技能格空位较多，按待打书半成品看，先不按最终定位评价强弱。",
+          };
+        }
+        const forcedRole = petName === "桃花精灵" ? "千速" : ["赤炎童子", "冥卫"].includes(petName) ? "卡速" : "";
+        if (forcedRole) {
+          return {
+            primary: forcedRole,
+            tone: "speed",
+            tags: unique([forcedRole, isBeast ? "神兽" : ""]),
+            advice: forcedRole === "千速" ? "按千速功能宠比较，重点看速度面板、生存和速度资质。" : "按卡速功能宠比较，重点看速度、生存、抗性和敏捷投入。",
+          };
+        }
+        const hasSword = text.includes("剑气四射");
+        const hasSpecialMagic = ["涡轮火", "分水神剑", "雷利风行", "山崩地倾"].some((skill) => text.includes(skill));
+        const hasNormalMagic = ["红莲业火", "葫芦仙法"].some((skill) => text.includes(skill));
+        const hasMagicSkill = hasSpecialMagic || hasNormalMagic || text.includes("法术") || text.includes("法连") || text.includes("法爆") || text.includes("灵蕴");
+        const hasAdvancedStealth = text.includes("高级隐身");
+
+        if (petName === "沧海公主") {
+          return {
+            primary: "特殊单攻",
+            tone: "physical",
+            tags: unique(["特殊单攻", isBeast ? "神兽" : ""]),
+            advice: "按特殊单攻宝宝比较，重点看攻击面板、核心输出技能和生存补强。",
+          };
+        }
+
+        if (petName === "神兽青蛇" && hasMagicSkill) {
+          return {
+            primary: "普通法",
+            tone: "magic",
+            tags: unique(["普通法", "神兽"]),
+            advice: "神兽青蛇带法系技能，按普通法宝宝比较法连/法暴/灵蕴、灵力和法资。",
+          };
+        }
+
+        if (hasAdvancedStealth && row.speed < 1400) {
+          return {
+            primary: "隐攻",
+            tone: "physical",
+            tags: unique(["隐攻", isBeast ? "神兽" : "", hasSword ? "剑气" : ""]),
+            advice: "带高级隐身且不是千速，按隐攻宝宝比较攻击面板、必杀/连击/偷袭和生存。",
+          };
+        }
+
+        const magicScore =
+          (row.spirit >= 1200 ? 2 : 0) +
+          (text.includes("法术") || text.includes("法连") || text.includes("法爆") ? 2 : 0) +
+          (text.includes("灵蕴") ? 1 : 0) +
+          (hasSpecialMagic || hasNormalMagic ? 2 : 0);
+        const physicalScore =
+          (row.attack >= 1800 ? 2 : 0) +
+          (text.includes("高级必杀") ? 1 : 0) +
+          (text.includes("高级连击") ? 1 : 0) +
+          (text.includes("高级吸血") ? 1 : 0) +
+          (text.includes("高级偷袭") ? 1 : 0) +
+          (text.includes("高级强力") || text.includes("高级攻坚") ? 1 : 0) +
+          (hasSword ? 2 : 0);
+
+        const tags = [];
+        let primary = "待归类";
+        let tone = "";
+        let advice = "记录字段完整度够用，建议结合队伍缺口再定用途。";
+
+        if (row.speed >= 1400) {
+          primary = "千速";
+          tone = "speed";
+          advice = "速度面板达到高速段，优先按千速/高速功能宠比较生存和速度资质。";
+        } else if (row.speed >= 850 && row.attack < 1300 && row.spirit < 800) {
+          primary = row.speed >= 1000 ? "千速" : "卡速";
+          tone = "speed";
+          advice = "速度明显高于常规输出宠，适合按卡速功能宠看抗性、血量和敏捷投入。";
+        } else if (magicScore >= physicalScore && magicScore >= 3) {
+          primary = hasSpecialMagic ? "特殊法" : "普通群法";
+          tone = "magic";
+          advice = "法系方向，重点看法连/法暴/灵蕴、灵力面板、法资与成品技能完整度。";
+        } else if (physicalScore >= 3) {
+          primary = hasSword ? "剑气" : "全力单攻";
+          tone = "physical";
+          advice = hasSword ? "物理剑气方向，重点比较攻击面板、必杀/强力/攻坚和剑气来源。" : "物理单攻方向，重点比较攻击面板、必杀/连击/吸血/偷袭完整度。";
+        } else if (hasNormalMagic || text.includes("高级敏捷")) {
+          primary = row.speed >= 850 ? "卡速" : "普通群法";
+          tone = row.speed >= 850 ? "speed" : "magic";
+          advice = row.speed >= 850 ? "可按卡速功能位观察，速度未到千速但有敏捷或功能技能。" : "有群法/法系技能信号，但面板更像低投入或未成型。";
+        }
+
+        tags.push(primary);
+        if (isBeast) tags.push("神兽");
+        if (primary !== "千速" && row.speed >= 1000) tags.push("千速");
+        if (primary !== "卡速" && row.speed >= 850 && row.speed < 1000) tags.push("卡速");
+        if (primary !== "剑气" && hasSword) tags.push("剑气");
+
+        return { primary, tone, tags: unique(tags), advice };
+      }
+
+      function buildComparisonRows() {
+        return datasets.flatMap((dataset) =>
+          buildGroups(dataset.records).map((group) => {
+            const row = {
+              ...group,
+              datasetKey: dataset.key,
+              datasetLabel: dataset.label,
+              source: dataset.source,
+              cleanName: cleanPetName(group.pet),
+              skillCount: group.skills.filter(isCountedSkill).length,
+              keySkills: keySkillText(group.skills),
+              hp: panelNumber(group, "气血"),
+              attack: panelNumber(group, "攻击"),
+              defense: panelNumber(group, "防御"),
+              speed: panelNumber(group, "速度"),
+              spirit: panelNumber(group, "灵力"),
+              talent: talentNumber(group.meta),
+              bloodline: bloodlineText(group.meta),
+              life: aptitudeValue(group, "寿命"),
+              speedApt: aptitudeValue(group, "速度资质"),
+              attackApt: aptitudeValue(group, "攻击资质"),
+              defenseApt: aptitudeValue(group, "防御资质"),
+              staminaApt: aptitudeValue(group, "体力资质"),
+              magicApt: aptitudeValue(group, "法力资质"),
+            };
+            row.beastStage = beastStage(row);
+            row.analysis = classifyComparisonRow(row);
+            row.searchText = [
+              row.datasetLabel,
+              row.pet,
+              row.cleanName,
+              row.meta,
+              row.heart || "",
+              row.skillCount,
+              row.keySkills,
+              row.analysis.primary,
+              row.analysis.tags.join(" "),
+              row.beastStage,
+              row.analysis.advice,
+              ...row.shots.flatMap((shot) => [shot.id, shot.file, shot.note]),
+              ...statsSearchText(row.stats),
+              ...row.skills,
+            ]
+              .join(" ")
+              .toLowerCase();
+            return row;
+          })
+        );
+      }
+
+      function topRows(rows, metric, limit = 3) {
+        return [...rows].sort((a, b) => b[metric] - a[metric] || b.talent - a.talent).slice(0, limit);
+      }
+
+      function roleCount(rows, names) {
+        return rows.filter((row) => names.includes(row.analysis.primary) || row.analysis.tags.some((tag) => names.includes(tag))).length;
+      }
+
+      function renderRoleTags(row, query) {
+        return `<div class="role-tags">${row.analysis.tags
+          .map((tag) => {
+            const cls = tag.includes("待打书") ? "pending-book" : tag.includes("法") ? "magic" : tag.includes("剑气") || tag.includes("单攻") || tag.includes("隐攻") ? "physical" : tag.includes("速") ? "speed" : tag.includes("神兽") ? "beast" : "";
+            return `<span class="role-tag ${cls}">${highlight(tag, query)}</span>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function renderMetricLine(row) {
+        return `<div class="metric-line">
+          <span>攻 <b>${row.attack || "-"}</b></span>
+          <span>速 <b>${row.speed || "-"}</b></span>
+          <span>灵 <b>${row.spirit || "-"}</b></span>
+          <span>血 <b>${row.hp || "-"}</b></span>
+        </div>`;
+      }
+
+      function renderRoleCards(rows, query) {
+        const cardData = [
+          {
+            title: "法宝宝",
+            count: roleCount(rows, ["特殊法", "普通群法", "普通法"]),
+            detail: topRows(rows.filter((row) => ["特殊法", "普通群法", "普通法"].includes(row.analysis.primary)), "spirit")
+              .map((row) => `${row.datasetLabel} ${row.pet}(${row.spirit})`)
+              .join("；") || "暂无",
+          },
+          {
+            title: "物理宝宝",
+            count: roleCount(rows, ["剑气", "全力单攻", "特殊单攻", "隐攻"]),
+            detail: topRows(rows.filter((row) => ["剑气", "全力单攻", "特殊单攻", "隐攻"].includes(row.analysis.primary)), "attack")
+              .map((row) => `${row.datasetLabel} ${row.pet}(${row.attack})`)
+              .join("；") || "暂无",
+          },
+          {
+            title: "卡速 / 千速",
+            count: roleCount(rows, ["卡速", "千速"]),
+            detail: topRows(rows.filter((row) => row.analysis.tags.includes("卡速") || row.analysis.tags.includes("千速")), "speed")
+              .map((row) => `${row.datasetLabel} ${row.pet}(${row.speed})`)
+              .join("；") || "暂无",
+          },
+          {
+            title: "神兽",
+            count: roleCount(rows, ["神兽"]),
+            detail: topRows(rows.filter((row) => row.analysis.tags.includes("神兽")), "talent")
+              .map((row) => `${row.datasetLabel} ${row.pet}(${row.talent || "无天资"})`)
+              .join("；") || "暂无",
+          },
+        ];
+
+        return `<div class="compare-cards">${cardData
+          .map(
+            (card) => `<article class="compare-card">
+              <strong>${card.count}</strong>
+              <span>${card.title}</span>
+              <p>${highlight(card.detail, query)}</p>
+            </article>`
+          )
+          .join("")}</div>`;
+      }
+
+      function renderInsights(rows, query) {
+        const magicTop = topRows(rows.filter((row) => ["特殊法", "普通群法", "普通法"].includes(row.analysis.primary)), "spirit", 4);
+        const physicalTop = topRows(rows.filter((row) => ["剑气", "全力单攻", "特殊单攻", "隐攻"].includes(row.analysis.primary)), "attack", 4);
+        const speedTop = topRows(rows.filter((row) => row.analysis.tags.includes("卡速") || row.analysis.tags.includes("千速")), "speed", 4);
+        const beastTop = topRows(rows.filter((row) => row.analysis.tags.includes("神兽")), "talent", 4);
+        const lines = [
+          ["法系候选", magicTop.map((row) => `${row.datasetLabel} ${row.pet}：灵力 ${row.spirit}，${row.analysis.primary}`).join("；")],
+          ["物理候选", physicalTop.map((row) => `${row.datasetLabel} ${row.pet}：攻击 ${row.attack}，${row.analysis.primary}`).join("；")],
+          ["速度候选", speedTop.map((row) => `${row.datasetLabel} ${row.pet}：速度 ${row.speed}，${row.analysis.primary}`).join("；")],
+          ["神兽候选", beastTop.map((row) => `${row.datasetLabel} ${row.pet}：天资 ${row.talent || "-"}，${row.bloodline || "无血脉"}`).join("；")],
+        ];
+
+        return `<div class="insight-list">${lines
+          .map(([title, body]) => `<div class="insight"><b>${title}</b><span>${highlight(body || "暂无", query)}</span></div>`)
+          .join("")}</div>`;
+      }
+
+      function renderComparisonTable(rows, query) {
+        return `<div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>目录</th>
+                <th>宠物</th>
+                <th>定位</th>
+                <th>技能</th>
+                <th>面板</th>
+                <th>天资 / 心 / 血脉</th>
+                <th>资质</th>
+                <th>建议</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  (row) => `<tr>
+                    <td><span class="tag">${row.datasetLabel}</span></td>
+                    <td>
+                      <div class="pet-name">${highlight(row.pet, query)}</div>
+                    </td>
+                    <td>${renderRoleTags(row, query)}</td>
+                    <td>
+                      <div class="tag">技能数 ${row.skillCount}</div>
+                      <div class="key-skills">${highlight(row.keySkills, query)}</div>
+                    </td>
+                    <td>${renderMetricLine(row)}</td>
+                    <td>${highlight(`天资 ${row.talent || "-"}｜${row.heart || "未记心色"}｜${row.bloodline || "-"}`, query)}</td>
+                    <td>${highlight(`攻资 ${currentAptitudeValue(row.attackApt) || "-"}｜法资 ${currentAptitudeValue(row.magicApt) || "-"}｜速资 ${currentAptitudeValue(row.speedApt) || "-"}｜寿命 ${row.life || "-"}`, query)}</td>
+                    <td class="advice">${highlight(row.analysis.advice, query)}</td>
+                  </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      function renderSpeciesTable(rows, query) {
+        const byName = new Map();
+        rows.forEach((row) => {
+          if (!byName.has(row.cleanName)) byName.set(row.cleanName, []);
+          byName.get(row.cleanName).push(row);
+        });
+        const species = [...byName.entries()]
+          .map(([name, items]) => ({
+            name,
+            items,
+            folders: unique(items.map((item) => item.datasetLabel)).join("、"),
+            roles: unique(items.flatMap((item) => item.analysis.tags)).join("、"),
+            bestTalent: topRows(items, "talent", 1)[0],
+            bestAttack: topRows(items, "attack", 1)[0],
+            bestSpeed: topRows(items, "speed", 1)[0],
+            bestSpirit: topRows(items, "spirit", 1)[0],
+          }))
+          .sort((a, b) => b.items.length - a.items.length || b.bestTalent.talent - a.bestTalent.talent)
+          .slice(0, 12);
+
+        return `<div class="table-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>同名宠物</th>
+                <th>出现目录</th>
+                <th>定位覆盖</th>
+                <th>最高天资</th>
+                <th>最高攻击</th>
+                <th>最高速度</th>
+                <th>最高灵力</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${species
+                .map(
+                  (item) => `<tr>
+                    <td><span class="pet-name">${highlight(item.name, query)}</span><div class="sources">${item.items.length} 组记录</div></td>
+                    <td>${highlight(item.folders, query)}</td>
+                    <td>${highlight(item.roles, query)}</td>
+                    <td>${highlight(`${item.bestTalent.datasetLabel} ${item.bestTalent.talent || "-"}`, query)}</td>
+                    <td>${highlight(`${item.bestAttack.datasetLabel} ${item.bestAttack.attack || "-"}`, query)}</td>
+                    <td>${highlight(`${item.bestSpeed.datasetLabel} ${item.bestSpeed.speed || "-"}`, query)}</td>
+                    <td>${highlight(`${item.bestSpirit.datasetLabel} ${item.bestSpirit.spirit || "-"}`, query)}</td>
+                  </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      function renderCompareEmpty(query) {
+        return `<section class="empty-state">
+          <h2>没有匹配的横向对比结果</h2>
+          <p>当前搜索：<code>${highlight(query, query)}</code>。可搜索目录、宠物名、技能名或定位标签。</p>
+        </section>`;
+      }
+
+      function renderCompare() {
+        const allRows = buildComparisonRows();
+        const query = document.getElementById("searchInput").value.trim();
+        const queryLower = query.toLowerCase();
+        const visible = queryLower ? allRows.filter((row) => row.searchText.includes(queryLower)) : allRows;
+        const pending = visible.filter((row) => row.skills.some(isPending)).length;
+
+        document.getElementById("records").innerHTML = visible.length
+          ? `<div class="compare-view">
+              <section class="compare-section">
+                <div class="compare-head">
+                  <div>
+                    <h2>定位汇总</h2>
+                    <p>分类为辅助判断：先看速度面板，再看法系/物理核心技能与面板，神兽作为附加标签保留。</p>
+                  </div>
+                </div>
+                ${renderRoleCards(visible, query)}
+              </section>
+              <section class="compare-section">
+                <div class="compare-head">
+                  <div>
+                    <h2>优先候选</h2>
+                    <p>每类按对应关键面板排序，方便先锁定值得继续看的宝宝。</p>
+                  </div>
+                </div>
+                ${renderInsights(visible, query)}
+              </section>
+              <section class="compare-section">
+                <div class="compare-head">
+                  <div>
+                    <h2>全记录横向表</h2>
+                    <p>保留目录、关键技能、面板与资质，便于跨账号或跨文件夹逐行比较。</p>
+                  </div>
+                </div>
+                ${renderComparisonTable(visible, query)}
+              </section>
+              <section class="compare-section">
+                <div class="compare-head">
+                  <div>
+                    <h2>同名宠物对比</h2>
+                    <p>按宠物名聚合，看同一种宝宝在哪个目录的天资、攻击、速度或灵力更突出。</p>
+                  </div>
+                </div>
+                ${renderSpeciesTable(visible, query)}
+              </section>
+            </div>`
+          : renderCompareEmpty(query);
+
+        document.getElementById("groupCount").textContent = visible.length;
+        document.getElementById("shotCount").textContent = visible.reduce((sum, row) => sum + row.shots.length, 0);
+        document.getElementById("pendingCount").textContent = pending;
+        document.getElementById("folderName").textContent = unique(visible.map((row) => row.datasetLabel)).length || 0;
+        document.getElementById("groupLabel").textContent = "横向记录组";
+        document.getElementById("shotLabel").textContent = "截图来源";
+        document.getElementById("pendingLabel").textContent = "含待确认记录组";
+        document.getElementById("folderLabel").textContent = "覆盖目录数";
+        document.getElementById("notice").hidden = true;
+        renderTabs();
+      }
+
+      const matrixColumns = [
+        { key: "huodou", label: "祸斗", group: "日常", match: (row) => row.cleanName === "祸斗" },
+        { key: "leisi", label: "雷司", group: "日常", match: (row) => row.cleanName === "雷司" },
+        { key: "jiutou", label: "九头", group: "日常", match: (row) => row.cleanName === "九头鸟" },
+        { key: "swordSnake", label: "剑气蛇", match: (row) => row.cleanName === "神兽青蛇" && (row.analysis.primary === "剑气" || row.analysis.tags.includes("剑气")) },
+        { key: "stealthSnake", label: "追影蛇", match: (row) => row.cleanName === "神兽青蛇" && row.analysis.primary === "隐攻" },
+        { key: "magicSnake", label: "法蛇", match: (row) => row.cleanName === "神兽青蛇" && row.analysis.primary === "普通法" },
+        { key: "hanling", label: "寒凌", match: (row) => row.cleanName === "寒翎" },
+        { key: "horse", label: "小马", match: (row) => row.cleanName === "神兽龙马" },
+        { key: "mingwei", label: "冥卫", match: (row) => row.cleanName === "冥卫" },
+        { key: "princess", label: "公主", match: (row) => row.cleanName === "沧海公主" },
+        { key: "lobster", label: "龙虾", match: (row) => row.cleanName === "龙虾骑士" },
+        { key: "yunluo", label: "云罗", match: (row) => row.cleanName === "云萝仙子" },
+        { key: "tongzi", label: "童子", match: (row) => row.cleanName === "赤炎童子" },
+        { key: "taohua", label: "桃花", match: (row) => row.cleanName === "桃花精灵" },
+        { key: "child", label: "孩子", match: (row) => row.cleanName === "孩子" || /^5$/.test(row.cleanName) },
+      ];
+
+      const matrixSections = [
+        { title: "日常", columns: matrixColumns.filter((column) => column.group === "日常") },
+        { title: "PK：神兽蛇 / 小马", columns: matrixColumns.filter((column) => ["swordSnake", "stealthSnake", "magicSnake", "horse"].includes(column.key)) },
+        { title: "PK：法系 / 特殊", columns: matrixColumns.filter((column) => ["hanling", "princess"].includes(column.key)) },
+        { title: "PK：物理 / 速度", columns: matrixColumns.filter((column) => ["mingwei", "lobster", "yunluo", "tongzi", "taohua", "child"].includes(column.key)) },
+      ];
+
+      const matrixOrder = ["FC", "LG1", "PT", "LG2", "MYT"];
+
+      function matrixScore(row, columnKey) {
+        if (["huodou", "magicSnake", "jiutou", "jingluan"].includes(columnKey) || row.analysis.primary.includes("法")) return row.spirit || 0;
+        if (["mingwei", "taohua", "tongzi"].includes(columnKey) || row.analysis.primary.includes("速")) return row.speed || 0;
+        if (columnKey === "horse") return row.talent || 0;
+        return row.attack || row.talent || 0;
+      }
+
+      function renderMatrixCell(rows, column) {
+        if (!rows.length) return `<span class="matrix-empty">-</span>`;
+        const best = [...rows].sort((a, b) => matrixScore(b, column.key) - matrixScore(a, column.key) || b.talent - a.talent)[0];
+        if (best.analysis.primary === "待打书") {
+          return `<div class="matrix-cell">
+            <div class="matrix-main">待打书</div>
+          </div>`;
+        }
+        const mainMetric = best.analysis.primary.includes("法") ? `灵 ${best.spirit || "-"}` : best.analysis.primary.includes("速") ? `速 ${best.speed || "-"}` : `攻 ${best.attack || "-"}`;
+        return `<div class="matrix-cell">
+          <div class="matrix-main">${best.analysis.primary}</div>
+          <div class="matrix-sub">${best.heart || "未记心色"}</div>
+          ${best.beastStage ? `<div class="matrix-sub">${best.beastStage}</div>` : ""}
+          <div class="matrix-sub">血 ${best.hp || "-"} / 防 ${best.defense || "-"}</div>
+          <div class="matrix-sub">${mainMetric}</div>
+        </div>`;
+      }
+
+      function renderMatrixSection(rows, section) {
+        const minWidth = Math.max(360, 104 + section.columns.length * 118);
+        return `<div class="table-wrap">
+          <table class="matrix-table" style="--matrix-min-width: ${minWidth}px">
+            <thead>
+              <tr>
+                <th></th>
+                ${section.columns.map((column) => `<th>${column.label}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${matrixOrder
+                .map((folderKey) => {
+                  const folderRows = rows.filter((row) => row.datasetKey === folderKey);
+                  return `<tr>
+                    <th class="matrix-row-head">${folderKey}</th>
+                    ${section.columns
+                      .map((column) => `<td>${renderMatrixCell(folderRows.filter(column.match), column)}</td>`)
+                      .join("")}
+                  </tr>`;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      function renderMatrixTable(rows) {
+        return `<div class="matrix-sections">
+          ${matrixSections
+            .map((section) => `<section class="matrix-section">
+              <h3 class="matrix-section-title">${section.title}</h3>
+              ${renderMatrixSection(rows, section)}
+            </section>`)
+            .join("")}
+        </div>`;
+      }
+
+      function renderMatrix() {
+        const allRows = buildComparisonRows();
+        const query = document.getElementById("searchInput").value.trim();
+        const queryLower = query.toLowerCase();
+        const visible = queryLower ? allRows.filter((row) => row.searchText.includes(queryLower)) : allRows;
+        const pending = visible.filter((row) => row.skills.some(isPending)).length;
+
+        document.getElementById("records").innerHTML = visible.length
+          ? `<div class="compare-view">
+              <section class="compare-section">
+                <div class="compare-head">
+                  <div>
+                    <h2>矩阵对比</h2>
+                    <p>按目录和固定宝宝类型铺开，格子内显示该目录最优候选的定位、心、神兽阶段、气血、防御和关键面板。</p>
+                  </div>
+                </div>
+                ${renderMatrixTable(visible)}
+              </section>
+            </div>`
+          : renderCompareEmpty(query);
+
+        document.getElementById("groupCount").textContent = visible.length;
+        document.getElementById("shotCount").textContent = visible.reduce((sum, row) => sum + row.shots.length, 0);
+        document.getElementById("pendingCount").textContent = pending;
+        document.getElementById("folderName").textContent = matrixColumns.length;
+        document.getElementById("groupLabel").textContent = "矩阵记录组";
+        document.getElementById("shotLabel").textContent = "截图来源";
+        document.getElementById("pendingLabel").textContent = "含待确认记录组";
+        document.getElementById("folderLabel").textContent = "矩阵列数";
+        document.getElementById("notice").hidden = true;
+        renderTabs();
+      }
+
+      function buildGroups(allRecords) {
+        const groups = [];
+        const byId = new Map();
+        allRecords.forEach((record) => {
+          if (record.skipped) return;
+          const sourceId = record.same?.match(/同\s+(\d+)/)?.[1];
+          if (sourceId && byId.has(sourceId)) {
+            byId.get(sourceId).shots.push({
+              id: record.id,
+              file: record.file,
+              folder: record.sourceFolder,
+              note: record.same,
+            });
+            return;
+          }
+
+          const group = {
+            id: record.id,
+            pet: record.pet,
+            meta: record.meta,
+            heart: record.heart,
+            stats: record.stats,
+            skills: inheritedSkills(record, allRecords),
+            shots: [
+              {
+                id: record.id,
+                file: record.file,
+                folder: record.sourceFolder,
+                note: "主截图",
+              },
+            ],
+          };
+          groups.push(group);
+          byId.set(record.id, group);
+        });
+        return groups;
+      }
+
+      function highlight(text, query) {
+        if (!query) return text;
+        const safe = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return text.replace(new RegExp(safe, "gi"), (match) => `<mark>${match}</mark>`);
+      }
+
+      function statsSearchText(stats) {
+        if (!stats) return [];
+        return [...stats.panel, ...stats.points, ...stats.aptitude, ...(stats.growth || [])].flat();
+      }
+
+      function renderNumberPanel(title, rows, query) {
+        return `<section class="number-panel">
+          <h3>${title}</h3>
+          ${rows.map(([label, value]) => `<div class="number-row"><span>${highlight(label, query)}</span><span>${highlight(value, query)}</span></div>`).join("")}
+        </section>`;
+      }
+
+      function renderStats(stats, query) {
+        if (!stats) return "";
+        return `<div class="numbers">
+          ${renderNumberPanel("面板", stats.panel, query)}
+          ${renderNumberPanel("属性点", stats.points, query)}
+          ${renderNumberPanel("资质 / 寿命", stats.aptitude, query)}
+          ${stats.growth ? renderNumberPanel("养成情况", stats.growth, query) : ""}
+        </div>`;
+      }
+
+      function renderGroup(group, query = "") {
+        const pending = group.skills.some(isPending);
+        const skillCount = group.skills.filter(isCountedSkill).length;
+        const shotsHtml = group.shots
+          .map(
+            (shot) => `<div class="shot">
+              <span class="shot-id">${shot.id}</span>
+              <img src="${imagePath(shot.file, shot.folder)}" alt="${group.pet} ${shot.file}" loading="lazy" />
+              <div class="file">${highlight(shot.file, query)}</div>
+            </div>`
+          )
+          .join("");
+        const skillHtml = `<div class="skills">${group.skills
+          .map((skill) => {
+            const classes = ["skill"];
+            if (skill === "空") classes.push("empty");
+            if (isPending(skill)) classes.push("pending");
+            return `<div class="${classes.join(" ")}">${highlight(skill, query)}</div>`;
+          })
+          .join("")}</div>`;
+
+        return `<article class="record" data-search="${[
+          group.id,
+          group.pet,
+          group.meta,
+          group.heart || "",
+          `技能数 ${skillCount}`,
+          ...group.shots.flatMap((shot) => [shot.id, shot.file, shot.note]),
+          ...statsSearchText(group.stats),
+          ...group.skills,
+        ].join(" ")}">
+          <div class="shots">
+            ${shotsHtml}
+          </div>
+          <div class="info">
+            <div class="record-head">
+              <div class="pet">
+                <h2>${highlight(group.pet, query)}</h2>
+                <p>${highlight(group.meta, query)}${group.heart ? `｜心：${highlight(group.heart, query)}` : ""}</p>
+              </div>
+              <span class="index">${group.id}</span>
+            </div>
+            <div class="skill-meta">
+              <div class="tag ${pending ? "warning" : ""}">${pending ? "含待确认" : "已识别"}</div>
+              <div class="tag">技能数 ${skillCount}</div>
+            </div>
+            <p class="sources">截图来源：${group.shots.map((shot) => highlight(`${shot.id} ${shot.file}`, query)).join("；")}</p>
+            ${renderStats(group.stats, query)}
+            ${skillHtml}
+          </div>
+        </article>`;
+      }
+
+      function renderTabs() {
+        const compareActive = activeKey === compareKey ? " active" : "";
+        const matrixActive = activeKey === matrixKey ? " active" : "";
+        const basicActive = activeKey === basicKey ? " active" : "";
+        const compareCount = buildComparisonRows().length;
+        const basicCount = datasets.reduce((sum, dataset) => sum + buildGroups(dataset.records).length, 0);
+        const basicTabs = document.getElementById("basicTabs");
+        document.getElementById("tabs").innerHTML = [
+          `<button class="tab${compareActive}" type="button" data-folder="${compareKey}">横向对比<span>${compareCount}</span></button>`,
+          `<button class="tab${matrixActive}" type="button" data-folder="${matrixKey}">矩阵对比<span>${matrixColumns.length}</span></button>`,
+          `<button class="tab${basicActive}" type="button" data-folder="${basicKey}">基础资料<span>${basicCount}</span></button>`,
+        ]
+          .join("");
+        basicTabs.hidden = activeKey !== basicKey;
+        basicTabs.innerHTML =
+          activeKey === basicKey
+            ? datasets
+                .map((dataset) => {
+                  const active = dataset.key === activeFolderKey ? " active" : "";
+                  return `<button class="tab${active}" type="button" data-basic-folder="${dataset.key}">${dataset.label}<span>${dataset.imageCount}</span></button>`;
+                })
+                .join("")
+            : "";
+      }
+
+      function renderEmpty(dataset) {
+        return `<section class="empty-state">
+          <h2>${dataset.label} 待识别</h2>
+          <p>来源目录：<code>${dataset.source}</code></p>
+          <p>当前发现 ${dataset.imageCount} 张图片。后续开始识别时，会按统一结构记录：同宝宝合并、技能数、心色、养成情况、面板数值、资质寿命和技能列表；技能数规则所有文件夹一致。</p>
+        </section>`;
+      }
+
+      function render() {
+        if (activeKey === compareKey) {
+          renderCompare();
+          return;
+        }
+        if (activeKey === matrixKey) {
+          renderMatrix();
+          return;
+        }
+        const dataset = datasets.find((item) => item.key === activeFolderKey) || datasets[0];
+        const groups = buildGroups(dataset.records);
+        const query = document.getElementById("searchInput").value.trim();
+        const queryLower = query.toLowerCase();
+        const visible = groups.filter((group) => {
+          if (!queryLower) return true;
+          const text = [
+            group.id,
+            group.pet,
+            group.meta,
+            group.heart || "",
+            `技能数 ${group.skills.filter(isCountedSkill).length}`,
+            ...group.shots.flatMap((shot) => [shot.id, shot.file, shot.note]),
+            ...statsSearchText(group.stats),
+            ...group.skills,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return text.includes(queryLower);
+        });
+        document.getElementById("records").innerHTML = groups.length ? visible.map((group) => renderGroup(group, query)).join("") : renderEmpty(dataset);
+        document.getElementById("groupCount").textContent = visible.length;
+        document.getElementById("shotCount").textContent = groups.length ? visible.reduce((sum, group) => sum + group.shots.length, 0) : dataset.imageCount;
+        document.getElementById("pendingCount").textContent = groups.filter((group) => group.skills.some(isPending)).length;
+        document.getElementById("folderName").textContent = dataset.label;
+        document.getElementById("groupLabel").textContent = "宠物记录组";
+        document.getElementById("shotLabel").textContent = "截图来源";
+        document.getElementById("pendingLabel").textContent = "含待确认记录组";
+        document.getElementById("folderLabel").textContent = "当前目录";
+        document.getElementById("notice").hidden = true;
+        renderTabs();
+      }
+
+      document.getElementById("searchInput").addEventListener("input", render);
+      document.getElementById("tabs").addEventListener("click", (event) => {
+        const tab = event.target.closest("[data-folder]");
+        if (!tab) return;
+        activeKey = tab.dataset.folder;
+        document.getElementById("searchInput").value = "";
+        render();
+      });
+      document.getElementById("basicTabs").addEventListener("click", (event) => {
+        const tab = event.target.closest("[data-basic-folder]");
+        if (!tab) return;
+        activeFolderKey = tab.dataset.basicFolder;
+        document.getElementById("searchInput").value = "";
+        render();
+      });
+      render();
+    </script>
+  </body>
+</html>

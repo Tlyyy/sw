@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>幻唐志技能库</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">技</div>
+          <div>
+            <h1>技能库</h1>
+            <p>图标识别与确认</p>
+          </div>
+        </div>
+
+        <section class="panel">
+          <label class="search-label" for="searchInput">搜索</label>
+          <input id="searchInput" type="search" placeholder="搜索技能名、分类" />
+        </section>
+
+        <section class="panel stats-panel">
+          <div>
+            <span id="totalCount">0</span>
+            <small>技能</small>
+          </div>
+          <div>
+            <span id="categoryCount">0</span>
+            <small>分类</small>
+          </div>
+        </section>
+
+        <section class="panel note-panel">
+          <h2>记录规则</h2>
+          <p>技能按兽决、御兽、强化技能分组。所有新识别条目先标为待确认，确认后再锁定。</p>
+        </section>
+      </aside>
+
+      <section class="content">
+        <header class="topbar">
+          <div>
+            <h2>技能库</h2>
+            <p>来源：<code>图片/技能库</code>，逐张处理图标后在这里确认。</p>
+          </div>
+        </header>
+
+        <div id="cards" class="cards" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="./skill-library.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

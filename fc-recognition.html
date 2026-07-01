@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FC 图片逐张识别记录</title>
+    <style>
+      :root {
+        --bg: #eef5fb;
+        --surface: #ffffff;
+        --surface-strong: #f7fbff;
+        --text: #142232;
+        --muted: #66788d;
+        --line: #d9e6f2;
+        --blue: #2f86d9;
+        --blue-strong: #1267ba;
+        --green: #2f9a69;
+        --gold: #b87916;
+        --red: #bd4545;
+        --shadow: 0 18px 45px rgba(35, 76, 120, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        background: radial-gradient(circle at 18% 8%, #d9ecff 0, transparent 30%), var(--bg);
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      }
+
+      .page {
+        width: min(1440px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 28px 0 40px;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: end;
+        margin-bottom: 20px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 30px;
+        line-height: 1.2;
+      }
+
+      .lead {
+        margin-top: 8px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+
+      .search {
+        width: 280px;
+        height: 42px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .stat {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: var(--shadow);
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .notice {
+        padding: 14px 16px;
+        margin-bottom: 18px;
+        border: 1px solid #ead19b;
+        border-radius: 8px;
+        background: #fff9e8;
+        color: #76500b;
+        line-height: 1.7;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .record {
+        display: grid;
+        grid-template-columns: minmax(420px, 560px) minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .shots {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px;
+        align-content: start;
+      }
+
+      .shot {
+        position: relative;
+        display: grid;
+        gap: 6px;
+        align-content: start;
+      }
+
+      .shot img {
+        width: 100%;
+        border: 1px solid #bcd6ec;
+        border-radius: 6px;
+        background: #d7ecff;
+        image-rendering: auto;
+      }
+
+      .shot-id {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        display: inline-grid;
+        place-items: center;
+        min-width: 30px;
+        height: 26px;
+        padding: 0 7px;
+        border-radius: 6px;
+        color: #fff;
+        background: rgba(21, 59, 97, 0.92);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .file {
+        color: var(--muted);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+
+      .info {
+        display: grid;
+        align-content: start;
+        gap: 12px;
+      }
+
+      .record-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .index {
+        display: inline-grid;
+        place-items: center;
+        min-width: 34px;
+        height: 30px;
+        padding: 0 8px;
+        border-radius: 6px;
+        color: #fff;
+        background: #153b61;
+        font-weight: 800;
+      }
+
+      .pet h2 {
+        font-size: 22px;
+        line-height: 1.25;
+      }
+
+      .pet p {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 8px;
+        border: 1px solid #c8ddec;
+        border-radius: 6px;
+        color: #285275;
+        background: #f5fbff;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .tag.warning {
+        border-color: #e7b4a9;
+        color: #9d3f33;
+        background: #fff3ef;
+      }
+
+      .skill-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .numbers {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .number-panel {
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fbfdff;
+      }
+
+      .number-panel h3 {
+        margin: 0 0 8px;
+        color: #285275;
+        font-size: 13px;
+      }
+
+      .number-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 4px 0;
+        border-top: 1px solid #edf3f9;
+        font-size: 12px;
+        line-height: 1.25;
+      }
+
+      .number-row:first-of-type {
+        border-top: 0;
+      }
+
+      .number-row span:first-child {
+        color: var(--muted);
+      }
+
+      .number-row span:last-child {
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .skills {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .skill {
+        min-height: 42px;
+        padding: 9px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface-strong);
+        font-size: 13px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+
+      .skill.empty {
+        color: #8aa0b6;
+        background: #eef5fb;
+      }
+
+      .skill.pending {
+        border-color: #edc4ba;
+        color: #8f352b;
+        background: #fff6f3;
+        font-weight: 700;
+      }
+
+      .same {
+        padding: 12px;
+        border: 1px dashed #c5d9ea;
+        border-radius: 8px;
+        color: var(--muted);
+        background: #f8fcff;
+        line-height: 1.6;
+      }
+
+      .sources {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      mark {
+        padding: 0 3px;
+        border-radius: 4px;
+        color: inherit;
+        background: #ffef9d;
+      }
+
+      @media (max-width: 1080px) {
+        .record {
+          grid-template-columns: 1fr;
+        }
+
+        .shot img {
+          max-width: 560px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          width: min(100% - 24px, 1440px);
+          padding-top: 18px;
+        }
+
+        .topbar,
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar {
+          justify-content: stretch;
+        }
+
+        .search {
+          width: 100%;
+        }
+
+        .skills {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .numbers {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <div>
+          <h1>FC 图片逐张识别记录</h1>
+          <p class="lead">按截图逐张核对，技能顺序为右侧技能区从上到下、每行从左到右。黄色底为小技能，待确认项已单独高亮。</p>
+        </div>
+        <div class="toolbar">
+          <input id="searchInput" class="search" type="search" placeholder="搜索宠物、技能、文件名" />
+        </div>
+      </header>
+
+      <section class="stats" aria-label="统计">
+        <div class="stat"><strong id="groupCount">11</strong><span>宠物记录组</span></div>
+        <div class="stat"><strong id="shotCount">22</strong><span>截图来源</span></div>
+        <div class="stat"><strong id="pendingCount">0</strong><span>含待确认记录组</span></div>
+        <div class="stat"><strong>FC</strong><span>来源目录</span></div>
+      </section>
+
+      <p class="notice">原始记录来自 <code>图片/FC/识别记录.md</code>。页面按同一宠物/同一套技能合并展示，带悬浮窗的截图作为同组来源保留。黄色底报复记为小报复。</p>
+
+      <section id="records" class="grid" aria-live="polite"></section>
+    </main>
+
+    <script>
+      const records = [
+        {
+          id: "01",
+          file: "ScreenShot_2026-07-01_145504_244.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16945)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "4004/4004"], ["魔法", "3682/3682"], ["攻击", "1012"], ["防御", "822"], ["速度", "470"], ["灵力", "1473"]],
+            points: [["体质", "155"], ["魔力", "961"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1446/1446"], ["防御资质", "1426/1426"], ["体力资质", "1560/1560"], ["法力资质", "1615/1615"], ["速度资质", "1620/1620"], ["寿命", "15961"]],
+            growth: [["已使用元宵数量", "46/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "46"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术暴击", "高级灵蕴", "高级强壮", "高级抵御", "涡轮火", "高级法术连击(符)", "高级凝气(符)", "护盾(驭)", "混沌(驭)", "围剿(驭)", "觉醒 1/5", "空"],
+        },
+        {
+          id: "02",
+          file: "ScreenShot_2026-07-01_145519_057.png",
+          pet: "祸斗(145)",
+          meta: "天资：极(16945)｜血脉：125级血脉",
+          same: "同 01。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "03",
+          file: "ScreenShot_2026-07-01_145543_975.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16774)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3571/3571"], ["魔法", "3620/3620"], ["攻击", "2136"], ["防御", "809"], ["速度", "509"], ["灵力", "782"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "930"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1619/1619"], ["防御资质", "1403/1403"], ["体力资质", "1451/1452"], ["法力资质", "1351/1351"], ["速度资质", "1623/1623"], ["寿命", "6423"]],
+            growth: [["已使用元宵数量", "18/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "18"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级吸血", "高级抵御", "高级狂暴", "小神佑(符)", "高级夜战(符)", "连环(驭)", "围剿(驭)", "恃势(驭)", "觉醒 5/5", "空"],
+        },
+        {
+          id: "04",
+          file: "ScreenShot_2026-07-01_145554_583.png",
+          pet: "雷司(145)",
+          meta: "天资：极(16774)｜血脉：125级血脉",
+          same: "同 03。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "05",
+          file: "ScreenShot_2026-07-01_145609_627.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16189)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "4420/4420"], ["魔法", "3644/3644"], ["攻击", "2156"], ["防御", "801"], ["速度", "511"], ["灵力", "746"]],
+            points: [["体质", "318"], ["魔力", "155"], ["力量", "782"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1632/1632"], ["防御资质", "1379/1379"], ["体力资质", "1411/1411"], ["法力资质", "1400/1400"], ["速度资质", "1648/1648"], ["寿命", "6197"]],
+            growth: [["已使用元宵数量", "19/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "19"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级强力", "高级吸血", "高级夜战", "水刃斩", "小反震(符)", "高级必杀(符)", "护盾(驭)", "先锋(驭)", "升龙(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "06",
+          file: "ScreenShot_2026-07-01_145620_725.png",
+          pet: "沧海公主(145)",
+          meta: "天资：极(16189)｜血脉：125级血脉",
+          same: "同 05。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "07",
+          file: "ScreenShot_2026-07-01_145631_852.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(15976)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3507/3507"], ["魔法", "3751/3751"], ["攻击", "896"], ["防御", "829"], ["速度", "461"], ["灵力", "1431"]],
+            points: [["体质", "155"], ["魔力", "930"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1199/1199"], ["防御资质", "1440/1440"], ["体力资质", "1499/1499"], ["法力资质", "1620/1620"], ["速度资质", "1597/1597"], ["寿命", "9280"]],
+            growth: [["已使用元宵数量", "21/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "21"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级神佑复生", "高级法术连击", "高级灵蕴", "分水神剑", "小感知(符)", "高级法爆(符)", "护盾(驭)", "混沌(驭)", "刺杀(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "08",
+          file: "ScreenShot_2026-07-01_145638_727.png",
+          pet: "寒翎(145)",
+          meta: "天资：极(15976)｜血脉：125级血脉",
+          same: "同 07。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "09",
+          file: "ScreenShot_2026-07-01_145650_492.png",
+          pet: "赤炎童子(145)",
+          meta: "天资：极(16529)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "5873/5873"], ["魔法", "2755/2755"], ["攻击", "954"], ["防御", "1067"], ["速度", "1077"], ["灵力", "392"]],
+            points: [["体质", "539"], ["魔力", "156"], ["力量", "155"], ["耐力", "190"], ["敏捷", "525"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1349/1465"], ["防御资质", "1510/1510"], ["体力资质", "1491/1491"], ["法力资质", "1429/1429"], ["速度资质", "1632/1632"], ["寿命", "8460"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "1/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级幸运", "高级敏捷", "高级勇敢", "高级火系吸收", "葫芦仙法", "小再生(符)", "高级防御(符)", "顺闪(驭)", "护盾(驭)", "觉醒 4/5", "空", "空"],
+        },
+        {
+          id: "10",
+          file: "ScreenShot_2026-07-01_145659_473.png",
+          pet: "赤炎童子(145)",
+          meta: "天资：极(16529)｜血脉：125级血脉",
+          same: "同 09。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "11",
+          file: "ScreenShot_2026-07-01_145711_916.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(16611)｜血脉：85级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3658/3658"], ["魔法", "3796/3796"], ["攻击", "961"], ["防御", "856"], ["速度", "450"], ["灵力", "1445"]],
+            points: [["体质", "155"], ["魔力", "951"], ["力量", "155"], ["耐力", "155"], ["敏捷", "156"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1377/1377"], ["防御资质", "1556/1556"], ["体力资质", "1436/1436"], ["法力资质", "1645/1645"], ["速度资质", "1572/1572"], ["寿命", "1962"]],
+            growth: [["已使用元宵数量", "42/50"], ["已使用兽魂果数量", "7/31"], ["可重置元宵数量", "42"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "0"]],
+          },
+          skills: ["高级法术暴击", "高级法术波动", "高级灵蕴", "高级抵御", "雷利风行", "小法术连击(符)", "高级强壮(符)", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 5/5", "空"],
+        },
+        {
+          id: "12",
+          file: "ScreenShot_2026-07-01_145719_250.png",
+          pet: "九头鸟(145)",
+          meta: "天资：极(16611)｜血脉：85级血脉",
+          same: "同 11。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "13",
+          file: "ScreenShot_2026-07-01_145729_307.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3166/3166"], ["魔法", "3682/3682"], ["攻击", "2183"], ["防御", "859"], ["速度", "463"], ["灵力", "927"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "961"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1570/1570"], ["防御资质", "1520/1520"], ["体力资质", "1520/1520"], ["法力资质", "1570/1570"], ["速度资质", "1470/1470"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "0"]],
+          },
+          skills: ["高级必杀", "高级连击", "高级隐身", "高级偷袭", "生死相依", "小夜战(符)", "高级追击(符)", "物抗强化", "乘胜(驭)", "恃势(驭)", "刺杀(驭)", "觉醒 5/5"],
+        },
+        {
+          id: "14",
+          file: "ScreenShot_2026-07-01_145736_171.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          same: "同 13。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "15",
+          file: "ScreenShot_2026-07-01_145744_251.png",
+          pet: "荧火(145)",
+          meta: "天资：优(14987)｜血脉：125级血脉",
+          skipped: true,
+          note: "用户确认这个宝宝不用继续处理。",
+        },
+        {
+          id: "16",
+          file: "ScreenShot_2026-07-01_145752_964.png",
+          pet: "荧火(145)",
+          meta: "天资：优(14987)｜血脉：125级血脉",
+          skipped: true,
+          same: "同 15。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "17",
+          file: "ScreenShot_2026-07-01_145803_353.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "3690/3690"], ["魔法", "3712/3712"], ["攻击", "1066"], ["防御", "848"], ["速度", "433"], ["灵力", "1441"]],
+            points: [["体质", "155"], ["魔力", "976"], ["力量", "155"], ["耐力", "155"], ["敏捷", "155"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1570/1570"], ["防御资质", "1520/1520"], ["体力资质", "1520/1520"], ["法力资质", "1570/1570"], ["速度资质", "1470/1470"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级法术连击", "高级法术暴击", "高级灵蕴", "高级攻坚", "生死相依", "高级强壮(符)", "山崩地倾(符)", "物抗强化", "顺闪(驭)", "护盾(驭)", "混沌(驭)", "觉醒 5/5"],
+        },
+        {
+          id: "18",
+          file: "ScreenShot_2026-07-01_145811_242.png",
+          pet: "神兽青蛇(145)",
+          meta: "天资：极(16797)｜血脉：125级血脉",
+          same: "同 17。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "19",
+          file: "ScreenShot_2026-07-01_145820_617.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16626)｜血脉：125级血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "6596/6596"], ["魔法", "2184/2184"], ["攻击", "939"], ["防御", "1013"], ["速度", "1050"], ["灵力", "411"]],
+            points: [["体质", "563"], ["魔力", "155"], ["力量", "155"], ["耐力", "155"], ["敏捷", "522"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1301/1301"], ["防御资质", "1482/1482"], ["体力资质", "1571/1571"], ["法力资质", "1426/1426"], ["速度资质", "1572/1572"], ["寿命", "8195"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级再生", "高级防御", "高级勇敢", "高级强壮", "幽冥之佑", "小凝神(符)", "高级敏捷(符)", "顺闪(驭)", "护盾(驭)", "觉醒 3/5", "空", "空"],
+        },
+        {
+          id: "20",
+          file: "ScreenShot_2026-07-01_145828_355.png",
+          pet: "冥卫(145)",
+          meta: "天资：极(16626)｜血脉：125级血脉",
+          same: "同 19。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "21",
+          file: "ScreenShot_2026-07-01_145840_928.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          heart: "红心",
+          stats: {
+            panel: [["气血", "2331/2331"], ["魔法", "2110/2110"], ["攻击", "1042"], ["防御", "800"], ["速度", "323"], ["灵力", "350"]],
+            points: [["体质", "165"], ["魔力", "165"], ["力量", "165"], ["耐力", "165"], ["敏捷", "165"], ["潜力", "725"]],
+            aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1500/1500"], ["体力资质", "1450/1450"], ["法力资质", "1450/1450"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
+            growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["红莲业火", "高级飞行", "高级勇敢", "一马当先", "空", "空", "空", "空", "空", "空", "空", "空"],
+        },
+        {
+          id: "22",
+          file: "ScreenShot_2026-07-01_145846_942.png",
+          pet: "神兽龙马(145)",
+          meta: "天资：优(14638)｜血脉：无血脉",
+          same: "同 21。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+        {
+          id: "23",
+          file: "ScreenShot_2026-07-01_145855_922.png",
+          pet: "龙虾骑士(145)",
+          meta: "天资：极(16377)｜血脉：125级血脉",
+          heart: "紫心",
+          stats: {
+            panel: [["气血", "3316/3316"], ["魔法", "3844/3844"], ["攻击", "2056"], ["防御", "807"], ["速度", "512"], ["灵力", "696"]],
+            points: [["体质", "155"], ["魔力", "155"], ["力量", "906"], ["耐力", "155"], ["敏捷", "179"], ["潜力", "0"]],
+            aptitude: [["攻击资质", "1574/1574"], ["防御资质", "1409/1409"], ["体力资质", "1450/1450"], ["法力资质", "1238/1238"], ["速度资质", "1580/1580"], ["寿命", "7258"]],
+            growth: [["已使用元宵数量", "50/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "50"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
+          },
+          skills: ["高级连击", "高级隐身", "高级感知", "高级偷袭", "高级冲击", "高级气势", "小报复(符)", "高级审判(符)", "护盾(驭)", "先锋(驭)", "刺杀(驭)", "觉醒 3/5"],
+        },
+        {
+          id: "24",
+          file: "ScreenShot_2026-07-01_145902_264.png",
+          pet: "龙虾骑士(145)",
+          meta: "天资：极(16377)｜血脉：125级血脉",
+          same: "同 23。截图带养成情况悬浮窗，但技能区未被遮挡。",
+        },
+      ];
+
+      const inheritedSkills = (record) => {
+        if (record.skills) return record.skills;
+        const sourceId = record.same.match(/同\s+(\d+)/)?.[1];
+        return records.find((item) => item.id === sourceId)?.skills || [];
+      };
+
+      const isPending = (text) => text.includes("待确认") || text.includes("疑似");
+      const imagePath = (file) => `./图片/FC/${file}`;
+      const isCountedSkill = (skill) =>
+        skill !== "空" &&
+        !skill.includes("(符)") &&
+        !skill.includes("(驭)") &&
+        !skill.includes("强化") &&
+        !skill.includes("之心") &&
+        !skill.startsWith("觉醒");
+
+      function buildGroups() {
+        const groups = [];
+        const byId = new Map();
+        records.forEach((record) => {
+          if (record.skipped) return;
+          const sourceId = record.same?.match(/同\s+(\d+)/)?.[1];
+          if (sourceId && byId.has(sourceId)) {
+            byId.get(sourceId).shots.push({
+              id: record.id,
+              file: record.file,
+              note: record.same,
+            });
+            return;
+          }
+
+          const group = {
+            id: record.id,
+            pet: record.pet,
+            meta: record.meta,
+            heart: record.heart,
+            stats: record.stats,
+            skills: inheritedSkills(record),
+            shots: [
+              {
+                id: record.id,
+                file: record.file,
+                note: "主截图",
+              },
+            ],
+          };
+          groups.push(group);
+          byId.set(record.id, group);
+        });
+        return groups;
+      }
+
+      const groups = buildGroups();
+
+      function highlight(text, query) {
+        if (!query) return text;
+        const safe = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return text.replace(new RegExp(safe, "gi"), (match) => `<mark>${match}</mark>`);
+      }
+
+      function statsSearchText(stats) {
+        if (!stats) return [];
+        return [...stats.panel, ...stats.points, ...stats.aptitude, ...(stats.growth || [])].flat();
+      }
+
+      function renderNumberPanel(title, rows, query) {
+        return `<section class="number-panel">
+          <h3>${title}</h3>
+          ${rows.map(([label, value]) => `<div class="number-row"><span>${highlight(label, query)}</span><span>${highlight(value, query)}</span></div>`).join("")}
+        </section>`;
+      }
+
+      function renderStats(stats, query) {
+        if (!stats) return "";
+        return `<div class="numbers">
+          ${renderNumberPanel("面板", stats.panel, query)}
+          ${renderNumberPanel("属性点", stats.points, query)}
+          ${renderNumberPanel("资质 / 寿命", stats.aptitude, query)}
+          ${stats.growth ? renderNumberPanel("养成情况", stats.growth, query) : ""}
+        </div>`;
+      }
+
+      function renderGroup(group, query = "") {
+        const pending = group.skills.some(isPending);
+        const skillCount = group.skills.filter(isCountedSkill).length;
+        const shotsHtml = group.shots
+          .map(
+            (shot) => `<div class="shot">
+              <span class="shot-id">${shot.id}</span>
+              <img src="${imagePath(shot.file)}" alt="${group.pet} ${shot.file}" loading="lazy" />
+              <div class="file">${highlight(shot.file, query)}</div>
+            </div>`
+          )
+          .join("");
+        const skillHtml = `<div class="skills">${group.skills
+          .map((skill) => {
+            const classes = ["skill"];
+            if (skill === "空") classes.push("empty");
+            if (isPending(skill)) classes.push("pending");
+            return `<div class="${classes.join(" ")}">${highlight(skill, query)}</div>`;
+          })
+          .join("")}</div>`;
+
+        return `<article class="record" data-search="${[
+          group.id,
+          group.pet,
+          group.meta,
+          group.heart || "",
+          `技能数 ${skillCount}`,
+          ...group.shots.flatMap((shot) => [shot.id, shot.file, shot.note]),
+          ...statsSearchText(group.stats),
+          ...group.skills,
+        ].join(" ")}">
+          <div class="shots">
+            ${shotsHtml}
+          </div>
+          <div class="info">
+            <div class="record-head">
+              <div class="pet">
+                <h2>${highlight(group.pet, query)}</h2>
+                <p>${highlight(group.meta, query)}${group.heart ? `｜心：${highlight(group.heart, query)}` : ""}</p>
+              </div>
+              <span class="index">${group.id}</span>
+            </div>
+            <div class="skill-meta">
+              <div class="tag ${pending ? "warning" : ""}">${pending ? "含待确认" : "已识别"}</div>
+              <div class="tag">技能数 ${skillCount}</div>
+            </div>
+            <p class="sources">截图来源：${group.shots.map((shot) => highlight(`${shot.id} ${shot.file}`, query)).join("；")}</p>
+            ${renderStats(group.stats, query)}
+            ${skillHtml}
+          </div>
+        </article>`;
+      }
+
+      function render() {
+        const query = document.getElementById("searchInput").value.trim();
+        const queryLower = query.toLowerCase();
+        const visible = groups.filter((group) => {
+          if (!queryLower) return true;
+          const text = [
+            group.id,
+            group.pet,
+            group.meta,
+            group.heart || "",
+            `技能数 ${group.skills.filter(isCountedSkill).length}`,
+            ...group.shots.flatMap((shot) => [shot.id, shot.file, shot.note]),
+            ...statsSearchText(group.stats),
+            ...group.skills,
+          ]
+            .join(" ")
+            .toLowerCase();
+          return text.includes(queryLower);
+        });
+        document.getElementById("records").innerHTML = visible.map((group) => renderGroup(group, query)).join("");
+        document.getElementById("groupCount").textContent = visible.length;
+        document.getElementById("shotCount").textContent = visible.reduce((sum, group) => sum + group.shots.length, 0);
+        document.getElementById("pendingCount").textContent = groups.filter((group) => group.skills.some(isPending)).length;
+      }
+
+      document.getElementById("searchInput").addEventListener("input", render);
+      render();
+    </script>
+  </body>
+</html>
