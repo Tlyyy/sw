@@ -14,15 +14,29 @@
         --line: #dce5ef;
         --blue: #2f86d9;
         --blue-strong: #174a7c;
+        --teal: #239b8f;
         --green: #2f9a69;
         --gold: #b87916;
+        --violet: #7256b8;
+        --orange: #d16b28;
         --red: #bd4545;
         --shadow: 0 12px 28px rgba(25, 47, 72, 0.08);
         --soft-shadow: 0 1px 2px rgba(22, 35, 52, 0.06);
+        --lift-shadow: 0 10px 26px rgba(31, 55, 82, 0.09);
+        --focus-ring: 0 0 0 3px rgba(47, 134, 217, 0.15);
+        --tint-blue: #eef7ff;
+        --tint-teal: #effbf8;
+        --tint-gold: #fff8e9;
+        --tint-violet: #f7f3ff;
+        --tint-red: #fff3ef;
       }
 
       * {
         box-sizing: border-box;
+      }
+
+      [hidden] {
+        display: none !important;
       }
 
       body {
@@ -350,9 +364,58 @@
       }
 
       .pet p {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
         margin-top: 6px;
         color: var(--muted);
         font-size: 14px;
+      }
+
+      .heart-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 1px 7px;
+        border: 1px solid #d7e2ee;
+        border-radius: 6px;
+        color: #41566d;
+        background: #f8fafc;
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+
+      .heart-red {
+        border-color: #efb4b4;
+        color: #a83333;
+        background: #fff3f3;
+      }
+
+      .heart-blue {
+        border-color: #adccec;
+        color: #2265a8;
+        background: #f0f7ff;
+      }
+
+      .heart-orange {
+        border-color: #ecc48e;
+        color: #9a5814;
+        background: #fff7e8;
+      }
+
+      .heart-purple {
+        border-color: #cdb9ea;
+        color: #6543a0;
+        background: #f8f3ff;
+      }
+
+      .heart-green {
+        border-color: #a9d6c1;
+        color: #26734c;
+        background: #f1fbf6;
       }
 
       .tag {
@@ -392,6 +455,7 @@
         border: 1px solid var(--line);
         border-radius: 6px;
         background: #fbfdff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
       }
 
       .number-panel h3 {
@@ -433,11 +497,70 @@
         min-height: 42px;
         padding: 9px 10px;
         border: 1px solid var(--line);
+        border-left: 3px solid #cbd7e2;
         border-radius: 6px;
-        background: var(--surface-strong);
+        background: #fff;
+        color: #23364a;
         font-size: 13px;
         line-height: 1.35;
         overflow-wrap: anywhere;
+        box-shadow: var(--soft-shadow);
+      }
+
+      .skill-magic {
+        border-color: #c9deef;
+        border-left-color: #2f86d9;
+        color: #1f5f9e;
+        background: #f6fbff;
+      }
+
+      .skill-output {
+        border-color: #ead7b7;
+        border-left-color: #b87916;
+        color: #7b4c0d;
+        background: #fffaf2;
+      }
+
+      .skill-survive {
+        border-color: #c6e1d2;
+        border-left-color: #2f9a69;
+        color: #256844;
+        background: #f6fbf8;
+      }
+
+      .skill-function {
+        border-color: #d7dce5;
+        border-left-color: #708096;
+        color: #425267;
+        background: #f8fafc;
+      }
+
+      .skill-rune {
+        border-color: #d8dbe2;
+        border-left-color: #8993a3;
+        color: #4c5968;
+        background: #fbfcfe;
+      }
+
+      .skill-drive {
+        border-color: #d6d8ee;
+        border-left-color: #6d75aa;
+        color: #4d568f;
+        background: #f7f8ff;
+      }
+
+      .skill-boost {
+        border-color: #ead7b7;
+        border-left-color: #b87916;
+        color: #7b4c0d;
+        background: #fffaf0;
+      }
+
+      .skill-awaken {
+        border-color: #d9c8ef;
+        border-left-color: #7256b8;
+        color: #5d4597;
+        background: #f8f5ff;
       }
 
       .skill.empty {
@@ -447,9 +570,17 @@
 
       .skill.pending {
         border-color: #edc4ba;
+        border-left-color: var(--red);
         color: #8f352b;
-        background: #fff6f3;
+        background: var(--tint-red);
         font-weight: 700;
+      }
+
+      .skill-pending {
+        border-color: #edc4ba;
+        border-left-color: var(--red);
+        color: #8f352b;
+        background: var(--tint-red);
       }
 
       .same {
@@ -473,8 +604,55 @@
         gap: 14px;
       }
 
+      .compare-view.compare-mode-view > .compare-section {
+        grid-column: 1 / -1;
+      }
+
+      .compare-mode-tabs {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 10px;
+        border: 1px solid #e1eaf3;
+        border-radius: 8px;
+        background: #f8fbff;
+      }
+
+      .compare-mode-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 38px;
+        padding: 8px 12px;
+        border: 1px solid #d8e4ef;
+        border-radius: 8px;
+        color: #285275;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .compare-mode-tab span {
+        color: #708096;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .compare-mode-tab.active {
+        border-color: var(--blue-strong);
+        color: #fff;
+        background: var(--blue-strong);
+      }
+
+      .compare-mode-tab.active span {
+        color: rgba(255, 255, 255, 0.82);
+      }
+
       .compare-section {
         grid-column: 1 / -1;
+        min-width: 0;
         padding: 22px 24px 24px;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
@@ -552,6 +730,670 @@
         line-height: 1.55;
       }
 
+      .compare-focus-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .compare-spacer {
+        height: 12px;
+      }
+
+      .compare-focus-card,
+      .compare-folder-card,
+      .compare-record-card,
+      .compare-species-card {
+        border: 1px solid #d8e7f2;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #fff 0, #f8fbff 100%);
+        box-shadow: var(--soft-shadow);
+      }
+
+      .compare-focus-card {
+        padding: 14px;
+      }
+
+      .compare-focus-head,
+      .compare-folder-head,
+      .compare-record-head,
+      .compare-species-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .compare-focus-head h3,
+      .compare-folder-head h3,
+      .compare-record-head h3,
+      .compare-species-head h3 {
+        margin: 0;
+        color: #153b61;
+        font-size: 16px;
+        line-height: 1.25;
+      }
+
+      .compare-focus-count,
+      .compare-folder-count {
+        color: #53687e;
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .compare-candidate-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .compare-candidate {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 10px;
+        border: 1px solid #e2edf6;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .compare-candidate-title,
+      .compare-record-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .compare-candidate-title strong,
+      .compare-record-title strong {
+        color: var(--text);
+        font-size: 15px;
+        line-height: 1.25;
+      }
+
+      .compare-candidate-meta,
+      .compare-record-meta {
+        display: grid;
+        gap: 7px;
+        margin-top: 8px;
+      }
+
+      .compare-candidate-skills,
+      .compare-record-skills {
+        color: #334960;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .compare-candidate-score {
+        min-width: 74px;
+        text-align: right;
+      }
+
+      .compare-candidate-score span,
+      .compare-record-score span {
+        display: block;
+        color: #708096;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .compare-candidate-score b,
+      .compare-record-score b {
+        display: block;
+        margin-top: 3px;
+        color: #153b61;
+        font-size: 24px;
+        line-height: 1;
+      }
+
+      .compare-folder-grid,
+      .compare-species-grid,
+      .compare-record-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .compare-folder-card,
+      .compare-species-card {
+        padding: 14px;
+      }
+
+      .compare-folder-stats,
+      .compare-species-stats {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      .compare-mini-stat {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 28px;
+        padding: 4px 8px;
+        border: 1px solid #d8e4ef;
+        border-radius: 7px;
+        color: #53687e;
+        background: #fff;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .compare-mini-stat b {
+        color: #153b61;
+        font-size: 14px;
+      }
+
+      .compare-folder-best,
+      .compare-species-best {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .compare-best-row {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        gap: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #edf3f9;
+        color: #334960;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .compare-best-row b {
+        color: #285275;
+      }
+
+      .compare-record-card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 13px;
+      }
+
+      .compare-record-score {
+        min-width: 84px;
+        text-align: right;
+      }
+
+      .beast-dashboard {
+        display: grid;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .beast-cost-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .beast-cost-card {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.95fr) minmax(280px, 1.35fr) minmax(120px, auto);
+        gap: 14px;
+        align-items: stretch;
+        padding: 14px;
+        border: 1px solid #d8e7f2;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #ffffff 0, #f8fbff 100%);
+        box-shadow: var(--soft-shadow);
+      }
+
+      .beast-cost-main,
+      .beast-cost-gap,
+      .beast-cost-amount {
+        min-width: 0;
+      }
+
+      .beast-cost-name-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .beast-cost-name {
+        color: var(--text);
+        font-size: 18px;
+        line-height: 1.25;
+        font-weight: 900;
+      }
+
+      .beast-cost-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        color: #53687e;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .beast-cost-stage-line {
+        margin-top: 10px;
+      }
+
+      .beast-cost-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #285275;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .beast-cost-missing-grid {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .beast-cost-missing-chip,
+      .beast-cost-complete-chip {
+        display: inline-grid;
+        grid-template-columns: auto auto;
+        gap: 3px 8px;
+        align-items: center;
+        min-height: 48px;
+        padding: 8px 10px;
+        border: 1px solid #e8c27f;
+        border-radius: 8px;
+        color: #7c4a03;
+        background: #fff8e8;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .beast-cost-missing-chip b {
+        color: #4c3107;
+        font-size: 14px;
+      }
+
+      .beast-cost-missing-chip span {
+        color: #9a6411;
+      }
+
+      .beast-cost-missing-chip strong {
+        grid-column: 1 / -1;
+        color: #b45309;
+        font-size: 18px;
+        line-height: 1.05;
+      }
+
+      .beast-cost-complete-chip {
+        display: inline-flex;
+        border-color: #a9d5bf;
+        color: #1f7a50;
+        background: #f1fbf6;
+        font-size: 14px;
+      }
+
+      .beast-cost-amount {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 3px;
+        padding-left: 14px;
+        border-left: 1px solid #e3edf6;
+        text-align: right;
+      }
+
+      .beast-cost-amount span {
+        color: #53687e;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .beast-cost-amount b {
+        color: #b45309;
+        font-size: 30px;
+        line-height: 1.02;
+        font-weight: 950;
+      }
+
+      .beast-cost-amount em {
+        color: #53687e;
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 800;
+      }
+
+      .beast-cost-amount.complete b {
+        color: var(--green);
+      }
+
+      .beast-cost-type-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+        padding: 10px;
+        border: 1px solid #e1eaf3;
+        border-radius: 8px;
+        background: #f8fbff;
+      }
+
+      .beast-cost-type-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 38px;
+        padding: 8px 12px;
+        border: 1px solid #d8e4ef;
+        border-radius: 8px;
+        color: #285275;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .beast-cost-type-tab span {
+        color: #708096;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .beast-cost-type-tab.active {
+        border-color: var(--blue-strong);
+        color: #fff;
+        background: var(--blue-strong);
+      }
+
+      .beast-cost-type-tab.active span {
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .beast-cost-matrix-wrap {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        border: 1px solid #e1e7ee;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .beast-cost-matrix {
+        width: 100%;
+        min-width: 920px;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .beast-cost-matrix th,
+      .beast-cost-matrix td {
+        padding: 11px 12px;
+        border-right: 1px solid #e5ebf1;
+        border-bottom: 1px solid #e5ebf1;
+        vertical-align: top;
+      }
+
+      .beast-cost-matrix th:last-child,
+      .beast-cost-matrix td:last-child {
+        border-right: 0;
+      }
+
+      .beast-cost-matrix tr:last-child th,
+      .beast-cost-matrix tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .beast-cost-matrix thead th {
+        color: #142232;
+        background: #f3f5f8;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .beast-cost-type-head {
+        width: 90px;
+        color: #153b61;
+        background: #f8fbff;
+        text-align: left;
+      }
+
+      .beast-cost-type-head strong {
+        display: block;
+        color: #153b61;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .beast-cost-type-head span {
+        display: block;
+        margin-top: 4px;
+        color: #708096;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .beast-cost-item-head {
+        width: 80px;
+        color: #285275;
+        background: #fbfdff;
+        text-align: center;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .beast-matrix-cell {
+        display: grid;
+        gap: 7px;
+        min-width: 128px;
+      }
+
+      .beast-matrix-meta {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        color: #53687e;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .beast-matrix-missing-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+
+      .beast-matrix-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 2px 7px;
+        border: 1px solid #e7c08a;
+        border-radius: 6px;
+        color: #8a580a;
+        background: #fff8e8;
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .beast-matrix-complete {
+        color: var(--green);
+        font-weight: 900;
+      }
+
+      .beast-matrix-number {
+        color: #142232;
+        font-size: 18px;
+        font-weight: 950;
+      }
+
+      .beast-matrix-cost {
+        color: #b45309;
+        font-size: 20px;
+        font-weight: 950;
+      }
+
+      .beast-panel {
+        border: 1px solid #d8e7f2;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: var(--soft-shadow);
+      }
+
+      .beast-rule-item span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .beast-layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.05fr);
+        gap: 14px;
+      }
+
+      .beast-panel {
+        padding: 16px;
+      }
+
+      .beast-panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .beast-panel-head h3 {
+        margin: 0;
+        color: #153b61;
+        font-size: 16px;
+      }
+
+      .beast-panel-head span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .beast-chart-box {
+        position: relative;
+        height: 260px;
+        min-height: 260px;
+      }
+
+      .beast-chart-box canvas {
+        width: 100%;
+        height: 260px;
+      }
+
+      .beast-bar-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .beast-bar-row {
+        display: grid;
+        grid-template-columns: 74px minmax(0, 1fr) 76px;
+        gap: 10px;
+        align-items: center;
+        color: #334960;
+        font-size: 13px;
+      }
+
+      .beast-bar-track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e8f0f7;
+      }
+
+      .beast-bar-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #2f86d9, #239b8f);
+      }
+
+      .beast-rule-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .beast-rule-item {
+        min-height: 96px;
+        padding: 12px;
+        border: 1px solid #d8e7f2;
+        border-radius: 8px;
+        background: #f8fcff;
+      }
+
+      .beast-rule-item b {
+        display: block;
+        color: #285275;
+        font-size: 20px;
+        line-height: 1.12;
+      }
+
+      .beast-rule-item p,
+      .beast-cost-cell {
+        margin-top: 8px;
+        color: #334960;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .beast-stage-list,
+      .beast-missing-list {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .beast-stage-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 2px 8px;
+        border: 1px solid #d7e4ef;
+        border-radius: 6px;
+        color: #53687e;
+        background: #f8fafc;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .beast-stage-chip.done {
+        border-color: #aacfbf;
+        color: #24714d;
+        background: #f1fbf6;
+      }
+
+      .beast-stage-chip.missing {
+        border-color: #e7c08a;
+        color: #8a580a;
+        background: #fff8e8;
+      }
+
+      .beast-cost-cell strong,
+      .beast-complete {
+        color: var(--green);
+        font-weight: 800;
+      }
+
+      .beast-cost-cell strong {
+        color: #153b61;
+      }
+
       .insight-list {
         display: grid;
         gap: 8px;
@@ -586,9 +1428,21 @@
 
       .compare-table {
         width: 100%;
-        min-width: 1120px;
+        min-width: 1280px;
         border-collapse: collapse;
         font-size: 13px;
+      }
+
+      .beast-cost-section .compare-table {
+        min-width: 760px;
+      }
+
+      .beast-table-section {
+        margin-top: 0;
+      }
+
+      .compare-desktop-table {
+        margin-top: 14px;
       }
 
       .compare-table th,
@@ -1081,6 +1935,69 @@
         color: #9aadbf;
       }
 
+      .matrix-skill-value.skill-magic,
+      .matrix-skill-cell.skill-magic {
+        border-color: #c9deef;
+        color: #1f5f9e;
+        background: #f6fbff;
+      }
+
+      .matrix-skill-value.skill-output,
+      .matrix-skill-cell.skill-output {
+        border-color: #ead7b7;
+        color: #7b4c0d;
+        background: #fffaf2;
+      }
+
+      .matrix-skill-value.skill-survive,
+      .matrix-skill-cell.skill-survive {
+        border-color: #c6e1d2;
+        color: #256844;
+        background: #f6fbf8;
+      }
+
+      .matrix-skill-value.skill-function,
+      .matrix-skill-cell.skill-function {
+        border-color: #d7dce5;
+        color: #425267;
+        background: #f8fafc;
+      }
+
+      .matrix-skill-value.skill-rune,
+      .matrix-skill-cell.skill-rune {
+        border-color: #d8dbe2;
+        color: #4c5968;
+        background: #fbfcfe;
+      }
+
+      .matrix-skill-value.skill-drive,
+      .matrix-skill-cell.skill-drive {
+        border-color: #d6d8ee;
+        color: #4d568f;
+        background: #f7f8ff;
+      }
+
+      .matrix-skill-value.skill-boost,
+      .matrix-skill-cell.skill-boost {
+        border-color: #ead7b7;
+        color: #7b4c0d;
+        background: #fffaf0;
+      }
+
+      .matrix-skill-value.skill-awaken,
+      .matrix-skill-cell.skill-awaken {
+        border-color: #d9c8ef;
+        color: #5d4597;
+        background: #f8f5ff;
+      }
+
+      .matrix-skill-value.skill-pending,
+      .matrix-skill-cell.skill-pending {
+        border-color: #edc4ba;
+        color: #8f352b;
+        background: var(--tint-red);
+      }
+
       mark {
         padding: 0 3px;
         border-radius: 4px;
@@ -1107,6 +2024,26 @@
         }
       }
 
+      @media (max-width: 980px) {
+        .beast-cost-card {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
+        .beast-cost-amount {
+          align-items: flex-start;
+          padding-top: 12px;
+          padding-left: 0;
+          border-top: 1px solid #e3edf6;
+          border-left: 0;
+          text-align: left;
+        }
+
+        .beast-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
       @media (max-width: 760px) {
         .page {
           width: min(100% - 24px, 1440px);
@@ -1114,10 +2051,36 @@
         }
 
         .topbar,
-        .stats,
         .workspace-nav,
         .view-head {
           grid-template-columns: 1fr;
+        }
+
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        body[data-view="COMPARE"] .view-head .stats {
+          display: none;
+        }
+
+        .stat {
+          align-items: flex-start;
+          justify-content: center;
+          gap: 7px;
+          min-height: 86px;
+          padding: 12px;
+          flex-direction: column;
+        }
+
+        .stat strong {
+          font-size: 28px;
+          line-height: 1.05;
+        }
+
+        .stat span {
+          font-size: 12px;
+          line-height: 1.25;
         }
 
         .topbar {
@@ -1142,6 +2105,92 @@
 
         .compare-cards {
           grid-template-columns: 1fr;
+        }
+
+        .compare-mode-tabs {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .compare-mode-tab {
+          justify-content: space-between;
+          padding: 8px 10px;
+        }
+
+        .compare-focus-grid,
+        .compare-folder-grid,
+        .compare-species-grid,
+        .compare-record-list {
+          grid-template-columns: 1fr;
+        }
+
+        .compare-candidate,
+        .compare-record-card {
+          grid-template-columns: 1fr;
+        }
+
+        .compare-candidate-score,
+        .compare-record-score {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          min-width: 0;
+          padding-top: 10px;
+          border-top: 1px solid #edf3f9;
+          text-align: left;
+        }
+
+        .compare-candidate-score b,
+        .compare-record-score b {
+          margin-top: 0;
+          font-size: 22px;
+        }
+
+        .compare-desktop-table {
+          display: none;
+        }
+
+        .beast-cost-card {
+          padding: 12px;
+        }
+
+        .beast-cost-type-tabs {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .beast-cost-type-tab {
+          justify-content: space-between;
+          padding: 8px 10px;
+        }
+
+        .beast-cost-matrix {
+          min-width: 840px;
+        }
+
+        .beast-cost-name {
+          font-size: 17px;
+        }
+
+        .beast-cost-amount b {
+          font-size: 28px;
+        }
+
+        .beast-detail-table {
+          display: none;
+        }
+
+        .beast-rule-list {
+          grid-template-columns: 1fr;
+        }
+
+        .beast-chart-box {
+          height: 220px;
+          min-height: 220px;
+        }
+
+        .beast-chart-box canvas {
+          height: 220px;
         }
 
         .compare-head,
@@ -1234,7 +2283,7 @@
             aptitude: [["攻击资质", "1619/1619"], ["防御资质", "1403/1403"], ["体力资质", "1451/1452"], ["法力资质", "1351/1351"], ["速度资质", "1623/1623"], ["寿命", "6423"]],
             growth: [["已使用元宵数量", "18/50"], ["已使用兽魂果数量", "0/31"], ["可重置元宵数量", "18"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
           },
-          skills: ["高级必杀", "高级连击", "高级吸血", "高级抵御", "高级狂暴", "小神佑(符)", "高级夜战(符)", "连环(驭)", "围剿(驭)", "恃势(驭)", "觉醒 5/5", "空"],
+          skills: ["高级必杀", "高级连击", "高级吸血", "高级抵御", "高级狂暴", "小报复(符)", "高级夜战(符)", "连环(驭)", "围剿(驭)", "恃势(驭)", "觉醒 5/5", "空"],
         },
         {
           id: "04",
@@ -2140,7 +3189,7 @@
             aptitude: [["攻击资质", "1500/1500"], ["防御资质", "1450/1450"], ["体力资质", "1450/1450"], ["法力资质", "1500/1500"], ["速度资质", "1400/1400"], ["寿命", "永生"]],
             growth: [["已使用元宵数量", "0/50"], ["已使用兽魂果数量", "31/31"], ["可重置元宵数量", "0"], ["已使用培元丹数量", "0/1"], ["免费重置属性次数", "1"]],
           },
-          skills: ["高级必杀", "高级强力", "高级夜战", "高级毒", "生死相依", "高级强壮(符)", "剑气四射(符)", "抵御强化", "顺闪(驭)", "护盾(驭)", "升龙(驭)", "觉醒 3/5"],
+          skills: ["高级必杀", "高级强力", "高级夜战", "高级抵御", "生死相依", "高级强壮(符)", "剑气四射(符)", "抵御强化", "顺闪(驭)", "护盾(驭)", "升龙(驭)", "觉醒 3/5"],
         },
         { id: "12", file: "ScreenShot_2026-07-01_162030_801.png", pet: "神兽青蛇(145)", meta: "天资：极(16445)｜血脉：125级血脉", same: "同 11。截图带养成情况悬浮窗，但技能区未被遮挡。" },
         {
@@ -2249,11 +3298,16 @@
       ];
 
       const compareKey = "COMPARE";
+      const beastCostKey = "BEAST_COST";
       const matrixKey = "MATRIX";
       const basicKey = "BASIC";
       let activeKey = compareKey;
       let activeFolderKey = "FC";
       let activeMatrixSectionKey = "daily";
+      let activeCompareMode = "focus";
+      let activeBeastCostType = "all";
+      let beastCostChart = null;
+      let chartLibraryPromise = null;
       let matrixDensity = "compact";
       const matrixDisplay = {
         stats: true,
@@ -2265,6 +3319,10 @@
         [compareKey]: {
           title: "横向对比",
           description: "跨目录汇总定位、技能、面板和资质，适合先筛出值得继续看的宝宝。",
+        },
+        [beastCostKey]: {
+          title: "神兽成本",
+          description: "先看逐只缺口清单，再看按缺项汇总；所有金额单位都是万。",
         },
         [matrixKey]: {
           title: "矩阵对比",
@@ -2278,6 +3336,7 @@
 
       function setViewCopy(key) {
         const copy = viewCopy[key] || viewCopy[compareKey];
+        document.body.dataset.view = key;
         document.getElementById("viewTitle").textContent = key === basicKey ? `${copy.title}：${(datasets.find((item) => item.key === activeFolderKey) || datasets[0]).label}` : copy.title;
         document.getElementById("viewDescription").textContent = copy.description;
       }
@@ -2301,7 +3360,37 @@
       const getRowValue = (rows = [], label) => rows.find(([name]) => name.includes(label))?.[1] || "";
       const parseFirstNumber = (value) => Number(String(value || "").match(/\d+/)?.[0] || 0);
       const cleanPetName = (pet) => pet.replace(/\(\d+\)/g, "");
+      const displayPetName = (pet) => cleanPetName(pet).trim();
       const unique = (items) => [...new Set(items.filter(Boolean))];
+      const displaySkillName = (skill) => String(skill || "").replace(/^小/, "低级");
+
+      function heartClass(heart = "") {
+        if (heart.includes("红")) return "heart-red";
+        if (heart.includes("蓝")) return "heart-blue";
+        if (heart.includes("橙")) return "heart-orange";
+        if (heart.includes("紫")) return "heart-purple";
+        if (heart.includes("绿")) return "heart-green";
+        return "";
+      }
+
+      function renderHeartChip(heart, query = "") {
+        if (!heart) return "";
+        return `<span class="heart-chip ${heartClass(heart)}">${highlight(heart, query)}</span>`;
+      }
+
+      function skillToneClass(skill = "") {
+        const normalized = normalizeMatrixSkill(skill);
+        const text = `${skill} ${normalized}`;
+        if (isPending(text)) return "skill-pending";
+        if (text.includes("觉醒")) return "skill-awaken";
+        if (text.includes("(驭)") || text.includes("（驭）")) return "skill-drive";
+        if (text.includes("(符)") || text.includes("（符）")) return "skill-rune";
+        if (text.includes("强化") || text.includes("之心")) return "skill-boost";
+        if (["法术", "法暴", "法连", "灵蕴", "凝气", "涡轮火", "雷利风行", "分水神剑", "山崩地倾", "红莲业火", "葫芦仙法"].some((keyword) => text.includes(keyword))) return "skill-magic";
+        if (["必杀", "连击", "强力", "吸血", "偷袭", "夜战", "狂暴", "攻坚", "追击", "水刃斩", "剑气四射", "生死相依", "一马当先"].some((keyword) => text.includes(keyword))) return "skill-output";
+        if (["强壮", "抵御", "防御", "幸运", "神佑", "保命", "再生", "凝神", "反震", "自愈", "吸收", "幽冥之佑"].some((keyword) => text.includes(keyword))) return "skill-survive";
+        return "skill-function";
+      }
 
       function panelNumber(group, label) {
         return parseFirstNumber(getRowValue(group.stats?.panel, label));
@@ -2327,6 +3416,19 @@
       function beastStage(row) {
         const base = beastBaseAptitudes[row.cleanName];
         if (!base) return "";
+        const minDelta = beastStageDelta(row);
+        if (minDelta >= 70) return "进阶2";
+        if (minDelta >= 50) return "进阶1";
+        return beastHasOrnament(row) ? "有饰品" : "";
+      }
+
+      function beastHasOrnament(row) {
+        return row.cleanName !== "神兽龙马";
+      }
+
+      function beastStageDelta(row) {
+        const base = beastBaseAptitudes[row.cleanName];
+        if (!base) return null;
         const deltas = [
           currentAptitudeNumber(row.attackApt) - base.attack,
           currentAptitudeNumber(row.defenseApt) - base.defense,
@@ -2334,10 +3436,66 @@
           currentAptitudeNumber(row.magicApt) - base.magic,
           currentAptitudeNumber(row.speedApt) - base.speed,
         ];
-        const minDelta = Math.min(...deltas);
-        if (minDelta >= 70) return "进阶2";
-        if (minDelta >= 50) return "进阶1";
-        return "有饰品";
+        return Math.min(...deltas);
+      }
+
+      function beastStageFlags(row) {
+        const minDelta = beastStageDelta(row);
+        if (minDelta === null) {
+          return { ornament: "", advance1: "", advance2: "", skin: "" };
+        }
+        return {
+          ornament: beastHasOrnament(row) ? "有" : "",
+          advance1: minDelta >= 50 ? "有" : "",
+          advance2: minDelta >= 70 ? "有" : "",
+          skin: "",
+        };
+      }
+
+      const beastEggPriceWan = 5.5;
+      const beastCostRules = [
+        { key: "ornament", label: "饰品", priceWan: 20, eggCount: 0 },
+        { key: "advance1", label: "进阶1", priceWan: 30 * beastEggPriceWan, eggCount: 30 },
+        { key: "advance2", label: "进阶2", priceWan: 30 * beastEggPriceWan, eggCount: 30 },
+        { key: "skin", label: "皮肤", priceWan: 40 * beastEggPriceWan, eggCount: 40 },
+      ];
+      const beastCostFolderOrder = ["FC", "LG1", "PT", "LG2", "MYT"];
+      const beastCostTypeDefs = [
+        { key: "snake1", label: "1蛇", pet: "神兽青蛇" },
+        { key: "snake2", label: "2蛇", pet: "神兽青蛇" },
+        { key: "horse", label: "马", pet: "神兽龙马" },
+      ];
+
+      function formatWan(value) {
+        const rounded = Math.round(Number(value || 0) * 10) / 10;
+        return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}万`;
+      }
+
+      function beastRuleDetail(rule) {
+        return rule.eggCount ? `${rule.label} ${rule.eggCount}蛋/${formatWan(rule.priceWan)}` : `${rule.label} ${formatWan(rule.priceWan)}`;
+      }
+
+      function beastMissingRules(row) {
+        if (!beastBaseAptitudes[row.cleanName]) return [];
+        const flags = row.beastStages || beastStageFlags(row);
+        return beastCostRules.filter((rule) => !flags[rule.key]);
+      }
+
+      function beastOwnedLabels(row) {
+        if (!beastBaseAptitudes[row.cleanName]) return [];
+        const flags = row.beastStages || {};
+        return beastCostRules.filter((rule) => flags[rule.key]).map((rule) => rule.label);
+      }
+
+      function beastCostSummary(row) {
+        if (!beastBaseAptitudes[row.cleanName]) return null;
+        const missing = beastMissingRules(row);
+        return {
+          missing,
+          totalWan: missing.reduce((sum, rule) => sum + rule.priceWan, 0),
+          eggCount: missing.reduce((sum, rule) => sum + rule.eggCount, 0),
+          detail: missing.map(beastRuleDetail).join("；") || "已齐",
+        };
       }
 
       function talentNumber(meta = "") {
@@ -2377,11 +3535,36 @@
           "高级防御",
         ];
         const picked = skills.filter((skill) => skill !== "空" && keywords.some((keyword) => skill.includes(keyword)));
-        return unique(picked).slice(0, 7).join("、") || unique(skills.filter((skill) => skill !== "空")).slice(0, 5).join("、");
+        const primary = unique(picked).slice(0, 7);
+        const fallback = unique(skills.filter((skill) => skill !== "空")).slice(0, 5);
+        return (primary.length ? primary : fallback).map(displaySkillName).join("、");
       }
 
       function isBookPending(row) {
-        return row.skills.filter((skill) => skill === "空").length >= 4;
+        if (row.skills.filter((skill) => skill === "空").length >= 4) return true;
+
+        const petName = cleanPetName(row.pet);
+        const isBeast = row.pet.includes("神兽") || aptitudeValue(row, "寿命") === "永生";
+        if (!isBeast || petName !== "神兽青蛇") return false;
+
+        const countedSkillCount = row.skills.filter(isCountedSkill).length;
+        const text = row.skills.join("、");
+        const hasCoreDirectionSkill = [
+          "高级必杀",
+          "高级连击",
+          "高级强力",
+          "高级偷袭",
+          "高级法术暴击",
+          "高级法术连击",
+          "高级灵蕴",
+          "剑气四射",
+          "高级隐身",
+        ].some((skill) => text.includes(skill));
+        return countedSkillCount <= 5 && !hasCoreDirectionSkill;
+      }
+
+      function isPendingBookRow(row) {
+        return row?.analysis?.primary === "待打书";
       }
 
       function classifyComparisonRow(row) {
@@ -2393,7 +3576,7 @@
             primary: "待打书",
             tone: "pending",
             tags: unique(["待打书", isBeast ? "神兽" : ""]),
-            advice: "技能格空位较多，按待打书半成品看，先不按最终定位评价强弱。",
+            advice: "技能未成型或空位较多，按待打书半成品看，先不按最终定位评价强弱。",
           };
         }
         const forcedRole = petName === "桃花精灵" ? "千速" : ["赤炎童子", "冥卫"].includes(petName) ? "卡速" : "";
@@ -2406,8 +3589,8 @@
           };
         }
         const hasSword = text.includes("剑气四射");
-        const hasSpecialMagic = ["涡轮火", "分水神剑", "雷利风行", "山崩地倾"].some((skill) => text.includes(skill));
-        const hasNormalMagic = ["红莲业火", "葫芦仙法"].some((skill) => text.includes(skill));
+        const hasSpecialMagic = ["涡轮火", "分水神剑", "雷利风行", "山崩地倾", "葫芦仙法"].some((skill) => text.includes(skill));
+        const hasNormalMagic = ["红莲业火"].some((skill) => text.includes(skill));
         const hasMagicSkill = hasSpecialMagic || hasNormalMagic || text.includes("法术") || text.includes("法连") || text.includes("法爆") || text.includes("灵蕴");
         const hasAdvancedStealth = text.includes("高级隐身");
 
@@ -2514,6 +3697,8 @@
               magicApt: aptitudeValue(group, "法力资质"),
             };
             row.beastStage = beastStage(row);
+            row.beastStages = beastStageFlags(row);
+            row.beastCost = beastCostSummary(row);
             row.analysis = classifyComparisonRow(row);
             row.searchText = [
               row.datasetLabel,
@@ -2526,6 +3711,8 @@
               row.analysis.primary,
               row.analysis.tags.join(" "),
               row.beastStage,
+              row.beastCost?.detail || "",
+              row.beastCost ? formatWan(row.beastCost.totalWan) : "",
               row.analysis.advice,
               ...row.shots.flatMap((shot) => [shot.id, shot.file, shot.note]),
               ...statsSearchText(row.stats),
@@ -2570,28 +3757,28 @@
             title: "法宝宝",
             count: roleCount(rows, ["特殊法", "普通群法", "普通法"]),
             detail: topRows(rows.filter((row) => ["特殊法", "普通群法", "普通法"].includes(row.analysis.primary)), "spirit")
-              .map((row) => `${row.datasetLabel} ${row.pet}(${row.spirit})`)
+              .map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}(${row.spirit})`)
               .join("；") || "暂无",
           },
           {
             title: "物理宝宝",
             count: roleCount(rows, ["剑气", "全力单攻", "特殊单攻", "隐攻"]),
             detail: topRows(rows.filter((row) => ["剑气", "全力单攻", "特殊单攻", "隐攻"].includes(row.analysis.primary)), "attack")
-              .map((row) => `${row.datasetLabel} ${row.pet}(${row.attack})`)
+              .map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}(${row.attack})`)
               .join("；") || "暂无",
           },
           {
             title: "卡速 / 千速",
             count: roleCount(rows, ["卡速", "千速"]),
             detail: topRows(rows.filter((row) => row.analysis.tags.includes("卡速") || row.analysis.tags.includes("千速")), "speed")
-              .map((row) => `${row.datasetLabel} ${row.pet}(${row.speed})`)
+              .map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}(${row.speed})`)
               .join("；") || "暂无",
           },
           {
             title: "神兽",
             count: roleCount(rows, ["神兽"]),
             detail: topRows(rows.filter((row) => row.analysis.tags.includes("神兽")), "talent")
-              .map((row) => `${row.datasetLabel} ${row.pet}(${row.talent || "无天资"})`)
+              .map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}(${row.talent || "无天资"})`)
               .join("；") || "暂无",
           },
         ];
@@ -2613,10 +3800,10 @@
         const speedTop = topRows(rows.filter((row) => row.analysis.tags.includes("卡速") || row.analysis.tags.includes("千速")), "speed", 4);
         const beastTop = topRows(rows.filter((row) => row.analysis.tags.includes("神兽")), "talent", 4);
         const lines = [
-          ["法系候选", magicTop.map((row) => `${row.datasetLabel} ${row.pet}：灵力 ${row.spirit}，${row.analysis.primary}`).join("；")],
-          ["物理候选", physicalTop.map((row) => `${row.datasetLabel} ${row.pet}：攻击 ${row.attack}，${row.analysis.primary}`).join("；")],
-          ["速度候选", speedTop.map((row) => `${row.datasetLabel} ${row.pet}：速度 ${row.speed}，${row.analysis.primary}`).join("；")],
-          ["神兽候选", beastTop.map((row) => `${row.datasetLabel} ${row.pet}：天资 ${row.talent || "-"}，${row.bloodline || "无血脉"}`).join("；")],
+          ["法系候选", magicTop.map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}：灵力 ${row.spirit}，${row.analysis.primary}`).join("；")],
+          ["物理候选", physicalTop.map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}：攻击 ${row.attack}，${row.analysis.primary}`).join("；")],
+          ["速度候选", speedTop.map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}：速度 ${row.speed}，${row.analysis.primary}`).join("；")],
+          ["神兽候选", beastTop.map((row) => `${row.datasetLabel} ${displayPetName(row.pet)}：天资 ${row.talent || "-"}，${row.bloodline || "无血脉"}`).join("；")],
         ];
 
         return `<div class="insight-list">${lines
@@ -2624,8 +3811,335 @@
           .join("")}</div>`;
       }
 
-      function renderComparisonTable(rows, query) {
-        return `<div class="table-wrap">
+      function compareSpeciesData(rows) {
+        const byName = new Map();
+        rows.forEach((row) => {
+          if (!byName.has(row.cleanName)) byName.set(row.cleanName, []);
+          byName.get(row.cleanName).push(row);
+        });
+        return [...byName.entries()]
+          .map(([name, items]) => ({
+            name,
+            items,
+            folders: unique(items.map((item) => item.datasetLabel)).join("、"),
+            roles: unique(items.flatMap((item) => item.analysis.tags)).join("、"),
+            bestTalent: topRows(items, "talent", 1)[0],
+            bestAttack: topRows(items, "attack", 1)[0],
+            bestSpeed: topRows(items, "speed", 1)[0],
+            bestSpirit: topRows(items, "spirit", 1)[0],
+          }))
+          .sort((a, b) => b.items.length - a.items.length || b.bestTalent.talent - a.bestTalent.talent)
+          .slice(0, 12);
+      }
+
+      function renderCompareModeTabs(rows) {
+        const counts = {
+          focus: "4类",
+          folders: unique(rows.map((row) => row.datasetLabel)).length,
+          records: rows.length,
+          species: compareSpeciesData(rows).length,
+        };
+        const modes = [
+          ["focus", "推荐清单"],
+          ["folders", "目录概览"],
+          ["records", "全记录"],
+          ["species", "同名对比"],
+        ];
+        return `<div class="compare-mode-tabs">${modes
+          .map(([key, label]) => `<button class="compare-mode-tab${activeCompareMode === key ? " active" : ""}" type="button" data-compare-mode="${key}">${label}<span>${counts[key]}</span></button>`)
+          .join("")}</div>`;
+      }
+
+      function compareMetricForRow(row) {
+        if (row.analysis.tags.includes("神兽") && row.talent) return { label: "天资", value: row.talent };
+        if (["特殊法", "普通群法", "普通法"].includes(row.analysis.primary)) return { label: "灵力", value: row.spirit };
+        if (["剑气", "全力单攻", "特殊单攻", "隐攻"].includes(row.analysis.primary)) return { label: "攻击", value: row.attack };
+        if (row.analysis.tags.includes("卡速") || row.analysis.tags.includes("千速")) return { label: "速度", value: row.speed };
+        return { label: "技能", value: row.skillCount || "-" };
+      }
+
+      function renderCompareCandidate(row, metric, metricLabel, query) {
+        const value = row[metric] || "-";
+        return `<article class="compare-candidate">
+          <div>
+            <div class="compare-candidate-title">
+              <span class="tag">${row.datasetLabel}</span>
+              <strong>${highlight(displayPetName(row.pet), query)}</strong>
+            </div>
+            <div class="compare-candidate-meta">
+              ${renderRoleTags(row, query)}
+              ${renderMetricLine(row)}
+              <div class="compare-candidate-skills">${highlight(row.keySkills || "暂无关键技能", query)}</div>
+            </div>
+          </div>
+          <div class="compare-candidate-score">
+            <span>${metricLabel}</span>
+            <b>${highlight(String(value), query)}</b>
+          </div>
+        </article>`;
+      }
+
+      function renderCompareFocusCards(rows, query) {
+        const usableRows = rows.filter((row) => !isPendingBookRow(row));
+        const groups = [
+          {
+            title: "法系先看",
+            count: roleCount(rows, ["特殊法", "普通群法", "普通法"]),
+            rows: topRows(usableRows.filter((row) => ["特殊法", "普通群法", "普通法"].includes(row.analysis.primary)), "spirit", 4),
+            metric: "spirit",
+            metricLabel: "灵力",
+          },
+          {
+            title: "物理先看",
+            count: roleCount(rows, ["剑气", "全力单攻", "特殊单攻", "隐攻"]),
+            rows: topRows(usableRows.filter((row) => ["剑气", "全力单攻", "特殊单攻", "隐攻"].includes(row.analysis.primary)), "attack", 4),
+            metric: "attack",
+            metricLabel: "攻击",
+          },
+          {
+            title: "速度先看",
+            count: roleCount(rows, ["卡速", "千速"]),
+            rows: topRows(usableRows.filter((row) => row.analysis.tags.includes("卡速") || row.analysis.tags.includes("千速")), "speed", 4),
+            metric: "speed",
+            metricLabel: "速度",
+          },
+          {
+            title: "神兽先看",
+            count: roleCount(rows, ["神兽"]),
+            rows: topRows(usableRows.filter((row) => row.analysis.tags.includes("神兽")), "talent", 4),
+            metric: "talent",
+            metricLabel: "天资",
+          },
+        ];
+        return `<div class="compare-focus-grid">${groups
+          .map(
+            (group) => `<article class="compare-focus-card">
+              <div class="compare-focus-head">
+                <h3>${group.title}</h3>
+                <span class="compare-focus-count">${group.count} 只</span>
+              </div>
+              <div class="compare-candidate-list">
+                ${group.rows.length ? group.rows.map((row) => renderCompareCandidate(row, group.metric, group.metricLabel, query)).join("") : '<div class="same">暂无匹配记录</div>'}
+              </div>
+            </article>`
+          )
+          .join("")}</div>`;
+      }
+
+      function renderFolderBestLine(label, row, metric, metricLabel, query) {
+        if (!row) return `<div class="compare-best-row"><b>${label}</b><span>暂无</span></div>`;
+        return `<div class="compare-best-row"><b>${label}</b><span>${highlight(displayPetName(row.pet), query)}｜${metricLabel} ${highlight(String(row[metric] || "-"), query)}｜${highlight(row.analysis.primary, query)}</span></div>`;
+      }
+
+      function renderFolderOverviewCards(rows, query) {
+        return `<div class="compare-folder-grid">${datasets
+          .map((dataset) => {
+            const items = rows.filter((row) => row.datasetKey === dataset.key);
+            const usable = items.filter((row) => !isPendingBookRow(row));
+            const magic = topRows(usable.filter((row) => ["特殊法", "普通群法", "普通法"].includes(row.analysis.primary)), "spirit", 1)[0];
+            const physical = topRows(usable.filter((row) => ["剑气", "全力单攻", "特殊单攻", "隐攻"].includes(row.analysis.primary)), "attack", 1)[0];
+            const speed = topRows(usable.filter((row) => row.analysis.tags.includes("卡速") || row.analysis.tags.includes("千速")), "speed", 1)[0];
+            return `<article class="compare-folder-card">
+              <div class="compare-folder-head">
+                <h3>${dataset.label}</h3>
+                <span class="compare-folder-count">${items.length} 组</span>
+              </div>
+              <div class="compare-folder-stats">
+                <span class="compare-mini-stat">神兽 <b>${items.filter((row) => row.analysis.tags.includes("神兽")).length}</b></span>
+                <span class="compare-mini-stat">待确认 <b>${items.filter((row) => row.skills.some(isPending)).length}</b></span>
+                <span class="compare-mini-stat">截图 <b>${items.reduce((sum, row) => sum + row.shots.length, 0)}</b></span>
+              </div>
+              <div class="compare-folder-best">
+                ${renderFolderBestLine("法系", magic, "spirit", "灵力", query)}
+                ${renderFolderBestLine("物理", physical, "attack", "攻击", query)}
+                ${renderFolderBestLine("速度", speed, "speed", "速度", query)}
+              </div>
+            </article>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function renderCompareRecordCards(rows, query) {
+        return `<div class="compare-record-list">${rows
+          .map((row) => {
+            const pendingBook = isPendingBookRow(row);
+            const score = compareMetricForRow(row);
+            return `<article class="compare-record-card">
+              <div>
+                <div class="compare-record-title">
+                  <span class="tag">${row.datasetLabel}</span>
+                  <strong>${highlight(displayPetName(row.pet), query)}</strong>
+                </div>
+                <div class="compare-record-meta">
+                  ${renderRoleTags(row, query)}
+                  ${pendingBook ? '<span class="matrix-empty">待打书</span>' : renderMetricLine(row)}
+                  <div class="compare-record-skills">${pendingBook ? "空位较多，先按半成品看" : highlight(row.keySkills || "暂无关键技能", query)}</div>
+                </div>
+              </div>
+              <div class="compare-record-score">
+                <span>${score.label}</span>
+                <b>${highlight(String(score.value), query)}</b>
+              </div>
+            </article>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function renderSpeciesCards(rows, query) {
+        return `<div class="compare-species-grid">${compareSpeciesData(rows)
+          .map(
+            (item) => `<article class="compare-species-card">
+              <div class="compare-species-head">
+                <h3>${highlight(item.name, query)}</h3>
+                <span class="compare-folder-count">${item.items.length} 组</span>
+              </div>
+              <div class="compare-species-stats">
+                <span class="compare-mini-stat">${highlight(item.folders, query)}</span>
+                <span class="compare-mini-stat">${highlight(item.roles || "未归类", query)}</span>
+              </div>
+              <div class="compare-species-best">
+                ${renderFolderBestLine("天资", item.bestTalent, "talent", "天资", query)}
+                ${renderFolderBestLine("攻击", item.bestAttack, "attack", "攻击", query)}
+                ${renderFolderBestLine("速度", item.bestSpeed, "speed", "速度", query)}
+                ${renderFolderBestLine("灵力", item.bestSpirit, "spirit", "灵力", query)}
+              </div>
+            </article>`
+          )
+          .join("")}</div>`;
+      }
+
+      function renderBeastMissingCompact(row, query = "") {
+        if (!row?.beastCost) return "";
+        return row.beastCost.missing.length ? `<span class="beast-missing-text">${highlight(row.beastCost.detail, query)}</span>` : '<span class="beast-complete">已齐</span>';
+      }
+
+      function beastCostRows(rows) {
+        return rows.filter((row) => row.beastCost);
+      }
+
+      function beastCostTotals(beasts) {
+        return {
+          totalWan: beasts.reduce((sum, row) => sum + row.beastCost.totalWan, 0),
+          totalEggs: beasts.reduce((sum, row) => sum + row.beastCost.eggCount, 0),
+          maxRow: [...beasts].sort((a, b) => b.beastCost.totalWan - a.beastCost.totalWan || b.talent - a.talent)[0],
+        };
+      }
+
+      function beastCostRuleStats(beasts) {
+        return beastCostRules.map((rule) => {
+          const count = beasts.filter((row) => row.beastCost.missing.some((item) => item.key === rule.key)).length;
+          return {
+            ...rule,
+            count,
+            totalWan: count * rule.priceWan,
+            totalEggs: count * rule.eggCount,
+          };
+        });
+      }
+
+      function renderBeastStageChips(row) {
+        const flags = row.beastStages || {};
+        return `<div class="beast-stage-list">${beastCostRules
+          .map((rule) => `<span class="beast-stage-chip ${flags[rule.key] ? "done" : "missing"}">${rule.label}${flags[rule.key] ? "有" : "缺"}</span>`)
+          .join("")}</div>`;
+      }
+
+      function renderBeastCostFallback(ruleStats) {
+        const maxWan = Math.max(...ruleStats.map((item) => item.totalWan), 1);
+        return ruleStats
+          .map(
+            (item) => `<div class="beast-bar-row">
+              <b>${item.label}</b>
+              <div class="beast-bar-track" aria-hidden="true"><div class="beast-bar-fill" style="width: ${(item.totalWan / maxWan) * 100}%"></div></div>
+              <span>${formatWan(item.totalWan)}</span>
+            </div>`
+          )
+          .join("");
+      }
+
+      function destroyBeastCostChart() {
+        if (beastCostChart) {
+          beastCostChart.destroy();
+          beastCostChart = null;
+        }
+      }
+
+      function ensureChartLibrary() {
+        if (window.Chart) return Promise.resolve(window.Chart);
+        if (chartLibraryPromise) return chartLibraryPromise;
+        chartLibraryPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js";
+          script.async = true;
+          script.onload = () => (window.Chart ? resolve(window.Chart) : reject(new Error("Chart.js 未加载")));
+          script.onerror = () => reject(new Error("Chart.js 加载失败"));
+          document.head.appendChild(script);
+        });
+        return chartLibraryPromise;
+      }
+
+      function renderBeastCostChart(ruleStats) {
+        const canvas = document.getElementById("beastCostChart");
+        const fallback = document.getElementById("beastCostFallback");
+        if (!canvas || !fallback) {
+          destroyBeastCostChart();
+          return;
+        }
+        fallback.innerHTML = renderBeastCostFallback(ruleStats);
+        fallback.hidden = false;
+        canvas.hidden = false;
+        canvas.style.visibility = "hidden";
+        window.__beastCostChartReady = false;
+        ensureChartLibrary()
+          .then((Chart) => {
+            if (!document.body.contains(canvas)) return;
+            destroyBeastCostChart();
+            beastCostChart = new Chart(canvas, {
+              type: "bar",
+              data: {
+                labels: ruleStats.map((item) => item.label),
+                datasets: [
+                  {
+                    label: "缺口成本（万）",
+                    data: ruleStats.map((item) => item.totalWan),
+                    backgroundColor: ["#2f86d9", "#239b8f", "#b87916", "#7256b8"],
+                    borderRadius: 6,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) => `${context.dataset.label}: ${formatWan(context.parsed.y)}`,
+                    },
+                  },
+                },
+                scales: {
+                  x: { grid: { display: false } },
+                  y: { beginAtZero: true, ticks: { callback: (value) => `${value}万` } },
+                },
+              },
+            });
+            window.__beastCostChartReady = true;
+            fallback.hidden = true;
+            canvas.style.visibility = "visible";
+            canvas.hidden = false;
+          })
+          .catch(() => {
+            destroyBeastCostChart();
+            window.__beastCostChartReady = false;
+            canvas.style.visibility = "";
+            canvas.hidden = true;
+            fallback.hidden = false;
+          });
+      }
+
+      function renderComparisonTable(rows, query, className = "") {
+        return `<div class="table-wrap ${className}">
           <table class="compare-table">
             <thead>
               <tr>
@@ -2641,23 +4155,28 @@
             </thead>
             <tbody>
               ${rows
-                .map(
-                  (row) => `<tr>
+                .map((row) => {
+                  const pendingBook = isPendingBookRow(row);
+                  return `<tr>
                     <td><span class="tag">${row.datasetLabel}</span></td>
                     <td>
-                      <div class="pet-name">${highlight(row.pet, query)}</div>
+                      <div class="pet-name">${highlight(displayPetName(row.pet), query)}</div>
                     </td>
                     <td>${renderRoleTags(row, query)}</td>
                     <td>
-                      <div class="tag">技能数 ${row.skillCount}</div>
-                      <div class="key-skills">${highlight(row.keySkills, query)}</div>
+                      ${
+                        pendingBook
+                          ? '<span class="matrix-empty">-</span>'
+                          : `<div class="tag">技能数 ${row.skillCount}</div>
+                      <div class="key-skills">${highlight(row.keySkills, query)}</div>`
+                      }
                     </td>
-                    <td>${renderMetricLine(row)}</td>
-                    <td>${highlight(`天资 ${row.talent || "-"}｜${row.heart || "未记心色"}｜${row.bloodline || "-"}`, query)}</td>
-                    <td>${highlight(`攻资 ${currentAptitudeValue(row.attackApt) || "-"}｜法资 ${currentAptitudeValue(row.magicApt) || "-"}｜速资 ${currentAptitudeValue(row.speedApt) || "-"}｜寿命 ${row.life || "-"}`, query)}</td>
+                    <td>${pendingBook ? '<span class="matrix-empty">-</span>' : renderMetricLine(row)}</td>
+                    <td><div class="metric-line"><span>天资 <b>${row.talent || "-"}</b></span>${row.heart ? renderHeartChip(row.heart, query) : `<span>${highlight("未记心色", query)}</span>`}<span>${highlight(row.bloodline || "-", query)}</span></div></td>
+                    <td>${pendingBook ? '<span class="matrix-empty">-</span>' : highlight(`攻资 ${currentAptitudeValue(row.attackApt) || "-"}｜法资 ${currentAptitudeValue(row.magicApt) || "-"}｜速资 ${currentAptitudeValue(row.speedApt) || "-"}｜寿命 ${row.life || "-"}`, query)}</td>
                     <td class="advice">${highlight(row.analysis.advice, query)}</td>
-                  </tr>`
-                )
+                  </tr>`;
+                })
                 .join("")}
             </tbody>
           </table>
@@ -2665,26 +4184,8 @@
       }
 
       function renderSpeciesTable(rows, query) {
-        const byName = new Map();
-        rows.forEach((row) => {
-          if (!byName.has(row.cleanName)) byName.set(row.cleanName, []);
-          byName.get(row.cleanName).push(row);
-        });
-        const species = [...byName.entries()]
-          .map(([name, items]) => ({
-            name,
-            items,
-            folders: unique(items.map((item) => item.datasetLabel)).join("、"),
-            roles: unique(items.flatMap((item) => item.analysis.tags)).join("、"),
-            bestTalent: topRows(items, "talent", 1)[0],
-            bestAttack: topRows(items, "attack", 1)[0],
-            bestSpeed: topRows(items, "speed", 1)[0],
-            bestSpirit: topRows(items, "spirit", 1)[0],
-          }))
-          .sort((a, b) => b.items.length - a.items.length || b.bestTalent.talent - a.bestTalent.talent)
-          .slice(0, 12);
-
-        return `<div class="table-wrap">
+        const species = compareSpeciesData(rows);
+        return `<div class="table-wrap compare-desktop-table">
           <table class="compare-table">
             <thead>
               <tr>
@@ -2716,6 +4217,54 @@
         </div>`;
       }
 
+      function renderCompareModeContent(rows, query) {
+        if (!["focus", "folders", "records", "species"].includes(activeCompareMode)) activeCompareMode = "focus";
+        if (activeCompareMode === "folders") {
+          return `<section class="compare-section">
+            <div class="compare-head">
+              <div>
+                <h2>目录概览</h2>
+                <p>按目录汇总数量、神兽、待确认和每类最高候选。</p>
+              </div>
+            </div>
+            ${renderFolderOverviewCards(rows, query)}
+          </section>`;
+        }
+        if (activeCompareMode === "records") {
+          return `<section class="compare-section">
+            <div class="compare-head">
+              <div>
+                <h2>全记录</h2>
+                <p>保留目录、定位、关键技能、面板与资质，按当前搜索结果展示。</p>
+              </div>
+            </div>
+            ${renderCompareRecordCards(rows, query)}
+            ${renderComparisonTable(rows, query, "compare-desktop-table")}
+          </section>`;
+        }
+        if (activeCompareMode === "species") {
+          return `<section class="compare-section">
+            <div class="compare-head">
+              <div>
+                <h2>同名对比</h2>
+                <p>按宠物名聚合，直接看出现目录和最高天资、攻击、速度、灵力。</p>
+              </div>
+            </div>
+            ${renderSpeciesCards(rows, query)}
+            ${renderSpeciesTable(rows, query)}
+          </section>`;
+        }
+        return `<section class="compare-section">
+          <div class="compare-head">
+            <div>
+              <h2>推荐清单</h2>
+              <p>按法系、物理、速度、神兽拆开，只展示每类优先看的候选。</p>
+            </div>
+          </div>
+          ${renderCompareFocusCards(rows, query)}
+        </section>`;
+      }
+
       function renderCompareEmpty(query) {
         return `<section class="empty-state">
           <h2>没有匹配的横向对比结果</h2>
@@ -2724,6 +4273,7 @@
       }
 
       function renderCompare() {
+        destroyBeastCostChart();
         setViewCopy(compareKey);
         const allRows = buildComparisonRows();
         const query = document.getElementById("searchInput").value.trim();
@@ -2732,43 +4282,9 @@
         const pending = visible.filter((row) => row.skills.some(isPending)).length;
 
         document.getElementById("records").innerHTML = visible.length
-          ? `<div class="compare-view">
-              <section class="compare-section">
-                <div class="compare-head">
-                  <div>
-                    <h2>定位汇总</h2>
-                    <p>分类为辅助判断：先看速度面板，再看法系/物理核心技能与面板，神兽作为附加标签保留。</p>
-                  </div>
-                </div>
-                ${renderRoleCards(visible, query)}
-              </section>
-              <section class="compare-section">
-                <div class="compare-head">
-                  <div>
-                    <h2>优先候选</h2>
-                    <p>每类按对应关键面板排序，方便先锁定值得继续看的宝宝。</p>
-                  </div>
-                </div>
-                ${renderInsights(visible, query)}
-              </section>
-              <section class="compare-section">
-                <div class="compare-head">
-                  <div>
-                    <h2>全记录横向表</h2>
-                    <p>保留目录、关键技能、面板与资质，便于跨账号或跨文件夹逐行比较。</p>
-                  </div>
-                </div>
-                ${renderComparisonTable(visible, query)}
-              </section>
-              <section class="compare-section">
-                <div class="compare-head">
-                  <div>
-                    <h2>同名宠物对比</h2>
-                    <p>按宠物名聚合，看同一种宝宝在哪个目录的天资、攻击、速度或灵力更突出。</p>
-                  </div>
-                </div>
-                ${renderSpeciesTable(visible, query)}
-              </section>
+          ? `<div class="compare-view compare-mode-view">
+              ${renderCompareModeTabs(visible)}
+              ${renderCompareModeContent(visible, query)}
             </div>`
           : renderCompareEmpty(query);
 
@@ -2780,6 +4296,272 @@
         document.getElementById("shotLabel").textContent = "截图来源";
         document.getElementById("pendingLabel").textContent = "含待确认记录组";
         document.getElementById("folderLabel").textContent = "覆盖目录数";
+        document.getElementById("notice").hidden = true;
+        renderTabs();
+      }
+
+      function renderBeastCostEmpty(query) {
+        return `<section class="empty-state">
+          <h2>没有匹配的神兽成本结果</h2>
+          <p>当前搜索：<code>${highlight(query, query)}</code>。可搜索目录、神兽名、饰品、进阶、皮肤或金额。</p>
+        </section>`;
+      }
+
+      function renderBeastCostTable(beasts, query) {
+        const rows = [...beasts].sort((a, b) => b.beastCost.totalWan - a.beastCost.totalWan || b.talent - a.talent);
+        return `<div class="table-wrap beast-detail-table">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>目录</th>
+                <th>神兽</th>
+                <th>当前完成</th>
+                <th>还差什么</th>
+                <th>缺蛋</th>
+                <th>差价</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  (row) => `<tr>
+                    <td><span class="tag">${row.datasetLabel}</span></td>
+                    <td><span class="pet-name">${highlight(displayPetName(row.pet), query)}</span><div class="sources">${highlight(row.bloodline || "无血脉", query)}</div></td>
+                    <td>${renderBeastStageChips(row)}</td>
+                    <td>${renderBeastMissingCompact(row, query)}</td>
+                    <td>${row.beastCost.eggCount ? `${row.beastCost.eggCount} 个` : "-"}</td>
+                    <td><strong>${formatWan(row.beastCost.totalWan)}</strong></td>
+                  </tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      function beastCostTypedRows(beasts) {
+        const snakeCounts = new Map();
+        return beasts
+          .map((row) => {
+            let typeKey = "";
+            if (row.cleanName === "神兽青蛇") {
+              const nextCount = (snakeCounts.get(row.datasetKey) || 0) + 1;
+              snakeCounts.set(row.datasetKey, nextCount);
+              typeKey = nextCount === 1 ? "snake1" : nextCount === 2 ? "snake2" : "";
+            } else if (row.cleanName === "神兽龙马") {
+              typeKey = "horse";
+            }
+            return typeKey ? { row, typeKey } : null;
+          })
+          .filter(Boolean);
+      }
+
+      function filteredBeastCostTypedRows(typedRows) {
+        return activeBeastCostType === "all" ? typedRows : typedRows.filter((item) => item.typeKey === activeBeastCostType);
+      }
+
+      function renderBeastCostTypeTabs(typedRows) {
+        const countFor = (key) => (key === "all" ? typedRows.length : typedRows.filter((item) => item.typeKey === key).length);
+        const tabs = [["all", "全部"], ...beastCostTypeDefs.map((item) => [item.key, item.label])];
+        return `<div class="beast-cost-type-tabs">${tabs
+          .map(([key, label]) => `<button class="beast-cost-type-tab${activeBeastCostType === key ? " active" : ""}" type="button" data-beast-cost-type="${key}">${label}<span>${countFor(key)}</span></button>`)
+          .join("")}</div>`;
+      }
+
+      function beastCostMatrixMap(typedRows) {
+        const map = new Map(beastCostTypeDefs.map((type) => [type.key, new Map()]));
+        typedRows.forEach(({ row, typeKey }) => {
+          if (!map.has(typeKey)) map.set(typeKey, new Map());
+          map.get(typeKey).set(row.datasetKey, row);
+        });
+        return map;
+      }
+
+      function renderBeastMatrixMissingCell(row, query) {
+        if (!row) return '<span class="matrix-empty">-</span>';
+        const missing = row.beastCost?.missing || [];
+        const missingHtml = missing.length
+          ? `<div class="beast-matrix-missing-list">${missing.map((rule) => `<span class="beast-matrix-chip">${highlight(rule.label, query)}</span>`).join("")}</div>`
+          : '<span class="beast-matrix-complete">已齐</span>';
+        return `<div class="beast-matrix-cell">
+          <div class="beast-matrix-meta"><span>${highlight(row.analysis.primary, query)}</span></div>
+          ${missingHtml}
+        </div>`;
+      }
+
+      function renderBeastMatrixValueCell(row, kind) {
+        if (!row) return '<span class="matrix-empty">-</span>';
+        if (kind === "eggs") return `<span class="beast-matrix-number">${row.beastCost.eggCount || 0} 个</span>`;
+        if (kind === "cost") return `<span class="beast-matrix-cost">${formatWan(row.beastCost.totalWan)}</span>`;
+        return "";
+      }
+
+      function renderBeastCostMatrix(typedRows, query) {
+        const activeTypes = activeBeastCostType === "all" ? beastCostTypeDefs : beastCostTypeDefs.filter((type) => type.key === activeBeastCostType);
+        const matrix = beastCostMatrixMap(typedRows);
+        const itemRows = [
+          { key: "missing", label: "缺项" },
+          { key: "eggs", label: "缺蛋" },
+          { key: "cost", label: "差价" },
+        ];
+        return `<div class="beast-cost-matrix-wrap">
+          <table class="beast-cost-matrix">
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th>项目</th>
+                ${beastCostFolderOrder.map((folderKey) => `<th>${folderKey}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${activeTypes
+                .map((type) => {
+                  const byFolder = matrix.get(type.key) || new Map();
+                  return itemRows
+                    .map(
+                      (item, index) => `<tr>
+                        ${index === 0 ? `<th class="beast-cost-type-head" rowspan="${itemRows.length}"><strong>${type.label}</strong><span>${type.pet}</span></th>` : ""}
+                        <th class="beast-cost-item-head">${item.label}</th>
+                        ${beastCostFolderOrder
+                          .map((folderKey) => {
+                            const row = byFolder.get(folderKey);
+                            return `<td>${item.key === "missing" ? renderBeastMatrixMissingCell(row, query) : renderBeastMatrixValueCell(row, item.key)}</td>`;
+                          })
+                          .join("")}
+                      </tr>`
+                    )
+                    .join("");
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </div>`;
+      }
+
+      function renderBeastCostGapChips(row, query) {
+        const missing = row.beastCost?.missing || [];
+        if (!missing.length) return '<span class="beast-cost-complete-chip">已齐</span>';
+        return missing
+          .map(
+            (rule) => `<span class="beast-cost-missing-chip">
+              <b>${highlight(rule.label, query)}</b>
+              <span>${rule.eggCount ? `${rule.eggCount}蛋` : "固定价"}</span>
+              <strong>${formatWan(rule.priceWan)}</strong>
+            </span>`
+          )
+          .join("");
+      }
+
+      function renderBeastCostCards(beasts, query) {
+        const rows = [...beasts].sort((a, b) => b.beastCost.totalWan - a.beastCost.totalWan || b.talent - a.talent);
+        return `<div class="beast-cost-list">${rows
+          .map((row) => {
+            const totalWan = row.beastCost.totalWan;
+            const amountClass = totalWan ? "" : " complete";
+            const eggText = row.beastCost.eggCount ? `缺 ${row.beastCost.eggCount} 个神兽蛋` : "不缺神兽蛋";
+            const owned = beastOwnedLabels(row).join("、") || "暂无";
+            return `<article class="beast-cost-card">
+              <div class="beast-cost-main">
+                <div class="beast-cost-name-row">
+                  <span class="tag">${row.datasetLabel}</span>
+                  <strong class="beast-cost-name">${highlight(displayPetName(row.pet), query)}</strong>
+                </div>
+                <div class="beast-cost-meta">
+                  <span>${highlight(row.bloodline || "无血脉", query)}</span>
+                  <span>已完成 ${highlight(owned, query)}</span>
+                </div>
+                <div class="beast-cost-stage-line">${renderBeastStageChips(row)}</div>
+              </div>
+              <div class="beast-cost-gap">
+                <span class="beast-cost-label">还差</span>
+                <div class="beast-cost-missing-grid">${renderBeastCostGapChips(row, query)}</div>
+              </div>
+              <div class="beast-cost-amount${amountClass}">
+                <span>差价</span>
+                <b>${formatWan(totalWan)}</b>
+                <em>${eggText}</em>
+              </div>
+            </article>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function renderBeastCost() {
+        setViewCopy(beastCostKey);
+        const allRows = buildComparisonRows();
+        const query = document.getElementById("searchInput").value.trim();
+        const queryLower = query.toLowerCase();
+        const visible = queryLower ? allRows.filter((row) => row.searchText.includes(queryLower)) : allRows;
+        const beasts = beastCostRows(visible);
+        const typedRows = beastCostTypedRows(beasts);
+        const displayTypedRows = filteredBeastCostTypedRows(typedRows);
+        const displayBeasts = displayTypedRows.map((item) => item.row);
+        const totals = beastCostTotals(displayBeasts);
+        const ruleStats = beastCostRuleStats(displayBeasts);
+        const maxRow = totals.maxRow;
+
+        document.getElementById("records").innerHTML = beasts.length
+          ? `<div class="beast-dashboard">
+              <section class="compare-section beast-cost-section">
+                <div class="compare-head">
+                  <div>
+                    <h2>神兽成本矩阵</h2>
+                    <p>按类型和目录横向看缺项。1蛇/2蛇按每个目录内青蛇出现顺序区分；马为神兽龙马。</p>
+                  </div>
+                </div>
+                ${renderBeastCostTypeTabs(typedRows)}
+                ${renderBeastCostMatrix(displayTypedRows, query)}
+              </section>
+              <section class="beast-layout">
+                <div class="beast-panel">
+                  <div class="beast-panel-head">
+                    <h3>成本拆分</h3>
+                    <span>按缺项汇总</span>
+                  </div>
+                  <div class="beast-chart-box">
+                    <canvas id="beastCostChart" aria-label="神兽缺口成本拆分图"></canvas>
+                    <div id="beastCostFallback" class="beast-bar-list"></div>
+                  </div>
+                </div>
+                <div class="beast-panel">
+                  <div class="beast-panel-head">
+                    <h3>计算规则</h3>
+                    <span>单位：万</span>
+                  </div>
+                  <div class="beast-rule-list">
+                    ${ruleStats
+                      .map(
+                        (item) => `<div class="beast-rule-item">
+                          <b>${item.count}</b>
+                          <span>缺${item.label}</span>
+                          <p>${item.eggCount ? `${item.totalEggs} 个神兽蛋，${formatWan(item.totalWan)}` : `${formatWan(item.totalWan)}，单个 ${formatWan(item.priceWan)}`}</p>
+                        </div>`
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              </section>
+              <section class="compare-section beast-cost-section beast-table-section">
+                <div class="compare-head">
+                  <div>
+                    <h2>表格明细</h2>
+                    <p>和当前开关同源，按差价从高到低排序，适合逐列核对。</p>
+                  </div>
+                </div>
+                ${renderBeastCostTable(displayBeasts, query)}
+              </section>
+            </div>`
+          : renderBeastCostEmpty(query);
+
+        requestAnimationFrame(() => renderBeastCostChart(ruleStats));
+        document.getElementById("groupCount").textContent = formatWan(totals.totalWan);
+        document.getElementById("shotCount").textContent = totals.totalEggs;
+        document.getElementById("pendingCount").textContent = displayBeasts.length;
+        document.getElementById("folderName").textContent = maxRow ? formatWan(maxRow.beastCost.totalWan) : "0万";
+        document.getElementById("groupLabel").textContent = "总缺口";
+        document.getElementById("shotLabel").textContent = "还差神兽蛋";
+        document.getElementById("pendingLabel").textContent = "神兽数量";
+        document.getElementById("folderLabel").textContent = "单只最高";
         document.getElementById("notice").hidden = true;
         renderTabs();
       }
@@ -2810,6 +4592,85 @@
       ];
 
       const matrixOrder = ["FC", "LG1", "PT", "LG2", "MYT"];
+      const skillSortGroups = [
+        [
+          "高级法术暴击",
+          "高级法术连击",
+          "高级法术波动",
+          "高级灵蕴",
+          "高级凝气",
+          "红莲业火",
+          "高级必杀",
+          "高级连击",
+          "高级强力",
+          "高级吸血",
+          "高级偷袭",
+          "高级夜战",
+          "高级追击",
+          "高级气势",
+          "高级狂暴",
+          "高级冲击",
+          "高级先驱",
+          "一马当先",
+        ],
+        [
+          "高级强壮",
+          "高级抵御",
+          "高级防御",
+          "高级幸运",
+          "高级神佑复生",
+          "高级保命",
+          "高级再生",
+          "高级凝神",
+          "高级反震",
+          "高级报复",
+          "高级自愈",
+          "高级水系吸收",
+          "高级火系吸收",
+          "高级土系吸收",
+          "高级雷系吸收",
+          "物抗强化",
+          "双抗之心",
+          "抵御强化",
+        ],
+        [
+          "高级审判",
+          "高级感知",
+          "高级攻坚",
+          "高级驱鬼",
+          "高级隐身",
+          "高级敏捷",
+          "高级勇敢",
+          "高级飞行",
+          "高级毒",
+          "感知强化",
+          "隐身强化",
+          "法连强化",
+          "护盾",
+          "混沌",
+          "围剿",
+          "连环",
+          "恃势",
+          "坚守",
+          "剑锋",
+          "升龙",
+          "顺闪",
+          "先锋",
+          "迁怒",
+          "刺杀",
+          "乘胜",
+          "涡轮火",
+          "雷利风行",
+          "山崩地倾",
+          "分水神剑",
+          "水刃斩",
+          "幽冥之佑",
+          "葫芦仙法",
+          "剑气四射",
+          "生死相依",
+        ],
+      ];
+      const skillSortRank = new Map(skillSortGroups.flatMap((group, groupIndex) => group.map((skill, skillIndex) => [skill, groupIndex * 100 + skillIndex])));
       const matrixSkillOrder = [
         "高级法术暴击",
         "高级法术连击",
@@ -2890,7 +4751,7 @@
 
       function normalizeMatrixSkill(skill) {
         const base = skill
-          .replace(/[（(]符[）)]/g, "")
+          .replace(/[（(](符|驭)[）)]/g, "")
           .replace(/^高级法爆$/, "高级法术暴击")
           .replace(/^小法爆$/, "小法术暴击")
           .replace(/^高级法连$/, "高级法术连击")
@@ -2912,29 +4773,67 @@
           小偷袭: "高级偷袭",
           小感知: "高级感知",
           小审判: "高级审判",
+          小驱鬼: "高级驱鬼",
           小报复: "高级报复",
           小追击: "高级追击",
           小气势: "高级气势",
+          高级水吸收: "高级水系吸收",
+          高级火吸收: "高级火系吸收",
+          高级土吸收: "高级土系吸收",
+          高级雷吸收: "高级雷系吸收",
           小水吸收: "高级水系吸收",
           小火吸收: "高级火系吸收",
+          小土吸收: "高级土系吸收",
+          小雷吸收: "高级雷系吸收",
           小反震: "高级反震",
         };
         return aliases[base] || base;
       }
 
-      function matrixSkillRank(skill) {
+      function skillSortValue(skill) {
         const normalized = normalizeMatrixSkill(skill);
-        const index = matrixSkillOrder.indexOf(normalized);
-        return index === -1 ? 1000 + normalized.charCodeAt(0) : index;
+        const rank = skillSortRank.get(normalized);
+        if (rank !== undefined) return rank;
+        const matrixIndex = matrixSkillOrder.indexOf(normalized);
+        if (matrixIndex !== -1) return 3000 + matrixIndex;
+        if (normalized.startsWith("觉醒")) return 5000;
+        if (normalized === "空") return 6000;
+        return 4000 + normalized.charCodeAt(0);
       }
 
-      function buildMatrixSkillSlots(rows, section) {
+      function sortSkillsByFixedOrder(skills) {
+        return [...skills].sort((a, b) => skillSortValue(a) - skillSortValue(b) || normalizeMatrixSkill(a).localeCompare(normalizeMatrixSkill(b), "zh-Hans-CN"));
+      }
+
+      const matrixBoostSlot = "__matrix_boost__";
+
+      function isMatrixBoostSkill(skill) {
+        const normalized = normalizeMatrixSkill(skill);
+        return normalized.includes("强化") || normalized.includes("之心");
+      }
+
+      function matrixSlotSortValue(slot) {
+        return slot === matrixBoostSlot ? skillSortValue("物抗强化") : skillSortValue(slot);
+      }
+
+      function displayMatrixSlot(slot) {
+        return slot === matrixBoostSlot ? "强化" : displaySkillName(slot);
+      }
+
+      function matrixSkillRank(skill) {
+        return skillSortValue(skill);
+      }
+
+      function buildMatrixSkillSlots(rows, section, options = {}) {
         const skills = rows
-          .filter((row) => section.columns.some((column) => column.match(row)))
+          .filter((row) => !isPendingBookRow(row) && section.columns.some((column) => column.match(row)))
           .flatMap((row) => row.skills)
           .filter(matrixVisibleSkill)
           .map(normalizeMatrixSkill);
-        return unique(skills).sort((a, b) => matrixSkillRank(a) - matrixSkillRank(b) || a.localeCompare(b, "zh-Hans-CN"));
+        const hasBoostSkills = options.combineBoosts && skills.some(isMatrixBoostSkill);
+        const visibleSkills = unique(skills).filter((skill) => !hasBoostSkills || !isMatrixBoostSkill(skill));
+        const slots = hasBoostSkills ? [...visibleSkills, matrixBoostSlot] : visibleSkills;
+        return slots.sort((a, b) => matrixSlotSortValue(a) - matrixSlotSortValue(b) || displayMatrixSlot(a).localeCompare(displayMatrixSlot(b), "zh-Hans-CN"));
       }
 
       function renderMatrixSkillBlock(best, skillSlots) {
@@ -2950,7 +4849,7 @@
             ${skillSlots
               .map((slot) => {
                 const skill = bySlot.get(slot);
-                return `<div class="matrix-skill-cell${skill ? "" : " empty"}">${skill || "-"}</div>`;
+                return `<div class="matrix-skill-cell${skill ? ` ${skillToneClass(skill)}` : " empty"}">${skill ? displaySkillName(skill) : "-"}</div>`;
               })
               .join("")}
           </div>
@@ -2965,9 +4864,12 @@
             <div class="matrix-main">待打书</div>
           </div>`;
         }
+        const stageItems = best.beastStages && beastBaseAptitudes[best.cleanName]
+          ? beastStageRows.map(([label, getter]) => ({ label, value: getter(best) || "-" }))
+          : [];
         const statItems = [
-          { label: "心", value: best.heart || "未记" },
-          { label: "阶段", value: best.beastStage },
+          { label: "心", value: best.heart ? renderHeartChip(best.heart) : "未记" },
+          ...stageItems,
           { label: "气血", value: best.hp || "-" },
           { label: "攻击", value: best.attack || "-" },
           { label: "防御", value: best.defense || "-" },
@@ -3005,12 +4907,30 @@
 
       function matrixSkillMap(record) {
         const bySlot = new Map();
-        if (!record) return bySlot;
+        if (!record || isPendingBookRow(record)) return bySlot;
         record.skills.filter(matrixVisibleSkill).forEach((skill) => {
           const normalized = normalizeMatrixSkill(skill);
           if (!bySlot.has(normalized)) bySlot.set(normalized, skill);
         });
         return bySlot;
+      }
+
+      function matrixBoostValue(record) {
+        if (!record || isPendingBookRow(record)) return "";
+        return sortSkillsByFixedOrder(unique(record.skills.filter(matrixVisibleSkill).filter(isMatrixBoostSkill)))
+          .map(displaySkillName)
+          .join("、");
+      }
+
+      const beastStageRows = [
+        ["饰品", (record) => record.beastStages?.ornament],
+        ["进阶1", (record) => record.beastStages?.advance1],
+        ["进阶2", (record) => record.beastStages?.advance2],
+        ["皮肤", (record) => record.beastStages?.skin],
+      ];
+
+      function hasBeastStageRecord(recordsByFolder) {
+        return [...recordsByFolder.values()].some((record) => record?.beastStages && beastBaseAptitudes[record.cleanName]);
       }
 
       function renderMatrixDetailRow(label, recordsByFolder, valueGetter, rowHeader, rowSpan, className = "") {
@@ -3021,7 +4941,12 @@
             .map((folderKey) => {
               const record = recordsByFolder.get(folderKey);
               const value = record ? valueGetter(record, folderKey) : "";
-              return `<td class="matrix-data-cell">${value || '<span class="matrix-empty">-</span>'}</td>`;
+              const pendingVisibleLabels = ["定位", "饰品", "进阶1", "进阶2", "皮肤"];
+              if (isPendingBookRow(record) && !pendingVisibleLabels.includes(label)) {
+                return `<td class="matrix-data-cell"><span class="matrix-empty">-</span></td>`;
+              }
+              const rendered = label === "心" && value ? renderHeartChip(value) : value;
+              return `<td class="matrix-data-cell">${rendered || '<span class="matrix-empty">-</span>'}</td>`;
             })
             .join("")}
         </tr>`;
@@ -3030,14 +4955,22 @@
       function renderMatrixSkillRow(slot, recordsByFolder, rowHeader, rowSpan, className = "") {
         return `<tr class="${className}">
           ${rowHeader ? `<th class="matrix-row-head" rowspan="${rowSpan}">${rowHeader}</th>` : ""}
-          <th class="matrix-field-head">${slot}</th>
+          <th class="matrix-field-head">${displayMatrixSlot(slot)}</th>
           ${matrixOrder
             .map((folderKey) => {
-              const skill = matrixSkillMap(recordsByFolder.get(folderKey)).get(slot);
-              return `<td class="matrix-data-cell">${skill ? `<span class="matrix-skill-value">${skill}</span>` : '<span class="matrix-empty">-</span>'}</td>`;
+              const record = recordsByFolder.get(folderKey);
+              const skill = slot === matrixBoostSlot ? matrixBoostValue(record) : matrixSkillMap(record).get(slot);
+              return `<td class="matrix-data-cell">${skill ? `<span class="matrix-skill-value ${slot === matrixBoostSlot ? "skill-boost" : skillToneClass(skill)}">${slot === matrixBoostSlot ? skill : displaySkillName(skill)}</span>` : '<span class="matrix-empty">-</span>'}</td>`;
             })
             .join("")}
         </tr>`;
+      }
+
+      function matrixHasSkillSlot(slot, recordsByFolder) {
+        return [...recordsByFolder.values()].some((record) => {
+          if (!record || isPendingBookRow(record)) return false;
+          return slot === matrixBoostSlot ? Boolean(matrixBoostValue(record)) : matrixSkillMap(record).has(slot);
+        });
       }
 
       function aptitudeLimit(value) {
@@ -3047,9 +4980,11 @@
 
       function renderMatrixCategoryRows(rows, column) {
         const recordsByFolder = matrixRecordByFolder(rows, column);
+        const stageRows = hasBeastStageRecord(recordsByFolder) ? beastStageRows : [];
         const statRows = matrixDisplay.stats
           ? [
-              ["阶段", (record) => record.beastStage],
+              ["定位", (record) => record.analysis.primary],
+              ...stageRows,
               ["气血", (record) => record.hp],
               ["攻击", (record) => record.attack],
               ["防御", (record) => record.defense],
@@ -3068,7 +5003,9 @@
               ["寿命", (record) => record.life],
             ]
           : [];
-        const skillSlots = matrixDisplay.skills ? buildMatrixSkillSlots(rows.filter(column.match), { columns: [column] }) : [];
+        const skillSlots = matrixDisplay.skills
+          ? buildMatrixSkillSlots(rows.filter(column.match), { columns: [column] }, { combineBoosts: stageRows.length > 0 }).filter((slot) => matrixHasSkillSlot(slot, recordsByFolder))
+          : [];
         const rowSpan = Math.max(1, statRows.length + aptitudeRows.length + skillSlots.length);
         const outputRows = [];
         let isFirst = true;
@@ -3143,6 +5080,7 @@
       }
 
       function renderMatrix() {
+        destroyBeastCostChart();
         setViewCopy(matrixKey);
         const allRows = buildComparisonRows();
         const query = document.getElementById("searchInput").value.trim();
@@ -3249,17 +5187,17 @@
           .map(
             (shot) => `<div class="shot">
               <span class="shot-id">${shot.id}</span>
-              <img src="${imagePath(shot.file, shot.folder)}" alt="${group.pet} ${shot.file}" loading="lazy" />
+              <img src="${imagePath(shot.file, shot.folder)}" alt="${displayPetName(group.pet)} ${shot.file}" loading="lazy" />
               <div class="file">${highlight(shot.file, query)}</div>
             </div>`
           )
           .join("");
         const skillHtml = `<div class="skills">${group.skills
+          .filter((skill) => skill !== "空")
           .map((skill) => {
-            const classes = ["skill"];
-            if (skill === "空") classes.push("empty");
+            const classes = ["skill", skillToneClass(skill)];
             if (isPending(skill)) classes.push("pending");
-            return `<div class="${classes.join(" ")}">${highlight(skill, query)}</div>`;
+            return `<div class="${classes.join(" ")}">${highlight(displaySkillName(skill), query)}</div>`;
           })
           .join("")}</div>`;
 
@@ -3279,8 +5217,8 @@
           <div class="info">
             <div class="record-head">
               <div class="pet">
-                <h2>${highlight(group.pet, query)}</h2>
-                <p>${highlight(group.meta, query)}${group.heart ? `｜心：${highlight(group.heart, query)}` : ""}</p>
+                <h2>${highlight(displayPetName(group.pet), query)}</h2>
+                <p><span>${highlight(group.meta, query)}</span>${group.heart ? renderHeartChip(group.heart, query) : ""}</p>
               </div>
               <span class="index">${group.id}</span>
             </div>
@@ -3297,13 +5235,17 @@
 
       function renderTabs() {
         const compareActive = activeKey === compareKey ? " active" : "";
+        const beastCostActive = activeKey === beastCostKey ? " active" : "";
         const matrixActive = activeKey === matrixKey ? " active" : "";
         const basicActive = activeKey === basicKey ? " active" : "";
-        const compareCount = buildComparisonRows().length;
+        const comparisonRows = buildComparisonRows();
+        const compareCount = comparisonRows.length;
+        const beastCostCount = beastCostRows(comparisonRows).length;
         const basicCount = datasets.reduce((sum, dataset) => sum + buildGroups(dataset.records).length, 0);
         const basicTabs = document.getElementById("basicTabs");
         document.getElementById("tabs").innerHTML = [
           `<button class="tab${compareActive}" type="button" data-folder="${compareKey}">横向对比<span>${compareCount}</span></button>`,
+          `<button class="tab${beastCostActive}" type="button" data-folder="${beastCostKey}">神兽成本<span>${beastCostCount}</span></button>`,
           `<button class="tab${matrixActive}" type="button" data-folder="${matrixKey}">矩阵对比<span>${matrixColumns.length}</span></button>`,
           `<button class="tab${basicActive}" type="button" data-folder="${basicKey}">基础资料<span>${basicCount}</span></button>`,
         ]
@@ -3333,10 +5275,15 @@
           renderCompare();
           return;
         }
+        if (activeKey === beastCostKey) {
+          renderBeastCost();
+          return;
+        }
         if (activeKey === matrixKey) {
           renderMatrix();
           return;
         }
+        destroyBeastCostChart();
         setViewCopy(basicKey);
         const dataset = datasets.find((item) => item.key === activeFolderKey) || datasets[0];
         const groups = buildGroups(dataset.records);
@@ -3375,7 +5322,9 @@
       document.getElementById("tabs").addEventListener("click", (event) => {
         const tab = event.target.closest("[data-folder]");
         if (!tab) return;
-        activeKey = tab.dataset.folder;
+        const nextKey = tab.dataset.folder;
+        if (nextKey === compareKey && activeKey !== compareKey) activeCompareMode = "focus";
+        activeKey = nextKey;
         document.getElementById("searchInput").value = "";
         render();
       });
@@ -3387,9 +5336,21 @@
         render();
       });
       document.getElementById("records").addEventListener("click", (event) => {
+        const compareTab = event.target.closest("[data-compare-mode]");
+        const beastCostTab = event.target.closest("[data-beast-cost-type]");
         const tab = event.target.closest("[data-matrix-section]");
         const density = event.target.closest("[data-matrix-density]");
-        if (!tab && !density) return;
+        if (!compareTab && !beastCostTab && !tab && !density) return;
+        if (compareTab) {
+          activeCompareMode = compareTab.dataset.compareMode;
+          renderCompare();
+          return;
+        }
+        if (beastCostTab) {
+          activeBeastCostType = beastCostTab.dataset.beastCostType;
+          renderBeastCost();
+          return;
+        }
         if (tab) activeMatrixSectionKey = tab.dataset.matrixSection;
         if (density) matrixDensity = density.dataset.matrixDensity;
         renderMatrix();
