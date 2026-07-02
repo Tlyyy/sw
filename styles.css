@@ -84,6 +84,61 @@ p {
   background: var(--surface);
 }
 
+.portal-panel {
+  border-color: #b8d3ea;
+  background: linear-gradient(180deg, #fff 0, #f4faff 100%);
+}
+
+.portal-panel h2 {
+  margin-bottom: 8px;
+  color: #153b61;
+  font-size: 16px;
+}
+
+.portal-panel p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.portal-link,
+.top-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #153b61;
+  border-radius: 7px;
+  color: #fff;
+  background: #153b61;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.portal-link {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.top-link {
+  white-space: nowrap;
+}
+
+.top-link.secondary {
+  border-color: #c8ddec;
+  color: #285275;
+  background: #fff;
+}
+
+.top-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .search-label {
   display: block;
   margin-bottom: 8px;
