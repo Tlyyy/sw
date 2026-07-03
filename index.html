@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>幻唐志技能库</title>
+    <title>幻唐志工具台</title>
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -12,14 +13,14 @@
         <div class="brand">
           <div class="brand-mark">技</div>
           <div>
-            <h1>技能库</h1>
-            <p>图标识别与确认</p>
+            <h1>幻唐志工具台</h1>
+            <p>技能图标 / 神兽排期</p>
           </div>
         </div>
 
         <section class="panel">
-          <label class="search-label" for="searchInput">搜索</label>
-          <input id="searchInput" type="search" placeholder="搜索技能名、分类" />
+          <label class="search-label" for="searchInput">当前分类搜索</label>
+          <input id="searchInput" type="search" placeholder="搜索技能名、状态或备注" autocomplete="off" />
         </section>
 
         <section class="panel stats-panel">
@@ -34,13 +35,13 @@
         </section>
 
         <section class="panel note-panel">
-          <h2>记录规则</h2>
-          <p>技能按兽决、御兽、强化技能分组。所有新识别条目先标为待确认，确认后再锁定。</p>
+          <h2>图标库状态</h2>
+          <p>技能按兽决、御兽、强化技能分组。这里用于快速查图标、名称和识别备注。</p>
         </section>
 
         <section class="panel portal-panel">
           <h2>神兽任务查询</h2>
-          <p>查看 1蛇、2蛇、马的成本、任务排期和每个账号资源。手机和电脑都可打开。</p>
+          <p>查看 1蛇、2蛇、马的成本、任务排期和账号资源，手机和电脑都可打开。</p>
           <a class="portal-link" href="./pet-recognition.html">打开神兽查询台</a>
         </section>
       </aside>
@@ -48,8 +49,8 @@
       <section class="content">
         <header class="topbar">
           <div>
-            <h2>技能库</h2>
-            <p>来源：<code>图片/技能库</code>，逐张处理图标后在这里确认。</p>
+            <h2>技能图标库</h2>
+            <p>来源：<code>图片/技能库</code>。先选分类，再按名称、状态或备注过滤。</p>
           </div>
           <div class="top-actions">
             <a class="top-link" href="./pet-recognition.html">神兽查询台</a>

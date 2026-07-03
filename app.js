@@ -6,6 +6,7 @@ const totalCount = document.querySelector("#totalCount");
 const categoryCount = document.querySelector("#categoryCount");
 
 const skillTypes = ["兽决", "御兽", "强化技能"];
+const skillCounts = Object.fromEntries(skillTypes.map((type) => [type, skillLibrary.filter((skill) => skill.type === type).length]));
 let currentSkillType = "兽决";
 
 function escapeHtml(value) {
@@ -23,8 +24,8 @@ function renderTabs() {
       ${skillTypes
         .map((type) => {
           const active = type === currentSkillType ? " active" : "";
-          const count = skillLibrary.filter((skill) => skill.type === type).length;
-          return `<button class="skill-tab${active}" type="button" data-skill-type="${escapeHtml(type)}" role="tab" aria-selected="${type === currentSkillType}">${escapeHtml(type)} <span>${count}</span></button>`;
+          const selected = type === currentSkillType;
+          return `<button class="skill-tab${active}" type="button" data-skill-type="${escapeHtml(type)}" role="tab" aria-selected="${selected}" tabindex="${selected ? "0" : "-1"}">${escapeHtml(type)} <span>${skillCounts[type] || 0}</span></button>`;
         })
         .join("")}
     </div>
@@ -94,6 +95,25 @@ cardsEl.addEventListener("click", (event) => {
   if (!tab) return;
   currentSkillType = tab.dataset.skillType;
   render();
+});
+
+cardsEl.addEventListener("keydown", (event) => {
+  const tab = event.target.closest("[data-skill-type]");
+  if (!tab || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const currentIndex = skillTypes.indexOf(currentSkillType);
+  const lastIndex = skillTypes.length - 1;
+  const nextIndex =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? lastIndex
+        : event.key === "ArrowRight"
+          ? (currentIndex + 1) % skillTypes.length
+          : (currentIndex - 1 + skillTypes.length) % skillTypes.length;
+  currentSkillType = skillTypes[nextIndex];
+  render();
+  cardsEl.querySelector(`[data-skill-type="${CSS.escape(currentSkillType)}"]`)?.focus();
 });
 
 render();
