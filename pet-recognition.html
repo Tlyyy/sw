@@ -77,6 +77,7 @@
       let activeMatrixSectionKey = "daily";
       let activeCompareMode = "focus";
       let activeBeastCostType = "all";
+      let activeBeastCostRuleKey = "all";
       let beastCostChart = null;
       let chartLibraryPromise = null;
       let beastTaskInputTimer = null;
@@ -763,6 +764,19 @@
         };
       }
 
+      function beastCostFocusedTotals(beasts, ruleKey) {
+        if (ruleKey === "all") return beastCostTotals(beasts);
+        const totalWan = beasts.reduce((sum, row) => sum + row.beastCost.missing.filter((rule) => rule.key === ruleKey).reduce((ruleSum, rule) => ruleSum + rule.priceWan, 0), 0);
+        const estimatedWan = beasts.reduce((sum, row) => sum + row.beastCost.estimates.filter((rule) => rule.key === ruleKey).reduce((ruleSum, rule) => ruleSum + rule.priceWan, 0), 0);
+        return {
+          totalWan,
+          estimatedWan,
+          totalWithEstimate: totalWan + estimatedWan,
+          totalEggs: beasts.reduce((sum, row) => sum + row.beastCost.missing.filter((rule) => rule.key === ruleKey).reduce((ruleSum, rule) => ruleSum + rule.eggCount, 0), 0),
+          maxRow: beasts[0],
+        };
+      }
+
       function beastCostRuleStats(beasts) {
         return beastCostRules.map((rule) => {
           const count = beasts.filter((row) => row.beastCost.missing.some((item) => item.key === rule.key)).length;
@@ -1114,6 +1128,14 @@
             <input id="taskWeeklyEggs" type="number" min="0" step="0.5" value="${settings.weeklyEggs}" data-task-setting="weeklyEggs" />
           </div>
           <div class="beast-task-field">
+            <label for="taskThisWeekInnerShards">本周锁片</label>
+            <input id="taskThisWeekInnerShards" type="number" min="0" step="1" value="${settings.thisWeekInnerShards}" data-task-setting="thisWeekInnerShards" />
+          </div>
+          <div class="beast-task-field">
+            <label for="taskWeeklyInnerShards">每周锁片</label>
+            <input id="taskWeeklyInnerShards" type="number" min="0" step="1" value="${settings.weeklyInnerShards}" data-task-setting="weeklyInnerShards" />
+          </div>
+          <div class="beast-task-field">
             <label for="taskEggPrice">蛋价 / 万</label>
             <input id="taskEggPrice" type="number" min="0" step="0.1" value="${settings.eggPriceWan}" data-task-setting="eggPriceWan" />
           </div>
@@ -1130,6 +1152,7 @@
             <span>账号</span>
             <span>银子</span>
             <span>神兽蛋</span>
+            <span>内丹锁片</span>
             <span>折算合计</span>
           </div>
           ${beastCostFolderOrder
@@ -1155,14 +1178,29 @@
                   <span class="beast-resource-unit">个</span>
                 </span>
               </label>
+              <label class="beast-resource-row">
+                <span class="beast-resource-label">锁片</span>
+                <span class="beast-resource-control">
+                  <input type="number" min="0" step="1" value="${resource.innerShardCount}" aria-label="${folderKey} 神兽内丹锁片" data-task-resource="${folderKey}" data-task-resource-field="innerShardCount" />
+                  <span class="beast-resource-unit">片</span>
+                </span>
+              </label>
               <div class="beast-resource-total">
                 <span>折算合计</span>
                 <b>${formatWan(availableWan)}</b>
               </div>
-              <div class="beast-resource-formula">银子 + 神兽蛋 x ${formatWan(state.settings.eggPriceWan)}</div>
+              <div class="beast-resource-formula">银子 + 神兽蛋 x ${formatWan(state.settings.eggPriceWan)}；锁片单独排期</div>
             </div>`;
           })
           .join("")}</div>`;
+      }
+
+      function formatBeastTaskAmount(task) {
+        return task.resourceType === "innerShard" ? `${task.shardCount}片` : formatWan(task.priceWan);
+      }
+
+      function formatBeastTaskDefault(task) {
+        return task.resourceType === "innerShard" ? `默认 ${task.baseShardCount}片` : `默认 ${formatWan(task.basePriceWan)}`;
       }
 
       function renderBeastTaskAccount(plan) {
@@ -1172,7 +1210,8 @@
         const nextTasks = plan.tasks
           .filter((task) => !task.done)
           .slice(0, 2)
-          .map((task) => `${taskTypeLabel(task.typeKey)} ${task.action.label} ${formatWan(task.priceWan)}`);
+          .map((task) => `${taskTypeLabel(task.typeKey)} ${task.action.label} ${formatBeastTaskAmount(task)}`);
+        const shardMeta = plan.missingShardCount ? `<span>还差锁片 ${plan.missingShardCount}片</span>` : "";
         return `<details class="beast-task-account">
           <summary class="beast-task-account-head">
             <div class="beast-task-account-title">
@@ -1181,8 +1220,10 @@
             </div>
             <div class="beast-task-account-meta">
               <span>当前折算 ${formatWan(plan.availableWan)}</span>
+              <span>锁片 ${plan.availableShards}/${beastInnerShardRequirement}</span>
               <span>剩余 ${remainingCount}/${plan.tasks.length} 项</span>
               <span>还需 ${formatWan(plan.remainingWan)}</span>
+              ${shardMeta}
             </div>
             <div class="beast-task-finish">预计完成 ${plan.finishDate}</div>
             <span class="beast-task-toggle" aria-hidden="true"></span>
@@ -1193,16 +1234,20 @@
               .map((task) => {
                 const typeLabel = taskTypeLabel(task.typeKey);
                 const rowClass = task.done ? " done" : "";
+                const amountControl =
+                  task.resourceType === "innerShard"
+                    ? `<span class="beast-task-price beast-task-fixed-amount">${task.shardCount}片</span>`
+                    : `<input class="beast-task-price" type="number" min="0" step="0.5" value="${task.priceWan}" aria-label="${plan.folderKey} ${typeLabel} ${task.action.label} 成本" data-task-price="${task.id}" />`;
                 return `<div class="beast-task-item${rowClass}">
                   <label class="beast-task-check" title="完成后后续日期会重算">
                     <input type="checkbox" ${task.done ? "checked" : ""} data-task-done="${task.id}" />
                   </label>
                   <div class="beast-task-name">
                     <b>${typeLabel} / ${task.action.label}</b>
-                    <span>${displayPetName(task.row.pet)} · ${task.row.analysis.primary} · 默认 ${formatWan(task.basePriceWan)}</span>
+                    <span>${displayPetName(task.row.pet)} · ${task.row.analysis.primary} · ${formatBeastTaskDefault(task)}</span>
                   </div>
                   <span class="role-tag ${task.action.kind === "预估" ? "pending-book" : "beast"} beast-task-kind">${task.action.kind}</span>
-                  <input class="beast-task-price" type="number" min="0" step="0.5" value="${task.priceWan}" aria-label="${plan.folderKey} ${typeLabel} ${task.action.label} 成本" data-task-price="${task.id}" />
+                  ${amountControl}
                   <span class="beast-task-date${task.done ? " done" : ""}">${task.dueDate}</span>
                 </div>`;
               })
@@ -1218,12 +1263,14 @@
         const totalTasks = accountPlans.reduce((sum, plan) => sum + plan.tasks.length, 0);
         const doneTasks = accountPlans.reduce((sum, plan) => sum + plan.tasks.filter((task) => task.done).length, 0);
         const totalRemaining = accountPlans.reduce((sum, plan) => sum + plan.remainingWan, 0);
+        const totalMissingShards = accountPlans.reduce((sum, plan) => sum + plan.missingShardCount, 0);
         const weeklyWan = numericOrDefault(state.settings.weeklyEggs, 0) * numericOrDefault(state.settings.eggPriceWan, beastEggPriceWan);
+        const weeklyShards = numericOrDefault(state.settings.weeklyInnerShards, 0);
         return `<section class="compare-section beast-task-section">
           <div class="compare-head">
             <div>
               <h2>神兽任务工作台</h2>
-              <p>先做任务排期，再用下面的成本矩阵核对。勾完成或改成本会保存在本机并重算日期。</p>
+              <p>先做任务排期，再用下面的成本矩阵核对。小马会先凑幻神兽内丹到五技能，再进入打书。</p>
             </div>
             <div class="beast-task-actions">
               <button class="beast-task-reset" type="button" data-beast-task-reset>重置任务修改</button>
@@ -1232,9 +1279,9 @@
           <div class="beast-task-command">
             <div class="beast-task-overview">
               <div class="beast-task-summary-card"><strong>${latestFinish}</strong><span>全部预计完成</span><p>按当前开关和本地任务状态计算。</p></div>
-              <div class="beast-task-summary-card"><strong>${formatWan(totalRemaining)}</strong><span>剩余任务成本</span><p>已完成的任务不再计入。</p></div>
+              <div class="beast-task-summary-card"><strong>${formatWan(totalRemaining)}</strong><span>剩余银蛋成本</span><p>另缺锁片 ${totalMissingShards} 片。</p></div>
               <div class="beast-task-summary-card"><strong>${doneTasks}/${totalTasks}</strong><span>任务完成数</span><p>洗护符和打书可随时勾掉。</p></div>
-              <div class="beast-task-summary-card"><strong>${formatWan(weeklyWan)}</strong><span>每周新增能力</span><p>${state.settings.weeklyEggs} 个蛋 / 周。</p></div>
+              <div class="beast-task-summary-card"><strong>${formatWan(weeklyWan)}</strong><span>每周新增能力</span><p>${state.settings.weeklyEggs} 个蛋 / 周，锁片 ${weeklyShards} 片 / 周。</p></div>
             </div>
             <div class="beast-task-config-panel schedule-panel">
               <h3>排期参数</h3>
@@ -1285,6 +1332,41 @@
         return activeBeastCostType === "all" ? typedRows : typedRows.filter((item) => item.typeKey === activeBeastCostType);
       }
 
+      function beastCostRuleDisplayLabel(rule) {
+        if (!rule) return "全部缺项";
+        if (rule.kind === "estimate") return rule.label;
+        return rule.key === "strengthen" ? rule.label : `缺${rule.label}`;
+      }
+
+      function beastCostRuleMatches(row, ruleKey) {
+        if (ruleKey === "all") return true;
+        return Boolean(row.beastCost?.missing.some((item) => item.key === ruleKey) || row.beastCost?.estimates.some((item) => item.key === ruleKey));
+      }
+
+      function filterBeastCostTypedRowsByRule(typedRows) {
+        return activeBeastCostRuleKey === "all" ? typedRows : typedRows.filter(({ row }) => beastCostRuleMatches(row, activeBeastCostRuleKey));
+      }
+
+      function renderBeastCostRuleFilters(ruleStats, totalCount) {
+        const totalActive = activeBeastCostRuleKey === "all" ? " active" : "";
+        return `<div class="beast-cost-focus-bar" aria-label="成本缺项筛选">
+          <button class="beast-cost-focus${totalActive}" type="button" data-beast-cost-rule="all">
+            <strong>全部缺项</strong>
+            <span>${totalCount} 只</span>
+          </button>
+          ${ruleStats
+            .map((item) => {
+              const active = activeBeastCostRuleKey === item.key ? " active" : "";
+              const disabled = item.count ? "" : " disabled";
+              return `<button class="beast-cost-focus${active}${disabled}" type="button" data-beast-cost-rule="${item.key}" ${item.count ? "" : "disabled"}>
+                <strong>${beastCostRuleDisplayLabel(item)}</strong>
+                <span>${item.count} 只 · ${formatWan(item.totalWan)}</span>
+              </button>`;
+            })
+            .join("")}
+        </div>`;
+      }
+
       function renderBeastCostTypeTabs(typedRows) {
         const countFor = (key) => (key === "all" ? typedRows.length : typedRows.filter((item) => item.typeKey === key).length);
         const tabs = [["all", "全部"], ...beastCostTypeDefs.map((item) => [item.key, item.label])];
@@ -1314,70 +1396,90 @@
         return map;
       }
 
-      function renderBeastMatrixMissingCell(row, query) {
-        if (!row) return '<span class="matrix-empty">-</span>';
-        const missing = row.beastCost?.missing || [];
-        const missingHtml = missing.length
+      function renderBeastMatrixMissingList(row, query, ruleKey = "all") {
+        const allMissing = row.beastCost?.missing || [];
+        const missing = ruleKey === "all" ? allMissing : allMissing.filter((rule) => rule.key === ruleKey);
+        return missing.length
           ? `<div class="beast-matrix-missing-list">${missing.map((rule) => `<span class="beast-matrix-chip">${highlight(rule.label, query)}</span>`).join("")}</div>`
-          : '<span class="beast-matrix-complete">已齐</span>';
-        return `<div class="beast-matrix-cell">
-          <div class="beast-matrix-meta"><span>${highlight(row.analysis.primary, query)}</span></div>
-          ${missingHtml}
-        </div>`;
+          : ruleKey === "all"
+            ? '<span class="beast-matrix-complete">已齐</span>'
+            : "";
       }
 
-      function renderBeastMatrixValueCell(row, kind) {
-        if (!row) return '<span class="matrix-empty">-</span>';
-        if (kind === "eggs") return `<span class="beast-matrix-number">${row.beastCost.eggCount || 0} 个</span>`;
-        if (kind === "confirmedCost") return `<span class="beast-matrix-cost">${formatWan(row.beastCost.totalWan)}</span>`;
-        if (kind === "estimateItems") return renderBeastEstimateCompact(row);
-        if (kind === "estimateCost") return row.beastCost.estimatedWan ? `<span class="beast-matrix-cost estimate">${formatWan(row.beastCost.estimatedWan)}</span>` : '<span class="matrix-empty">-</span>';
-        if (kind === "totalCost") return `<span class="beast-matrix-cost total">${formatWan(row.beastCost.totalWithEstimate)}</span>`;
-        return "";
+      function renderBeastMatrixEstimateList(row, query, ruleKey = "all") {
+        const allEstimates = row.beastCost?.estimates || [];
+        const estimates = ruleKey === "all" ? allEstimates : allEstimates.filter((rule) => rule.key === ruleKey);
+        if (!estimates.length) return "";
+        return `<div class="beast-matrix-missing-list">${estimates
+          .map((rule) => `<span class="beast-matrix-chip estimate">${highlight(rule.label, query)} ${formatWan(rule.priceWan)}</span>`)
+          .join("")}</div>`;
+      }
+
+      function renderBeastDecisionCard(type, folderKey, row, query) {
+        if (!row) {
+          return `<article class="beast-decision-card empty">
+            <div class="beast-decision-head">
+              <span class="tag">${folderKey}</span>
+              <strong>${type.label}</strong>
+            </div>
+            <p>当前筛选下无匹配神兽。</p>
+          </article>`;
+        }
+        const rowTotals = activeBeastCostRuleKey === "all" ? row.beastCost : beastCostFocusedTotals([row], activeBeastCostRuleKey);
+        const totalTone = rowTotals.totalWithEstimate >= 800 ? " high" : rowTotals.totalWithEstimate >= 400 ? " mid" : "";
+        const missingHtml = renderBeastMatrixMissingList(row, query, activeBeastCostRuleKey);
+        const estimateHtml = renderBeastMatrixEstimateList(row, query, activeBeastCostRuleKey);
+        return `<article class="beast-decision-card${totalTone}">
+          <div class="beast-decision-head">
+            <span class="tag">${folderKey}</span>
+            <div>
+              <strong>${type.label} · ${highlight(displayPetName(row.pet), query)}</strong>
+              <span>${highlight(row.analysis.primary, query)} · ${highlight(row.bloodline || "无血脉", query)}</span>
+            </div>
+          </div>
+          <div class="beast-decision-missing">
+            ${missingHtml || estimateHtml ? `${missingHtml}${estimateHtml}` : '<span class="beast-matrix-complete">已齐</span>'}
+          </div>
+          <div class="beast-decision-metrics">
+            <span><b>${rowTotals.eggCount || rowTotals.totalEggs || 0}</b><em>缺蛋</em></span>
+            <span><b>${formatWan(rowTotals.totalWan)}</b><em>确认</em></span>
+            <span><b>${rowTotals.estimatedWan ? formatWan(rowTotals.estimatedWan) : "-"}</b><em>预估</em></span>
+            <span><b>${formatWan(rowTotals.totalWithEstimate)}</b><em>合计</em></span>
+          </div>
+        </article>`;
       }
 
       function renderBeastCostMatrix(typedRows, query) {
         const activeTypes = activeBeastCostType === "all" ? beastCostTypeDefs : beastCostTypeDefs.filter((type) => type.key === activeBeastCostType);
         const matrix = beastCostMatrixMap(typedRows);
-        const itemRows = [
-          { key: "missing", label: "缺项" },
-          { key: "eggs", label: "缺蛋" },
-          { key: "confirmedCost", label: "确认差价" },
-          { key: "estimateItems", label: "预估项" },
-          { key: "estimateCost", label: "预估差价" },
-          { key: "totalCost", label: "预估合计" },
-        ];
-        return `<div class="beast-cost-matrix-wrap">
-          <table class="beast-cost-matrix">
-            <thead>
-              <tr>
-                <th>类型</th>
-                <th>项目</th>
-                ${beastCostFolderOrder.map((folderKey) => `<th>${folderKey}</th>`).join("")}
-              </tr>
-            </thead>
-            <tbody>
-              ${activeTypes
-                .map((type) => {
-                  const byFolder = matrix.get(type.key) || new Map();
-                  return itemRows
-                    .map(
-                      (item, index) => `<tr>
-                        ${index === 0 ? `<th class="beast-cost-type-head" rowspan="${itemRows.length}"><strong>${type.label}</strong><span>${type.pet}</span></th>` : ""}
-                        <th class="beast-cost-item-head">${item.label}</th>
-                        ${beastCostFolderOrder
-                          .map((folderKey) => {
-                            const row = byFolder.get(folderKey);
-                            return `<td>${item.key === "missing" ? renderBeastMatrixMissingCell(row, query) : renderBeastMatrixValueCell(row, item.key)}</td>`;
-                          })
-                          .join("")}
-                      </tr>`
-                    )
-                    .join("");
-                })
-                .join("")}
-            </tbody>
-          </table>
+        const visibleTypes = activeTypes.filter((type) => activeBeastCostRuleKey === "all" || (matrix.get(type.key)?.size || 0));
+        if (!visibleTypes.length) {
+          return `<div class="beast-decision-empty">
+            <h3>当前筛选没有匹配项</h3>
+            <p>可以切回“全部缺项”，或换一个类型/缺项筛选继续看。</p>
+          </div>`;
+        }
+        return `<div class="beast-decision-board">
+          ${visibleTypes
+            .map((type) => {
+              const byFolder = matrix.get(type.key) || new Map();
+              const typeRows = beastCostFolderOrder.map((folderKey) => byFolder.get(folderKey)).filter(Boolean);
+              const typeTotal = beastCostFocusedTotals(typeRows, activeBeastCostRuleKey).totalWithEstimate;
+              const folderKeys = activeBeastCostRuleKey === "all" ? beastCostFolderOrder : beastCostFolderOrder.filter((folderKey) => byFolder.has(folderKey));
+              return `<section class="beast-decision-type">
+                <div class="beast-decision-type-head">
+                  <div>
+                    <h3>${type.label}</h3>
+                    <p>${type.pet}</p>
+                  </div>
+                  <strong>${formatWan(typeTotal)}</strong>
+                </div>
+                <div class="beast-decision-grid">
+                  ${folderKeys.map((folderKey) => renderBeastDecisionCard(type, folderKey, byFolder.get(folderKey), query)).join("")}
+                </div>
+              </section>`;
+            })
+            .join("")}
         </div>`;
       }
 
@@ -1436,24 +1538,29 @@
         const queryLower = query.toLowerCase();
         const allTypedRows = beastCostTypedRows(beastCostRows(allRows));
         const typedRows = queryLower ? allTypedRows.filter(({ row }) => beastCostSearchText(row).includes(queryLower)) : allTypedRows;
-        const displayTypedRows = filteredBeastCostTypedRows(typedRows);
-        const displayBeasts = displayTypedRows.map((item) => item.row);
-        const totals = beastCostTotals(displayBeasts);
-        const ruleStats = beastCostRuleStats(displayBeasts);
-        const estimateStats = beastEstimateRuleStats(displayBeasts);
+        const typeTypedRows = filteredBeastCostTypedRows(typedRows);
+        const baseBeasts = typeTypedRows.map((item) => item.row);
+        const ruleStats = beastCostRuleStats(baseBeasts);
+        const estimateStats = beastEstimateRuleStats(baseBeasts);
         const chartStats = [...ruleStats, ...estimateStats];
+        const displayTypedRows = filterBeastCostTypedRowsByRule(typeTypedRows);
+        const displayBeasts = displayTypedRows.map((item) => item.row);
+        const totals = beastCostFocusedTotals(displayBeasts, activeBeastCostRuleKey);
+        const activeRule = chartStats.find((item) => item.key === activeBeastCostRuleKey);
+        const focusText = activeBeastCostRuleKey === "all" ? "全部缺项" : beastCostRuleDisplayLabel(activeRule);
 
         document.getElementById("records").innerHTML = typedRows.length
           ? `<div class="beast-dashboard">
-              ${renderBeastTaskPlan(displayTypedRows)}
+              ${renderBeastTaskPlan(typeTypedRows)}
               <section class="compare-section beast-cost-section">
                 <div class="compare-head">
                   <div>
-                    <h2>横向成本矩阵</h2>
-                    <p>按类型和目录横向核对确认差价和不确认预估。1蛇/2蛇按每个目录内青蛇出现顺序区分；马为神兽龙马。</p>
+                    <h2>成本决策面板</h2>
+                    <p>先用缺项筛选定位成本来源，再按账号和类型判断优先级。当前聚焦：${focusText}。</p>
                   </div>
                 </div>
                 ${renderBeastCostTypeTabs(typedRows)}
+                ${renderBeastCostRuleFilters(chartStats, baseBeasts.length)}
                 ${renderBeastCostMatrix(displayTypedRows, query)}
               </section>
               <section class="beast-layout">
@@ -1475,25 +1582,26 @@
                   <div class="beast-rule-list">
                     ${chartStats
                       .map(
-                        (item) => `<div class="beast-rule-item${item.kind === "estimate" ? " estimate" : ""}">
+                        (item) => `<button class="beast-rule-item${item.kind === "estimate" ? " estimate" : ""}${activeBeastCostRuleKey === item.key ? " active" : ""}" type="button" data-beast-cost-rule="${item.key}">
                           <b>${item.count}</b>
-                          <span>${item.kind === "estimate" || item.key === "strengthen" ? item.label : `缺${item.label}`}</span>
+                          <span>${beastCostRuleDisplayLabel(item)}</span>
                           <p>${item.kind === "estimate" ? `${item.count} 个，${formatWan(item.totalWan)}，单个 ${formatWan(item.priceWan)}` : item.eggCount ? `${item.totalEggs} 个神兽蛋，${formatWan(item.totalWan)}` : `${formatWan(item.totalWan)}，单个 ${formatWan(item.priceWan)}`}</p>
-                        </div>`
+                        </button>`
                       )
                       .join("")}
                   </div>
                 </div>
               </section>
-              <section class="compare-section beast-cost-section beast-table-section">
-                <div class="compare-head">
+              <details class="compare-section beast-cost-section beast-table-section beast-detail-disclosure">
+                <summary class="beast-detail-summary">
                   <div>
-                    <h2>表格明细</h2>
-                    <p>和当前开关同源，按预估合计从高到低排序，确认差价和不确认预估分开看。</p>
+                    <h2>详细核对</h2>
+                    <p>${displayBeasts.length} 条记录，和当前类型/缺项筛选同源，按预估合计从高到低排序。</p>
                   </div>
-                </div>
+                  <span>展开表格</span>
+                </summary>
                 ${renderBeastCostTable(displayBeasts, query)}
-              </section>
+              </details>
             </div>`
           : renderBeastCostEmpty(query);
 
@@ -2311,10 +2419,11 @@
       document.getElementById("records").addEventListener("click", (event) => {
         const compareTab = event.target.closest("[data-compare-mode]");
         const beastCostTab = event.target.closest("[data-beast-cost-type]");
+        const beastCostRule = event.target.closest("[data-beast-cost-rule]");
         const taskReset = event.target.closest("[data-beast-task-reset]");
         const tab = event.target.closest("[data-matrix-section]");
         const density = event.target.closest("[data-matrix-density]");
-        if (!compareTab && !beastCostTab && !taskReset && !tab && !density) return;
+        if (!compareTab && !beastCostTab && !beastCostRule && !taskReset && !tab && !density) return;
         if (compareTab) {
           activeCompareMode = compareTab.dataset.compareMode;
           renderCompare();
@@ -2322,6 +2431,11 @@
         }
         if (beastCostTab) {
           activeBeastCostType = beastCostTab.dataset.beastCostType;
+          renderBeastCost();
+          return;
+        }
+        if (beastCostRule) {
+          activeBeastCostRuleKey = beastCostRule.dataset.beastCostRule;
           renderBeastCost();
           return;
         }

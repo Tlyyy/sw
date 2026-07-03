@@ -15,6 +15,7 @@ var beastCostTypeDefs = [
 ];
 var beastBookEstimateWan = 200;
 var beastTalismanEstimateWan = 150;
+var beastInnerShardRequirement = 50;
 var beastTalismanMissingByFolder = {
   PT: ["snake1"],
   MYT: ["snake2", "horse"],
@@ -28,18 +29,21 @@ var beastTaskDefaultSettings = {
   startDate: "2026-07-02",
   thisWeekEggs: 2.5,
   weeklyEggs: 16,
+  thisWeekInnerShards: 0,
+  weeklyInnerShards: 2,
   eggPriceWan: beastEggPriceWan,
 };
 var beastTaskDefaultResources = {
-  FC: { silverWan: 148, eggCount: 4 },
-  LG1: { silverWan: 102, eggCount: 6 },
-  PT: { silverWan: 41, eggCount: 3 },
-  LG2: { silverWan: 30, eggCount: 14 },
-  MYT: { silverWan: 3, eggCount: 15 },
+  FC: { silverWan: 148, eggCount: 4, innerShardCount: 26 },
+  LG1: { silverWan: 102, eggCount: 6, innerShardCount: 17 },
+  PT: { silverWan: 41, eggCount: 3, innerShardCount: 14 },
+  LG2: { silverWan: 30, eggCount: 14, innerShardCount: 15 },
+  MYT: { silverWan: 3, eggCount: 15, innerShardCount: 14 },
 };
 var beastTaskTypeOrder = { snake1: 1, snake2: 2, horse: 3 };
 var beastTaskActionOrder = [
   { key: "talisman", label: "洗护符", kind: "预估", sourceKey: "talisman" },
+  { key: "innerDan", label: "幻神兽内丹", kind: "前置", sourceKey: "innerDan", resourceType: "innerShard" },
   { key: "book", label: "打书", kind: "预估", sourceKey: "book" },
   { key: "ornament", label: "饰品", kind: "确认", sourceKey: "ornament" },
   { key: "advance1", label: "进阶1", kind: "确认", sourceKey: "advance1" },
@@ -194,6 +198,27 @@ function taskFinishDate(targetWan, availableWan, settings) {
   return taskDateKey(new Date(weekEnd.getTime() + weeks * 7 * 86400000));
 }
 
+function taskShardFinishDate(targetShards, availableShards, settings) {
+  const startDate = parseTaskDate(settings.startDate);
+  if (targetShards <= availableShards + 0.0001) return taskDateKey(startDate);
+  const weekEnd = taskWeekEnd(startDate);
+  const thisWeekShards = Math.max(0, numericOrDefault(settings.thisWeekInnerShards, 0));
+  if (targetShards <= availableShards + thisWeekShards + 0.0001) return taskDateKey(weekEnd);
+  const weeklyShards = Math.max(0, numericOrDefault(settings.weeklyInnerShards, 0));
+  if (!weeklyShards) return "待补锁片";
+  const weeks = Math.ceil((targetShards - availableShards - thisWeekShards - 0.0001) / weeklyShards);
+  return taskDateKey(new Date(weekEnd.getTime() + weeks * 7 * 86400000));
+}
+
+function taskMaxDateKey(firstDate, secondDate) {
+  if (!firstDate || firstDate === "已完成") return secondDate;
+  if (!secondDate || secondDate === "已完成") return firstDate;
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(firstDate)) return firstDate;
+  if (!datePattern.test(secondDate)) return secondDate;
+  return firstDate > secondDate ? firstDate : secondDate;
+}
+
 function taskId(row, typeKey, actionKey) {
   return `${row.datasetKey}:${typeKey}:${actionKey}`;
 }
@@ -212,6 +237,16 @@ function defaultTaskPrice(row, typeKey, action, settings) {
   return missingRule.eggCount ? missingRule.eggCount * eggPrice : missingRule.priceWan;
 }
 
+function beastInnerDanNeeded(row, typeKey) {
+  const skillCount = Number(row.skillCount);
+  return typeKey === "horse" && isPendingBookRow(row) && (!Number.isFinite(skillCount) || skillCount <= 4);
+}
+
+function defaultTaskShardCount(row, typeKey, action) {
+  if (action.key !== "innerDan") return 0;
+  return beastInnerDanNeeded(row, typeKey) ? beastInnerShardRequirement : 0;
+}
+
 function buildBeastTaskRows(typedRows, state) {
   const settings = state.settings;
   return [...typedRows]
@@ -220,20 +255,27 @@ function buildBeastTaskRows(typedRows, state) {
       beastTaskActionOrder
         .map((action) => {
           const basePriceWan = defaultTaskPrice(row, typeKey, action, settings);
-          if (!basePriceWan) return null;
+          const baseShardCount = defaultTaskShardCount(row, typeKey, action);
+          if (!basePriceWan && !baseShardCount) return null;
           const id = taskId(row, typeKey, action.key);
           const override = state.overrides[id] || {};
-          const priceWan = Math.max(0, numericOrDefault(override.priceWan, basePriceWan));
+          const resourceType = action.resourceType || "wan";
+          const priceWan = resourceType === "innerShard" ? 0 : Math.max(0, numericOrDefault(override.priceWan, basePriceWan));
+          const shardCount = resourceType === "innerShard" ? baseShardCount : 0;
           const done = Boolean(override.done);
           return {
             id,
             row,
             typeKey,
             action,
+            resourceType,
             basePriceWan,
+            baseShardCount,
             priceWan,
+            shardCount,
             done,
             remainingWan: done ? 0 : priceWan,
+            remainingShardCount: done ? 0 : shardCount,
           };
         })
         .filter(Boolean)
@@ -246,22 +288,40 @@ function buildBeastTaskAccountPlans(typedRows, state) {
     .map((folderKey) => {
       const resource = state.resources[folderKey] || beastTaskDefaultResources[folderKey];
       const availableWan = numericOrDefault(resource.silverWan, 0) + numericOrDefault(resource.eggCount, 0) * numericOrDefault(state.settings.eggPriceWan, beastEggPriceWan);
+      const availableShards = numericOrDefault(resource.innerShardCount, 0);
       let cumulativeWan = 0;
+      let cumulativeShards = 0;
       let finishDate = taskDateKey(parseTaskDate(state.settings.startDate));
+      let dependencyDate = finishDate;
       const tasks = taskRows
         .filter((task) => task.row.datasetKey === folderKey)
         .map((task) => {
-          cumulativeWan += task.remainingWan;
-          const dueDate = task.done ? "已完成" : taskFinishDate(cumulativeWan, availableWan, state.settings);
-          if (!task.done) finishDate = dueDate;
-          return { ...task, cumulativeWan, dueDate };
+          let resourceDueDate = finishDate;
+          if (task.resourceType === "innerShard") {
+            cumulativeShards += task.remainingShardCount;
+            resourceDueDate = taskShardFinishDate(cumulativeShards, availableShards, state.settings);
+          } else {
+            cumulativeWan += task.remainingWan;
+            resourceDueDate = taskFinishDate(cumulativeWan, availableWan, state.settings);
+          }
+          const dueDate = task.done ? "已完成" : taskMaxDateKey(resourceDueDate, dependencyDate);
+          if (!task.done) {
+            dependencyDate = taskMaxDateKey(dependencyDate, dueDate);
+            finishDate = taskMaxDateKey(finishDate, dueDate);
+          }
+          return { ...task, cumulativeWan, cumulativeShards, dueDate };
         });
+      const remainingWan = tasks.reduce((sum, task) => sum + task.remainingWan, 0);
+      const remainingShardCount = tasks.reduce((sum, task) => sum + task.remainingShardCount, 0);
       return {
         folderKey,
         resource,
         availableWan,
+        availableShards,
         tasks,
-        remainingWan: tasks.reduce((sum, task) => sum + task.remainingWan, 0),
+        remainingWan,
+        remainingShardCount,
+        missingShardCount: Math.max(0, remainingShardCount - availableShards),
         finishDate,
       };
     })
