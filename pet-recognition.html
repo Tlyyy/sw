@@ -1493,7 +1493,7 @@
       }
 
       .beast-task-resource-grid {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       }
 
       .beast-task-field,
@@ -1504,6 +1504,102 @@
         border: 1px solid #d8e7f2;
         border-radius: 8px;
         background: #f8fcff;
+      }
+
+      .beast-task-resource {
+        gap: 9px;
+        padding: 12px;
+        background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      }
+
+      .beast-resource-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e3edf6;
+      }
+
+      .beast-resource-title strong {
+        color: #153b61;
+        font-size: 16px;
+        font-weight: 950;
+        line-height: 1.2;
+      }
+
+      .beast-resource-title span {
+        color: #708096;
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.2;
+      }
+
+      .beast-resource-row {
+        display: grid;
+        grid-template-columns: 54px minmax(0, 1fr);
+        gap: 8px;
+        align-items: center;
+      }
+
+      .beast-resource-label {
+        color: #53687e;
+        font-size: 12px;
+        font-weight: 950;
+        line-height: 1.2;
+      }
+
+      .beast-resource-control {
+        position: relative;
+        min-width: 0;
+      }
+
+      .beast-resource-control input {
+        padding-right: 34px;
+      }
+
+      .beast-resource-unit {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #708096;
+        font-size: 12px;
+        font-weight: 900;
+        pointer-events: none;
+      }
+
+      .beast-resource-total {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 2px;
+        padding: 9px 10px;
+        border: 1px solid #cfe0ee;
+        border-radius: 7px;
+        background: #eef7ff;
+      }
+
+      .beast-resource-total span {
+        color: #53687e;
+        font-size: 12px;
+        font-weight: 950;
+        line-height: 1.2;
+      }
+
+      .beast-resource-total b {
+        color: #153b61;
+        font-size: 18px;
+        font-weight: 950;
+        line-height: 1.2;
+      }
+
+      .beast-resource-formula {
+        color: #708096;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.35;
       }
 
       .beast-task-field.plan-note {
@@ -4978,10 +5074,29 @@
             const resource = state.resources[folderKey] || beastTaskDefaultResources[folderKey];
             const availableWan = numericOrDefault(resource.silverWan, 0) + numericOrDefault(resource.eggCount, 0) * numericOrDefault(state.settings.eggPriceWan, beastEggPriceWan);
             return `<div class="beast-task-resource">
-              <label>${folderKey} 当前资源</label>
-              <input type="number" min="0" step="0.5" value="${resource.silverWan}" aria-label="${folderKey} 银子" data-task-resource="${folderKey}" data-task-resource-field="silverWan" />
-              <input type="number" min="0" step="0.5" value="${resource.eggCount}" aria-label="${folderKey} 神兽蛋" data-task-resource="${folderKey}" data-task-resource-field="eggCount" />
-              <span class="beast-task-item-type">折算 ${formatWan(availableWan)}</span>
+              <div class="beast-resource-title">
+                <strong>${folderKey}</strong>
+                <span>当前资源</span>
+              </div>
+              <label class="beast-resource-row">
+                <span class="beast-resource-label">银子</span>
+                <span class="beast-resource-control">
+                  <input type="number" min="0" step="0.5" value="${resource.silverWan}" aria-label="${folderKey} 银子" data-task-resource="${folderKey}" data-task-resource-field="silverWan" />
+                  <span class="beast-resource-unit">万</span>
+                </span>
+              </label>
+              <label class="beast-resource-row">
+                <span class="beast-resource-label">神兽蛋</span>
+                <span class="beast-resource-control">
+                  <input type="number" min="0" step="0.5" value="${resource.eggCount}" aria-label="${folderKey} 神兽蛋" data-task-resource="${folderKey}" data-task-resource-field="eggCount" />
+                  <span class="beast-resource-unit">个</span>
+                </span>
+              </label>
+              <div class="beast-resource-total">
+                <span>折算合计</span>
+                <b>${formatWan(availableWan)}</b>
+              </div>
+              <div class="beast-resource-formula">银子 + 神兽蛋 x ${formatWan(state.settings.eggPriceWan)}</div>
             </div>`;
           })
           .join("")}</div>`;
