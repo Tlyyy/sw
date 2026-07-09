@@ -1,5 +1,5 @@
 // Static gem market facts captured from screenshots. Keep this file free of derived calculations and DOM/UI logic.
-var gemMarketSnapshots = [
+window.gemMarketSnapshots = [
   {
     sourceDate: "2026-07-09",
     sourceType: "宝石行情",
@@ -40,5 +40,3 @@ var gemMarketSnapshots = [
     ],
   },
 ];
-
-window.gemMarketSnapshots = gemMarketSnapshots;

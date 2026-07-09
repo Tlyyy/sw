@@ -1,5 +1,5 @@
 // Static gem upgrade facts. Keep this file free of DOM/UI logic.
-var gemUpgradeSteps = [
+window.gemUpgradeSteps = [
   {
     "from": "0",
     "to": "1",
@@ -169,5 +169,3 @@ var gemUpgradeSteps = [
     "total": 24575
   }
 ];
-
-window.gemUpgradeSteps = gemUpgradeSteps;

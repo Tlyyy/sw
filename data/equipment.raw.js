@@ -1,5 +1,5 @@
 // Static equipment and gem recognition facts. Keep this file free of derived calculations and DOM/UI logic.
-var equipmentDatasets = [
+window.equipmentDatasets = [
   {
     "key": "FC",
     "label": "FC",
@@ -960,5 +960,3 @@ var equipmentDatasets = [
     "sourceDate": "2026-07-09"
   }
 ];
-
-window.equipmentDatasets = equipmentDatasets;
