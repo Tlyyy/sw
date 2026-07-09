@@ -33,7 +33,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/FC/宝石/2026-07-09/ScreenShot_2026-07-09_133458_753.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/FC/ScreenShot_2026-07-09_133458_753.png"
+        "legacySourceImage": "图片/旧目录/宝石/FC/ScreenShot_2026-07-09_133458_753.png"
       },
       {
         "slot": "衣服",
@@ -63,7 +63,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/FC/宝石/2026-07-09/ScreenShot_2026-07-09_133516_640.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/FC/ScreenShot_2026-07-09_133516_640.png"
+        "legacySourceImage": "图片/旧目录/宝石/FC/ScreenShot_2026-07-09_133516_640.png"
       },
       {
         "slot": "项链",
@@ -93,7 +93,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/FC/宝石/2026-07-09/ScreenShot_2026-07-09_133522_166.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/FC/ScreenShot_2026-07-09_133522_166.png"
+        "legacySourceImage": "图片/旧目录/宝石/FC/ScreenShot_2026-07-09_133522_166.png"
       },
       {
         "slot": "头盔",
@@ -124,7 +124,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/FC/宝石/2026-07-09/ScreenShot_2026-07-09_133529_815.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/FC/ScreenShot_2026-07-09_133529_815.png"
+        "legacySourceImage": "图片/旧目录/宝石/FC/ScreenShot_2026-07-09_133529_815.png"
       },
       {
         "slot": "腰带",
@@ -156,7 +156,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/FC/宝石/2026-07-09/ScreenShot_2026-07-09_133536_188.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/FC/ScreenShot_2026-07-09_133536_188.png"
+        "legacySourceImage": "图片/旧目录/宝石/FC/ScreenShot_2026-07-09_133536_188.png"
       },
       {
         "slot": "鞋子",
@@ -186,10 +186,10 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/FC/宝石/2026-07-09/ScreenShot_2026-07-09_133543_997.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/FC/ScreenShot_2026-07-09_133543_997.png"
+        "legacySourceImage": "图片/旧目录/宝石/FC/ScreenShot_2026-07-09_133543_997.png"
       }
     ],
-    "legacySource": "图片/宝石/FC",
+    "legacySource": "图片/旧目录/宝石/FC",
     "sourceType": "宝石",
     "sourceDate": "2026-07-09"
   },
@@ -226,7 +226,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG1/宝石/2026-07-09/ScreenShot_2026-07-09_134040_214.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG1/ScreenShot_2026-07-09_134040_214.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG1/ScreenShot_2026-07-09_134040_214.png"
       },
       {
         "slot": "衣服",
@@ -255,7 +255,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG1/宝石/2026-07-09/ScreenShot_2026-07-09_134050_725.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG1/ScreenShot_2026-07-09_134050_725.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG1/ScreenShot_2026-07-09_134050_725.png"
       },
       {
         "slot": "项链",
@@ -284,7 +284,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG1/宝石/2026-07-09/ScreenShot_2026-07-09_134056_823.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG1/ScreenShot_2026-07-09_134056_823.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG1/ScreenShot_2026-07-09_134056_823.png"
       },
       {
         "slot": "头盔",
@@ -315,7 +315,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG1/宝石/2026-07-09/ScreenShot_2026-07-09_134103_336.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG1/ScreenShot_2026-07-09_134103_336.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG1/ScreenShot_2026-07-09_134103_336.png"
       },
       {
         "slot": "腰带",
@@ -346,7 +346,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG1/宝石/2026-07-09/ScreenShot_2026-07-09_134110_760.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG1/ScreenShot_2026-07-09_134110_760.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG1/ScreenShot_2026-07-09_134110_760.png"
       },
       {
         "slot": "鞋子",
@@ -377,10 +377,10 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG1/宝石/2026-07-09/ScreenShot_2026-07-09_134116_636.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG1/ScreenShot_2026-07-09_134116_636.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG1/ScreenShot_2026-07-09_134116_636.png"
       }
     ],
-    "legacySource": "图片/宝石/LG1",
+    "legacySource": "图片/旧目录/宝石/LG1",
     "sourceType": "宝石",
     "sourceDate": "2026-07-09"
   },
@@ -417,7 +417,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/PT/宝石/2026-07-09/ScreenShot_2026-07-09_134241_019.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/PT/ScreenShot_2026-07-09_134241_019.png"
+        "legacySourceImage": "图片/旧目录/宝石/PT/ScreenShot_2026-07-09_134241_019.png"
       },
       {
         "slot": "衣服",
@@ -448,7 +448,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/PT/宝石/2026-07-09/ScreenShot_2026-07-09_134249_427.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/PT/ScreenShot_2026-07-09_134249_427.png"
+        "legacySourceImage": "图片/旧目录/宝石/PT/ScreenShot_2026-07-09_134249_427.png"
       },
       {
         "slot": "项链",
@@ -478,7 +478,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/PT/宝石/2026-07-09/ScreenShot_2026-07-09_134255_588.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/PT/ScreenShot_2026-07-09_134255_588.png"
+        "legacySourceImage": "图片/旧目录/宝石/PT/ScreenShot_2026-07-09_134255_588.png"
       },
       {
         "slot": "头盔",
@@ -508,7 +508,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/PT/宝石/2026-07-09/ScreenShot_2026-07-09_134309_002.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/PT/ScreenShot_2026-07-09_134309_002.png"
+        "legacySourceImage": "图片/旧目录/宝石/PT/ScreenShot_2026-07-09_134309_002.png"
       },
       {
         "slot": "鞋子",
@@ -539,7 +539,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/PT/宝石/2026-07-09/ScreenShot_2026-07-09_134315_807.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/PT/ScreenShot_2026-07-09_134315_807.png"
+        "legacySourceImage": "图片/旧目录/宝石/PT/ScreenShot_2026-07-09_134315_807.png"
       },
       {
         "slot": "腰带",
@@ -569,10 +569,10 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/PT/宝石/2026-07-09/ScreenShot_2026-07-09_134321_712.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/PT/ScreenShot_2026-07-09_134321_712.png"
+        "legacySourceImage": "图片/旧目录/宝石/PT/ScreenShot_2026-07-09_134321_712.png"
       }
     ],
-    "legacySource": "图片/宝石/PT",
+    "legacySource": "图片/旧目录/宝石/PT",
     "sourceType": "宝石",
     "sourceDate": "2026-07-09"
   },
@@ -609,7 +609,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG2/宝石/2026-07-09/ScreenShot_2026-07-09_134334_466.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG2/ScreenShot_2026-07-09_134334_466.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG2/ScreenShot_2026-07-09_134334_466.png"
       },
       {
         "slot": "衣服",
@@ -640,7 +640,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG2/宝石/2026-07-09/ScreenShot_2026-07-09_134343_627.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG2/ScreenShot_2026-07-09_134343_627.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG2/ScreenShot_2026-07-09_134343_627.png"
       },
       {
         "slot": "项链",
@@ -670,7 +670,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG2/宝石/2026-07-09/ScreenShot_2026-07-09_134437_142.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG2/ScreenShot_2026-07-09_134437_142.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG2/ScreenShot_2026-07-09_134437_142.png"
       },
       {
         "slot": "头盔",
@@ -700,7 +700,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG2/宝石/2026-07-09/ScreenShot_2026-07-09_134442_217.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG2/ScreenShot_2026-07-09_134442_217.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG2/ScreenShot_2026-07-09_134442_217.png"
       },
       {
         "slot": "腰带",
@@ -731,7 +731,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG2/宝石/2026-07-09/ScreenShot_2026-07-09_134447_513.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG2/ScreenShot_2026-07-09_134447_513.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG2/ScreenShot_2026-07-09_134447_513.png"
       },
       {
         "slot": "鞋子",
@@ -762,10 +762,10 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/LG2/宝石/2026-07-09/ScreenShot_2026-07-09_134453_022.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/LG2/ScreenShot_2026-07-09_134453_022.png"
+        "legacySourceImage": "图片/旧目录/宝石/LG2/ScreenShot_2026-07-09_134453_022.png"
       }
     ],
-    "legacySource": "图片/宝石/LG2",
+    "legacySource": "图片/旧目录/宝石/LG2",
     "sourceType": "宝石",
     "sourceDate": "2026-07-09"
   },
@@ -802,7 +802,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/MYT/宝石/2026-07-09/ScreenShot_2026-07-09_134517_846.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/MYT/ScreenShot_2026-07-09_134517_846.png"
+        "legacySourceImage": "图片/旧目录/宝石/MYT/ScreenShot_2026-07-09_134517_846.png"
       },
       {
         "slot": "衣服",
@@ -832,7 +832,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/MYT/宝石/2026-07-09/ScreenShot_2026-07-09_134524_940.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/MYT/ScreenShot_2026-07-09_134524_940.png"
+        "legacySourceImage": "图片/旧目录/宝石/MYT/ScreenShot_2026-07-09_134524_940.png"
       },
       {
         "slot": "项链",
@@ -861,7 +861,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/MYT/宝石/2026-07-09/ScreenShot_2026-07-09_134530_146.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/MYT/ScreenShot_2026-07-09_134530_146.png"
+        "legacySourceImage": "图片/旧目录/宝石/MYT/ScreenShot_2026-07-09_134530_146.png"
       },
       {
         "slot": "头盔",
@@ -892,7 +892,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/MYT/宝石/2026-07-09/ScreenShot_2026-07-09_134536_480.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/MYT/ScreenShot_2026-07-09_134536_480.png"
+        "legacySourceImage": "图片/旧目录/宝石/MYT/ScreenShot_2026-07-09_134536_480.png"
       },
       {
         "slot": "腰带",
@@ -922,7 +922,7 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/MYT/宝石/2026-07-09/ScreenShot_2026-07-09_134541_783.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/MYT/ScreenShot_2026-07-09_134541_783.png"
+        "legacySourceImage": "图片/旧目录/宝石/MYT/ScreenShot_2026-07-09_134541_783.png"
       },
       {
         "slot": "鞋子",
@@ -952,10 +952,10 @@ window.equipmentDatasets = [
         "sourceImage": "图片/原始截图/MYT/宝石/2026-07-09/ScreenShot_2026-07-09_134550_647.png",
         "sourceDate": "2026-07-09",
         "sourceType": "宝石",
-        "legacySourceImage": "图片/宝石/MYT/ScreenShot_2026-07-09_134550_647.png"
+        "legacySourceImage": "图片/旧目录/宝石/MYT/ScreenShot_2026-07-09_134550_647.png"
       }
     ],
-    "legacySource": "图片/宝石/MYT",
+    "legacySource": "图片/旧目录/宝石/MYT",
     "sourceType": "宝石",
     "sourceDate": "2026-07-09"
   }

@@ -1009,7 +1009,7 @@ var datasets = [
     label: "FC",
     imageCount: 22,
     source: "图片/识别记录/FC/宠物.md",
-    legacySource: "图片/FC/识别记录.md",
+    legacySource: "图片/旧目录/FC/识别记录.md",
     records,
     note: "FC 已完成识别校对。黄色底为小技能；技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
   },
@@ -1018,7 +1018,7 @@ var datasets = [
     label: "LG1",
     imageCount: 20,
     source: "图片/识别记录/LG1/宠物.md",
-    legacySource: "图片/LG1/识别记录.md",
+    legacySource: "图片/旧目录/LG1/识别记录.md",
     records: lg1Records,
     note: "LG1 已补录同款神兽小马，合并为 10 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
   },
@@ -1027,7 +1027,7 @@ var datasets = [
     label: "LG2",
     imageCount: 22,
     source: "图片/识别记录/LG2/宠物.md",
-    legacySource: "图片/LG2/识别记录.md",
+    legacySource: "图片/旧目录/LG2/识别记录.md",
     records: lg2Records,
     note: "LG2 已按 22 张截图逐张识别，合并为 11 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
   },
@@ -1036,7 +1036,7 @@ var datasets = [
     label: "PT",
     imageCount: 22,
     source: "图片/识别记录/PT/宠物.md",
-    legacySource: "图片/PT/识别记录.md",
+    legacySource: "图片/旧目录/PT/识别记录.md",
     records: ptRecords,
     note: "PT 已按 22 张截图逐张识别，合并为 11 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
   },
@@ -1045,7 +1045,7 @@ var datasets = [
     label: "MYT",
     imageCount: 20,
     source: "图片/识别记录/MYT/宠物.md",
-    legacySource: "图片/MYT/识别记录.md",
+    legacySource: "图片/旧目录/MYT/识别记录.md",
     records: mytRecords,
     note: "MYT 已按 20 张截图逐张识别，合并为 10 组。技能数按全局统一规则，不含空、符、驭、觉醒、强化、之心。",
   },
@@ -1061,7 +1061,7 @@ datasets.forEach((dataset) => {
     const sourceDate = recognitionSourceDate(record.file);
     record.sourceType = "宠物";
     record.sourceDate = sourceDate;
-    record.sourceImage = sourceDate ? `图片/原始截图/${sourceFolder}/宠物/${sourceDate}/${record.file}` : `图片/${sourceFolder}/${record.file}`;
-    record.legacySourceImage = `图片/${sourceFolder}/${record.file}`;
+    record.sourceImage = sourceDate ? `图片/原始截图/${sourceFolder}/宠物/${sourceDate}/${record.file}` : `图片/旧目录/${sourceFolder}/${record.file}`;
+    record.legacySourceImage = `图片/旧目录/${sourceFolder}/${record.file}`;
   });
 });

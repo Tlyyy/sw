@@ -2342,7 +2342,7 @@
           {
             title: "原始截图",
             count: petShotCount + gemShotCount + gemMarketSnapshotData.length,
-            detail: "图片/原始截图/{角色|公共}/{宠物|宝石|宝石行情}/{YYYY-MM-DD}/",
+            detail: "图片/原始截图/{角色|公共}/{宠物|宝石|宝石行情}/{YYYY-MM-DD}/；旧目录已收进 图片/旧目录。",
           },
           {
             title: "识别记录",
