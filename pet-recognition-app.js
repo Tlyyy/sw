@@ -1,8 +1,10 @@
       const compareKey = "COMPARE";
       const beastCostKey = "BEAST_COST";
       const matrixKey = "MATRIX";
+      const gemKey = "GEMS";
       const basicKey = "BASIC";
-      let activeKey = beastCostKey;
+      const sourceKey = "SOURCES";
+      let activeKey = compareKey;
       let activeFolderKey = "FC";
       let activeMatrixSectionKey = "daily";
       let activeCompareMode = "focus";
@@ -17,10 +19,12 @@
         aptitude: true,
         skills: true,
       };
+      const gemAccountDatasets = window.equipmentDatasets || [];
+      const gemMarketSnapshotData = window.gemMarketSnapshots || [];
 
       const viewCopy = {
         [compareKey]: {
-          title: "横向对比",
+          title: "总览",
           description: "跨目录汇总定位、技能、面板和资质，适合先筛出值得继续看的宝宝。",
         },
         [beastCostKey]: {
@@ -31,9 +35,17 @@
           title: "矩阵对比",
           description: "按目录和固定宝宝类型铺开，适合快速看每个账号/目录缺什么、强在哪。",
         },
+        [gemKey]: {
+          title: "升级计划",
+          description: "按账号规划宝石 13 段和神兽任务资金，先看排期，再看明细。",
+        },
         [basicKey]: {
-          title: "基础资料",
+          title: "宠物资料",
           description: "按原始目录查看识别记录、截图来源、面板、资质和完整技能列表。",
+        },
+        [sourceKey]: {
+          title: "基础资料",
+          description: "查看截图证据、识别记录、基础数据和分析模块的分层结构。",
         },
       };
 
@@ -52,6 +64,8 @@
 
       const isPending = (text) => text.includes("待确认") || text.includes("疑似");
       const imagePath = (file, folder = activeFolderKey) => `./图片/${folder}/${file}`;
+      const sourcePath = (source) => (source ? `./${String(source).replaceAll("\\", "/")}` : "");
+      const shotImagePath = (shot) => sourcePath(shot.sourceImage || shot.legacySourceImage) || imagePath(shot.file, shot.folder);
       const isCountedSkill = (skill) =>
         skill !== "空" &&
         !skill.includes("(符)") &&
@@ -502,7 +516,7 @@
           ["records", "全记录"],
           ["species", "同名对比"],
         ];
-        return `<div class="compare-mode-tabs" role="group" aria-label="横向对比模式">
+        return `<div class="compare-mode-tabs" role="group" aria-label="总览模式">
           ${modes
           .map(([key, label]) => `<button class="compare-mode-tab${activeCompareMode === key ? " active" : ""}" type="button" data-compare-mode="${key}" aria-pressed="${activeCompareMode === key}">${label}<span>${counts[key]}</span></button>`)
           .join("")}</div>`;
@@ -965,7 +979,7 @@
 
       function renderCompareEmpty(query) {
         return `<section class="empty-state">
-          <h2>没有匹配的横向对比结果</h2>
+          <h2>没有匹配的总览结果</h2>
           <p>当前搜索：<code>${highlight(query, query)}</code>。可搜索目录、宠物名、技能名或定位标签。</p>
         </section>`;
       }
@@ -2109,6 +2123,10 @@
               id: record.id,
               file: record.file,
               folder: record.sourceFolder,
+              sourceImage: record.sourceImage,
+              sourceDate: record.sourceDate,
+              sourceType: record.sourceType,
+              legacySourceImage: record.legacySourceImage,
               note: record.same,
             });
             return;
@@ -2126,6 +2144,10 @@
                 id: record.id,
                 file: record.file,
                 folder: record.sourceFolder,
+                sourceImage: record.sourceImage,
+                sourceDate: record.sourceDate,
+                sourceType: record.sourceType,
+                legacySourceImage: record.legacySourceImage,
                 note: "主截图",
               },
             ],
@@ -2171,7 +2193,7 @@
           .map(
             (shot) => `<div class="shot">
               <span class="shot-id">${shot.id}</span>
-              <img src="${imagePath(shot.file, shot.folder)}" alt="${displayPetName(group.pet)} ${shot.file}" loading="lazy" />
+              <img src="${shotImagePath(shot)}" alt="${displayPetName(group.pet)} ${shot.file}" loading="lazy" />
               <div class="file">${highlight(shot.file, query)}</div>
             </div>`
           )
@@ -2217,21 +2239,76 @@
         </article>`;
       }
 
+      function gemViewContext() {
+        const beastBudgets = buildGemBeastBudgetByAccount();
+        return {
+          beastBudgets,
+          destroyBeastCostChart,
+          highlight,
+          renderTabs,
+          setViewCopy,
+          viewKey: gemKey,
+        };
+      }
+
+      function buildGemBeastBudgetByAccount() {
+        const state = loadBeastTaskState();
+        const typedRows = beastCostTypedRows(beastCostRows(buildComparisonRows()));
+        const accountPlans = buildBeastTaskAccountPlans(typedRows, state);
+        return Object.fromEntries(
+          beastCostFolderOrder.map((folderKey) => {
+            const plan = accountPlans.find((item) => item.folderKey === folderKey);
+            const resource = plan?.resource || state.resources[folderKey] || beastTaskDefaultResources[folderKey] || {};
+            const eggPriceWan = numericOrDefault(state.settings.eggPriceWan, beastEggPriceWan);
+            const availableWan = plan?.availableWan ?? numericOrDefault(resource.silverWan, 0) + numericOrDefault(resource.eggCount, 0) * eggPriceWan;
+            const remainingWan = plan?.remainingWan || 0;
+            const requiredWan = Math.max(0, remainingWan - availableWan);
+            const tasks = plan?.tasks || [];
+            return [
+              folderKey,
+              {
+                accountKey: folderKey,
+                taskWan: remainingWan,
+                availableWan,
+                requiredWan,
+                taskSilver: Math.round(remainingWan * 10000),
+                availableSilver: Math.round(availableWan * 10000),
+                requiredSilver: Math.round(requiredWan * 10000),
+                missingShardCount: plan?.missingShardCount || 0,
+                taskCount: tasks.length,
+                doneTaskCount: tasks.filter((task) => task.done).length,
+                unfinishedTaskCount: tasks.filter((task) => !task.done).length,
+                finishDate: plan?.finishDate || "已完成",
+              },
+            ];
+          })
+        );
+      }
+
+      function renderGems() {
+        window.GemsView.render(gemViewContext());
+      }
+
       function renderTabs() {
         const compareActive = activeKey === compareKey ? " active" : "";
         const beastCostActive = activeKey === beastCostKey ? " active" : "";
         const matrixActive = activeKey === matrixKey ? " active" : "";
+        const gemActive = activeKey === gemKey ? " active" : "";
         const basicActive = activeKey === basicKey ? " active" : "";
+        const sourceActive = activeKey === sourceKey ? " active" : "";
         const comparisonRows = buildComparisonRows();
         const compareCount = comparisonRows.length;
         const beastCostCount = beastCostRows(comparisonRows).length;
+        const gemCount = gemAccountDatasets.reduce((sum, dataset) => sum + dataset.items.length, 0);
         const basicCount = datasets.reduce((sum, dataset) => sum + buildGroups(dataset.records).length, 0);
         const basicTabs = document.getElementById("basicTabs");
         document.getElementById("tabs").innerHTML = [
-          `<button class="tab${compareActive}" type="button" role="tab" data-folder="${compareKey}" aria-selected="${activeKey === compareKey}" tabindex="${activeKey === compareKey ? "0" : "-1"}">横向对比<span>${compareCount}</span></button>`,
+          `<button class="tab${compareActive}" type="button" role="tab" data-folder="${compareKey}" aria-selected="${activeKey === compareKey}" tabindex="${activeKey === compareKey ? "0" : "-1"}">总览<span>${compareCount}</span></button>`,
+          `<button class="tab${basicActive}" type="button" role="tab" data-folder="${basicKey}" aria-selected="${activeKey === basicKey}" tabindex="${activeKey === basicKey ? "0" : "-1"}">宠物资料<span>${basicCount}</span></button>`,
+          `<button class="tab${gemActive}" type="button" role="tab" data-folder="${gemKey}" aria-selected="${activeKey === gemKey}" tabindex="${activeKey === gemKey ? "0" : "-1"}">升级计划<span>${gemCount}</span></button>`,
           `<button class="tab${beastCostActive}" type="button" role="tab" data-folder="${beastCostKey}" aria-selected="${activeKey === beastCostKey}" tabindex="${activeKey === beastCostKey ? "0" : "-1"}">神兽成本<span>${beastCostCount}</span></button>`,
           `<button class="tab${matrixActive}" type="button" role="tab" data-folder="${matrixKey}" aria-selected="${activeKey === matrixKey}" tabindex="${activeKey === matrixKey ? "0" : "-1"}">矩阵对比<span>${matrixColumns.length}</span></button>`,
-          `<button class="tab${basicActive}" type="button" role="tab" data-folder="${basicKey}" aria-selected="${activeKey === basicKey}" tabindex="${activeKey === basicKey ? "0" : "-1"}">基础资料<span>${basicCount}</span></button>`,
+          `<button class="tab${sourceActive}" type="button" role="tab" data-folder="${sourceKey}" aria-selected="${activeKey === sourceKey}" tabindex="${activeKey === sourceKey ? "0" : "-1"}">基础资料<span>${datasets.length}</span></button>`,
         ]
           .join("");
         basicTabs.hidden = activeKey !== basicKey;
@@ -2254,6 +2331,72 @@
         </section>`;
       }
 
+      function renderSources() {
+        destroyBeastCostChart();
+        setViewCopy(sourceKey);
+        const petShotCount = datasets.reduce((sum, dataset) => sum + dataset.imageCount, 0);
+        const gemShotCount = gemAccountDatasets.reduce((sum, dataset) => sum + dataset.items.length, 0);
+        const marketCount = gemMarketSnapshotData.reduce((sum, snapshot) => sum + snapshot.items.length, 0);
+        const query = document.getElementById("searchInput").value.trim();
+        const cards = [
+          {
+            title: "原始截图",
+            count: petShotCount + gemShotCount + gemMarketSnapshotData.length,
+            detail: "图片/原始截图/{角色|公共}/{宠物|宝石|宝石行情}/{YYYY-MM-DD}/",
+          },
+          {
+            title: "识别记录",
+            count: datasets.length,
+            detail: "图片/识别记录/{角色}/宠物.md 与 宝石.md",
+          },
+          {
+            title: "基础数据",
+            count: gemShotCount + marketCount,
+            detail: "data/equipment.raw.js、data/gem-levels.js、data/gem-market.raw.js；宠物数据仍在 pet-recognition-data.js，并已补 sourceImage 字段。",
+          },
+          {
+            title: "分析与视图",
+            count: 2,
+            detail: "analysis/gem-progress.js 负责宝石累计与银币估算；views/gems-view.js 负责宝石页面展示。",
+          },
+        ].filter((card) => !query || [card.title, card.detail, card.count].join(" ").toLowerCase().includes(query.toLowerCase()));
+
+        document.getElementById("records").innerHTML = `<div class="compare-view compare-mode-view">
+          <section class="compare-section">
+            <div class="compare-head">
+              <div>
+                <h2>资料分层</h2>
+                <p>截图是证据，基础数据记录事实，分析模块负责计算，视图只展示结果。旧目录保留为兼容来源。</p>
+              </div>
+            </div>
+            <div class="compare-folder-grid">
+              ${cards
+                .map(
+                  (card) => `<article class="compare-folder-card">
+                    <div class="compare-folder-head">
+                      <h3>${highlight(card.title, query)}</h3>
+                      <span class="compare-folder-count">${card.count}</span>
+                    </div>
+                    <p class="sources">${highlight(card.detail, query)}</p>
+                  </article>`
+                )
+                .join("")}
+            </div>
+          </section>
+        </div>`;
+
+        document.getElementById("groupCount").textContent = datasets.length;
+        document.getElementById("shotCount").textContent = petShotCount + gemShotCount + gemMarketSnapshotData.length;
+        document.getElementById("pendingCount").textContent = gemShotCount + marketCount;
+        document.getElementById("folderName").textContent = "sourceImage";
+        document.getElementById("groupLabel").textContent = "角色";
+        document.getElementById("shotLabel").textContent = "截图";
+        document.getElementById("pendingLabel").textContent = "宝石数据";
+        document.getElementById("folderLabel").textContent = "图片字段";
+        document.getElementById("notice").hidden = true;
+        renderTabs();
+      }
+
       function render() {
         if (activeKey === compareKey) {
           renderCompare();
@@ -2265,6 +2408,14 @@
         }
         if (activeKey === matrixKey) {
           renderMatrix();
+          return;
+        }
+        if (activeKey === gemKey) {
+          renderGems();
+          return;
+        }
+        if (activeKey === sourceKey) {
+          renderSources();
           return;
         }
         destroyBeastCostChart();
@@ -2349,6 +2500,7 @@
         render();
       });
       document.getElementById("records").addEventListener("click", (event) => {
+        if (activeKey === gemKey && window.GemsView.handleClick(event, gemViewContext())) return;
         const compareTab = event.target.closest("[data-compare-mode]");
         const beastCostTab = event.target.closest("[data-beast-cost-type]");
         const beastCostRule = event.target.closest("[data-beast-cost-rule]");
@@ -2391,6 +2543,7 @@
         renderMatrix();
       });
       document.getElementById("records").addEventListener("input", (event) => {
+        if (activeKey === gemKey && window.GemsView.handleInput(event, gemViewContext())) return;
         if (!event.target.closest("[data-task-setting], [data-task-resource], [data-task-price]")) return;
         if (!persistBeastTaskControlEvent(event)) return;
         window.clearTimeout(beastTaskInputTimer);

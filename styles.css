@@ -213,6 +213,12 @@ input:focus {
   margin-top: 12px;
 }
 
+.portal-link.secondary {
+  border-color: var(--color-border-strong);
+  color: var(--color-brand-strong);
+  background: var(--color-surface);
+}
+
 .top-link {
   white-space: nowrap;
 }
