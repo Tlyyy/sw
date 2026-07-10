@@ -1,0 +1,15 @@
+{
+  "accounts": 5,
+  "pets": 53,
+  "petEvidence": 106,
+  "uniquePetNames": 12,
+  "equipment": 30,
+  "skills": 125,
+  "skillTypes": {
+    "强化技能": 26,
+    "兽决": 62,
+    "御兽": 37
+  },
+  "evidence": 137,
+  "gemMarketItems": 6
+}
