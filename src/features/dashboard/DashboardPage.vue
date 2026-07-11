@@ -23,7 +23,7 @@ const eggTotal = computed(() => eggInventory.value + catalog.beastSummary.eggs);
 const shardTotal = computed(() => shardInventory.value + shardGap.value);
 
 const actions = computed(() => [
-  { rank: "01", title: `${slowest.value?.accountId} 先补宝石资金`, detail: `预计第 ${slowest.value?.finishWeek} 周完成，还需 ${formatCurrency(slowest.value?.gemRequiredSilver || 0)} 银币`, to: "/plans/upgrades", tone: "orange" },
+  { rank: "01", title: `${slowest.value?.accountId} 先补宝石资金`, detail: `预计还需 ${slowest.value?.finishWeek} 周，还差 ${formatCurrency(slowest.value?.gemRequiredSilver || 0)} 银币`, to: "/plans/upgrades", tone: "orange" },
   { rank: "02", title: "按周推进神兽任务", detail: `每周 ${settings.taskSettings.weeklyEggs} 蛋、${settings.taskSettings.weeklyInnerShards} 锁片；当前 ${taskCount.value} 项未完成`, to: "/plans/beasts", tone: "blue" },
   { rank: "03", title: "先核对待确认资料", detail: `${catalog.pets.filter((item) => item.recognitionStatus === "pending").length} 组记录含待确认信息`, to: "/assets/pets?status=pending", tone: "green" },
 ]);
@@ -65,7 +65,7 @@ function ringProgress(current: number, total: number) {
         <div class="decision-summary">
           <h1>今日决策</h1>
           <strong>{{ slowest?.accountId }}</strong>
-          <b>第 {{ slowest?.finishWeek }} 周</b>
+          <b>预计还需 {{ slowest?.finishWeek }} 周</b>
           <span aria-hidden="true"></span>
           <RouterLink to="/plans/timeline">查看联合时间轴 <i>›</i></RouterLink>
         </div>
@@ -101,14 +101,14 @@ function ringProgress(current: number, total: number) {
             <span>{{ formatCurrency(plan.gemRequiredSilver) }}</span>
             <span>{{ formatCurrency(plan.beastRequiredSilver) }}</span>
             <span>{{ plan.missingShardCount || "—" }}</span>
-            <strong>第 {{ plan.finishWeek }} 周</strong>
+            <strong>还需 {{ plan.finishWeek }} 周</strong>
           </RouterLink>
         </div>
       </section>
 
       <section class="orbit-timeline-panel">
         <h2>五账号完成时间轴</h2>
-        <AccountTimeline :plans="plans" :selected="slowest?.accountId" />
+        <AccountTimeline :plans="plans" :selected="slowest?.accountId" :start-date="settings.taskSettings.startDate" />
       </section>
 
       <section class="orbit-data-band">

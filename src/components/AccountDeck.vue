@@ -47,7 +47,7 @@ function selectAccount(accountId: AccountId) {
         <b>{{ formatCurrency(row.displaySilver) }}</b>
         <small><em>{{ row.equipmentCount }}</em> 件装备</small>
       </span>
-      <span class="account-week">第 {{ row.plan?.finishWeek || 0 }} 周</span>
+      <span class="account-week">还需 {{ row.plan?.finishWeek || 0 }} 周</span>
     </RouterLink>
   </section>
 </template>
