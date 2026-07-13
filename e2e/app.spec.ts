@@ -20,6 +20,7 @@ test.describe("desktop application", () => {
     expect([...new Set(recommendationAccounts)].sort()).toEqual([...accountIds].sort());
 
     await page.goto("/#/analysis/species");
+    await expect(page.getByRole("heading", { name: "同名对比", exact: true })).toBeVisible();
     const speciesAccountColumns = await page.locator(".species-table article > span:nth-child(2)").allTextContents();
     for (const accountId of accountIds) {
       expect(speciesAccountColumns.some((value) => value.includes(accountId))).toBeTruthy();
@@ -86,7 +87,7 @@ test.describe("desktop application", () => {
     await page.getByPlaceholder("搜索账号、宠物、装备、技能或页面").fill("矩阵");
     await page.getByText("固定矩阵", { exact: true }).click();
     await expect(page).toHaveURL(/#\/analysis\/matrix$/);
-    await page.getByRole("button", { name: "PK：速度" }).click();
+    await page.getByRole("tab", { name: "PK：速度" }).click();
     await expect(page.locator(".matrix-table tbody tr")).toHaveCount(3);
     await expect(page.getByRole("tab", { name: "PK：速度" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("columnheader")).toHaveCount(6);
