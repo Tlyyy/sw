@@ -23,7 +23,10 @@ const balanceSchema = z.object({
   dedicatedEggs: z.number().finite().int().nonnegative(),
   regularEggs: z.number().finite().int().nonnegative(),
   silverWan: z.number().finite().nonnegative(),
+  innerShardCount: z.number().finite().int().nonnegative().nullable(),
 }).strict();
+
+const legacyBalanceSchema = balanceSchema.omit({ innerShardCount: true });
 
 const accountsSchema = z.object({
   FC: balanceSchema,
@@ -40,12 +43,32 @@ export const inventorySnapshotSchema = z.object({
 }).strict();
 
 const inventoryExportSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   snapshots: z.array(inventorySnapshotSchema),
 }).strict();
 
+const legacyInventoryExportSchema = z.object({
+  version: z.literal(1),
+  snapshots: z.array(z.object({
+    effectiveDate: z.string().refine(isDateKey, "effectiveDate must be a real YYYY-MM-DD date"),
+    recordedAt: z.string().refine((value) => Number.isFinite(Date.parse(value)), "recordedAt must be a valid timestamp"),
+    accounts: z.object({
+      FC: legacyBalanceSchema,
+      LG1: legacyBalanceSchema,
+      PT: legacyBalanceSchema,
+      LG2: legacyBalanceSchema,
+      MYT: legacyBalanceSchema,
+    }).strict(),
+  }).strict()),
+}).strict();
+
 function cloneBalance(value: InventoryBalance): InventoryBalance {
-  return { dedicatedEggs: value.dedicatedEggs, regularEggs: value.regularEggs, silverWan: value.silverWan };
+  return {
+    dedicatedEggs: value.dedicatedEggs,
+    regularEggs: value.regularEggs,
+    silverWan: value.silverWan,
+    innerShardCount: value.innerShardCount,
+  };
 }
 
 function cloneSnapshot(value: InventorySnapshot): InventorySnapshot {
@@ -107,16 +130,30 @@ export function calculateInventoryDeltas(
       dedicatedEggs: current.dedicatedEggs - prior.dedicatedEggs,
       regularEggs: current.regularEggs - prior.regularEggs,
       silverWan: current.silverWan - prior.silverWan,
+      innerShardCount: current.innerShardCount === null || prior.innerShardCount === null
+        ? null
+        : current.innerShardCount - prior.innerShardCount,
     } satisfies InventoryAccountDelta];
   })) as Record<AccountId, InventoryAccountDelta>;
 }
 
 export function parseInventoryExport(value: string | unknown): InventoryExportPayload {
   const raw = typeof value === "string" ? JSON.parse(value) : value;
+  if ((raw as { version?: unknown } | null)?.version === 1) {
+    const legacy = legacyInventoryExportSchema.parse(raw);
+    const snapshots = legacy.snapshots.map((snapshot) => ({
+      ...snapshot,
+      accounts: Object.fromEntries(accountIds.map((accountId) => [accountId, {
+        ...snapshot.accounts[accountId],
+        innerShardCount: null,
+      }])) as Record<AccountId, InventoryBalance>,
+    }));
+    return { version: 2, snapshots: normalizeInventorySnapshots(snapshots) };
+  }
   const parsed = inventoryExportSchema.parse(raw);
-  return { version: 1, snapshots: normalizeInventorySnapshots(parsed.snapshots) };
+  return { version: 2, snapshots: normalizeInventorySnapshots(parsed.snapshots) };
 }
 
 export function createInventoryExport(snapshots: InventorySnapshot[]): InventoryExportPayload {
-  return { version: 1, snapshots: normalizeInventorySnapshots(snapshots) };
+  return { version: 2, snapshots: normalizeInventorySnapshots(snapshots) };
 }

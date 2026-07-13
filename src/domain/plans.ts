@@ -33,11 +33,11 @@ export interface AccountTaskPlan {
   accountId: AccountId;
   resource: BeastResource;
   availableWan: number;
-  availableShards: number;
+  availableShards: number | null;
   tasks: ScheduledTask[];
   remainingWan: number;
   remainingShardCount: number;
-  missingShardCount: number;
+  missingShardCount: number | null;
   finishDate: string;
 }
 
@@ -52,6 +52,11 @@ function maxDate(a: string, b: string) {
   if (!b || b === "已完成") return a;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(a) || !/^\d{4}-\d{2}-\d{2}$/.test(b)) return /^\d/.test(a) ? b : a;
   return a > b ? a : b;
+}
+function mergeDue(a: string, b: string) {
+  if (a === "待录库存" || b === "待录库存") return "待录库存";
+  if (a === "待补内丹碎片" || b === "待补内丹碎片") return "待补内丹碎片";
+  return maxDate(a, b);
 }
 function finishForMoney(targetWan: number, availableWan: number, settings: BeastTaskSettings) {
   const start = parseDate(settings.startDate);
@@ -68,7 +73,7 @@ function finishForShards(target: number, available: number, settings: BeastTaskS
   if (target <= available + 0.0001) return dateKey(start);
   const end = weekEnd(start);
   if (target <= available + settings.thisWeekInnerShards + 0.0001) return dateKey(end);
-  if (!settings.weeklyInnerShards) return "待补锁片";
+  if (!settings.weeklyInnerShards) return "待补内丹碎片";
   const weeks = Math.ceil((target - available - settings.thisWeekInnerShards - 0.0001) / settings.weeklyInnerShards);
   return dateKey(new Date(end.getTime() + weeks * 7 * 86_400_000));
 }
@@ -112,7 +117,8 @@ export function buildTaskPlans(catalog: Catalog, rows: PetView[], state: Plannin
 
   return catalog.accounts.map((account) => {
     const resource = state.resources[account.id];
-    const availableWan = resource.silverWan + resource.eggCount * state.settings.eggPriceWan;
+    const inventoryRecorded = resource.inventoryRecorded !== false;
+    const availableWan = inventoryRecorded ? resource.silverWan + resource.eggCount * state.settings.eggPriceWan : 0;
     const availableShards = resource.innerShardCount;
     let cumulativeWan = 0;
     let cumulativeShards = 0;
@@ -123,13 +129,13 @@ export function buildTaskPlans(catalog: Catalog, rows: PetView[], state: Plannin
       let resourceDue = finishDate;
       if (current.resourceType === "innerShard") {
         cumulativeShards += current.remainingShardCount;
-        resourceDue = finishForShards(cumulativeShards, availableShards, state.settings);
+        resourceDue = !inventoryRecorded ? "待录库存" : availableShards === null ? "待补内丹碎片" : finishForShards(cumulativeShards, availableShards, state.settings);
       } else {
         cumulativeWan += current.remainingWan;
-        resourceDue = finishForMoney(cumulativeWan, availableWan, state.settings);
+        resourceDue = inventoryRecorded ? finishForMoney(cumulativeWan, availableWan, state.settings) : "待录库存";
       }
-      const dueDate = current.done ? "已完成" : maxDate(resourceDue, dependencyDate);
-      if (!current.done) { dependencyDate = maxDate(dependencyDate, dueDate); finishDate = maxDate(finishDate, dueDate); }
+      const dueDate = current.done ? "已完成" : mergeDue(resourceDue, dependencyDate);
+      if (!current.done) { dependencyDate = mergeDue(dependencyDate, dueDate); finishDate = mergeDue(finishDate, dueDate); }
       return {
         id: current.taskId, accountId: account.id, typeKey: current.typeKey, typeLabel: config.typeDefs.find((item) => item.key === current.typeKey)?.label || current.typeKey,
         actionKey: current.action.key, actionLabel: current.action.label, kind: current.action.kind, resourceType: current.resourceType,
@@ -140,7 +146,7 @@ export function buildTaskPlans(catalog: Catalog, rows: PetView[], state: Plannin
     });
     const remainingWan = scheduled.reduce((sum, task) => sum + task.remainingWan, 0);
     const remainingShardCount = scheduled.reduce((sum, task) => sum + task.remainingShardCount, 0);
-    return { accountId: account.id, resource, availableWan, availableShards, tasks: scheduled, remainingWan, remainingShardCount, missingShardCount: Math.max(0, remainingShardCount - availableShards), finishDate };
+    return { accountId: account.id, resource, availableWan, availableShards, tasks: scheduled, remainingWan, remainingShardCount, missingShardCount: availableShards === null ? null : Math.max(0, remainingShardCount - availableShards), finishDate };
   });
 }
 

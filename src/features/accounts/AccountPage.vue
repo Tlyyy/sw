@@ -17,9 +17,9 @@ const accountId = computed(() => String(route.params.accountId || "LG2") as Acco
 watchEffect(() => { ui.recentAccount = accountId.value; });
 const pets = computed(() => catalog.pets.filter((item) => item.accountId === accountId.value));
 const equipment = computed(() => catalog.data.equipment.filter((item) => item.accountId === accountId.value));
-const taskPlans = computed(() => buildTaskPlans(catalog.data, catalog.pets, settings.snapshot()));
+const taskPlans = computed(() => buildTaskPlans(catalog.data, catalog.pets, settings.snapshot(inventory.planningResources)));
 const beastPlan = computed(() => taskPlans.value.find((item) => item.accountId === accountId.value)!);
-const projections = computed(() => buildMainlineProjection(taskPlans.value, inventory.snapshots, settings.resources, settings.taskSettings.eggPriceWan));
+const projections = computed(() => buildMainlineProjection(taskPlans.value, inventory.snapshots, settings.taskSettings.eggPriceWan));
 const projection = computed(() => projections.value.find((item) => item.accountId === accountId.value)!);
 const gemPlan = computed(() => accountGemPlan(catalog.data, accountId.value, settings.gemPriceOverrides));
 const topPets = computed(() => [...pets.value].sort((a,b) => (b.talent || 0) - (a.talent || 0) || b.attack - a.attack).slice(0,4));
@@ -27,7 +27,7 @@ const visibleTasks = computed(() => [...beastPlan.value.tasks].sort((left, right
 
 function taskAmount(task: ScheduledTask) {
   if (task.eggCount) return `${task.eggCount} 蛋`;
-  if (task.shardCount) return `${task.shardCount} 锁片`;
+  if (task.shardCount) return `${task.shardCount} 内丹碎片`;
   return formatCurrency(task.priceWan * 10_000);
 }
 function taskState(task: ScheduledTask) {
@@ -42,7 +42,7 @@ function taskState(task: ScheduledTask) {
     <StatStrip :items="[{value:projection.inventory.dedicatedEggs,label:'专用蛋',note:'任务时优先消耗'},{value:projection.inventory.regularEggs,label:'普通蛋',note:'可用于任务或出售'},{value:`${projection.inventory.silverWan}万`,label:'银子',note:projection.effectiveDate ? `${projection.effectiveDate} 库存` : '待录库存快照'},{value:projection.statusLabel,label:'当前状态',note:projection.actionHint}]" />
     <section class="split-workspace">
       <div><div class="section-head"><div><h2>优先宠物</h2><p>按天资和输出面板优先展示</p></div><RouterLink :to="`/assets/pets?account=${accountId}`">全部宠物 →</RouterLink></div><div class="pet-list"><PetRow v-for="pet in topPets" :key="pet.id" :pet="pet" /></div></div>
-      <div><div class="section-head"><div><h2>主线任务与资源</h2><p>{{ projection.actionHint }}</p></div><RouterLink to="/data/inventory">更新库存 →</RouterLink></div><div class="resource-line"><span>专用蛋 <b>{{ projection.inventory.dedicatedEggs }}</b></span><span>普通蛋 <b>{{ projection.inventory.regularEggs }}</b></span><span>锁片 <b>{{ projection.inventory.innerShardCount }}</b></span></div><div class="task-mini-list"><div v-for="task in visibleTasks" :key="task.id"><i :class="{done:task.done}"></i><span>{{ task.typeLabel }} · {{ task.actionLabel }} · {{ taskAmount(task) }}</span><b>{{ taskState(task) }}</b></div></div></div>
+      <div><div class="section-head"><div><h2>主线任务与资源</h2><p>{{ projection.actionHint }}</p></div><RouterLink to="/data/inventory">更新库存 →</RouterLink></div><div class="resource-line"><span>专用蛋 <b>{{ projection.inventory.dedicatedEggs }}</b></span><span>普通蛋 <b>{{ projection.inventory.regularEggs }}</b></span><span>内丹碎片 <b>{{ projection.inventory.innerShardCount ?? "待补录" }}</b></span></div><div class="task-mini-list"><div v-for="task in visibleTasks" :key="task.id"><i :class="{done:task.done}"></i><span>{{ task.typeLabel }} · {{ task.actionLabel }} · {{ taskAmount(task) }}</span><b>{{ taskState(task) }}</b></div></div></div>
     </section>
     <section><div class="section-head"><div><h2>六件装备 · 次级参考</h2><p>神兽主线后再处理；当前到 13 段测算约 {{ formatCurrency(gemPlan.cost) }} 银币</p></div><RouterLink :to="`/assets/equipment?account=${accountId}`">查看截图与属性 →</RouterLink></div><div class="equipment-strip"><article v-for="item in equipment" :key="item.id"><span>{{ item.slot }}</span><strong>{{ item.name }}</strong><em>{{ item.gem.name }} {{ item.gem.level }}</em></article></div></section>
   </div>

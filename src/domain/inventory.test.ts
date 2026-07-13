@@ -16,6 +16,7 @@ function accounts(seed: number) {
     dedicatedEggs: seed + index,
     regularEggs: seed * 2 + index,
     silverWan: seed * 10 + index,
+    innerShardCount: seed * 3 + index,
   }])) as Record<AccountId, InventoryBalance>;
 }
 
@@ -49,6 +50,7 @@ describe("inventory snapshots", () => {
       dedicatedEggs: 2,
       regularEggs: 4,
       silverWan: 20,
+      innerShardCount: 6,
     });
   });
 
@@ -56,12 +58,29 @@ describe("inventory snapshots", () => {
     const payload = createInventoryExport([snapshot("2026-07-11", 3)]);
     expect(parseInventoryExport(JSON.stringify(payload))).toEqual(payload);
     expect(() => parseInventoryExport({
-      version: 1,
+      version: 2,
       snapshots: [{
         effectiveDate: "2026-07-11",
         recordedAt: "2026-07-11T12:00:00.000Z",
         accounts: { FC: accounts(1).FC },
       }],
     })).toThrow();
+  });
+
+  it("migrates v1 snapshots without inventing dated inner-fragment values", () => {
+    const migrated = parseInventoryExport({
+      version: 1,
+      snapshots: [{
+        effectiveDate: "2026-07-11",
+        recordedAt: "2026-07-11T12:00:00.000Z",
+        accounts: Object.fromEntries(ids.map((accountId, index) => [accountId, {
+          dedicatedEggs: index,
+          regularEggs: index + 1,
+          silverWan: index + 2,
+        }])),
+      }],
+    });
+    expect(migrated.version).toBe(2);
+    expect(migrated.snapshots[0].accounts.FC.innerShardCount).toBeNull();
   });
 });

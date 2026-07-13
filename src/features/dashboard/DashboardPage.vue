@@ -16,15 +16,17 @@ const saveNotice = ref("");
 
 inventory.hydrate();
 
-const taskPlans = computed(() => buildTaskPlans(catalog.data, catalog.pets, settings.snapshot()));
+const taskPlans = computed(() => buildTaskPlans(catalog.data, catalog.pets, settings.snapshot(inventory.planningResources)));
 const projections = computed(() => buildMainlineProjection(
   taskPlans.value,
   inventory.snapshots,
-  settings.resources,
   settings.taskSettings.eggPriceWan,
 ));
 const latestDate = computed(() => inventory.latestSnapshot?.effectiveDate || null);
 const previousDate = computed(() => inventory.previousSnapshot?.effectiveDate || null);
+const latestInventoryComplete = computed(() => inventory.latestSnapshot
+  ? Object.values(inventory.latestSnapshot.accounts).every((balance) => balance.innerShardCount !== null)
+  : false);
 const today = computed(() => new Date().toLocaleDateString("en-CA"));
 const accountTone: Record<AccountId, string> = {
   FC: "#176bb2",
@@ -98,7 +100,7 @@ function requirementTitle(kind: "eggs" | "silver" | "shards" | "complete", amoun
 function requirementCaption(kind: "eggs" | "silver" | "shards" | "complete") {
   if (kind === "eggs") return "专用蛋优先";
   if (kind === "silver") return "银子任务";
-  if (kind === "shards") return "内丹锁片";
+  if (kind === "shards") return "内丹碎片";
   return "没有待办";
 }
 
@@ -130,7 +132,7 @@ function allocationLines(projection: ReturnType<typeof buildMainlineProjection>[
     ];
   }
   if (projection.requirementKind === "shards") {
-    return [`锁片 ${formatNumber(projection.allocation.shardsUsed)}`, "独立资源"];
+    return [`内丹碎片 ${formatNumber(projection.allocation.shardsUsed)}`, "独立资源"];
   }
   return ["无需分配", "主线已清空"];
 }
@@ -170,7 +172,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
     <p v-if="saveNotice" class="action-notice" aria-live="polite">{{ saveNotice }}</p>
 
     <section class="workbench-snapshot-meta" aria-label="最近库存快照">
-      <strong>最近完整快照：{{ latestDate ? `${formatDate(latestDate)} · 五号已录` : "尚未建立" }}</strong>
+      <strong>最近库存快照：{{ latestDate ? `${formatDate(latestDate)} · ${latestInventoryComplete ? "五号已齐" : "内丹碎片待补录"}` : "尚未建立" }}</strong>
       <span>{{ latestDate ? `系统按库存所属日期排序；实际录入时间另行保留` : "先录入一份五号总库存，第二份开始计算区间净变化" }}</span>
     </section>
 
@@ -179,7 +181,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
         <div class="mainline-grid mainline-head" role="row">
           <span role="columnheader">账号</span>
           <span role="columnheader">最新库存<small>有效日期</small></span>
-          <span role="columnheader">当前库存<small>专用蛋 / 普通蛋 / 银子</small></span>
+          <span role="columnheader">当前库存<small>专用蛋 / 普通蛋 / 银子 / 内丹碎片</small></span>
           <span role="columnheader">库存净变化<small>相对上一快照</small></span>
           <span role="columnheader">主线推进<small>当前 → 下一步 → 再下一步</small></span>
           <span role="columnheader">当前任务<small>需求量</small></span>
@@ -209,6 +211,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
               <span><small>专用蛋</small><b>{{ formatNumber(projection.inventory.dedicatedEggs) }}</b></span>
               <span><small>普通蛋</small><b>{{ formatNumber(projection.inventory.regularEggs) }}</b></span>
               <span><small>银子/万</small><b>{{ formatNumber(projection.inventory.silverWan) }}</b></span>
+              <span><small>内丹碎片</small><b>{{ projection.inventory.innerShardCount ?? "待补" }}</b></span>
             </div>
           </div>
 
@@ -217,6 +220,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
               <span><small>专用蛋</small><b :class="deltaTone(projection.delta.dedicatedEggs)">{{ signed(projection.delta.dedicatedEggs) }}</b></span>
               <span><small>普通蛋</small><b :class="deltaTone(projection.delta.regularEggs)">{{ signed(projection.delta.regularEggs) }}</b></span>
               <span><small>银子/万</small><b :class="deltaTone(projection.delta.silverWan)">{{ signed(projection.delta.silverWan) }}</b></span>
+              <span><small>内丹碎片</small><b :class="projection.delta.innerShardCount === null ? 'neutral' : deltaTone(projection.delta.innerShardCount)">{{ projection.delta.innerShardCount === null ? "—" : signed(projection.delta.innerShardCount) }}</b></span>
             </div>
             <span v-else class="inventory-baseline-label">{{ latestDate ? "首份基线" : "待录快照" }}</span>
           </div>
@@ -260,13 +264,14 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
           <span>{{ previousDate ? `相对上一快照：${formatDate(previousDate)}` : "需要至少两份快照" }}</span>
         </header>
         <table class="changes-ledger">
-          <thead><tr><th>账号</th><th>专用蛋净变化</th><th>普通蛋净变化</th><th>银子净变化 / 万</th><th>说明</th></tr></thead>
+          <thead><tr><th>账号</th><th>专用蛋净变化</th><th>普通蛋净变化</th><th>银子净变化 / 万</th><th>内丹碎片净变化</th><th>说明</th></tr></thead>
           <tbody>
             <tr v-for="projection in projections" :key="projection.accountId">
               <td><strong :style="{ color: accountTone[projection.accountId] }">{{ projection.accountId }}</strong></td>
               <td :class="projection.delta ? deltaTone(projection.delta.dedicatedEggs) : ''">{{ projection.delta ? signed(projection.delta.dedicatedEggs) : "—" }}</td>
               <td :class="projection.delta ? deltaTone(projection.delta.regularEggs) : ''">{{ projection.delta ? signed(projection.delta.regularEggs) : "—" }}</td>
               <td :class="projection.delta ? deltaTone(projection.delta.silverWan) : ''">{{ projection.delta ? signed(projection.delta.silverWan) : "—" }}</td>
+              <td :class="projection.delta?.innerShardCount === null || !projection.delta ? '' : deltaTone(projection.delta.innerShardCount)">{{ projection.delta?.innerShardCount === null || !projection.delta ? "—" : signed(projection.delta.innerShardCount) }}</td>
               <td>{{ projection.delta ? `间隔 ${projection.delta.intervalDays} 天` : "尚无对比区间" }}</td>
             </tr>
           </tbody>

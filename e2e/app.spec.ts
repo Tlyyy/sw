@@ -36,7 +36,7 @@ test.describe("desktop application", () => {
     await page.getByRole("button", { name: "录入五号库存快照", exact: true }).click();
     const inventoryDialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(inventoryDialog).toBeVisible();
-    await expect(inventoryDialog.getByRole("spinbutton")).toHaveCount(15);
+    await expect(inventoryDialog.getByRole("spinbutton")).toHaveCount(20);
     await inventoryDialog.getByRole("button", { name: "关闭库存快照录入" }).click();
     await expect(inventoryDialog).toHaveCount(0);
     const typography = await page.evaluate(() => ({
@@ -49,7 +49,7 @@ test.describe("desktop application", () => {
     expect(typography.title).toBeGreaterThanOrEqual(22);
     expect(typography.body).toBeGreaterThanOrEqual(14);
     expect(typography.button).toBeGreaterThanOrEqual(13);
-    await page.screenshot({ path: "docs/refactor/screenshots/dashboard-desktop.png" });
+    await page.screenshot({ path: testInfo.outputPath("dashboard-desktop.png") });
 
     const routes = [
       ["/#/accounts/LG2", "LG2 单号下钻"],
@@ -99,13 +99,73 @@ test.describe("desktop application", () => {
 
     await page.goto("/#/publish");
     await page.getByRole("button", { name: "推荐首发" }).click();
-    await expect(page.getByText("已选 15 组 · 30 张图", { exact: true })).toBeVisible();
+    await expect(page.getByText("已选 15 组 · 36 张图", { exact: true })).toBeVisible();
     await expect(page.locator(".output-panel textarea")).toHaveValue(/资产总览/);
 
     await page.goto("/#/plans/upgrades");
     await expect(page.locator(".gem-ocr-panel, .market-band input")).toHaveCount(0);
     await page.goto("/#/plans/beasts");
     await expect(page.locator(".settings-band input, .resource-table input, .task-list input")).toHaveCount(0);
+  });
+
+  test("统一库存快照同时保存蛋、银子和内丹碎片", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.goto("/#/data/inventory");
+    await page.getByRole("button", { name: "录入五号快照", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "录入库存快照" });
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
+    await dialog.getByLabel("FC专用蛋库存").fill("11");
+    await dialog.getByLabel("FC普通蛋库存").fill("22");
+    await dialog.getByLabel("FC银子库存（万）").fill("33.5");
+    await dialog.getByLabel("FC内丹碎片库存").fill("44");
+    await dialog.getByRole("button", { name: "保存五号快照" }).click();
+
+    const fcCard = page.locator(".inventory-account-cell").filter({ hasText: "FC" });
+    await expect(fcCard).toContainText("内丹碎片");
+    await expect(fcCard).toContainText("44");
+    const persisted = await page.evaluate(() => ({
+      inventory: JSON.parse(localStorage.getItem("sw.app.inventory.v2") || "null"),
+      settings: JSON.parse(localStorage.getItem("sw.app.settings.v3") || localStorage.getItem("sw.app.settings.v2") || "null"),
+    }));
+    expect(persisted.inventory.version).toBe(2);
+    expect(persisted.inventory.snapshots[0].accounts.FC).toEqual({
+      dedicatedEggs: 11,
+      regularEggs: 22,
+      silverWan: 33.5,
+      innerShardCount: 44,
+    });
+    expect(persisted.settings).not.toHaveProperty("resources");
+
+    await page.reload();
+    await expect(page.locator(".inventory-account-cell").filter({ hasText: "FC" })).toContainText("44");
+    await page.goto("/#/accounts/FC");
+    await expect(page.getByRole("heading", { name: "FC 单号下钻" })).toBeVisible();
+    await expect(page.locator(".resource-line")).toContainText("内丹碎片 44");
+  });
+
+  test("手动发布正文会被复制、保留并可主动重新生成", async ({ page, context, baseURL }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: new URL(baseURL!).origin });
+    await page.goto("/#/publish");
+    await page.getByRole("button", { name: "推荐首发" }).click();
+
+    const draft = page.getByLabel("发布正文");
+    await expect(draft).toHaveValue(/资产总览/);
+    const manualText = "这是手动修改后的最终发布正文。";
+    await draft.fill(manualText);
+    await expect(page.getByText("已保留手动编辑", { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "纯文本", exact: true }).click();
+    await expect(draft).toHaveValue(manualText);
+    await page.getByRole("button", { name: "复制正文", exact: true }).click();
+    await expect(page.getByText("正文已复制", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(manualText);
+
+    await page.reload();
+    await expect(page.getByLabel("发布正文")).toHaveValue(manualText);
+    await page.getByRole("button", { name: "重新生成正文", exact: true }).click();
+    await expect(page.getByLabel("发布正文")).toHaveValue(/资产总览/);
+    await expect(page.getByText("已保留手动编辑", { exact: true })).toHaveCount(0);
   });
 });
 
@@ -121,11 +181,12 @@ test.describe("mobile application", () => {
     }));
     expect(layout.scroll).toBe(layout.client);
     expect(layout.navRight).toBeLessThanOrEqual(0);
-    await page.screenshot({ path: "docs/refactor/screenshots/dashboard-mobile.png" });
+    await page.screenshot({ path: testInfo.outputPath("dashboard-mobile.png") });
 
     await page.getByRole("button", { name: "打开导航" }).click();
-    await expect(page.getByRole("navigation", { name: "主导航" })).toBeVisible();
-    await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name: "分析" }).click();
+    const mobileNavigation = page.getByRole("dialog", { name: "主导航" });
+    await expect(mobileNavigation).toBeVisible();
+    await mobileNavigation.getByRole("link", { name: "分析" }).click();
     await page.getByRole("link", { name: "固定矩阵", exact: true }).click();
     await expect(page.locator(".matrix-scroll")).toBeVisible();
     await expect(page.locator(".orbit-nav-scrim")).toHaveCount(0);
@@ -143,7 +204,7 @@ test.describe("mobile application", () => {
     expect(matrix.scroll).toBeGreaterThan(matrix.client);
     await expect(page.getByText("可左右滚动；账号表头和位置列会保持可见。")).toBeVisible();
     await expect(page.locator(".matrix-table tbody th").first()).toHaveCSS("position", "sticky");
-    await page.screenshot({ path: "docs/refactor/screenshots/matrix-mobile.png" });
+    await page.screenshot({ path: testInfo.outputPath("matrix-mobile.png") });
 
     await page.goto("/#/data/tasks");
     await expect(page.locator(".data-task-list")).toBeVisible();
@@ -170,6 +231,6 @@ test.describe("tablet application", () => {
       expect(width.scroll, `${url} 不应产生页面级横向滚动`).toBe(width.client);
     }
     await page.goto("/#/");
-    await page.screenshot({ path: `docs/refactor/screenshots/dashboard-${testInfo.project.name}.png` });
+    await page.screenshot({ path: testInfo.outputPath(`dashboard-${testInfo.project.name}.png`) });
   });
 });

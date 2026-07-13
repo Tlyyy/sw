@@ -5,6 +5,7 @@ import { useCatalogStore } from "../../stores/catalog";
 import { useUiStore } from "../../stores/ui";
 import { matrixAccountIds, matrixGroups, matrixRow } from "../../domain/matrix";
 import type { PetView } from "../../domain/types";
+import { queryChoice } from "../../app/queryState";
 
 type ComparableMetric = "attack" | "speed" | "spirit" | "hp";
 
@@ -12,9 +13,7 @@ const catalog = useCatalogStore();
 const ui = useUiStore();
 const route = useRoute();
 const router = useRouter();
-const routeGroup = typeof route.query.group === "string" && matrixGroups.includes(route.query.group)
-  ? route.query.group
-  : matrixGroups[0];
+const routeGroup = queryChoice(route.query.group, matrixGroups, matrixGroups[0]);
 const group = ref(routeGroup);
 const accounts = matrixAccountIds;
 
@@ -35,6 +34,9 @@ const groupCopy: Record<string, { short: string; description: string }> = {
 
 watch(group, (value) => {
   void router.replace({ query: { ...route.query, group: value } });
+});
+watch(() => route.query.group, (value) => {
+  group.value = queryChoice(value, matrixGroups, matrixGroups[0]);
 });
 
 function groupRowCount(value: string) {

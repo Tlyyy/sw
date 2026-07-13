@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generatedAt": "2026-07-10T04:01:48.754Z",
+  "generatedAt": "2026-07-13T05:58:50.675Z",
   "accounts": [
     {
       "id": "FC",
@@ -809,6 +809,7 @@
       "sourceRecordId": "13",
       "accountId": "FC",
       "name": "神兽青蛇",
+      "beastType": "snake1",
       "level": 145,
       "meta": "天资：极(16797)｜血脉：125级血脉",
       "talent": 16797,
@@ -939,6 +940,10 @@
       "sourceRecordId": "17",
       "accountId": "FC",
       "name": "神兽青蛇",
+      "beastType": "snake2",
+      "beastProgress": {
+        "skin": true
+      },
       "level": 145,
       "meta": "天资：极(16797)｜血脉：125级血脉",
       "talent": 16797,
@@ -951,7 +956,7 @@
         ],
         [
           "魔法",
-          "3712/3712"
+          "3742/3742"
         ],
         [
           "攻击",
@@ -963,11 +968,11 @@
         ],
         [
           "速度",
-          "433"
+          "435"
         ],
         [
           "灵力",
-          "1441"
+          "1459"
         ]
       ],
       "points": [
@@ -977,7 +982,7 @@
         ],
         [
           "魔力",
-          "976"
+          "991"
         ],
         [
           "力量",
@@ -1060,7 +1065,9 @@
       ],
       "evidenceIds": [
         "FC:pet:17",
-        "FC:pet:18"
+        "FC:pet:18",
+        "FC:pet:17:2026-07-13:panel",
+        "FC:pet:17:2026-07-13:growth"
       ],
       "recognitionStatus": "confirmed"
     },
@@ -1199,6 +1206,7 @@
       "sourceRecordId": "21",
       "accountId": "FC",
       "name": "神兽龙马",
+      "beastType": "horse",
       "level": 145,
       "meta": "天资：优(14638)｜血脉：无血脉",
       "talent": 14638,
@@ -1979,15 +1987,19 @@
       "sourceRecordId": "09",
       "accountId": "LG1",
       "name": "神兽青蛇",
+      "beastType": "snake1",
+      "beastProgress": {
+        "advance2": true
+      },
       "level": 145,
-      "meta": "天资：极(16395)｜血脉：125级血脉",
-      "talent": 16395,
+      "meta": "天资：极(16495)｜血脉：125级血脉",
+      "talent": 16495,
       "bloodline": "125级血脉",
       "heart": "红心",
       "panel": [
         [
           "气血",
-          "3935/3935"
+          "3961/3961"
         ],
         [
           "魔法",
@@ -1995,19 +2007,19 @@
         ],
         [
           "攻击",
-          "2164"
+          "2173"
         ],
         [
           "防御",
-          "849"
+          "856"
         ],
         [
           "速度",
-          "568"
+          "577"
         ],
         [
           "灵力",
-          "915"
+          "927"
         ]
       ],
       "points": [
@@ -2039,23 +2051,23 @@
       "aptitudes": [
         [
           "攻击资质",
-          "1550/1550"
+          "1570/1570"
         ],
         [
           "防御资质",
-          "1500/1500"
+          "1520/1520"
         ],
         [
           "体力资质",
-          "1500/1500"
+          "1520/1520"
         ],
         [
           "法力资质",
-          "1550/1550"
+          "1570/1570"
         ],
         [
           "速度资质",
-          "1450/1450"
+          "1470/1470"
         ],
         [
           "寿命",
@@ -2100,7 +2112,9 @@
       ],
       "evidenceIds": [
         "LG1:pet:09",
-        "LG1:pet:10"
+        "LG1:pet:10",
+        "LG1:pet:09:2026-07-13:panel",
+        "LG1:pet:09:2026-07-13:growth"
       ],
       "recognitionStatus": "confirmed"
     },
@@ -2109,6 +2123,7 @@
       "sourceRecordId": "11",
       "accountId": "LG1",
       "name": "神兽青蛇",
+      "beastType": "snake2",
       "level": 145,
       "meta": "天资：极(16546)｜血脉：125级血脉",
       "talent": 16546,
@@ -2629,6 +2644,7 @@
       "sourceRecordId": "19",
       "accountId": "LG1",
       "name": "神兽龙马",
+      "beastType": "horse",
       "level": 145,
       "meta": "天资：优(14638)｜血脉：无血脉",
       "talent": 14638,
@@ -3019,15 +3035,19 @@
       "sourceRecordId": "05",
       "accountId": "LG2",
       "name": "神兽青蛇",
+      "beastType": "snake1",
+      "beastProgress": {
+        "advance2": true
+      },
       "level": 145,
-      "meta": "天资：极(16696)｜血脉：125级血脉",
-      "talent": 16696,
+      "meta": "天资：极(16797)｜血脉：125级血脉",
+      "talent": 16797,
       "bloodline": "125级血脉",
       "heart": "红心",
       "panel": [
         [
           "气血",
-          "3836/3836"
+          "3862/3862"
         ],
         [
           "魔法",
@@ -3035,19 +3055,19 @@
         ],
         [
           "攻击",
-          "1056"
+          "1066"
         ],
         [
           "防御",
-          "849"
+          "856"
         ],
         [
           "速度",
-          "420"
+          "426"
         ],
         [
           "灵力",
-          "1405"
+          "1423"
         ]
       ],
       "points": [
@@ -3079,23 +3099,23 @@
       "aptitudes": [
         [
           "攻击资质",
-          "1550/1550"
+          "1570/1570"
         ],
         [
           "防御资质",
-          "1500/1500"
+          "1520/1520"
         ],
         [
           "体力资质",
-          "1500/1500"
+          "1520/1520"
         ],
         [
           "法力资质",
-          "1550/1550"
+          "1570/1570"
         ],
         [
           "速度资质",
-          "1450/1450"
+          "1470/1470"
         ],
         [
           "寿命",
@@ -3140,7 +3160,9 @@
       ],
       "evidenceIds": [
         "LG2:pet:05",
-        "LG2:pet:06"
+        "LG2:pet:06",
+        "LG2:pet:05:2026-07-13:panel",
+        "LG2:pet:05:2026-07-13:growth"
       ],
       "recognitionStatus": "confirmed"
     },
@@ -3149,6 +3171,7 @@
       "sourceRecordId": "07",
       "accountId": "LG2",
       "name": "神兽青蛇",
+      "beastType": "snake2",
       "level": 145,
       "meta": "天资：极(16546)｜血脉：125级血脉",
       "talent": 16546,
@@ -4059,6 +4082,7 @@
       "sourceRecordId": "21",
       "accountId": "LG2",
       "name": "神兽龙马",
+      "beastType": "horse",
       "level": 145,
       "meta": "天资：优(14638)｜血脉：无血脉",
       "talent": 14638,
@@ -5099,6 +5123,7 @@
       "sourceRecordId": "15",
       "accountId": "PT",
       "name": "神兽青蛇",
+      "beastType": "snake1",
       "level": 145,
       "meta": "天资：优(14939)｜血脉：无血脉",
       "talent": 14939,
@@ -5229,6 +5254,7 @@
       "sourceRecordId": "17",
       "accountId": "PT",
       "name": "神兽青蛇",
+      "beastType": "snake2",
       "level": 145,
       "meta": "天资：极(16696)｜血脉：125级血脉",
       "talent": 16696,
@@ -5359,6 +5385,7 @@
       "sourceRecordId": "19",
       "accountId": "PT",
       "name": "神兽龙马",
+      "beastType": "horse",
       "level": 145,
       "meta": "天资：优(14638)｜血脉：无血脉",
       "talent": 14638,
@@ -6269,15 +6296,20 @@
       "sourceRecordId": "11",
       "accountId": "MYT",
       "name": "神兽青蛇",
+      "beastType": "snake1",
+      "beastProgress": {
+        "ornament": true,
+        "advance1": true
+      },
       "level": 145,
-      "meta": "天资：极(16445)｜血脉：125级血脉",
-      "talent": 16445,
+      "meta": "天资：极(16696)｜血脉：125级血脉",
+      "talent": 16696,
       "bloodline": "125级血脉",
       "heart": "红心",
       "panel": [
         [
           "气血",
-          "3858/3858"
+          "3924/3924"
         ],
         [
           "魔法",
@@ -6285,19 +6317,19 @@
         ],
         [
           "攻击",
-          "2335"
+          "2361"
         ],
         [
           "防御",
-          "834"
+          "850"
         ],
         [
           "速度",
-          "441"
+          "457"
         ],
         [
           "灵力",
-          "886"
+          "915"
         ]
       ],
       "points": [
@@ -6329,23 +6361,23 @@
       "aptitudes": [
         [
           "攻击资质",
-          "1500/1500"
+          "1550/1550"
         ],
         [
           "防御资质",
-          "1450/1450"
-        ],
-        [
-          "体力资质",
-          "1450/1450"
-        ],
-        [
-          "法力资质",
           "1500/1500"
         ],
         [
+          "体力资质",
+          "1500/1500"
+        ],
+        [
+          "法力资质",
+          "1550/1550"
+        ],
+        [
           "速度资质",
-          "1400/1400"
+          "1450/1450"
         ],
         [
           "寿命",
@@ -6390,7 +6422,9 @@
       ],
       "evidenceIds": [
         "MYT:pet:11",
-        "MYT:pet:12"
+        "MYT:pet:12",
+        "MYT:pet:11:2026-07-13:panel",
+        "MYT:pet:11:2026-07-13:growth"
       ],
       "recognitionStatus": "confirmed"
     },
@@ -6529,6 +6563,7 @@
       "sourceRecordId": "15",
       "accountId": "MYT",
       "name": "神兽青蛇",
+      "beastType": "snake2",
       "level": 145,
       "meta": "天资：优(14939)｜血脉：无血脉",
       "talent": 14939,
@@ -6789,6 +6824,7 @@
       "sourceRecordId": "19",
       "accountId": "MYT",
       "name": "神兽龙马",
+      "beastType": "horse",
       "level": 145,
       "meta": "天资：优(14638)｜血脉：无血脉",
       "talent": 14638,
@@ -6936,13 +6972,17 @@
         "level": "9★★",
         "effect": "魔法+1235",
         "progress": {
-          "current": 50,
+          "current": 61,
           "required": 256,
           "next": "10",
           "gain": "魔法+65"
         }
       },
-      "evidenceId": "FC:equipment:武器"
+      "evidenceId": "FC:equipment:武器:2026-07-13",
+      "evidenceIds": [
+        "FC:equipment:武器",
+        "FC:equipment:武器:2026-07-13"
+      ]
     },
     {
       "id": "FC:equipment:衣服",
@@ -6964,13 +7004,17 @@
         "level": "10",
         "effect": "气血+700",
         "progress": {
-          "current": 119,
+          "current": 126,
           "required": 512,
           "next": "10★★",
           "gain": "气血+35"
         }
       },
-      "evidenceId": "FC:equipment:衣服"
+      "evidenceId": "FC:equipment:衣服:2026-07-13",
+      "evidenceIds": [
+        "FC:equipment:衣服",
+        "FC:equipment:衣服:2026-07-13"
+      ]
     },
     {
       "id": "FC:equipment:项链",
@@ -6992,13 +7036,17 @@
         "level": "10★★",
         "effect": "灵力+63",
         "progress": {
-          "current": 237,
+          "current": 253,
           "required": 512,
           "next": "11",
           "gain": "灵力+3"
         }
       },
-      "evidenceId": "FC:equipment:项链"
+      "evidenceId": "FC:equipment:项链:2026-07-13",
+      "evidenceIds": [
+        "FC:equipment:项链",
+        "FC:equipment:项链:2026-07-13"
+      ]
     },
     {
       "id": "FC:equipment:头盔",
@@ -7018,16 +7066,20 @@
       "durability": 349,
       "gem": {
         "name": "月亮石",
-        "level": "10",
-        "effect": "防御+120",
+        "level": "10★★",
+        "effect": "防御+126",
         "progress": {
-          "current": 505,
+          "current": 9,
           "required": 512,
-          "next": "10★★",
+          "next": "11",
           "gain": "防御+6"
         }
       },
-      "evidenceId": "FC:equipment:头盔"
+      "evidenceId": "FC:equipment:头盔:2026-07-13",
+      "evidenceIds": [
+        "FC:equipment:头盔",
+        "FC:equipment:头盔:2026-07-13"
+      ]
     },
     {
       "id": "FC:equipment:腰带",
@@ -7057,7 +7109,11 @@
           "gain": "速度+2"
         }
       },
-      "evidenceId": "FC:equipment:腰带"
+      "evidenceId": "FC:equipment:腰带:2026-07-13",
+      "evidenceIds": [
+        "FC:equipment:腰带",
+        "FC:equipment:腰带:2026-07-13"
+      ]
     },
     {
       "id": "FC:equipment:鞋子",
@@ -7079,13 +7135,17 @@
         "level": "11★★",
         "effect": "速度+92",
         "progress": {
-          "current": 74,
+          "current": 117,
           "required": 1024,
           "next": "12",
           "gain": "速度+4"
         }
       },
-      "evidenceId": "FC:equipment:鞋子"
+      "evidenceId": "FC:equipment:鞋子:2026-07-13",
+      "evidenceIds": [
+        "FC:equipment:鞋子",
+        "FC:equipment:鞋子:2026-07-13"
+      ]
     },
     {
       "id": "LG1:equipment:武器",
@@ -7107,13 +7167,17 @@
         "level": "9",
         "effect": "攻击+72",
         "progress": {
-          "current": 236,
+          "current": 243,
           "required": 256,
           "next": "9★★",
           "gain": "攻击+4"
         }
       },
-      "evidenceId": "LG1:equipment:武器"
+      "evidenceId": "LG1:equipment:武器:2026-07-13",
+      "evidenceIds": [
+        "LG1:equipment:武器",
+        "LG1:equipment:武器:2026-07-13"
+      ]
     },
     {
       "id": "LG1:equipment:衣服",
@@ -7134,13 +7198,17 @@
         "level": "11",
         "effect": "灵力+79",
         "progress": {
-          "current": 72,
+          "current": 122,
           "required": 1024,
           "next": "11★★",
           "gain": "灵力+3"
         }
       },
-      "evidenceId": "LG1:equipment:衣服"
+      "evidenceId": "LG1:equipment:衣服:2026-07-13",
+      "evidenceIds": [
+        "LG1:equipment:衣服",
+        "LG1:equipment:衣服:2026-07-13"
+      ]
     },
     {
       "id": "LG1:equipment:项链",
@@ -7167,7 +7235,11 @@
           "gain": "灵力+3"
         }
       },
-      "evidenceId": "LG1:equipment:项链"
+      "evidenceId": "LG1:equipment:项链:2026-07-13",
+      "evidenceIds": [
+        "LG1:equipment:项链",
+        "LG1:equipment:项链:2026-07-13"
+      ]
     },
     {
       "id": "LG1:equipment:头盔",
@@ -7190,13 +7262,17 @@
         "level": "10",
         "effect": "防御+120",
         "progress": {
-          "current": 309,
+          "current": 321,
           "required": 512,
           "next": "10★★",
           "gain": "防御+6"
         }
       },
-      "evidenceId": "LG1:equipment:头盔"
+      "evidenceId": "LG1:equipment:头盔:2026-07-13",
+      "evidenceIds": [
+        "LG1:equipment:头盔",
+        "LG1:equipment:头盔:2026-07-13"
+      ]
     },
     {
       "id": "LG1:equipment:腰带",
@@ -7219,13 +7295,17 @@
         "level": "11",
         "effect": "速度+105",
         "progress": {
-          "current": 345,
+          "current": 355,
           "required": 1024,
           "next": "11★★",
           "gain": "速度+5"
         }
       },
-      "evidenceId": "LG1:equipment:腰带"
+      "evidenceId": "LG1:equipment:腰带:2026-07-13",
+      "evidenceIds": [
+        "LG1:equipment:腰带",
+        "LG1:equipment:腰带:2026-07-13"
+      ]
     },
     {
       "id": "LG1:equipment:鞋子",
@@ -7254,7 +7334,11 @@
           "gain": "速度+4"
         }
       },
-      "evidenceId": "LG1:equipment:鞋子"
+      "evidenceId": "LG1:equipment:鞋子:2026-07-13",
+      "evidenceIds": [
+        "LG1:equipment:鞋子",
+        "LG1:equipment:鞋子:2026-07-13"
+      ]
     },
     {
       "id": "PT:equipment:武器",
@@ -7273,16 +7357,20 @@
       "durability": 630,
       "gem": {
         "name": "神秘石",
-        "level": "9",
-        "effect": "魔法+1170",
+        "level": "9★★",
+        "effect": "魔法+1235",
         "progress": {
-          "current": 247,
+          "current": 4,
           "required": 256,
-          "next": "9★★",
+          "next": "10",
           "gain": "魔法+65"
         }
       },
-      "evidenceId": "PT:equipment:武器"
+      "evidenceId": "PT:equipment:武器:2026-07-13",
+      "evidenceIds": [
+        "PT:equipment:武器",
+        "PT:equipment:武器:2026-07-13"
+      ]
     },
     {
       "id": "PT:equipment:衣服",
@@ -7305,13 +7393,17 @@
         "level": "9",
         "effect": "气血+756",
         "progress": {
-          "current": 167,
+          "current": 190,
           "required": 256,
           "next": "9★★",
           "gain": "气血+42"
         }
       },
-      "evidenceId": "PT:equipment:衣服"
+      "evidenceId": "PT:equipment:衣服:2026-07-13",
+      "evidenceIds": [
+        "PT:equipment:衣服",
+        "PT:equipment:衣服:2026-07-13"
+      ]
     },
     {
       "id": "PT:equipment:项链",
@@ -7333,13 +7425,17 @@
         "level": "10★★",
         "effect": "灵力+63",
         "progress": {
-          "current": 118,
+          "current": 124,
           "required": 512,
           "next": "11",
           "gain": "灵力+3"
         }
       },
-      "evidenceId": "PT:equipment:项链"
+      "evidenceId": "PT:equipment:项链:2026-07-13",
+      "evidenceIds": [
+        "PT:equipment:项链",
+        "PT:equipment:项链:2026-07-13"
+      ]
     },
     {
       "id": "PT:equipment:头盔",
@@ -7361,13 +7457,17 @@
         "level": "10",
         "effect": "防御+120",
         "progress": {
-          "current": 381,
+          "current": 389,
           "required": 512,
           "next": "10★★",
           "gain": "防御+6"
         }
       },
-      "evidenceId": "PT:equipment:头盔"
+      "evidenceId": "PT:equipment:头盔:2026-07-13",
+      "evidenceIds": [
+        "PT:equipment:头盔",
+        "PT:equipment:头盔:2026-07-13"
+      ]
     },
     {
       "id": "PT:equipment:鞋子",
@@ -7390,13 +7490,17 @@
         "level": "11",
         "effect": "速度+88",
         "progress": {
-          "current": 714,
+          "current": 773,
           "required": 1024,
           "next": "11★★",
           "gain": "速度+4"
         }
       },
-      "evidenceId": "PT:equipment:鞋子"
+      "evidenceId": "PT:equipment:鞋子:2026-07-13",
+      "evidenceIds": [
+        "PT:equipment:鞋子",
+        "PT:equipment:鞋子:2026-07-13"
+      ]
     },
     {
       "id": "PT:equipment:腰带",
@@ -7424,7 +7528,11 @@
           "gain": "速度+2"
         }
       },
-      "evidenceId": "PT:equipment:腰带"
+      "evidenceId": "PT:equipment:腰带:2026-07-13",
+      "evidenceIds": [
+        "PT:equipment:腰带",
+        "PT:equipment:腰带:2026-07-13"
+      ]
     },
     {
       "id": "LG2:equipment:武器",
@@ -7446,13 +7554,17 @@
         "level": "9★★",
         "effect": "攻击+76",
         "progress": {
-          "current": 74,
+          "current": 79,
           "required": 256,
           "next": "10",
           "gain": "攻击+4"
         }
       },
-      "evidenceId": "LG2:equipment:武器"
+      "evidenceId": "LG2:equipment:武器:2026-07-13",
+      "evidenceIds": [
+        "LG2:equipment:武器",
+        "LG2:equipment:武器:2026-07-13"
+      ]
     },
     {
       "id": "LG2:equipment:衣服",
@@ -7475,13 +7587,17 @@
         "level": "11",
         "effect": "灵力+79",
         "progress": {
-          "current": 55,
+          "current": 125,
           "required": 1024,
           "next": "11★★",
           "gain": "灵力+3"
         }
       },
-      "evidenceId": "LG2:equipment:衣服"
+      "evidenceId": "LG2:equipment:衣服:2026-07-13",
+      "evidenceIds": [
+        "LG2:equipment:衣服",
+        "LG2:equipment:衣服:2026-07-13"
+      ]
     },
     {
       "id": "LG2:equipment:项链",
@@ -7509,7 +7625,11 @@
           "gain": "灵力+3"
         }
       },
-      "evidenceId": "LG2:equipment:项链"
+      "evidenceId": "LG2:equipment:项链:2026-07-13",
+      "evidenceIds": [
+        "LG2:equipment:项链",
+        "LG2:equipment:项链:2026-07-13"
+      ]
     },
     {
       "id": "LG2:equipment:头盔",
@@ -7531,13 +7651,17 @@
         "level": "10",
         "effect": "防御+120",
         "progress": {
-          "current": 151,
+          "current": 161,
           "required": 512,
           "next": "10★★",
           "gain": "防御+6"
         }
       },
-      "evidenceId": "LG2:equipment:头盔"
+      "evidenceId": "LG2:equipment:头盔:2026-07-13",
+      "evidenceIds": [
+        "LG2:equipment:头盔",
+        "LG2:equipment:头盔:2026-07-13"
+      ]
     },
     {
       "id": "LG2:equipment:腰带",
@@ -7560,13 +7684,17 @@
         "level": "11",
         "effect": "速度+88",
         "progress": {
-          "current": 0,
+          "current": 5,
           "required": 1024,
           "next": "11★★",
           "gain": "速度+4"
         }
       },
-      "evidenceId": "LG2:equipment:腰带"
+      "evidenceId": "LG2:equipment:腰带:2026-07-13",
+      "evidenceIds": [
+        "LG2:equipment:腰带",
+        "LG2:equipment:腰带:2026-07-13"
+      ]
     },
     {
       "id": "LG2:equipment:鞋子",
@@ -7586,16 +7714,20 @@
       "durability": 860,
       "gem": {
         "name": "黑宝石",
-        "level": "10★★",
-        "effect": "速度+84",
+        "level": "11",
+        "effect": "速度+88",
         "progress": {
-          "current": 488,
-          "required": 512,
-          "next": "11",
+          "current": 0,
+          "required": 1024,
+          "next": "11★★",
           "gain": "速度+4"
         }
       },
-      "evidenceId": "LG2:equipment:鞋子"
+      "evidenceId": "LG2:equipment:鞋子:2026-07-13",
+      "evidenceIds": [
+        "LG2:equipment:鞋子",
+        "LG2:equipment:鞋子:2026-07-13"
+      ]
     },
     {
       "id": "MYT:equipment:武器",
@@ -7617,13 +7749,17 @@
         "level": "10",
         "effect": "攻击+80",
         "progress": {
-          "current": 136,
+          "current": 147,
           "required": 512,
           "next": "10★★",
           "gain": "攻击+4"
         }
       },
-      "evidenceId": "MYT:equipment:武器"
+      "evidenceId": "MYT:equipment:武器:2026-07-13",
+      "evidenceIds": [
+        "MYT:equipment:武器",
+        "MYT:equipment:武器:2026-07-13"
+      ]
     },
     {
       "id": "MYT:equipment:衣服",
@@ -7645,13 +7781,17 @@
         "level": "9★★",
         "effect": "气血+665",
         "progress": {
-          "current": 63,
+          "current": 66,
           "required": 256,
           "next": "10",
           "gain": "气血+35"
         }
       },
-      "evidenceId": "MYT:equipment:衣服"
+      "evidenceId": "MYT:equipment:衣服:2026-07-13",
+      "evidenceIds": [
+        "MYT:equipment:衣服",
+        "MYT:equipment:衣服:2026-07-13"
+      ]
     },
     {
       "id": "MYT:equipment:项链",
@@ -7672,13 +7812,17 @@
         "level": "10",
         "effect": "灵力+60",
         "progress": {
-          "current": 398,
+          "current": 407,
           "required": 512,
           "next": "10★★",
           "gain": "灵力+3"
         }
       },
-      "evidenceId": "MYT:equipment:项链"
+      "evidenceId": "MYT:equipment:项链:2026-07-13",
+      "evidenceIds": [
+        "MYT:equipment:项链",
+        "MYT:equipment:项链:2026-07-13"
+      ]
     },
     {
       "id": "MYT:equipment:头盔",
@@ -7707,7 +7851,11 @@
           "gain": "攻击+4"
         }
       },
-      "evidenceId": "MYT:equipment:头盔"
+      "evidenceId": "MYT:equipment:头盔:2026-07-13",
+      "evidenceIds": [
+        "MYT:equipment:头盔",
+        "MYT:equipment:头盔:2026-07-13"
+      ]
     },
     {
       "id": "MYT:equipment:腰带",
@@ -7729,13 +7877,17 @@
         "level": "11★★",
         "effect": "速度+92",
         "progress": {
-          "current": 0,
+          "current": 26,
           "required": 1024,
           "next": "12",
           "gain": "速度+4"
         }
       },
-      "evidenceId": "MYT:equipment:腰带"
+      "evidenceId": "MYT:equipment:腰带:2026-07-13",
+      "evidenceIds": [
+        "MYT:equipment:腰带",
+        "MYT:equipment:腰带:2026-07-13"
+      ]
     },
     {
       "id": "MYT:equipment:鞋子",
@@ -7754,16 +7906,20 @@
       "durability": 467,
       "gem": {
         "name": "黑宝石",
-        "level": "11",
-        "effect": "速度+88",
+        "level": "11★★",
+        "effect": "速度+92",
         "progress": {
-          "current": 996,
+          "current": 0,
           "required": 1024,
-          "next": "11★★",
+          "next": "12",
           "gain": "速度+4"
         }
       },
-      "evidenceId": "MYT:equipment:鞋子"
+      "evidenceId": "MYT:equipment:鞋子:2026-07-13",
+      "evidenceIds": [
+        "MYT:equipment:鞋子",
+        "MYT:equipment:鞋子:2026-07-13"
+      ]
     }
   ],
   "skills": [
@@ -8773,6 +8929,22 @@
       "file": "ScreenShot_2026-07-01_145811_242.png"
     },
     {
+      "id": "FC:pet:17:2026-07-13:panel",
+      "accountId": "FC",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宠物/2026-07-13/FC_pet_17_skin_panel_2026-07-13.png",
+      "file": "FC_pet_17_skin_panel_2026-07-13.png"
+    },
+    {
+      "id": "FC:pet:17:2026-07-13:growth",
+      "accountId": "FC",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宠物/2026-07-13/FC_pet_17_skin_growth_2026-07-13.png",
+      "file": "FC_pet_17_skin_growth_2026-07-13.png"
+    },
+    {
       "id": "FC:pet:19",
       "accountId": "FC",
       "kind": "pet",
@@ -8901,6 +9073,22 @@
       "file": "ScreenShot_2026-07-01_150315_217.png"
     },
     {
+      "id": "LG1:pet:09:2026-07-13:panel",
+      "accountId": "LG1",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宠物/2026-07-13/LG1_pet_09_advance2_panel_2026-07-13.png",
+      "file": "LG1_pet_09_advance2_panel_2026-07-13.png"
+    },
+    {
+      "id": "LG1:pet:09:2026-07-13:growth",
+      "accountId": "LG1",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宠物/2026-07-13/LG1_pet_09_advance2_growth_2026-07-13.png",
+      "file": "LG1_pet_09_advance2_growth_2026-07-13.png"
+    },
+    {
       "id": "LG1:pet:11",
       "accountId": "LG1",
       "kind": "pet",
@@ -9027,6 +9215,22 @@
       "capturedAt": "2026-07-01",
       "sourcePath": "图片/原始截图/LG2/宠物/2026-07-01/ScreenShot_2026-07-01_155420_842.png",
       "file": "ScreenShot_2026-07-01_155420_842.png"
+    },
+    {
+      "id": "LG2:pet:05:2026-07-13:panel",
+      "accountId": "LG2",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宠物/2026-07-13/LG2_pet_05_advance2_panel_2026-07-13.png",
+      "file": "LG2_pet_05_advance2_panel_2026-07-13.png"
+    },
+    {
+      "id": "LG2:pet:05:2026-07-13:growth",
+      "accountId": "LG2",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宠物/2026-07-13/LG2_pet_05_advance2_growth_2026-07-13.png",
+      "file": "LG2_pet_05_advance2_growth_2026-07-13.png"
     },
     {
       "id": "LG2:pet:07",
@@ -9429,6 +9633,22 @@
       "file": "ScreenShot_2026-07-01_162030_801.png"
     },
     {
+      "id": "MYT:pet:11:2026-07-13:panel",
+      "accountId": "MYT",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宠物/2026-07-13/MYT_pet_11_ornament_advance1_panel_2026-07-13.png",
+      "file": "MYT_pet_11_ornament_advance1_panel_2026-07-13.png"
+    },
+    {
+      "id": "MYT:pet:11:2026-07-13:growth",
+      "accountId": "MYT",
+      "kind": "pet",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宠物/2026-07-13/MYT_pet_11_ornament_advance1_growth_2026-07-13.png",
+      "file": "MYT_pet_11_ornament_advance1_growth_2026-07-13.png"
+    },
+    {
       "id": "MYT:pet:13",
       "accountId": "MYT",
       "kind": "pet",
@@ -9739,6 +9959,246 @@
       "capturedAt": "2026-07-09",
       "sourcePath": "图片/原始截图/公共/宝石行情/2026-07-09/gem-market-2026-07-09.png",
       "file": "gem-market-2026-07-09.png"
+    },
+    {
+      "id": "FC:equipment:武器:2026-07-13",
+      "accountId": "FC",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宝石/2026-07-13/ScreenShot_2026-07-13_110034_308.png",
+      "file": "ScreenShot_2026-07-13_110034_308.png"
+    },
+    {
+      "id": "FC:equipment:衣服:2026-07-13",
+      "accountId": "FC",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宝石/2026-07-13/ScreenShot_2026-07-13_110102_331.png",
+      "file": "ScreenShot_2026-07-13_110102_331.png"
+    },
+    {
+      "id": "FC:equipment:项链:2026-07-13",
+      "accountId": "FC",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宝石/2026-07-13/ScreenShot_2026-07-13_110107_578.png",
+      "file": "ScreenShot_2026-07-13_110107_578.png"
+    },
+    {
+      "id": "FC:equipment:头盔:2026-07-13",
+      "accountId": "FC",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宝石/2026-07-13/ScreenShot_2026-07-13_110113_721.png",
+      "file": "ScreenShot_2026-07-13_110113_721.png"
+    },
+    {
+      "id": "FC:equipment:腰带:2026-07-13",
+      "accountId": "FC",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宝石/2026-07-13/ScreenShot_2026-07-13_110120_754.png",
+      "file": "ScreenShot_2026-07-13_110120_754.png"
+    },
+    {
+      "id": "FC:equipment:鞋子:2026-07-13",
+      "accountId": "FC",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/FC/宝石/2026-07-13/ScreenShot_2026-07-13_110126_533.png",
+      "file": "ScreenShot_2026-07-13_110126_533.png"
+    },
+    {
+      "id": "LG1:equipment:武器:2026-07-13",
+      "accountId": "LG1",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宝石/2026-07-13/ScreenShot_2026-07-13_110154_327.png",
+      "file": "ScreenShot_2026-07-13_110154_327.png"
+    },
+    {
+      "id": "LG1:equipment:衣服:2026-07-13",
+      "accountId": "LG1",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宝石/2026-07-13/ScreenShot_2026-07-13_110209_006.png",
+      "file": "ScreenShot_2026-07-13_110209_006.png"
+    },
+    {
+      "id": "LG1:equipment:项链:2026-07-13",
+      "accountId": "LG1",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宝石/2026-07-13/ScreenShot_2026-07-13_110215_304.png",
+      "file": "ScreenShot_2026-07-13_110215_304.png"
+    },
+    {
+      "id": "LG1:equipment:头盔:2026-07-13",
+      "accountId": "LG1",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宝石/2026-07-13/ScreenShot_2026-07-13_110221_092.png",
+      "file": "ScreenShot_2026-07-13_110221_092.png"
+    },
+    {
+      "id": "LG1:equipment:腰带:2026-07-13",
+      "accountId": "LG1",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宝石/2026-07-13/ScreenShot_2026-07-13_110226_971.png",
+      "file": "ScreenShot_2026-07-13_110226_971.png"
+    },
+    {
+      "id": "LG1:equipment:鞋子:2026-07-13",
+      "accountId": "LG1",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG1/宝石/2026-07-13/ScreenShot_2026-07-13_110235_503.png",
+      "file": "ScreenShot_2026-07-13_110235_503.png"
+    },
+    {
+      "id": "PT:equipment:武器:2026-07-13",
+      "accountId": "PT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/PT/宝石/2026-07-13/ScreenShot_2026-07-13_110251_339.png",
+      "file": "ScreenShot_2026-07-13_110251_339.png"
+    },
+    {
+      "id": "PT:equipment:衣服:2026-07-13",
+      "accountId": "PT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/PT/宝石/2026-07-13/ScreenShot_2026-07-13_110303_394.png",
+      "file": "ScreenShot_2026-07-13_110303_394.png"
+    },
+    {
+      "id": "PT:equipment:项链:2026-07-13",
+      "accountId": "PT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/PT/宝石/2026-07-13/ScreenShot_2026-07-13_110308_062.png",
+      "file": "ScreenShot_2026-07-13_110308_062.png"
+    },
+    {
+      "id": "PT:equipment:头盔:2026-07-13",
+      "accountId": "PT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/PT/宝石/2026-07-13/ScreenShot_2026-07-13_110315_001.png",
+      "file": "ScreenShot_2026-07-13_110315_001.png"
+    },
+    {
+      "id": "PT:equipment:腰带:2026-07-13",
+      "accountId": "PT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/PT/宝石/2026-07-13/ScreenShot_2026-07-13_110321_537.png",
+      "file": "ScreenShot_2026-07-13_110321_537.png"
+    },
+    {
+      "id": "PT:equipment:鞋子:2026-07-13",
+      "accountId": "PT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/PT/宝石/2026-07-13/ScreenShot_2026-07-13_110327_787.png",
+      "file": "ScreenShot_2026-07-13_110327_787.png"
+    },
+    {
+      "id": "MYT:equipment:武器:2026-07-13",
+      "accountId": "MYT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宝石/2026-07-13/ScreenShot_2026-07-13_110549_327.png",
+      "file": "ScreenShot_2026-07-13_110549_327.png"
+    },
+    {
+      "id": "MYT:equipment:衣服:2026-07-13",
+      "accountId": "MYT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宝石/2026-07-13/ScreenShot_2026-07-13_110603_003.png",
+      "file": "ScreenShot_2026-07-13_110603_003.png"
+    },
+    {
+      "id": "MYT:equipment:项链:2026-07-13",
+      "accountId": "MYT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宝石/2026-07-13/ScreenShot_2026-07-13_110608_235.png",
+      "file": "ScreenShot_2026-07-13_110608_235.png"
+    },
+    {
+      "id": "MYT:equipment:头盔:2026-07-13",
+      "accountId": "MYT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宝石/2026-07-13/ScreenShot_2026-07-13_110614_083.png",
+      "file": "ScreenShot_2026-07-13_110614_083.png"
+    },
+    {
+      "id": "MYT:equipment:腰带:2026-07-13",
+      "accountId": "MYT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宝石/2026-07-13/ScreenShot_2026-07-13_110619_925.png",
+      "file": "ScreenShot_2026-07-13_110619_925.png"
+    },
+    {
+      "id": "MYT:equipment:鞋子:2026-07-13",
+      "accountId": "MYT",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/MYT/宝石/2026-07-13/ScreenShot_2026-07-13_110626_587.png",
+      "file": "ScreenShot_2026-07-13_110626_587.png"
+    },
+    {
+      "id": "LG2:equipment:武器:2026-07-13",
+      "accountId": "LG2",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宝石/2026-07-13/ScreenShot_2026-07-13_110652_120.png",
+      "file": "ScreenShot_2026-07-13_110652_120.png"
+    },
+    {
+      "id": "LG2:equipment:衣服:2026-07-13",
+      "accountId": "LG2",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宝石/2026-07-13/ScreenShot_2026-07-13_110705_637.png",
+      "file": "ScreenShot_2026-07-13_110705_637.png"
+    },
+    {
+      "id": "LG2:equipment:项链:2026-07-13",
+      "accountId": "LG2",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宝石/2026-07-13/ScreenShot_2026-07-13_110710_806.png",
+      "file": "ScreenShot_2026-07-13_110710_806.png"
+    },
+    {
+      "id": "LG2:equipment:头盔:2026-07-13",
+      "accountId": "LG2",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宝石/2026-07-13/ScreenShot_2026-07-13_110716_466.png",
+      "file": "ScreenShot_2026-07-13_110716_466.png"
+    },
+    {
+      "id": "LG2:equipment:腰带:2026-07-13",
+      "accountId": "LG2",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宝石/2026-07-13/ScreenShot_2026-07-13_110721_754.png",
+      "file": "ScreenShot_2026-07-13_110721_754.png"
+    },
+    {
+      "id": "LG2:equipment:鞋子:2026-07-13",
+      "accountId": "LG2",
+      "kind": "equipment",
+      "capturedAt": "2026-07-13",
+      "sourcePath": "图片/原始截图/LG2/宝石/2026-07-13/ScreenShot_2026-07-13_110729_607.png",
+      "file": "ScreenShot_2026-07-13_110729_607.png"
     }
   ],
   "gemUpgradeSteps": [

@@ -17,7 +17,7 @@ describe("migration baseline", () => {
   it("preserves the complete catalog", () => {
     expect(catalog.accounts).toHaveLength(5);
     expect(pets).toHaveLength(53);
-    expect(catalog.evidence.filter((item) => item.kind === "pet")).toHaveLength(106);
+    expect(catalog.evidence.filter((item) => item.kind === "pet")).toHaveLength(114);
     expect(new Set(pets.map((item) => item.name))).toHaveLength(12);
     expect(catalog.equipment).toHaveLength(30);
     expect(catalog.skills).toHaveLength(125);
@@ -27,14 +27,14 @@ describe("migration baseline", () => {
   });
 
   it("preserves beast costs", () => {
-    expect(beastTotals(pets)).toEqual({ confirmedWan: 9395, estimatedWan: 1850, totalWan: 11245, eggs: 1690 });
+    expect(beastTotals(pets)).toEqual({ confirmedWan: 8680, estimatedWan: 1850, totalWan: 10530, eggs: 1560 });
   });
 
   it("preserves the combined account schedule", () => {
     const plans = buildAccountPlans(catalog, pets, state);
     expect(plans[0].accountId).toBe("LG2");
-    expect(plans[0].finishWeek).toBe(72);
-    expect(plans.find((item) => item.accountId === "FC")?.finishWeek).toBe(50);
+    expect(plans[0].finishWeek).toBe(70);
+    expect(plans.find((item) => item.accountId === "FC")?.finishWeek).toBe(48);
   });
 
   it("preserves the fixed comparison matrix", () => {

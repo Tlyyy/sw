@@ -56,9 +56,9 @@ function classify(row: PetView): PetAnalysis {
 
 function stageFlags(row: PetView) {
   const base = beastBaseAptitudes[row.name];
-  if (!base) return { ornament: false, advance1: false, advance2: false, skin: false, strengthen: false };
+  if (!base) return { ornament: false, advance1: false, advance2: false, skin: false, strengthen: false, ...row.beastProgress };
   const minDelta = Math.min(currentAptitude(row.attackApt) - base.attack, currentAptitude(row.defenseApt) - base.defense, currentAptitude(row.staminaApt) - base.stamina, currentAptitude(row.magicApt) - base.magic, currentAptitude(row.speedApt) - base.speed);
-  return { ornament: row.name !== "神兽龙马", advance1: minDelta >= 50, advance2: minDelta >= 70, skin: false, strengthen: false };
+  return { ornament: row.name !== "神兽龙马", advance1: minDelta >= 50, advance2: minDelta >= 70, skin: false, strengthen: false, ...row.beastProgress };
 }
 
 function beastCost(row: PetView, config: BeastConfig, typeKey: PetView["beastType"]): BeastCostSummary | undefined {
@@ -98,13 +98,7 @@ function baseView(pet: PetAsset): PetView {
 
 export function buildPetViews(catalog: Catalog): PetView[] {
   const views = catalog.pets.map(baseView);
-  const snakeCounts = new Map<string, number>();
   for (const row of views) {
-    if (row.name === "神兽青蛇") {
-      const count = (snakeCounts.get(row.accountId) || 0) + 1;
-      snakeCounts.set(row.accountId, count);
-      row.beastType = count === 1 ? "snake1" : count === 2 ? "snake2" : undefined;
-    } else if (row.name === "神兽龙马") row.beastType = "horse";
     row.beastCost = beastCost(row, catalog.beastConfig, row.beastType);
     row.searchText = [row.accountId, row.name, row.meta, row.heart, row.role.primary, ...row.role.tags, ...row.skills, ...row.panel.flat(), ...row.aptitudes.flat()].filter(Boolean).join(" ").toLowerCase();
   }

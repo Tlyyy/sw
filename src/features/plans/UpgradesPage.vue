@@ -28,7 +28,7 @@ const market = computed(() => marketItems(catalog.data, settings.gemPriceOverrid
       <div><h2>宝石升级参考</h2><p>神兽主线完成前暂不把宝石纳入行动优先级；现有装备、行情和 13 段测算仍完整保留。</p></div>
       <RouterLink class="button primary" to="/data/market">维护宝石行情</RouterLink>
     </section>
-    <StatStrip :items="[{ value: '主线后', label: '当前优先级', note: '暂不进入行动推进台' }, { value: '30', label: '装备', note: '五号各 6 件' }, { value: totalGap.toLocaleString('zh-CN'), label: '宝石颗数缺口', note: `按当前行情约 ${formatCurrency(totalCost)}` }, { value: `${market.filter((item) => item.edited).length}`, label: '行情覆盖', note: '来自数据中心' }]" />
+    <StatStrip :items="[{ value: '主线后', label: '当前优先级', note: '暂不进入行动推进台' }, { value: `${catalog.data.equipment.length}`, label: '装备', note: '五号装备总数' }, { value: totalGap.toLocaleString('zh-CN'), label: '宝石颗数缺口', note: `按当前行情约 ${formatCurrency(totalCost)}` }, { value: `${market.filter((item) => item.edited).length}`, label: '行情覆盖', note: '来自数据中心' }]" />
     <section class="market-band readonly-market-band">
       <div class="section-head"><div><h2>当前生效行情</h2><p>{{ catalog.data.gemMarketSnapshots.at(-1)?.sourceDate }} · 银币/颗 · 只读</p></div><RouterLink to="/data/market">前往维护 →</RouterLink></div>
       <article v-for="item in market" :key="item.name"><span>{{ item.name }}</span><strong>{{ item.price }}</strong><em>{{ item.edited ? "本地覆盖" : "截图基准" }}</em></article>

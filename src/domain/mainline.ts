@@ -2,7 +2,6 @@ import { calculateInventoryDeltas, latestInventoryPair } from "./inventory";
 import type { AccountTaskPlan, ScheduledTask } from "./plans";
 import type {
   AccountId,
-  BeastResource,
   InventoryAccountDelta,
   InventoryBalance,
   InventorySnapshot,
@@ -13,9 +12,7 @@ export const mainlineAccountIds = ["FC", "LG1", "LG2", "PT", "MYT"] as const sat
 export type MainlineStatus = "ready" | "buyable" | "blocked" | "stale";
 export type MainlineRequirementKind = "eggs" | "silver" | "shards" | "complete";
 
-export interface MainlineInventory extends InventoryBalance {
-  innerShardCount: number;
-}
+export type MainlineInventory = InventoryBalance;
 
 export interface MainlineAllocation {
   dedicatedUsed: number;
@@ -127,11 +124,19 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
 
   if (task.remainingShardCount > 0 || task.resourceType === "innerShard") {
     const requiredAmount = task.remainingShardCount;
+    if (inventory.innerShardCount === null) {
+      return {
+        ...statusCopy("stale", "请补录该库存日期的内丹碎片"),
+        requirementKind: "shards" as const,
+        requiredAmount,
+        allocation,
+      };
+    }
     allocation.shardsUsed = Math.min(requiredAmount, inventory.innerShardCount);
     allocation.shardShortage = requiredAmount - allocation.shardsUsed;
     const result = allocation.shardShortage
-      ? statusCopy("blocked", `还差 ${allocation.shardShortage} 个内丹锁片`)
-      : statusCopy("ready", "锁片库存充足，可以完成");
+      ? statusCopy("blocked", `还差 ${allocation.shardShortage} 个内丹碎片`)
+      : statusCopy("ready", "内丹碎片库存充足，可以完成");
     return { ...result, requirementKind: "shards" as const, requiredAmount, allocation };
   }
 
@@ -165,13 +170,11 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
 
 /**
  * Build the five-account mainline workbench in its stable UI order.
- * Inventory snapshots are authoritative when present. Legacy settings are a
- * read-only fallback and are deliberately marked stale.
+ * Inventory snapshots are the only mutable source for current resources.
  */
 export function buildMainlineProjection(
   taskPlans: AccountTaskPlan[],
   snapshots: InventorySnapshot[],
-  fallbackResources: Record<AccountId, BeastResource>,
   eggPriceWan: number,
 ): MainlineAccountProjection[] {
   const { latest, previous } = latestInventoryPair(snapshots);
@@ -179,13 +182,13 @@ export function buildMainlineProjection(
   const normalizedEggPrice = Number.isFinite(eggPriceWan) ? Math.max(0, eggPriceWan) : 0;
 
   return mainlineAccountIds.map((accountId) => {
-    const fallback = fallbackResources[accountId];
     const balance = latest?.accounts[accountId] || {
       dedicatedEggs: 0,
-      regularEggs: fallback.eggCount,
-      silverWan: fallback.silverWan,
+      regularEggs: 0,
+      silverWan: 0,
+      innerShardCount: null,
     };
-    const inventory: MainlineInventory = { ...balance, innerShardCount: fallback.innerShardCount };
+    const inventory: MainlineInventory = { ...balance };
     const tasks = taskPlans.find((plan) => plan.accountId === accountId)?.tasks || [];
     const nextTasks = tasks.filter((task) => !task.done).slice(0, 3);
     const currentTask = nextTasks[0] || null;

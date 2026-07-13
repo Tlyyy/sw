@@ -24,13 +24,21 @@
   --radius: 5px;
   --shadow: 0 14px 38px rgba(7, 19, 31, .09);
   --header-height: 68px;
-  --text-2xs: 11px;
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-md: 14px;
-  --text-body: 15px;
-  --text-ui: 16px;
-  --text-large: 20px;
+  --content-max: 1920px;
+  --page-gutter: clamp(14px, 1vw, 24px);
+  --font-caption: 13px;
+  --font-support: 15px;
+  --font-body: 16px;
+  --font-emphasis: 18px;
+  --font-section: 24px;
+  --font-title: 32px;
+  --text-2xs: var(--font-caption);
+  --text-xs: var(--font-caption);
+  --text-sm: var(--font-support);
+  --text-md: var(--font-support);
+  --text-body: var(--font-body);
+  --text-ui: var(--font-body);
+  --text-large: var(--font-section);
 }
 
 * { box-sizing: border-box; }

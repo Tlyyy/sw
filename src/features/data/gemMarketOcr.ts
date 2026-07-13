@@ -5,7 +5,6 @@ import {
   type GemMarketItemName,
   type GemPriceCrop,
 } from "../../domain/gemMarketRecognition";
-import { parsePaddleGemMarketItems, type PaddleTextItem } from "../../domain/gemMarketPaddleParsing";
 import { publicAsset } from "../../utils/publicAsset";
 
 export interface GemMarketOcrResult {
@@ -14,7 +13,7 @@ export interface GemMarketOcrResult {
   confidence: number;
   level: "high" | "medium" | "low";
   rawText: string;
-  engine: "paddle" | "template";
+  engine: "template";
 }
 
 export interface GemMarketOcrProgress {
@@ -38,75 +37,6 @@ const REFERENCE_IMAGE = publicAsset("图片/原始截图/公共/宝石行情/202
 const REFERENCE_VALUES = ["798", "852", "1257", "1240", "308", "264"] as const;
 const GLYPH_WIDTH = 24;
 const GLYPH_HEIGHT = 36;
-
-interface PaddleEngine {
-  predict(input: unknown, params?: Record<string, unknown>): Promise<Array<{
-    image: { width: number; height: number };
-    items: PaddleTextItem[];
-  }>>;
-}
-
-let paddleEnginePromise: Promise<PaddleEngine> | undefined;
-
-async function loadPaddleEngine(): Promise<PaddleEngine> {
-  if (!paddleEnginePromise) {
-    paddleEnginePromise = import("@paddleocr/paddleocr-js").then(async ({ PaddleOCR }) => PaddleOCR.create({
-      lang: "ch",
-      ocrVersion: "PP-OCRv6",
-      textDetectionModelName: "PP-OCRv6_small_det",
-      textRecognitionModelName: "PP-OCRv6_small_rec",
-      textDetectionModelAsset: { url: publicAsset("ocr-models/PP-OCRv6_small_det_onnx_infer.tar") },
-      textRecognitionModelAsset: { url: publicAsset("ocr-models/PP-OCRv6_small_rec_onnx_infer.tar") },
-      textDetectionBatchSize: 1,
-      textRecognitionBatchSize: 8,
-      ortOptions: {
-        backend: "wasm",
-        wasmPaths: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/",
-        numThreads: 1,
-        simd: true,
-        proxy: false,
-      },
-    }) as Promise<PaddleEngine>);
-  }
-  return paddleEnginePromise;
-}
-
-function upscaleForPaddle(image: HTMLImageElement) {
-  const scale = Math.max(2, Math.min(4, Math.ceil(720 / image.naturalWidth)));
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth * scale;
-  canvas.height = image.naturalHeight * scale;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("当前浏览器无法建立强力 OCR 画布。");
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas;
-}
-
-async function recognizeWithPaddle(file: File, onProgress?: (state: GemMarketOcrProgress) => void): Promise<GemMarketOcrResult[]> {
-  onProgress?.({ progress: 0.12, label: "正在读取并放大行情截图" });
-  const image = await loadImage(file);
-  const canvas = upscaleForPaddle(image);
-  onProgress?.({ progress: 0.24, label: "正在加载 PP-OCRv6 强力模型（首次约 60 MB）" });
-  const engine = await loadPaddleEngine();
-  onProgress?.({ progress: 0.58, label: "正在自动定位表格文字和六项价格" });
-  const [result] = await engine.predict(canvas, {
-    textDetLimitSideLen: 960,
-    textDetLimitType: "max",
-    textDetBoxThresh: 0.42,
-    textDetThresh: 0.25,
-    textDetUnclipRatio: 1.8,
-    textRecScoreThresh: 0.2,
-  });
-  const parsed = parsePaddleGemMarketItems(result?.items || [], canvas.width, canvas.height);
-  onProgress?.({ progress: 0.92, label: "正在核对识别结果" });
-  return parsed.map((row) => ({
-    ...row,
-    level: gemRecognitionLevel(row.confidence, row.price),
-    engine: "paddle" as const,
-  }));
-}
 
 function loadImage(source: File | string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -172,7 +102,7 @@ function normalizeGlyph(row: BinaryRow, left: number, right: number): Glyph | nu
   return { pixels: normalized };
 }
 
-function segmentGlyphs(row: BinaryRow, expectedCount?: number): Glyph[] {
+function segmentGlyphs(row: BinaryRow, expectedCount?: number, fixedBounds?: { left: number; right: number }): Glyph[] {
   const visited = new Uint8Array(row.pixels.length);
   const components: Array<{ left: number; right: number; top: number; bottom: number; area: number }> = [];
   for (let start = 0; start < row.pixels.length; start += 1) {
@@ -213,8 +143,8 @@ function segmentGlyphs(row: BinaryRow, expectedCount?: number): Glyph[] {
 
   components.sort((left, right) => left.left - right.left);
   if (expectedCount && components.length) {
-    const groupLeft = Math.min(...components.map((component) => component.left));
-    const groupRight = Math.max(...components.map((component) => component.right));
+    const groupLeft = fixedBounds?.left ?? Math.min(...components.map((component) => component.left));
+    const groupRight = fixedBounds?.right ?? Math.max(...components.map((component) => component.right));
     const groupWidth = groupRight - groupLeft + 1;
     return Array.from({ length: expectedCount }, (_, index) => {
       const left = Math.round(groupLeft + (groupWidth * index) / expectedCount);
@@ -245,14 +175,48 @@ function glyphSimilarity(left: Uint8Array, right: Uint8Array): number {
   return union ? intersection / union : 0;
 }
 
-function buildTemplates(reference: HTMLImageElement): TemplateMap {
-  const templates: TemplateMap = new Map();
+function horizontalInkBounds(row: BinaryRow) {
+  let left = row.width;
+  let right = -1;
+  for (let index = 0; index < row.pixels.length; index += 1) {
+    if (!row.pixels[index]) continue;
+    const x = index % row.width;
+    left = Math.min(left, x);
+    right = Math.max(right, x);
+  }
+  return right >= left ? { left, right } : undefined;
+}
+
+async function normalizeToReference(image: HTMLImageElement, width: number, height: number, margin: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("当前浏览器无法建立离线识别画布。");
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(
+    image,
+    margin,
+    margin,
+    image.naturalWidth - margin * 2,
+    image.naturalHeight - margin * 2,
+    0,
+    0,
+    width,
+    height,
+  );
+  return loadImage(canvas.toDataURL("image/png"));
+}
+
+function addTemplates(templates: TemplateMap, reference: HTMLImageElement, required: boolean) {
   const crops = buildGemPriceCrops(reference.naturalWidth, reference.naturalHeight);
   crops.forEach((crop, rowIndex) => {
     const expected = REFERENCE_VALUES[rowIndex];
     const glyphs = segmentGlyphs(extractBinaryRow(reference, crop), expected.length);
     if (glyphs.length !== expected.length) {
-      throw new Error(`本地数字基准加载失败（第 ${rowIndex + 1} 行：${glyphs.length}/${expected.length}），请刷新页面后重试。`);
+      if (required) throw new Error(`本地数字基准加载失败（第 ${rowIndex + 1} 行：${glyphs.length}/${expected.length}），请刷新页面后重试。`);
+      return;
     }
     glyphs.forEach((glyph, glyphIndex) => {
       const digit = expected[glyphIndex];
@@ -261,11 +225,30 @@ function buildTemplates(reference: HTMLImageElement): TemplateMap {
       templates.set(digit, list);
     });
   });
+}
+
+async function buildTemplates(reference: HTMLImageElement, targetWidth: number, targetHeight: number): Promise<TemplateMap> {
+  const templates: TemplateMap = new Map();
+  if (targetWidth === reference.naturalWidth && targetHeight === reference.naturalHeight) addTemplates(templates, reference, true);
+  const variants = await Promise.all([0.78].map(async (quality) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(120, targetWidth);
+    canvas.height = Math.max(160, targetHeight);
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.filter = "blur(0.25px)";
+    context.drawImage(reference, 0, 0, canvas.width, canvas.height);
+    const compressed = await loadImage(canvas.toDataURL("image/jpeg", quality));
+    return normalizeToReference(compressed, reference.naturalWidth, reference.naturalHeight, 0);
+  }));
+  variants.filter((variant): variant is HTMLImageElement => variant !== null).forEach((variant) => addTemplates(templates, variant, true));
   return templates;
 }
 
-function recognizeRow(row: BinaryRow, templates: TemplateMap, expectedCount: number) {
-  const glyphs = segmentGlyphs(row, expectedCount);
+function recognizeRow(row: BinaryRow, templates: TemplateMap, expectedCount: number, fixedBounds?: { left: number; right: number }) {
+  const glyphs = segmentGlyphs(row, expectedCount, fixedBounds);
   if (!glyphs.length || glyphs.length > 6) return { text: "", confidence: 0 };
 
   let confidenceTotal = 0;
@@ -292,23 +275,40 @@ async function recognizeWithTemplate(
 ): Promise<GemMarketOcrResult[]> {
   onProgress?.({ progress: 0.08, label: "正在读取行情截图" });
   const [image, reference] = await Promise.all([loadImage(file), loadImage(REFERENCE_IMAGE)]);
-  const crops = buildGemPriceCrops(image.naturalWidth, image.naturalHeight);
   onProgress?.({ progress: 0.3, label: "正在加载本地数字基准" });
-  const templates = buildTemplates(reference);
+  const referenceRatio = reference.naturalWidth / reference.naturalHeight;
+  const estimatedMargin = Math.max(0, (image.naturalWidth - referenceRatio * image.naturalHeight) / (2 * (1 - referenceRatio)));
+  const candidateMargins = estimatedMargin < 2
+    ? [0]
+    : [...new Set([-4, -3, -2, -1, 0, 1, 2, 3, 4].map((offset) => Math.round(estimatedMargin) + offset))]
+      .filter((margin) => margin >= 0 && margin * 2 < Math.min(image.naturalWidth, image.naturalHeight) * 0.12);
 
-  const results = crops.map((crop, index) => {
-    onProgress?.({ progress: 0.35 + ((index + 1) / crops.length) * 0.6, label: `正在识别第 ${index + 1} / ${crops.length} 行` });
-    const recognized = recognizeRow(extractBinaryRow(image, crop), templates, REFERENCE_VALUES[index].length);
-    const price = parseRecognizedGemPrice(recognized.text);
-    return {
-      name: crop.name,
-      price,
-      confidence: recognized.confidence,
-      level: gemRecognitionLevel(recognized.confidence, price),
-      rawText: recognized.text,
-      engine: "template" as const,
-    };
-  });
+  const candidates = await Promise.all(candidateMargins.map(async (margin) => {
+    const templates = await buildTemplates(reference, image.naturalWidth - margin * 2, image.naturalHeight - margin * 2);
+    const normalizedImage = await normalizeToReference(image, reference.naturalWidth, reference.naturalHeight, margin);
+    const crops = buildGemPriceCrops(reference.naturalWidth, reference.naturalHeight);
+    const rows = crops.map((crop, index) => {
+      const referenceRow = extractBinaryRow(reference, crop);
+      const recognized = recognizeRow(extractBinaryRow(normalizedImage, crop), templates, REFERENCE_VALUES[index].length, horizontalInkBounds(referenceRow));
+      const price = parseRecognizedGemPrice(recognized.text);
+      return {
+        name: crop.name,
+        price,
+        confidence: recognized.confidence,
+        level: gemRecognitionLevel(recognized.confidence, price),
+        rawText: recognized.text,
+        engine: "template" as const,
+      };
+    });
+    return { rows, score: rows.reduce((sum, row) => sum + row.confidence, 0) };
+  }));
+  const bestRows = candidates.sort((left, right) => right.score - left.score)[0]?.rows || [];
+  const transformedInput = image.naturalWidth !== reference.naturalWidth || image.naturalHeight !== reference.naturalHeight;
+  const results = transformedInput ? bestRows.map((row) => {
+    const confidence = Math.min(row.confidence, 70);
+    return { ...row, confidence, level: gemRecognitionLevel(confidence, row.price) };
+  }) : bestRows;
+  results.forEach((_, index) => onProgress?.({ progress: 0.35 + ((index + 1) / results.length) * 0.6, label: `正在识别第 ${index + 1} / ${results.length} 行` }));
 
   onProgress?.({ progress: 1, label: "识别完成，请核对价格" });
   return results;
@@ -318,25 +318,5 @@ export async function recognizeGemMarketScreenshot(
   file: File,
   onProgress?: (state: GemMarketOcrProgress) => void,
 ): Promise<GemMarketOcrResult[]> {
-  try {
-    const paddleRows = await recognizeWithPaddle(file, onProgress);
-    if (paddleRows.filter((row) => row.price !== null).length >= 4) {
-      onProgress?.({ progress: 1, label: "PP-OCRv6 识别完成，请核对价格" });
-      return paddleRows;
-    }
-    onProgress?.({ progress: 0.94, label: "强力模型结果不足，正在使用本地基准补充" });
-    const templateRows = await recognizeWithTemplate(file);
-    const merged = paddleRows.map((row, index) => {
-      if (row.price !== null) return row;
-      const fallback = templateRows[index];
-      return fallback.confidence >= 78 ? fallback : row;
-    });
-    onProgress?.({ progress: 1, label: "组合识别完成，请核对价格" });
-    return merged;
-  } catch (cause) {
-    console.warn("PP-OCRv6 unavailable; using the built-in offline template fallback.", cause);
-    paddleEnginePromise = undefined;
-    onProgress?.({ progress: 0.5, label: "强力模型暂不可用，正在切换离线基准" });
-    return recognizeWithTemplate(file, onProgress);
-  }
+  return recognizeWithTemplate(file, onProgress);
 }

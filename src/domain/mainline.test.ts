@@ -51,11 +51,11 @@ function plan(accountId: AccountId, tasks: ScheduledTask[]): AccountTaskPlan {
 
 function accounts(): Record<AccountId, InventoryBalance> {
   return {
-    FC: { dedicatedEggs: 6, regularEggs: 2, silverWan: 20 },
-    LG1: { dedicatedEggs: 0, regularEggs: 1, silverWan: 10 },
-    LG2: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0 },
-    PT: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0 },
-    MYT: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0 },
+    FC: { dedicatedEggs: 6, regularEggs: 2, silverWan: 20, innerShardCount: 10 },
+    LG1: { dedicatedEggs: 0, regularEggs: 1, silverWan: 10, innerShardCount: 10 },
+    LG2: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: 3 },
+    PT: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: 10 },
+    MYT: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: 10 },
   };
 }
 
@@ -74,12 +74,12 @@ describe("five-account mainline projection", () => {
       gemPriceOverrides: {},
     });
     const tasks = taskPlans.flatMap((item) => item.tasks);
-    expect(tasks.reduce((sum, task) => sum + task.remainingEggCount, 0)).toBe(1690);
+    expect(tasks.reduce((sum, task) => sum + task.remainingEggCount, 0)).toBe(1560);
     expect(tasks.filter((task) => task.eggCount > 0).every((task) => task.priceWan === task.eggCount * 5.5)).toBe(true);
   });
 
   it("uses dedicated eggs first and recommends buying only the shortage", () => {
-    const projections = buildMainlineProjection([plan("FC", [scheduled()])], [current], fallback, 5);
+    const projections = buildMainlineProjection([plan("FC", [scheduled()])], [current], 5);
     expect(projections.map((item) => item.accountId)).toEqual(["FC", "LG1", "LG2", "PT", "MYT"]);
     expect(projections[0]).toMatchObject({
       status: "buyable",
@@ -112,7 +112,7 @@ describe("five-account mainline projection", () => {
       plan("LG1", [done, silver, scheduled({ id: "LG1:2", accountId: "LG1" }), scheduled({ id: "LG1:3", accountId: "LG1" }), scheduled({ id: "LG1:4", accountId: "LG1" })]),
       plan("LG2", [shard]),
     ];
-    const projections = buildMainlineProjection(taskPlans, [current], fallback, 5);
+    const projections = buildMainlineProjection(taskPlans, [current], 5);
     const lg1 = projections.find((item) => item.accountId === "LG1")!;
     const lg2 = projections.find((item) => item.accountId === "LG2")!;
     expect(lg1.currentTask?.id).toBe("LG1:silver");
@@ -121,9 +121,53 @@ describe("five-account mainline projection", () => {
     expect(lg2).toMatchObject({ status: "blocked", requirementKind: "shards", allocation: { shardShortage: 1 } });
   });
 
-  it("falls back to legacy resources but marks every account stale without a snapshot", () => {
-    const projections = buildMainlineProjection([plan("FC", [scheduled()])], [], fallback, 5);
+  it("uses no second resource source and marks every account stale without a snapshot", () => {
+    const projections = buildMainlineProjection([plan("FC", [scheduled()])], [], 5);
     expect(projections.every((item) => item.status === "stale" && item.isFallback)).toBe(true);
-    expect(projections[0].inventory).toMatchObject({ dedicatedEggs: 0, regularEggs: 9, silverWan: 5 });
+    expect(projections[0].inventory).toMatchObject({ dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: null });
+  });
+
+  it("does not claim a shard result when a migrated snapshot needs completion", () => {
+    const migrated = structuredClone(current);
+    migrated.accounts.LG2.innerShardCount = null;
+    const shard = scheduled({
+      id: "LG2:shard",
+      accountId: "LG2",
+      resourceType: "innerShard",
+      eggCount: 0,
+      remainingEggCount: 0,
+      priceWan: 0,
+      remainingWan: 0,
+      shardCount: 4,
+      remainingShardCount: 4,
+    });
+    const lg2 = buildMainlineProjection([plan("LG2", [shard])], [migrated], 5)
+      .find((item) => item.accountId === "LG2")!;
+    expect(lg2).toMatchObject({ status: "stale", requirementKind: "shards", actionHint: "请补录该库存日期的内丹碎片" });
+  });
+
+  it("does not calculate task dates from missing or incomplete inventory", () => {
+    const noInventory = structuredClone(catalog.beastConfig.taskDefaultResources);
+    noInventory.FC = { silverWan: 0, eggCount: 0, innerShardCount: null, inventoryRecorded: false };
+    const missingPlan = buildTaskPlans(catalog, buildPetViews(catalog), {
+      settings: structuredClone(catalog.beastConfig.taskDefaultSettings),
+      resources: noInventory,
+      overrides: {},
+      gemPriceOverrides: {},
+    }).find((item) => item.accountId === "FC")!;
+    expect(missingPlan.tasks.filter((task) => !task.done).every((task) => task.dueDate === "待录库存")).toBe(true);
+    expect(missingPlan.finishDate).toBe("待录库存");
+
+    const incomplete = structuredClone(catalog.beastConfig.taskDefaultResources);
+    Object.values(incomplete).forEach((resource) => { resource.innerShardCount = null; });
+    const incompletePlans = buildTaskPlans(catalog, buildPetViews(catalog), {
+      settings: structuredClone(catalog.beastConfig.taskDefaultSettings),
+      resources: incomplete,
+      overrides: {},
+      gemPriceOverrides: {},
+    });
+    const shardTasks = incompletePlans.flatMap((plan) => plan.tasks).filter((task) => task.resourceType === "innerShard");
+    expect(shardTasks.length).toBeGreaterThan(0);
+    expect(shardTasks.every((task) => task.dueDate === "待补内丹碎片")).toBe(true);
   });
 });

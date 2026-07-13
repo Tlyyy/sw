@@ -36,6 +36,7 @@ function emptyRows(): Record<AccountId, InventoryBalance> {
     dedicatedEggs: 0,
     regularEggs: 0,
     silverWan: 0,
+    innerShardCount: 0,
   }])) as Record<AccountId, InventoryBalance>;
 }
 
@@ -59,7 +60,7 @@ function seedRowsForDate(date: string) {
   }
   copyRows(emptyRows());
   seedDescription.value = props.snapshots.length
-    ? "所选日期之前没有快照，15 项已清空，请按当天实际总库存填写。"
+    ? "所选日期之前没有快照，20 项已清空，请按当天实际总库存填写。"
     : "这是第一份分类库存基线。旧系统只有蛋合计，无法判断专用或普通，因此请按实际库存填写。";
 }
 
@@ -95,6 +96,7 @@ function submit() {
       dedicatedEggs: Math.round(normalizedNumber(rows[accountId].dedicatedEggs)),
       regularEggs: Math.round(normalizedNumber(rows[accountId].regularEggs)),
       silverWan: normalizedNumber(rows[accountId].silverWan),
+      innerShardCount: Math.round(normalizedNumber(rows[accountId].innerShardCount ?? Number.NaN)),
     };
   });
   dirty.value = false;
@@ -181,12 +183,14 @@ onBeforeUnmount(() => deactivateDialog(false));
               <span role="columnheader">专用蛋</span>
               <span role="columnheader">普通蛋</span>
               <span role="columnheader">银子 / 万</span>
+              <span role="columnheader">内丹碎片</span>
             </div>
             <div v-for="accountId in accountOrder" :key="accountId" class="snapshot-entry-row" role="row">
               <strong role="cell" :class="`account-pill account-${accountId.toLowerCase()}`">{{ accountId }}</strong>
               <span role="cell"><input v-model.number="rows[accountId].dedicatedEggs" type="number" min="0" step="1" inputmode="numeric" :aria-label="`${accountId}专用蛋库存`" @input="dirty = true" /></span>
               <span role="cell"><input v-model.number="rows[accountId].regularEggs" type="number" min="0" step="1" inputmode="numeric" :aria-label="`${accountId}普通蛋库存`" @input="dirty = true" /></span>
               <span role="cell"><input v-model.number="rows[accountId].silverWan" type="number" min="0" step="0.01" inputmode="decimal" :aria-label="`${accountId}银子库存（万）`" @input="dirty = true" /></span>
+              <span role="cell"><input v-model.number="rows[accountId].innerShardCount" type="number" min="0" step="1" inputmode="numeric" required :aria-label="`${accountId}内丹碎片库存`" @input="dirty = true" /></span>
             </div>
           </div>
         </div>

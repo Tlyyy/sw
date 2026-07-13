@@ -22,10 +22,8 @@ const applied = ref(false);
 const rows = ref<GemMarketOcrResult[]>([]);
 const inputSource = ref<"file" | "paste">("file");
 
-const allValid = computed(() => rows.value.length === 6 && rows.value.every((item) => Number(item.price) > 0));
-const lowCount = computed(() => rows.value.filter((item) => item.level === "low").length);
-const engineDegraded = computed(() => rows.value.length > 0 && rows.value.every((item) => item.engine === "template"));
-const engineLabel = computed(() => engineDegraded.value ? "强力模型未启用 · 兼容识别" : "PP-OCRv6 强力识别");
+const allValid = computed(() => rows.value.length === 6 && rows.value.every((item) => Number.isInteger(Number(item.price)) && Number(item.price) >= 1));
+const lowCount = computed(() => rows.value.filter((item) => item.level !== "high").length);
 
 function clearPreview() {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
@@ -109,7 +107,7 @@ onBeforeUnmount(() => {
         <h2>从行情截图更新价格</h2>
         <p>截图只在当前浏览器中处理。请上传包含表头和六行价格的完整行情表。</p>
       </div>
-      <span class="local-processing">PP-OCRv6 · 截图不上传</span>
+      <span class="local-processing">本地离线数字识别 · 截图不上传</span>
     </header>
 
     <div class="gem-ocr-workspace">
@@ -138,7 +136,7 @@ onBeforeUnmount(() => {
           <div class="ocr-progress"><i :style="{ width: `${progress}%` }"></i></div>
           <strong>{{ progressLabel }}</strong>
           <span>{{ progress }}%</span>
-          <small>模型只在当前浏览器运行，不会发送截图。首次使用需要加载约 60 MB。</small>
+          <small>识别只使用站内数字模板，不会发送截图或加载外部模型。</small>
         </template>
         <template v-else-if="error">
           <strong class="error-text">识别未完成</strong>
@@ -147,13 +145,13 @@ onBeforeUnmount(() => {
         </template>
         <template v-else-if="rows.length">
           <strong>已识别 {{ rows.length }} 项价格</strong>
-          <span :class="{ 'warning-text': lowCount || engineDegraded }">{{ engineLabel }} · {{ lowCount ? `${lowCount} 项需要重点核对` : "结果清晰" }}</span>
+          <span :class="{ 'warning-text': lowCount }">本地离线数字识别 · {{ lowCount ? `${lowCount} 项需要重点核对` : "结果清晰" }}</span>
           <small>确认前可以直接修改任何数字。</small>
         </template>
         <template v-else>
           <strong>识别后不会立即覆盖</strong>
           <span>核对六项结果，再统一应用。</span>
-          <small>保留表头和六行即可，缩放、留边和轻度压缩会自动适配。</small>
+          <small>保留表头和六行；原始清晰截图效果最佳，缩放或压缩后请逐项核对。</small>
         </template>
       </div>
     </div>
@@ -163,7 +161,7 @@ onBeforeUnmount(() => {
       <label v-for="row in rows" :key="row.name" class="gem-result-row" :class="`confidence-${row.level}`">
         <strong>{{ row.name }}</strong>
         <span>{{ props.items.find((item) => item.name === row.name)?.price ?? "—" }}</span>
-        <input v-model.number="row.price" type="number" min="1" max="999999" inputmode="numeric" :aria-label="`${row.name}识别价格`" />
+        <input v-model.number="row.price" type="number" min="1" max="999999" step="1" inputmode="numeric" :aria-label="`${row.name}识别价格`" />
         <span class="confidence-label">{{ row.price ? `${row.confidence}%` : "未识别" }}</span>
       </label>
       <footer>

@@ -22,6 +22,8 @@ export interface PetAsset {
   sourceRecordId: string;
   accountId: AccountId;
   name: string;
+  beastType?: "snake1" | "snake2" | "horse";
+  beastProgress?: Partial<Record<"ornament" | "advance1" | "advance2" | "skin" | "strengthen", boolean>>;
   level?: number;
   meta: string;
   talent?: number;
@@ -53,6 +55,7 @@ export interface EquipmentAsset {
   effects: string[];
   durability?: number;
   gem: GemProgressState;
+  evidenceIds?: string[];
   evidenceId: string;
 }
 
@@ -106,13 +109,21 @@ export interface BeastTaskSettings {
   weeklyInnerShards: number;
   eggPriceWan: number;
 }
-export interface BeastResource { silverWan: number; eggCount: number; innerShardCount: number }
+export interface BeastResource {
+  silverWan: number;
+  eggCount: number;
+  innerShardCount: number | null;
+  /** False only when no inventory snapshot exists for this account. */
+  inventoryRecorded?: boolean;
+}
 
 /** A point-in-time inventory balance entered for one account. */
 export interface InventoryBalance {
   dedicatedEggs: number;
   regularEggs: number;
   silverWan: number;
+  /** Null only while a legacy snapshot is waiting for a real dated value. */
+  innerShardCount: number | null;
 }
 
 /**
@@ -140,10 +151,11 @@ export interface InventoryAccountDelta {
   dedicatedEggs: number;
   regularEggs: number;
   silverWan: number;
+  innerShardCount: number | null;
 }
 
 export interface InventoryExportPayload {
-  version: 1;
+  version: 2;
   snapshots: InventorySnapshot[];
 }
 
@@ -204,7 +216,6 @@ export interface PetView extends PetAsset {
   speedApt: string;
   role: PetAnalysis;
   beastStage: string;
-  beastType?: "snake1" | "snake2" | "horse";
   beastCost?: BeastCostSummary;
   searchText: string;
 }
@@ -215,7 +226,7 @@ export interface AccountPlan {
   beastRequiredSilver: number;
   beastTaskSilver: number;
   beastAvailableSilver: number;
-  missingShardCount: number;
+  missingShardCount: number | null;
   taskCount: number;
   totalSilver: number;
   finishWeek: number;
