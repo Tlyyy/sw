@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { catalog } from "../data/catalog";
 import { beastTotals, buildPetViews } from "./pets";
 import { buildAccountPlans } from "./plans";
-import { matrixColumns, matrixGroups } from "./matrix";
+import { matrixAccountIds, matrixColumns, matrixGroups } from "./matrix";
 import { generatePublishContent, publishDefaults } from "./publish";
 
 const pets = buildPetViews(catalog);
@@ -40,6 +40,7 @@ describe("migration baseline", () => {
   it("preserves the fixed comparison matrix", () => {
     expect(matrixColumns).toHaveLength(15);
     expect(matrixGroups).toHaveLength(4);
+    expect(matrixAccountIds).toEqual(["FC", "LG1", "LG2", "PT", "MYT"]);
   });
 
   it("generates publish content from normalized assets", () => {

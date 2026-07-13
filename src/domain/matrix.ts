@@ -1,4 +1,6 @@
-import type { PetView } from "./types";
+import type { AccountId, PetView } from "./types";
+
+export const matrixAccountIds = ["FC", "LG1", "LG2", "PT", "MYT"] as const satisfies readonly AccountId[];
 
 export interface MatrixColumn { key: string; label: string; group: string; match: (row: PetView) => boolean }
 export const matrixColumns: MatrixColumn[] = [
@@ -23,7 +25,7 @@ export const matrixGroups = ["日常", "PK：神兽蛇 / 小马", "PK：法系 /
 export function matrixRow(rows: PetView[], group: string) {
   return matrixColumns.filter((column) => column.group === group).map((column) => ({
     column,
-    accounts: ["FC", "LG1", "PT", "LG2", "MYT"].map((accountId) => {
+    accounts: matrixAccountIds.map((accountId) => {
       const candidates = rows.filter((row) => row.accountId === accountId && column.match(row));
       return candidates.sort((a, b) => (b.talent || 0) - (a.talent || 0) || b.attack - a.attack || b.spirit - a.spirit)[0];
     }),

@@ -19,11 +19,26 @@ export interface ScheduledTask {
   kind: string;
   resourceType: "wan" | "innerShard";
   priceWan: number;
+  /** Explicit egg requirement; zero means this is not an egg task. */
+  eggCount: number;
   shardCount: number;
   done: boolean;
   remainingWan: number;
+  remainingEggCount: number;
   remainingShardCount: number;
   dueDate: string;
+}
+
+export interface AccountTaskPlan {
+  accountId: AccountId;
+  resource: BeastResource;
+  availableWan: number;
+  availableShards: number;
+  tasks: ScheduledTask[];
+  remainingWan: number;
+  remainingShardCount: number;
+  missingShardCount: number;
+  finishDate: string;
 }
 
 const dateKey = (date: Date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
@@ -60,27 +75,39 @@ function finishForShards(target: number, available: number, settings: BeastTaskS
 
 function isPendingBook(row: PetView) { return row.role.primary === "待打书"; }
 
-export function buildTaskPlans(catalog: Catalog, rows: PetView[], state: PlanningState) {
+export function buildTaskPlans(catalog: Catalog, rows: PetView[], state: PlanningState): AccountTaskPlan[] {
   const config = catalog.beastConfig;
   const tasks = rows.filter((row) => row.beastType && row.beastCost).flatMap((row) => config.taskActionOrder.map((action) => {
     const typeKey = row.beastType!;
     const taskId = `${row.accountId}:${typeKey}:${action.key}`;
     const override = state.overrides[taskId] || {};
     let basePriceWan = 0;
+    let eggCount = 0;
     let shardCount = 0;
     if (action.key === "talisman" && config.talismanMissingByFolder[row.accountId]?.includes(typeKey)) basePriceWan = config.estimateRules.find((item) => item.key === "talisman")?.priceWan || 0;
     else if (action.key === "book" && isPendingBook(row)) basePriceWan = config.estimateRules.find((item) => item.key === "book")?.priceWan || 0;
-    else if (action.key === "strengthen" && typeKey === "horse") basePriceWan = 80 * state.settings.eggPriceWan;
+    else if (action.key === "strengthen" && typeKey === "horse") {
+      eggCount = 80;
+      basePriceWan = eggCount * state.settings.eggPriceWan;
+    }
     else if (action.key === "innerDan" && typeKey === "horse" && isPendingBook(row) && row.skillCount <= 4) shardCount = config.innerShardRequirement;
     else {
       const missing = row.beastCost?.missing.find((item) => item.key === action.sourceKey);
-      if (missing) basePriceWan = missing.eggCount ? missing.eggCount * state.settings.eggPriceWan : missing.priceWan;
+      if (missing) {
+        eggCount = missing.eggCount;
+        basePriceWan = eggCount ? eggCount * state.settings.eggPriceWan : missing.priceWan;
+      }
     }
-    if (!basePriceWan && !shardCount) return null;
+    if (!basePriceWan && !eggCount && !shardCount) return null;
     const done = Boolean(override.done);
     const resourceType: "innerShard" | "wan" = action.resourceType === "innerShard" ? "innerShard" : "wan";
     const priceWan = resourceType === "wan" ? Math.max(0, Number(override.priceWan ?? basePriceWan)) : 0;
-    return { taskId, row, typeKey, action, done, resourceType, priceWan, shardCount, remainingWan: done ? 0 : priceWan, remainingShardCount: done ? 0 : shardCount };
+    return {
+      taskId, row, typeKey, action, done, resourceType, priceWan, eggCount, shardCount,
+      remainingWan: done ? 0 : priceWan,
+      remainingEggCount: done ? 0 : eggCount,
+      remainingShardCount: done ? 0 : shardCount,
+    };
   }).filter(Boolean));
 
   return catalog.accounts.map((account) => {
@@ -106,7 +133,9 @@ export function buildTaskPlans(catalog: Catalog, rows: PetView[], state: Plannin
       return {
         id: current.taskId, accountId: account.id, typeKey: current.typeKey, typeLabel: config.typeDefs.find((item) => item.key === current.typeKey)?.label || current.typeKey,
         actionKey: current.action.key, actionLabel: current.action.label, kind: current.action.kind, resourceType: current.resourceType,
-        priceWan: current.priceWan, shardCount: current.shardCount, done: current.done, remainingWan: current.remainingWan, remainingShardCount: current.remainingShardCount, dueDate,
+        priceWan: current.priceWan, eggCount: current.eggCount, shardCount: current.shardCount, done: current.done,
+        remainingWan: current.remainingWan, remainingEggCount: current.remainingEggCount,
+        remainingShardCount: current.remainingShardCount, dueDate,
       } satisfies ScheduledTask;
     });
     const remainingWan = scheduled.reduce((sum, task) => sum + task.remainingWan, 0);

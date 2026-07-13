@@ -107,6 +107,46 @@ export interface BeastTaskSettings {
   eggPriceWan: number;
 }
 export interface BeastResource { silverWan: number; eggCount: number; innerShardCount: number }
+
+/** A point-in-time inventory balance entered for one account. */
+export interface InventoryBalance {
+  dedicatedEggs: number;
+  regularEggs: number;
+  silverWan: number;
+}
+
+/**
+ * A batch inventory observation for all five accounts.
+ * `effectiveDate` is the date the balances describe; `recordedAt` is the
+ * audit timestamp for when the observation was entered into the app.
+ */
+export interface InventorySnapshot {
+  effectiveDate: string;
+  recordedAt: string;
+  accounts: Record<AccountId, InventoryBalance>;
+}
+
+export interface InventorySnapshotInput {
+  effectiveDate: string;
+  recordedAt?: string;
+  accounts: Record<AccountId, InventoryBalance>;
+}
+
+export interface InventoryAccountDelta {
+  accountId: AccountId;
+  fromEffectiveDate: string;
+  toEffectiveDate: string;
+  intervalDays: number;
+  dedicatedEggs: number;
+  regularEggs: number;
+  silverWan: number;
+}
+
+export interface InventoryExportPayload {
+  version: 1;
+  snapshots: InventorySnapshot[];
+}
+
 export interface BeastConfig {
   eggPriceWan: number;
   costRules: BeastCostRule[];

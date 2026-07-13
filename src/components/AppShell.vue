@@ -1,43 +1,40 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import AppIcon from "./AppIcon.vue";
 import CommandSearch from "./CommandSearch.vue";
 import { useCatalogStore } from "../stores/catalog";
+import { useInventoryStore } from "../stores/inventory";
 import { useUiStore } from "../stores/ui";
 import { useAuthStore } from "../stores/auth";
 
 const route = useRoute();
-const router = useRouter();
 const catalog = useCatalogStore();
+const inventory = useInventoryStore();
 const ui = useUiStore();
 const auth = useAuthStore();
 
-const links = [
-  { to: "/", text: "今日决策", icon: "home", section: "home" },
-  { to: "/accounts/LG2", text: "账号", icon: "account", section: "accounts" },
+const links = computed(() => [
+  { to: "/", text: "行动推进台", icon: "home", section: "home" },
+  { to: `/accounts/${ui.recentAccount}`, text: "账号", icon: "account", section: "accounts" },
   { to: "/assets/pets", text: "资产", icon: "assets", section: "assets" },
-  { to: "/plans/upgrades", text: "计划", icon: "plan", section: "plans" },
+  { to: "/plans/beasts", text: "计划", icon: "plan", section: "plans" },
   { to: "/analysis/recommendations", text: "分析", icon: "analysis", section: "analysis" },
   { to: "/publish", text: "发布", icon: "publish", section: "publish" },
-  { to: "/data/market", text: "数据", icon: "settings", section: "data" },
-];
+  { to: "/data/inventory", text: "数据", icon: "settings", section: "data" },
+]);
 
 const title = computed(() => String(route.meta.title || "幻唐志账号管理系统"));
 const isDashboard = computed(() => route.meta.section === "home");
-const date = computed(() => catalog.data.gemMarketSnapshots.at(-1)?.sourceDate || catalog.data.generatedAt.slice(0, 10));
+const isImmersivePage = computed(() => route.name === "matrix");
+const date = computed(() => inventory.latestSnapshot?.effectiveDate || catalog.data.generatedAt.slice(0, 10));
 
 function keydown(event: KeyboardEvent) {
+  if (document.querySelector('[aria-modal="true"]')) return;
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
     ui.commandOpen = true;
   }
-}
-
-function changeScope() {
-  if (ui.accountScope === "ALL") return;
-  ui.recentAccount = ui.accountScope;
-  if (route.meta.section === "accounts") router.replace(`/accounts/${ui.accountScope}`);
 }
 
 onMounted(() => window.addEventListener("keydown", keydown));
@@ -68,14 +65,11 @@ onBeforeUnmount(() => window.removeEventListener("keydown", keydown));
       </nav>
 
       <div class="orbit-header-tools">
-        <select v-model="ui.accountScope" aria-label="账号范围" @change="changeScope">
-          <option value="ALL">全部</option>
-          <option v-for="account in catalog.data.accounts" :key="account.id" :value="account.id">{{ account.label }}</option>
-        </select>
-        <button class="orbit-command-trigger" @click="ui.commandOpen = true">
-          <span>搜索全系统</span>
+        <button class="orbit-command-trigger" aria-label="搜索全系统" title="搜索全系统（Ctrl+K）" @click="ui.commandOpen = true">
+          <span class="orbit-command-label">搜索全系统</span>
           <AppIcon name="search" />
         </button>
+        <span class="orbit-local-user"><AppIcon name="account" /><b>本地用户</b></span>
         <button class="orbit-logout" title="退出登录" @click="auth.logout">退出</button>
       </div>
     </header>
@@ -83,7 +77,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", keydown));
     <button v-if="ui.mobileNavOpen" class="orbit-nav-scrim" aria-label="关闭导航" @click="ui.mobileNavOpen = false"></button>
 
     <main class="orbit-main">
-      <header v-if="!isDashboard" class="orbit-route-context">
+      <header v-if="!isDashboard && !isImmersivePage" class="orbit-route-context">
         <div>
           <h1>{{ title }}</h1>
           <p>数据日期 {{ date }}</p>

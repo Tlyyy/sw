@@ -1,158 +1,288 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import AccountDeck from "../../components/AccountDeck.vue";
-import AccountTimeline from "../../components/AccountTimeline.vue";
+import { computed, ref } from "vue";
+import InventorySnapshotDialog from "../../components/InventorySnapshotDialog.vue";
+import { buildMainlineProjection } from "../../domain/mainline";
+import { buildTaskPlans } from "../../domain/plans";
+import type { AccountId, InventoryBalance } from "../../domain/types";
 import { useCatalogStore } from "../../stores/catalog";
+import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
-import { buildAccountPlans, buildTaskPlans } from "../../domain/plans";
-import { formatCurrency } from "../../domain/gems";
-import type { EquipmentAsset, PetView } from "../../domain/types";
 
 const catalog = useCatalogStore();
+const inventory = useInventoryStore();
 const settings = useSettingsStore();
-const planning = computed(() => settings.snapshot());
-const plans = computed(() => buildAccountPlans(catalog.data, catalog.pets, planning.value));
-const taskPlans = computed(() => buildTaskPlans(catalog.data, catalog.pets, planning.value));
-const slowest = computed(() => plans.value[0]);
-const taskCount = computed(() => taskPlans.value.flatMap((item) => item.tasks).filter((item) => !item.done).length);
-const shardGap = computed(() => taskPlans.value.reduce((sum, item) => sum + item.missingShardCount, 0));
-const totalFunds = computed(() => plans.value.reduce((sum, item) => sum + item.totalSilver, 0));
-const eggInventory = computed(() => Object.values(planning.value.resources).reduce((sum, item) => sum + item.eggCount, 0));
-const shardInventory = computed(() => Object.values(planning.value.resources).reduce((sum, item) => sum + item.innerShardCount, 0));
-const eggTotal = computed(() => eggInventory.value + catalog.beastSummary.eggs);
-const shardTotal = computed(() => shardInventory.value + shardGap.value);
+const inventoryDialogOpen = ref(false);
+const saveNotice = ref("");
 
-const actions = computed(() => [
-  { rank: "01", title: `${slowest.value?.accountId} 先补宝石资金`, detail: `预计还需 ${slowest.value?.finishWeek} 周，还差 ${formatCurrency(slowest.value?.gemRequiredSilver || 0)} 银币`, to: "/plans/upgrades", tone: "orange" },
-  { rank: "02", title: "按周推进神兽任务", detail: `每周 ${settings.taskSettings.weeklyEggs} 蛋、${settings.taskSettings.weeklyInnerShards} 锁片；当前 ${taskCount.value} 项未完成`, to: "/plans/beasts", tone: "blue" },
-  { rank: "03", title: "先核对待确认资料", detail: `${catalog.pets.filter((item) => item.recognitionStatus === "pending").length} 组记录含待确认信息`, to: "/assets/pets?status=pending", tone: "green" },
-]);
+inventory.hydrate();
 
-function bestPet(name: string, metric: "spirit" | "attack") {
-  return [...catalog.pets.filter((item) => item.name === name)].sort((a, b) => b[metric] - a[metric])[0];
+const taskPlans = computed(() => buildTaskPlans(catalog.data, catalog.pets, settings.snapshot()));
+const projections = computed(() => buildMainlineProjection(
+  taskPlans.value,
+  inventory.snapshots,
+  settings.resources,
+  settings.taskSettings.eggPriceWan,
+));
+const latestDate = computed(() => inventory.latestSnapshot?.effectiveDate || null);
+const previousDate = computed(() => inventory.previousSnapshot?.effectiveDate || null);
+const today = computed(() => new Date().toLocaleDateString("en-CA"));
+const accountTone: Record<AccountId, string> = {
+  FC: "#176bb2",
+  LG1: "#7244aa",
+  LG2: "#ed6b00",
+  PT: "#d6372d",
+  MYT: "#12804d",
+};
+
+function saveInventorySnapshot(draft: { effectiveDate: string; accounts: Record<AccountId, InventoryBalance> }) {
+  const updating = inventory.snapshots.some((item) => item.effectiveDate === draft.effectiveDate);
+  inventory.saveSnapshot(draft);
+  inventoryDialogOpen.value = false;
+  saveNotice.value = `${updating ? "已更新" : "已保存"} ${draft.effectiveDate} 的五号库存快照`;
 }
 
-const priorityPets = computed(() => [
-  { pet: bestPet("祸斗", "spirit"), label: "灵力", metric: "spirit" as const },
-  { pet: bestPet("神兽青蛇", "attack"), label: "攻击", metric: "attack" as const },
-  { pet: bestPet("雷司", "attack"), label: "攻击", metric: "attack" as const },
-].filter((item): item is { pet: PetView; label: string; metric: "spirit" | "attack" } => Boolean(item.pet)));
-
-const slotOrder = ["武器", "衣服", "项链", "头盔", "腰带", "鞋子"];
-const equipmentRows = computed(() => catalog.data.equipment
-  .filter((item) => item.accountId === slowest.value?.accountId)
-  .sort((a, b) => slotOrder.indexOf(a.slot) - slotOrder.indexOf(b.slot)));
-
-function gemLevel(item: EquipmentAsset) {
-  return Number(String(item.gem.level).match(/\d+/)?.[0] || 0);
+function formatNumber(value: number, maximumFractionDigits = 2) {
+  return value.toLocaleString("zh-CN", { maximumFractionDigits });
 }
 
-function gemProgress(item: EquipmentAsset) {
-  return `${Math.min(100, Math.max(7, (gemLevel(item) / 13) * 100))}%`;
+function formatDate(value: string | null) {
+  if (!value) return "未录入";
+  const [, month, day] = value.split("-");
+  return `${Number(month)}月${Number(day)}日`;
 }
 
-function ringProgress(current: number, total: number) {
-  return `${Math.min(100, total ? (current / total) * 100 : 0)}%`;
+function dateAge(value: string | null) {
+  if (!value) return "沿用初始值";
+  const start = Date.parse(`${value}T00:00:00`);
+  const end = Date.parse(`${today.value}T00:00:00`);
+  const days = Math.max(0, Math.round((end - start) / 86_400_000));
+  if (days === 0) return "今天";
+  if (days === 1) return "昨天";
+  return `${days} 天前`;
+}
+
+function formatLongDate(value: string | null) {
+  if (!value) return "待录入";
+  const weekday = new Intl.DateTimeFormat("zh-CN", { weekday: "long", timeZone: "Asia/Shanghai" })
+    .format(new Date(`${value}T00:00:00+08:00`));
+  return `${value}（${weekday}）`;
+}
+
+function isStaleDate(value: string | null) {
+  if (!value) return true;
+  const start = Date.parse(`${value}T00:00:00`);
+  const end = Date.parse(`${today.value}T00:00:00`);
+  return end - start > 8 * 86_400_000;
+}
+
+function signed(value: number, suffix = "") {
+  const amount = formatNumber(value);
+  return `${value > 0 ? "+" : ""}${amount}${suffix}`;
+}
+
+function deltaTone(value: number) {
+  return value > 0 ? "positive" : value < 0 ? "negative" : "neutral";
+}
+
+function taskLabel(task: ReturnType<typeof buildTaskPlans>[number]["tasks"][number] | null) {
+  return task ? `${task.typeLabel} · ${task.actionLabel}` : "主线已完成";
+}
+
+function requirementTitle(kind: "eggs" | "silver" | "shards" | "complete", amount: number) {
+  if (kind === "eggs") return `${formatNumber(amount)} 个蛋`;
+  if (kind === "silver") return `${formatNumber(amount)} 万`;
+  if (kind === "shards") return `${formatNumber(amount)} 片`;
+  return "—";
+}
+
+function requirementCaption(kind: "eggs" | "silver" | "shards" | "complete") {
+  if (kind === "eggs") return "专用蛋优先";
+  if (kind === "silver") return "银子任务";
+  if (kind === "shards") return "内丹锁片";
+  return "没有待办";
+}
+
+function shortageValue(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (projection.requirementKind === "eggs") return projection.allocation.eggShortage;
+  if (projection.requirementKind === "silver") return projection.allocation.silverShortageWan;
+  if (projection.requirementKind === "shards") return projection.allocation.shardShortage;
+  return 0;
+}
+
+function shortageUnit(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (projection.requirementKind === "eggs") return "个蛋";
+  if (projection.requirementKind === "silver") return "万";
+  if (projection.requirementKind === "shards") return "片";
+  return "";
+}
+
+function allocationLines(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (projection.requirementKind === "eggs") {
+    return [
+      `专用蛋 ${formatNumber(projection.allocation.dedicatedUsed)}`,
+      `普通蛋 ${formatNumber(projection.allocation.regularUsed)}`,
+    ];
+  }
+  if (projection.requirementKind === "silver") {
+    return [
+      `银子 ${formatNumber(projection.allocation.silverUsed)}万`,
+      projection.allocation.regularEggsToSell ? `可卖普通蛋 ${projection.allocation.regularEggsToSell}` : "无需卖蛋",
+    ];
+  }
+  if (projection.requirementKind === "shards") {
+    return [`锁片 ${formatNumber(projection.allocation.shardsUsed)}`, "独立资源"];
+  }
+  return ["无需分配", "主线已清空"];
+}
+
+function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (projection.status === "stale") return "待补库存";
+  if (projection.status === "ready") return "可推进";
+  if (projection.status === "buyable" && projection.requirementKind === "eggs") return "银子可补齐";
+  if (projection.status === "buyable" && projection.requirementKind === "silver") return "卖普通蛋可补齐";
+  return projection.statusLabel;
 }
 </script>
 
 <template>
-  <div class="orbit-dashboard-page">
-    <AccountDeck :plans="plans" :selected="slowest?.accountId" :total-funds="totalFunds" />
+  <main class="workbench-page">
+    <InventorySnapshotDialog
+      :open="inventoryDialogOpen"
+      :initial-date="today"
+      :snapshots="inventory.snapshots"
+      @close="inventoryDialogOpen = false"
+      @save="saveInventorySnapshot"
+    />
 
-    <section class="orbit-command-canvas">
-      <div class="orbit-decision-panel">
-        <div class="decision-summary">
-          <h1>今日决策</h1>
-          <strong>{{ slowest?.accountId }}</strong>
-          <b>预计还需 {{ slowest?.finishWeek }} 周</b>
-          <span aria-hidden="true"></span>
-          <RouterLink to="/plans/timeline">查看联合时间轴 <i>›</i></RouterLink>
-        </div>
-
-        <div class="decision-instrument" aria-label="总资金与资源缺口">
-          <div class="instrument-face">
-            <div class="instrument-ticks"></div>
-            <div class="instrument-center">
-              <strong>{{ formatCurrency(totalFunds) }}</strong>
-              <span>五号总资金</span>
-            </div>
-          </div>
-          <div class="instrument-foot left"><strong>{{ catalog.beastSummary.eggs }}</strong><span>还差神兽蛋</span><small>{{ catalog.beastSummary.confirmedWan }} 万确认差价</small></div>
-          <div class="instrument-foot right"><strong>{{ shardGap }}</strong><span>还差锁片</span><small>{{ taskCount }} 项未完成</small></div>
-        </div>
+    <header class="workbench-titlebar">
+      <div>
+        <h1>五条主线推进轨道</h1>
+        <p>聚焦神兽主线行动，五个账号的库存、缺口和下一步同时可见。</p>
       </div>
+      <div class="workbench-title-actions">
+        <span class="workbench-date">库存所属日期：{{ formatLongDate(latestDate) }}</span>
+        <button class="workbench-primary" type="button" @click="inventoryDialogOpen = true">
+          录入五号库存快照
+        </button>
+      </div>
+    </header>
 
-      <section class="orbit-action-panel">
-        <h2>本周行动</h2>
-        <RouterLink v-for="item in actions" :key="item.rank" :to="item.to" class="orbit-action-row" :class="item.tone">
-          <b>{{ item.rank }}</b>
-          <span><strong>{{ item.title }}</strong><small>{{ item.detail }}</small></span>
-          <i>›</i>
-        </RouterLink>
-      </section>
+    <p v-if="saveNotice" class="action-notice" aria-live="polite">{{ saveNotice }}</p>
 
-      <section class="orbit-account-panel">
-        <h2>账号状态</h2>
-        <div class="orbit-account-table">
-          <div class="table-head"><span>账号</span><span>宝石</span><span>神兽</span><span>碎片</span><span>完成</span></div>
-          <RouterLink v-for="plan in plans" :key="plan.accountId" :to="`/accounts/${plan.accountId}`">
-            <b :class="`account-${plan.accountId.toLowerCase()}`">{{ plan.accountId }}</b>
-            <span>{{ formatCurrency(plan.gemRequiredSilver) }}</span>
-            <span>{{ formatCurrency(plan.beastRequiredSilver) }}</span>
-            <span>{{ plan.missingShardCount || "—" }}</span>
-            <strong>还需 {{ plan.finishWeek }} 周</strong>
-          </RouterLink>
-        </div>
-      </section>
-
-      <section class="orbit-timeline-panel">
-        <h2>五账号完成时间轴</h2>
-        <AccountTimeline :plans="plans" :selected="slowest?.accountId" :start-date="settings.taskSettings.startDate" />
-      </section>
-
-      <section class="orbit-data-band">
-        <article class="orbit-pet-ledger">
-          <header><h2>核心宠物</h2><RouterLink to="/analysis/recommendations">查看分析 ›</RouterLink></header>
-          <div class="orbit-pet-head"><span>排名</span><span>宠物名</span><span>角色定位</span><span>主属性</span><span>技能数</span><span>账号</span></div>
-          <RouterLink v-for="(item, index) in priorityPets" :key="item.pet.id" :to="`/assets/pets?selected=${encodeURIComponent(item.pet.id)}`" class="orbit-pet-row">
-            <b>0{{ index + 1 }}</b>
-            <strong>{{ item.pet.name }}</strong>
-            <span>{{ item.pet.role.primary }}</span>
-            <span>{{ item.label }} {{ item.pet[item.metric] }}</span>
-            <span>{{ item.pet.skillCount }} 技能</span>
-            <em>{{ item.pet.accountId }}</em>
-          </RouterLink>
-        </article>
-
-        <article class="orbit-equipment-meter">
-          <header><h2>六件装备</h2><RouterLink to="/assets/equipment">查看详情 ›</RouterLink></header>
-          <div class="equipment-meter-grid">
-            <div v-for="item in equipmentRows" :key="item.id">
-              <strong>{{ item.slot }}</strong>
-              <span>{{ item.type }}</span>
-              <i><b :style="{ height: gemProgress(item) }"></b></i>
-              <em>{{ gemLevel(item) }} 级</em>
-              <small>{{ item.gem.name }}</small>
-            </div>
-          </div>
-        </article>
-
-        <article class="orbit-beast-gauges">
-          <header><h2>神兽任务</h2><RouterLink to="/plans/beasts">查看任务 ›</RouterLink></header>
-          <div class="beast-gauge-grid">
-            <div class="mini-ring" :style="{ '--ring-progress': ringProgress(eggInventory, eggTotal) }">
-              <span><b>{{ eggInventory }}</b><em>/ {{ eggTotal }}</em></span>
-              <strong>神兽蛋</strong><small>缺口 {{ catalog.beastSummary.eggs }}</small>
-            </div>
-            <div class="mini-ring blue" :style="{ '--ring-progress': ringProgress(shardInventory, shardTotal) }">
-              <span><b>{{ shardInventory }}</b><em>/ {{ shardTotal }}</em></span>
-              <strong>锁片</strong><small>缺口 {{ shardGap }}</small>
-            </div>
-            <div class="remaining-count"><span>当前剩余</span><strong>{{ taskCount }}</strong><b>项未完成</b></div>
-          </div>
-        </article>
-      </section>
+    <section class="workbench-snapshot-meta" aria-label="最近库存快照">
+      <strong>最近完整快照：{{ latestDate ? `${formatDate(latestDate)} · 五号已录` : "尚未建立" }}</strong>
+      <span>{{ latestDate ? `系统按库存所属日期排序；实际录入时间另行保留` : "先录入一份五号总库存，第二份开始计算区间净变化" }}</span>
     </section>
-  </div>
+
+    <div class="mainline-table-scroll">
+      <section class="mainline-table" role="table" aria-label="五账号神兽主线推进轨道">
+        <div class="mainline-grid mainline-head" role="row">
+          <span role="columnheader">账号</span>
+          <span role="columnheader">最新库存<small>有效日期</small></span>
+          <span role="columnheader">当前库存<small>专用蛋 / 普通蛋 / 银子</small></span>
+          <span role="columnheader">库存净变化<small>相对上一快照</small></span>
+          <span role="columnheader">主线推进<small>当前 → 下一步 → 再下一步</small></span>
+          <span role="columnheader">当前任务<small>需求量</small></span>
+          <span role="columnheader">资源分配<small>专用蛋优先</small></span>
+          <span role="columnheader">缺口</span>
+          <span role="columnheader">推荐下一步行动</span>
+          <span role="columnheader">明细</span>
+        </div>
+
+        <article
+          v-for="projection in projections"
+          :key="projection.accountId"
+          class="mainline-grid mainline-row"
+          :style="{ '--account-tone': accountTone[projection.accountId] }"
+          role="row"
+        >
+          <div class="mainline-cell" role="cell">
+            <span class="account-pill" :class="`account-${projection.accountId.toLowerCase()}`">{{ projection.accountId }}</span>
+          </div>
+
+          <div class="mainline-cell snapshot-age" :class="{ stale: isStaleDate(projection.effectiveDate) }" role="cell">
+            <span><b>{{ formatDate(projection.effectiveDate) }}</b><small>{{ dateAge(projection.effectiveDate) }}</small></span>
+          </div>
+
+          <div class="mainline-cell" role="cell">
+            <div class="resource-trio">
+              <span><small>专用蛋</small><b>{{ formatNumber(projection.inventory.dedicatedEggs) }}</b></span>
+              <span><small>普通蛋</small><b>{{ formatNumber(projection.inventory.regularEggs) }}</b></span>
+              <span><small>银子/万</small><b>{{ formatNumber(projection.inventory.silverWan) }}</b></span>
+            </div>
+          </div>
+
+          <div class="mainline-cell" role="cell">
+            <div v-if="projection.delta" class="delta-trio">
+              <span><small>专用蛋</small><b :class="deltaTone(projection.delta.dedicatedEggs)">{{ signed(projection.delta.dedicatedEggs) }}</b></span>
+              <span><small>普通蛋</small><b :class="deltaTone(projection.delta.regularEggs)">{{ signed(projection.delta.regularEggs) }}</b></span>
+              <span><small>银子/万</small><b :class="deltaTone(projection.delta.silverWan)">{{ signed(projection.delta.silverWan) }}</b></span>
+            </div>
+            <span v-else class="inventory-baseline-label">{{ latestDate ? "首份基线" : "待录快照" }}</span>
+          </div>
+
+          <div class="mainline-cell" role="cell">
+            <div class="task-track">
+              <div class="task-track-labels">
+                <span v-for="(task, index) in projection.nextTasks" :key="task.id">{{ taskLabel(task) }}</span>
+                <span v-for="index in Math.max(0, 3 - projection.nextTasks.length)" :key="`empty-${index}`">{{ index === 1 && !projection.nextTasks.length ? "主线已完成" : "—" }}</span>
+              </div>
+              <div class="task-track-line" aria-hidden="true"><i></i><i></i><i></i></div>
+            </div>
+          </div>
+
+          <div class="mainline-cell requirement-cell" role="cell">
+            <span><b>{{ requirementTitle(projection.requirementKind, projection.requiredAmount) }}</b><small>{{ requirementCaption(projection.requirementKind) }}</small></span>
+          </div>
+
+          <div class="mainline-cell allocation-cell" role="cell">
+            <span><b>{{ allocationLines(projection)[0] }}</b><small>{{ allocationLines(projection)[1] }}</small></span>
+          </div>
+
+          <div class="mainline-cell shortage-cell" :class="{ none: shortageValue(projection) === 0 }" role="cell">
+            {{ shortageValue(projection) ? `${formatNumber(shortageValue(projection))}${shortageUnit(projection)}` : "—" }}
+          </div>
+
+          <div class="status-cell" role="cell">
+            <span class="status-chip" :class="projection.status">{{ statusLabelFor(projection) }}</span>
+            <small>{{ projection.actionHint }}</small>
+          </div>
+
+          <RouterLink class="mainline-detail-link" :to="`/accounts/${projection.accountId}`" role="cell">明细 ›</RouterLink>
+        </article>
+      </section>
+    </div>
+
+    <div class="workbench-bottom-grid">
+      <section class="workbench-panel">
+        <header>
+          <h2>五号最近变化</h2>
+          <span>{{ previousDate ? `相对上一快照：${formatDate(previousDate)}` : "需要至少两份快照" }}</span>
+        </header>
+        <table class="changes-ledger">
+          <thead><tr><th>账号</th><th>专用蛋净变化</th><th>普通蛋净变化</th><th>银子净变化 / 万</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr v-for="projection in projections" :key="projection.accountId">
+              <td><strong :style="{ color: accountTone[projection.accountId] }">{{ projection.accountId }}</strong></td>
+              <td :class="projection.delta ? deltaTone(projection.delta.dedicatedEggs) : ''">{{ projection.delta ? signed(projection.delta.dedicatedEggs) : "—" }}</td>
+              <td :class="projection.delta ? deltaTone(projection.delta.regularEggs) : ''">{{ projection.delta ? signed(projection.delta.regularEggs) : "—" }}</td>
+              <td :class="projection.delta ? deltaTone(projection.delta.silverWan) : ''">{{ projection.delta ? signed(projection.delta.silverWan) : "—" }}</td>
+              <td>{{ projection.delta ? `间隔 ${projection.delta.intervalDays} 天` : "尚无对比区间" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="workbench-panel">
+        <header><h2>共用规则（神兽主线库存）</h2></header>
+        <ul class="workbench-rules">
+          <li><strong>专用蛋不可出售：</strong>任务消耗时优先使用专用蛋，其次使用普通蛋。</li>
+          <li><strong>普通蛋可买可卖：</strong>可以用银子购买，也可以手动卖出换成银子。</li>
+          <li><strong>银子只提示可行方案：</strong>系统计算补齐普通蛋需要多少银子，但不会自动转换。</li>
+          <li><strong>库存日期和录入时间分开：</strong>补录周一库存时选择周一，系统另存实际录入时间。</li>
+          <li><strong>净变化不是收入：</strong>它是两次完整库存之差，包含期间获得、消耗和买卖的最终结果。</li>
+        </ul>
+      </section>
+    </div>
+  </main>
 </template>
