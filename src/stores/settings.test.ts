@@ -41,4 +41,27 @@ describe("settings store persistence", () => {
     expect(settings.recordGemPrices("manual", items)).toBe(true);
     expect(settings.gemPriceHistory).toHaveLength(1);
   });
+
+  it("adds inventory and current dates only to runtime planning snapshots", () => {
+    const settings = useSettingsStore();
+    settings.hydrate();
+    const persistedBefore = settings.exportState();
+    const snapshot = settings.snapshot(
+      structuredClone(catalog.beastConfig.taskDefaultResources),
+      "2026-07-12",
+      "2026-07-13",
+    );
+
+    expect(snapshot).toMatchObject({ inventoryEffectiveDate: "2026-07-12", asOfDate: "2026-07-13" });
+    expect(settings.exportState()).toEqual(persistedBefore);
+    expect(settings.exportState()).not.toHaveProperty("inventoryEffectiveDate");
+    expect(settings.exportState()).not.toHaveProperty("asOfDate");
+    const persisted = JSON.parse(localStorage.getItem(settingsStorageKey) || "null");
+    expect(persisted).not.toHaveProperty("inventoryEffectiveDate");
+    expect(persisted).not.toHaveProperty("asOfDate");
+
+    settings.refreshPlanningAsOfDate(new Date("2026-07-12T16:00:00.000Z"));
+    expect(settings.planningAsOfDate).toBe("2026-07-13");
+    expect(settings.exportState()).toEqual(persistedBefore);
+  });
 });

@@ -2,7 +2,7 @@ import { reactive, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { catalog } from "../data/catalog";
 import type { AccountId, BeastResource, BeastTaskSettings, GemMarketItem, GemPriceHistoryEntry, GemPriceHistorySource } from "../domain/types";
-import type { PlanningState, TaskOverride } from "../domain/plans";
+import { shanghaiDateKey, type PlanningState, type TaskOverride } from "../domain/plans";
 import { createGemPriceHistoryEntry, normalizeGemPriceHistory } from "../domain/gemPriceHistory";
 import { parseSettingsState, type SettingsState } from "../persistence/state";
 
@@ -16,6 +16,7 @@ export const useSettingsStore = defineStore("settings", () => {
   const taskSettings = reactive<BeastTaskSettings>(clone(catalog.beastConfig.taskDefaultSettings));
   const taskOverrides = reactive<Record<string, TaskOverride>>({});
   const gemPriceHistory = ref<GemPriceHistoryEntry[]>([]);
+  const planningAsOfDate = ref(shanghaiDateKey());
 
   const marketNames = catalog.gemMarketSnapshots.at(-1)?.items.map((item) => item.name) || [];
 
@@ -29,8 +30,23 @@ export const useSettingsStore = defineStore("settings", () => {
     gemPriceHistory.value = normalizeGemPriceHistory(value.gemPriceHistory, marketNames);
   }
 
-  function snapshot(resources: Record<AccountId, BeastResource>): PlanningState {
-    return { gemPriceOverrides: { ...gemPriceOverrides }, settings: { ...taskSettings }, resources: clone(resources), overrides: clone(taskOverrides) };
+  function snapshot(
+    resources: Record<AccountId, BeastResource>,
+    inventoryEffectiveDate: string | null = null,
+    asOfDate = planningAsOfDate.value,
+  ): PlanningState {
+    return {
+      gemPriceOverrides: { ...gemPriceOverrides },
+      settings: { ...taskSettings },
+      asOfDate,
+      inventoryEffectiveDate,
+      resources: clone(resources),
+      overrides: clone(taskOverrides),
+    };
+  }
+
+  function refreshPlanningAsOfDate(now: Date | number = Date.now()) {
+    planningAsOfDate.value = shanghaiDateKey(now);
   }
 
   function persist() {
@@ -111,8 +127,8 @@ export const useSettingsStore = defineStore("settings", () => {
 
   watch([gemPriceOverrides, taskSettings, taskOverrides, gemPriceHistory], persist, { deep: true });
   return {
-    hydrated, gemPriceOverrides, gemPriceHistory, taskSettings, taskOverrides,
-    hydrate, snapshot, exportState, replaceState, setGemPrice, resetGemPrices, setTaskSetting, setTaskDone, setTaskPrice,
+    hydrated, gemPriceOverrides, gemPriceHistory, taskSettings, taskOverrides, planningAsOfDate,
+    hydrate, snapshot, refreshPlanningAsOfDate, exportState, replaceState, setGemPrice, resetGemPrices, setTaskSetting, setTaskDone, setTaskPrice,
     recordGemPrices, removeGemPriceHistory, clearGemPriceHistory,
     resetTaskSettings, resetTaskOverrides, resetTasks, resetAllPlanningData,
   };

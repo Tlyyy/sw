@@ -8,6 +8,8 @@ import { generatePublishContent, publishDefaults } from "./publish";
 const pets = buildPetViews(catalog);
 const state = {
   settings: structuredClone(catalog.beastConfig.taskDefaultSettings),
+  asOfDate: catalog.beastConfig.taskDefaultSettings.startDate,
+  inventoryEffectiveDate: catalog.beastConfig.taskDefaultSettings.startDate,
   resources: structuredClone(catalog.beastConfig.taskDefaultResources),
   overrides: {},
   gemPriceOverrides: {},
@@ -41,6 +43,12 @@ describe("migration baseline", () => {
     expect(matrixColumns).toHaveLength(15);
     expect(matrixGroups).toHaveLength(4);
     expect(matrixAccountIds).toEqual(["FC", "LG1", "LG2", "PT", "MYT"]);
+    expect(matrixColumns.filter((column) => column.group === "PK：神兽蛇 / 小马").map((column) => column.label)).toEqual([
+      "剑气蛇",
+      "法蛇",
+      "隐攻蛇",
+      "小马",
+    ]);
   });
 
   it("generates publish content from normalized assets", () => {

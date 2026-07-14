@@ -92,6 +92,11 @@ test.describe("desktop application", () => {
     await expect(page.getByRole("tab", { name: "PK：速度" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("columnheader")).toHaveCount(6);
 
+    await page.getByRole("tab", { name: "PK：神兽蛇 / 小马" }).click();
+    await expect(page.locator(".matrix-table tbody th > strong")).toHaveText(["剑气蛇", "法蛇", "隐攻蛇", "小马"]);
+    await expect(page.getByText("剑气蛇、法蛇、隐攻蛇与小马", { exact: true })).toBeVisible();
+    await expect(page.getByText("追影蛇", { exact: true })).toHaveCount(0);
+
     const skills = page.getByRole("checkbox", { name: "技能" });
     await skills.uncheck();
     await expect(page.locator(".matrix-skills")).toHaveCount(0);
@@ -106,6 +111,8 @@ test.describe("desktop application", () => {
     await expect(page.locator(".gem-ocr-panel, .market-band input")).toHaveCount(0);
     await page.goto("/#/plans/beasts");
     await expect(page.locator(".settings-band input, .resource-table input, .task-list input")).toHaveCount(0);
+    await expect(page.getByRole("option", { name: "小马", exact: true })).toHaveCount(1);
+    await expect(page.getByText("普通宠不进入此任务表", { exact: false })).toBeVisible();
   });
 
   test("统一库存快照同时保存蛋、银子和内丹碎片", async ({ page }, testInfo) => {
@@ -214,17 +221,19 @@ test.describe("mobile application", () => {
     });
     expect(taskLayout.rootScroll).toBe(taskLayout.rootClient);
     expect(taskLayout.scroll).toBeGreaterThan(taskLayout.client);
+    await page.screenshot({ path: testInfo.outputPath("data-tasks-mobile.png") });
 
     await page.goto("/#/plans/beasts");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
     await expect(page.locator(".settings-band input, .resource-table input, .task-list input")).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath("beasts-mobile.png") });
   });
 });
 
 test.describe("tablet application", () => {
   test("关键页面无页面级横向溢出", async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith("tablet-"));
-    for (const url of ["/#/", "/#/assets/pets", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/analysis/matrix"]) {
+    for (const url of ["/#/", "/#/assets/pets", "/#/plans/beasts", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/data/tasks", "/#/analysis/matrix"]) {
       await page.goto(url);
       await expect(page.locator(".workbench-page, .page-wrap")).toBeVisible();
       const width = await page.evaluate(() => ({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
@@ -232,5 +241,61 @@ test.describe("tablet application", () => {
     }
     await page.goto("/#/");
     await page.screenshot({ path: testInfo.outputPath(`dashboard-${testInfo.project.name}.png`) });
+    await page.goto("/#/plans/beasts");
+    await page.screenshot({ path: testInfo.outputPath(`beasts-${testInfo.project.name}.png`) });
+    await page.goto("/#/data/tasks");
+    await page.screenshot({ path: testInfo.outputPath(`data-tasks-${testInfo.project.name}.png`) });
+  });
+});
+
+test.describe("schedule completion dates", () => {
+  test("首页轨道和账号任务在各尺寸显示完整预计日期", async ({ page }, testInfo) => {
+    await page.clock.setFixedTime(new Date("2026-07-13T02:00:00Z"));
+    await page.addInitScript(() => {
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [{
+          effectiveDate: "2026-07-12",
+          recordedAt: "2026-07-12T02:00:00.000Z",
+          accounts: Object.fromEntries(["FC", "LG1", "LG2", "PT", "MYT"].map((id) => [id, {
+            dedicatedEggs: 10_000,
+            regularEggs: 10_000,
+            silverWan: 10_000,
+            innerShardCount: 1_000,
+          }])),
+        }],
+      }));
+      localStorage.setItem("sw.app.settings.v2", JSON.stringify({
+        version: 2,
+        settings: { startDate: "2026-07-02" },
+      }));
+    });
+
+    await page.goto("/#/");
+    const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
+    const currentTrackTask = ptMainline.locator(".task-track-labels span").first();
+    await expect(currentTrackTask.locator("b")).toHaveText("剑气蛇 · 进阶2");
+    await expect(currentTrackTask.locator("small")).toHaveText("预计 7月13日完成");
+    await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
+    if (testInfo.project.name === "desktop") {
+      const tableWidth = await page.locator(".mainline-table-scroll").evaluate((element) => ({
+        client: element.clientWidth,
+        scroll: element.scrollWidth,
+      }));
+      expect(tableWidth.scroll).toBe(tableWidth.client);
+    }
+    await ptMainline.locator(".task-track").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
+
+    await page.goto("/#/accounts/PT");
+    const accountTask = page.locator(".task-mini-list > div").filter({ hasText: "剑气蛇 · 进阶2" }).first();
+    await expect(accountTask.locator("small")).toHaveText("预计 7月13日完成");
+    await expect(page.locator(".account-mainline-finish")).toHaveText("整条主线：待洗护符后排期");
+    await accountTask.scrollIntoViewIfNeeded();
+    const accountWidth = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(accountWidth.scroll).toBe(accountWidth.client);
+    await page.screenshot({ path: testInfo.outputPath(`account-schedule-${testInfo.project.name}.png`) });
   });
 });

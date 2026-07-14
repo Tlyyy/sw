@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import InventorySnapshotDialog from "../../components/InventorySnapshotDialog.vue";
-import { buildMainlineProjection } from "../../domain/mainline";
-import { buildTaskPlans } from "../../domain/plans";
+import { buildMainlineProjection, type MainlineRequirementKind } from "../../domain/mainline";
+import { buildTaskPlans, formatScheduleDueDate, resolvePlanningStartDate } from "../../domain/plans";
 import type { AccountId, InventoryBalance } from "../../domain/types";
 import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
@@ -16,18 +16,31 @@ const saveNotice = ref("");
 
 inventory.hydrate();
 
-const taskPlans = computed(() => buildTaskPlans(catalog.data, catalog.pets, settings.snapshot(inventory.planningResources)));
+const inventoryEffectiveDate = computed(() => inventory.latestSnapshot?.effectiveDate || null);
+const planningStartDate = computed(() => resolvePlanningStartDate(
+  settings.taskSettings.startDate,
+  inventoryEffectiveDate.value,
+  settings.planningAsOfDate,
+));
+const taskPlans = computed(() => buildTaskPlans(
+  catalog.data,
+  catalog.pets,
+  settings.snapshot(inventory.planningResources, inventoryEffectiveDate.value),
+));
 const projections = computed(() => buildMainlineProjection(
   taskPlans.value,
   inventory.snapshots,
-  settings.taskSettings.eggPriceWan,
+  {
+    buyWan: settings.taskSettings.eggPriceWan,
+    sellWan: catalog.data.beastConfig.eggSellPriceWan,
+  },
 ));
 const latestDate = computed(() => inventory.latestSnapshot?.effectiveDate || null);
 const previousDate = computed(() => inventory.previousSnapshot?.effectiveDate || null);
 const latestInventoryComplete = computed(() => inventory.latestSnapshot
   ? Object.values(inventory.latestSnapshot.accounts).every((balance) => balance.innerShardCount !== null)
   : false);
-const today = computed(() => new Date().toLocaleDateString("en-CA"));
+const today = computed(() => settings.planningAsOfDate);
 const accountTone: Record<AccountId, string> = {
   FC: "#176bb2",
   LG1: "#7244aa",
@@ -90,17 +103,29 @@ function taskLabel(task: ReturnType<typeof buildTaskPlans>[number]["tasks"][numb
   return task ? `${task.typeLabel} · ${task.actionLabel}` : "主线已完成";
 }
 
-function requirementTitle(kind: "eggs" | "silver" | "shards" | "complete", amount: number) {
+function taskDueLabel(value: string | null) {
+  return formatScheduleDueDate(value, planningStartDate.value);
+}
+
+function mainlineFinishLabel(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (!projection.currentTask) return "整条主线已完成";
+  const finish = taskDueLabel(projection.finishDate);
+  return finish.startsWith("预计 ") ? `整条主线${finish}` : `整条主线：${finish}`;
+}
+
+function requirementTitle(kind: MainlineRequirementKind, amount: number) {
   if (kind === "eggs") return `${formatNumber(amount)} 个蛋`;
   if (kind === "silver") return `${formatNumber(amount)} 万`;
   if (kind === "shards") return `${formatNumber(amount)} 片`;
+  if (kind === "estimate") return `${formatNumber(amount)} 万`;
   return "—";
 }
 
-function requirementCaption(kind: "eggs" | "silver" | "shards" | "complete") {
+function requirementCaption(kind: MainlineRequirementKind) {
   if (kind === "eggs") return "专用蛋优先";
   if (kind === "silver") return "银子任务";
   if (kind === "shards") return "内丹碎片";
+  if (kind === "estimate") return "仅预算参考";
   return "没有待办";
 }
 
@@ -128,11 +153,16 @@ function allocationLines(projection: ReturnType<typeof buildMainlineProjection>[
   if (projection.requirementKind === "silver") {
     return [
       `银子 ${formatNumber(projection.allocation.silverUsed)}万`,
-      projection.allocation.regularEggsToSell ? `可卖普通蛋 ${projection.allocation.regularEggsToSell}` : "无需卖蛋",
+      projection.allocation.regularEggsToSell
+        ? `普通蛋默认保留（应急 ${projection.allocation.regularEggsToSell} 个）`
+        : "普通蛋默认保留",
     ];
   }
   if (projection.requirementKind === "shards") {
     return [`内丹碎片 ${formatNumber(projection.allocation.shardsUsed)}`, "独立资源"];
+  }
+  if (projection.requirementKind === "estimate") {
+    return [`预算 ${formatNumber(projection.requiredAmount)}万`, "实际成本待定"];
   }
   return ["无需分配", "主线已清空"];
 }
@@ -141,7 +171,6 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
   if (projection.status === "stale") return "待补库存";
   if (projection.status === "ready") return "可推进";
   if (projection.status === "buyable" && projection.requirementKind === "eggs") return "银子可补齐";
-  if (projection.status === "buyable" && projection.requirementKind === "silver") return "卖普通蛋可补齐";
   return projection.statusLabel;
 }
 </script>
@@ -159,7 +188,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
     <header class="workbench-titlebar">
       <div>
         <h1>五条主线推进轨道</h1>
-        <p>聚焦神兽主线行动，五个账号的库存、缺口和下一步同时可见。</p>
+        <p>已成型神兽先推进；半成品神兽完成内丹、护符和打书后，才进入神兽专属养成。排期不会早于今天或库存日期，当前基准为 {{ planningStartDate }}。</p>
       </div>
       <div class="workbench-title-actions">
         <span class="workbench-date">库存所属日期：{{ formatLongDate(latestDate) }}</span>
@@ -183,7 +212,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
           <span role="columnheader">最新库存<small>有效日期</small></span>
           <span role="columnheader">当前库存<small>专用蛋 / 普通蛋 / 银子 / 内丹碎片</small></span>
           <span role="columnheader">库存净变化<small>相对上一快照</small></span>
-          <span role="columnheader">主线推进<small>当前 → 下一步 → 再下一步</small></span>
+          <span role="columnheader">主线推进<small>任务与预计完成日</small></span>
           <span role="columnheader">当前任务<small>需求量</small></span>
           <span role="columnheader">资源分配<small>专用蛋优先</small></span>
           <span role="columnheader">缺口</span>
@@ -228,10 +257,11 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
           <div class="mainline-cell" role="cell">
             <div class="task-track">
               <div class="task-track-labels">
-                <span v-for="(task, index) in projection.nextTasks" :key="task.id">{{ taskLabel(task) }}</span>
-                <span v-for="index in Math.max(0, 3 - projection.nextTasks.length)" :key="`empty-${index}`">{{ index === 1 && !projection.nextTasks.length ? "主线已完成" : "—" }}</span>
+                <span v-for="task in projection.nextTasks" :key="task.id"><b>{{ taskLabel(task) }}</b><small>{{ taskDueLabel(task.dueDate) }}</small></span>
+                <span v-for="index in Math.max(0, 3 - projection.nextTasks.length)" :key="`empty-${index}`" class="empty"><b>{{ index === 1 && !projection.nextTasks.length ? "主线已完成" : "—" }}</b></span>
               </div>
               <div class="task-track-line" aria-hidden="true"><i></i><i></i><i></i></div>
+              <small class="task-track-finish">{{ mainlineFinishLabel(projection) }}</small>
             </div>
           </div>
 
@@ -281,9 +311,12 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
       <section class="workbench-panel">
         <header><h2>共用规则（神兽主线库存）</h2></header>
         <ul class="workbench-rules">
+          <li><strong>神兽专属养成：</strong>神兽青蛇和神兽龙马（小马）在打书后按饰品 → 进阶1 → 进阶2 → 皮肤推进；小马完成皮肤后另做马强化，普通宠不进入此任务表。</li>
+          <li><strong>半成品依赖：</strong>需洗护符的神兽整体后置，并严格按内丹前置（如需）→ 洗护符 → 打书 → 神兽专属养成推进；洗护符金额只作预算，不承诺洗成。</li>
           <li><strong>专用蛋不可出售：</strong>任务消耗时优先使用专用蛋，其次使用普通蛋。</li>
-          <li><strong>普通蛋可买可卖：</strong>可以用银子购买，也可以手动卖出换成银子。</li>
-          <li><strong>银子只提示可行方案：</strong>系统计算补齐普通蛋需要多少银子，但不会自动转换。</li>
+          <li><strong>普通蛋任务优先：</strong>默认保留给神兽任务，只有确实必须立即推进时才考虑出售。</li>
+          <li><strong>买卖存在损耗：</strong>买入 {{ formatNumber(settings.taskSettings.eggPriceWan) }} 万/个，紧急出售仅 {{ formatNumber(catalog.data.beastConfig.eggSellPriceWan) }} 万/个；卖后再买每个损失 {{ formatNumber(Math.max(0, settings.taskSettings.eggPriceWan - catalog.data.beastConfig.eggSellPriceWan)) }} 万。</li>
+          <li><strong>银子方案保持克制：</strong>系统优先提示积攒银子，卖普通蛋只作为明确标注的紧急兜底。</li>
           <li><strong>库存日期和录入时间分开：</strong>补录周一库存时选择周一，系统另存实际录入时间。</li>
           <li><strong>净变化不是收入：</strong>它是两次完整库存之差，包含期间获得、消耗和买卖的最终结果。</li>
         </ul>

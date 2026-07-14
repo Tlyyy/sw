@@ -161,6 +161,8 @@ export interface InventoryExportPayload {
 
 export interface BeastConfig {
   eggPriceWan: number;
+  /** Fixed system recovery price when an ordinary egg is sold. */
+  eggSellPriceWan: number;
   costRules: BeastCostRule[];
   typeDefs: BeastTypeDef[];
   estimateRules: Array<{ key: string; label: string; priceWan: number }>;

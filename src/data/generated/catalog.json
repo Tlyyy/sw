@@ -10414,6 +10414,7 @@
   ],
   "beastConfig": {
     "eggPriceWan": 5.5,
+    "eggSellPriceWan": 5.2,
     "costRules": [
       {
         "key": "ornament",
@@ -10460,7 +10461,7 @@
       },
       {
         "key": "horse",
-        "label": "马",
+        "label": "小马",
         "pet": "神兽龙马"
       }
     ],
@@ -10523,17 +10524,17 @@
     },
     "taskActionOrder": [
       {
-        "key": "talisman",
-        "label": "洗护符",
-        "kind": "预估",
-        "sourceKey": "talisman"
-      },
-      {
         "key": "innerDan",
         "label": "幻神兽内丹",
         "kind": "前置",
         "sourceKey": "innerDan",
         "resourceType": "innerShard"
+      },
+      {
+        "key": "talisman",
+        "label": "洗护符",
+        "kind": "预估",
+        "sourceKey": "talisman"
       },
       {
         "key": "book",

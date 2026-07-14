@@ -27,7 +27,7 @@ const groupIndex = computed(() => matrixGroups.indexOf(group.value));
 
 const groupCopy: Record<string, { short: string; description: string }> = {
   "日常": { short: "日常", description: "祸斗、雷司与九头鸟的五号配置" },
-  "PK：神兽蛇 / 小马": { short: "神兽蛇 / 小马", description: "剑气蛇、追影蛇、法蛇与小马" },
+  "PK：神兽蛇 / 小马": { short: "神兽蛇 / 小马", description: "剑气蛇、法蛇、隐攻蛇与小马" },
   "PK：法系 / 特殊 / 物理": { short: "法系 / 特殊 / 物理", description: "跨账号核对法系、特殊与物理位置" },
   "PK：速度": { short: "速度", description: "速度位置的五号横向比较" },
 };

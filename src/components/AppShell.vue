@@ -25,7 +25,7 @@ let restoreMobileFocus = true;
 
 const links = computed(() => buildPrimaryNavigation(ui.recentAccount));
 
-const title = computed(() => String(route.meta.title || "幻唐志账号管理系统"));
+const title = computed(() => String(route.meta.title || "项目台账"));
 const isDashboard = computed(() => route.meta.section === "home");
 const isImmersivePage = computed(() => route.name === "matrix");
 const date = computed(() => inventory.latestSnapshot?.effectiveDate || catalog.data.generatedAt.slice(0, 10));
@@ -125,8 +125,8 @@ onBeforeUnmount(() => {
         @click="mobileDialogOpen ? closeMobileNavigation() : openMobileNavigation()"
       >☰</button>
       <RouterLink class="orbit-brand" to="/" :inert="mobileDialogOpen || undefined" :tabindex="mobileDialogOpen ? -1 : undefined" @click="closeMobileNavigation(false)">
-        <strong>幻唐志</strong>
-        <span>幻唐志账号管理系统</span>
+        <strong>项目台账</strong>
+        <span>进度与资源汇总</span>
       </RouterLink>
 
       <nav

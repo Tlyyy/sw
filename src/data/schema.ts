@@ -65,6 +65,7 @@ export const catalogSchema = z.object({
   })),
   beastConfig: z.object({
     eggPriceWan: z.number(),
+    eggSellPriceWan: z.number(),
     costRules: z.array(z.object({ key: z.string(), label: z.string(), priceWan: z.number(), eggCount: z.number(), appliesTo: z.literal("horse").optional() })),
     typeDefs: z.array(z.object({ key: z.enum(["snake1", "snake2", "horse"]), label: z.string(), pet: z.string() })),
     estimateRules: z.array(z.object({ key: z.string(), label: z.string(), priceWan: z.number() })),
@@ -101,6 +102,12 @@ export const catalogSchema = z.object({
 
   const evidenceById = new Map(data.evidence.map((row) => [row.id, row]));
   for (const pet of data.pets) {
+    if (pet.beastProgress && !pet.beastType) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: `普通宠物 ${pet.id} 不能记录神兽养成进度` });
+    }
+    if (pet.beastProgress?.strengthen !== undefined && pet.beastType !== "horse") {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: `非小马神兽 ${pet.id} 不能记录马强化进度` });
+    }
     for (const evidenceId of pet.evidenceIds) {
       const evidence = evidenceById.get(evidenceId);
       if (!evidence || evidence.kind !== "pet" || evidence.accountId !== pet.accountId) {

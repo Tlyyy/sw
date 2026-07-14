@@ -32,4 +32,20 @@ describe("catalogSchema relationships", () => {
     invalid.beastConfig.taskActionOrder.push(clone(invalid.beastConfig.taskActionOrder[0]));
     expect(catalogSchema.safeParse(invalid).success).toBe(false);
   });
+
+  it("rejects divine-beast progression on an ordinary pet", () => {
+    const invalid = clone(rawCatalog);
+    const ordinaryPet = invalid.pets.find((pet) => !("beastType" in pet));
+    expect(ordinaryPet).toBeDefined();
+    Object.assign(ordinaryPet!, { beastProgress: { ornament: true } });
+    expect(catalogSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it("rejects horse strengthening progress on a divine-beast snake", () => {
+    const invalid = clone(rawCatalog);
+    const snake = invalid.pets.find((pet) => pet.beastType === "snake1");
+    expect(snake).toBeDefined();
+    Object.assign(snake!, { beastProgress: { ...snake!.beastProgress, strengthen: true } });
+    expect(catalogSchema.safeParse(invalid).success).toBe(false);
+  });
 });

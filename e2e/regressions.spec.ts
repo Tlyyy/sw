@@ -89,17 +89,145 @@ test.describe("desktop regressions", () => {
     const filters = page.locator(".inline-filters select");
     await expect(filters).toHaveCount(2);
     await filters.nth(0).selectOption("LG1");
-    await filters.nth(1).selectOption("snake1");
+    await filters.nth(1).selectOption("swordSnake");
 
     const tasks = page.locator(".readonly-task-list article");
+    await expect(tasks.filter({ hasText: "LG1 · 剑气蛇" })).not.toHaveCount(0);
     await expect(tasks).not.toContainText("进阶2");
 
     await filters.nth(0).selectOption("LG2");
+    await filters.nth(1).selectOption("magicSnake");
+    await expect(tasks.filter({ hasText: "LG2 · 法蛇" })).not.toHaveCount(0);
     await expect(tasks).not.toContainText("进阶2");
 
     await filters.nth(0).selectOption("MYT");
+    await filters.nth(1).selectOption("swordSnake");
+    await expect(tasks.filter({ hasText: "MYT · 剑气蛇" })).not.toHaveCount(0);
     await expect(tasks.filter({ hasText: "饰品" })).toHaveCount(0);
     await expect(tasks.filter({ hasText: "进阶1" })).toHaveCount(0);
+  });
+
+  test("主线后置洗护符并在打书完成后才安排后续养成", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-07-13T02:00:00Z"));
+    await page.addInitScript(() => {
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [{
+          effectiveDate: "2026-07-12",
+          recordedAt: "2026-07-12T02:00:00.000Z",
+          accounts: Object.fromEntries(["FC", "LG1", "LG2", "PT", "MYT"].map((id) => [id, {
+            dedicatedEggs: 10_000,
+            regularEggs: 10_000,
+            silverWan: 10_000,
+            innerShardCount: 1_000,
+          }])),
+        }],
+      }));
+      localStorage.setItem("sw.app.settings.v2", JSON.stringify({
+        version: 2,
+        settings: { startDate: "2026-07-02" },
+      }));
+    });
+    await page.goto("/#/plans/beasts");
+    await expect(page.getByText("神兽青蛇和神兽龙马（小马）", { exact: false })).toBeVisible();
+
+    const filters = page.locator(".inline-filters select");
+    await filters.nth(0).selectOption("PT");
+    const tasks = page.locator(".readonly-task-list article");
+    const orderedTasks = await tasks.evaluateAll((nodes) => nodes.map((node) => {
+      const beast = node.querySelector("b")?.textContent?.trim() || "";
+      const action = node.querySelector("em")?.textContent?.split(" · ")[0]?.trim() || "";
+      return `${beast}|${action}`;
+    }));
+
+    expect(orderedTasks.slice(0, 2)).toEqual(["PT · 剑气蛇|进阶2", "PT · 剑气蛇|皮肤"]);
+    expect(orderedTasks.indexOf("PT · 待打书蛇|洗护符")).toBeGreaterThan(orderedTasks.indexOf("PT · 小马|马强化"));
+    const pendingBookIndex = orderedTasks.indexOf("PT · 待打书蛇|打书");
+    expect(pendingBookIndex).toBeGreaterThan(orderedTasks.indexOf("PT · 待打书蛇|洗护符"));
+    expect(orderedTasks.indexOf("PT · 待打书蛇|进阶1")).toBeGreaterThan(pendingBookIndex);
+
+    await page.goto("/#/");
+    const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
+    const ptTrack = ptMainline.locator(".task-track-labels span");
+    await expect(ptTrack.first().locator("b")).toHaveText("剑气蛇 · 进阶2");
+    await expect(ptTrack.first().locator("small")).toHaveText("预计 7月13日完成");
+    await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
+
+    await page.goto("/#/accounts/PT");
+    const accountTask = page.locator(".task-mini-list > div").filter({ hasText: "剑气蛇 · 进阶2" }).first();
+    await expect(accountTask.locator("small")).toHaveText("预计 7月13日完成");
+    await expect(page.locator(".account-mainline-finish")).toHaveText("整条主线：待洗护符后排期");
+
+    await page.goto("/#/data/tasks");
+    const maintenanceFilters = page.locator(".inline-filters select");
+    await maintenanceFilters.nth(0).selectOption("PT");
+    const pendingSnakeTasks = page.locator(".data-task-list label").filter({ hasText: "PT · 待打书蛇" });
+    const talismanTask = pendingSnakeTasks.filter({ has: page.locator("em", { hasText: "洗护符 · 预估" }) });
+    const downstreamBook = pendingSnakeTasks.filter({ has: page.locator("em", { hasText: "打书 · 预估" }) });
+    await expect(talismanTask.locator("small")).toHaveText("待洗护符");
+    await expect(downstreamBook.locator("small")).toHaveText("待洗护符");
+  });
+
+  test("普通蛋默认保留且仅按 5.2 万作为紧急兜底", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [{
+          effectiveDate: "2026-07-13",
+          recordedAt: "2026-07-13T02:00:00.000Z",
+          accounts: {
+            FC: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: 0 },
+            LG1: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: 0 },
+            LG2: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: 0 },
+            PT: { dedicatedEggs: 0, regularEggs: 8, silverWan: 163.5, innerShardCount: 0 },
+            MYT: { dedicatedEggs: 0, regularEggs: 0, silverWan: 0, innerShardCount: 0 },
+          },
+        }],
+      }));
+      localStorage.setItem("sw.app.settings.v2", JSON.stringify({
+        version: 2,
+        overrides: Object.fromEntries([
+          "PT:snake2:advance2",
+          "PT:snake2:skin",
+          "PT:horse:innerDan",
+          "PT:horse:book",
+          "PT:horse:ornament",
+          "PT:horse:advance1",
+          "PT:horse:advance2",
+          "PT:horse:skin",
+          "PT:horse:strengthen",
+          "PT:snake1:talisman",
+        ].map((id) => [id, { done: true }])),
+      }));
+    });
+
+    await page.goto("/#/");
+    const ptRow = page.locator(".mainline-row").filter({ hasText: "PT" });
+    await expect(ptRow).toContainText("普通蛋默认保留（应急 8 个）");
+    await expect(ptRow).toContainText("优先攒银子");
+    await expect(ptRow).toContainText("仅万不得已按 5.2 万/个出售 8 个普通蛋");
+    await expect(ptRow).toContainText("按 5.5 万/个买回将多花 2.4 万");
+    await expect(page.getByText("卖普通蛋可补齐", { exact: true })).toHaveCount(0);
+
+    await page.goto("/#/accounts/PT");
+    await expect(page.getByText("优先攒银子", { exact: true })).toBeVisible();
+    await expect(page.getByText("优先留作任务，仅紧急出售", { exact: true })).toBeVisible();
+
+    await page.goto("/#/plans/timeline");
+    const timelineRow = page.locator(".timeline-ledger > a").filter({ hasText: "PT" });
+    await expect(timelineRow).toContainText("优先攒银子");
+    await expect(timelineRow).toContainText("仅万不得已按 5.2 万/个出售 8 个普通蛋");
+
+    await page.goto("/#/plans/beasts");
+    const beastResourceRow = page.locator(".readonly-resource-table > div").filter({ hasText: "PT" });
+    await expect(beastResourceRow).toContainText("优先攒银子");
+    await expect(page.getByText("优先留作任务，仅紧急出售", { exact: true })).toBeVisible();
+
+    await page.goto("/#/data/inventory");
+    await expect(page.getByLabel("普通蛋买入价 / 万", { exact: true })).toHaveValue("5.5");
+    await expect(page.getByLabel("普通蛋紧急回收价 / 万", { exact: true })).toHaveValue("5.2");
+    await expect(page.getByLabel("普通蛋紧急回收价 / 万", { exact: true })).toHaveAttribute("readonly", "");
+    await expect(page.getByText("普通蛋买入 5.5 万、紧急回收 5.2 万；卖后再买每个损失 0.3 万。实际排期会从最早起算日、今天和库存日期中的较晚日期继续。", { exact: true })).toBeVisible();
   });
 
   test("装备页展示 2026-07-13 的四处宝石升级", async ({ page }) => {

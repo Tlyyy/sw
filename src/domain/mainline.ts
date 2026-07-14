@@ -9,8 +9,13 @@ import type {
 
 export const mainlineAccountIds = ["FC", "LG1", "LG2", "PT", "MYT"] as const satisfies readonly AccountId[];
 
-export type MainlineStatus = "ready" | "buyable" | "blocked" | "stale";
-export type MainlineRequirementKind = "eggs" | "silver" | "shards" | "complete";
+export type MainlineStatus = "ready" | "buyable" | "caution" | "blocked" | "stale";
+export type MainlineRequirementKind = "eggs" | "silver" | "shards" | "estimate" | "complete";
+
+export interface EggTradePrices {
+  buyWan: number;
+  sellWan: number;
+}
 
 export type MainlineInventory = InventoryBalance;
 
@@ -22,6 +27,7 @@ export interface MainlineAllocation {
   silverUsed: number;
   silverShortageWan: number;
   regularEggsToSell: number;
+  repurchaseLossWan: number;
   shardsUsed: number;
   shardShortage: number;
 }
@@ -34,6 +40,8 @@ export interface MainlineAccountProjection {
   currentTask: ScheduledTask | null;
   /** Current task plus at most the next two unfinished tasks. */
   nextTasks: ScheduledTask[];
+  /** Expected completion of the whole account mainline, or a planner blocker. */
+  finishDate: string | null;
   inventory: MainlineInventory;
   delta: InventoryAccountDelta | null;
   snapshot: {
@@ -58,21 +66,27 @@ const emptyAllocation = (): MainlineAllocation => ({
   silverUsed: 0,
   silverShortageWan: 0,
   regularEggsToSell: 0,
+  repurchaseLossWan: 0,
   shardsUsed: 0,
   shardShortage: 0,
 });
 
-function statusCopy(status: MainlineStatus, actionHint: string) {
+function statusCopy(status: MainlineStatus, actionHint: string, customLabel?: string) {
   const labels: Record<MainlineStatus, string> = {
     ready: "可以完成",
     buyable: "转换后可完成",
+    caution: "优先攒银子",
     blocked: "资源不足",
     stale: "待录库存",
   };
-  return { status, statusLabel: labels[status], actionHint };
+  return { status, statusLabel: customLabel || labels[status], actionHint };
 }
 
-function projectRequirement(task: ScheduledTask | null, inventory: MainlineInventory, eggPriceWan: number) {
+function formatAmount(value: number) {
+  return Number(value.toFixed(2)).toString();
+}
+
+function projectRequirement(task: ScheduledTask | null, inventory: MainlineInventory, eggPrices: EggTradePrices) {
   const allocation = emptyAllocation();
   if (!task) {
     return {
@@ -83,13 +97,23 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
     };
   }
 
+  if (task.actionKey === "talisman") {
+    const requiredAmount = task.remainingWan;
+    return {
+      ...statusCopy("caution", `洗护符成本不可控，${formatAmount(requiredAmount)} 万仅作预算；洗成后请在任务维护中勾选完成，再进入打书和后续养成`, "成本待定"),
+      requirementKind: "estimate" as const,
+      requiredAmount,
+      allocation,
+    };
+  }
+
   if (task.remainingEggCount > 0) {
     const requiredAmount = task.remainingEggCount;
     allocation.dedicatedUsed = Math.min(requiredAmount, inventory.dedicatedEggs);
     const afterDedicated = requiredAmount - allocation.dedicatedUsed;
     allocation.regularUsed = Math.min(afterDedicated, inventory.regularEggs);
     allocation.eggShortage = afterDedicated - allocation.regularUsed;
-    allocation.purchaseCostWan = allocation.eggShortage * eggPriceWan;
+    allocation.purchaseCostWan = allocation.eggShortage * eggPrices.buyWan;
     if (!allocation.eggShortage) {
       return {
         ...statusCopy("ready", `优先使用 ${allocation.dedicatedUsed} 个专用蛋，可直接完成`),
@@ -98,7 +122,7 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
         allocation,
       };
     }
-    if (eggPriceWan <= 0) {
+    if (eggPrices.buyWan <= 0) {
       return {
         ...statusCopy("blocked", `还差 ${allocation.eggShortage} 个蛋，请先维护普通蛋价格`),
         requirementKind: "eggs" as const,
@@ -108,14 +132,14 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
     }
     if (allocation.purchaseCostWan <= inventory.silverWan + 0.0001) {
       return {
-        ...statusCopy("buyable", `还差 ${allocation.eggShortage} 个蛋，可花 ${allocation.purchaseCostWan} 万银子购买`),
+        ...statusCopy("buyable", `还差 ${allocation.eggShortage} 个蛋，可花 ${formatAmount(allocation.purchaseCostWan)} 万银子购买`),
         requirementKind: "eggs" as const,
         requiredAmount,
         allocation,
       };
     }
     return {
-      ...statusCopy("blocked", `还差 ${allocation.eggShortage} 个蛋，购买还缺 ${Math.max(0, allocation.purchaseCostWan - inventory.silverWan)} 万银子`),
+      ...statusCopy("blocked", `还差 ${allocation.eggShortage} 个蛋，购买还缺 ${formatAmount(Math.max(0, allocation.purchaseCostWan - inventory.silverWan))} 万银子`),
       requirementKind: "eggs" as const,
       requiredAmount,
       allocation,
@@ -142,7 +166,7 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
 
   const requiredAmount = task.remainingWan;
   allocation.silverUsed = Math.min(requiredAmount, inventory.silverWan);
-  allocation.silverShortageWan = Math.max(0, requiredAmount - allocation.silverUsed);
+  allocation.silverShortageWan = Math.round(Math.max(0, requiredAmount - allocation.silverUsed) * 100) / 100;
   if (!allocation.silverShortageWan) {
     return {
       ...statusCopy("ready", "银子库存充足，可以完成"),
@@ -151,17 +175,27 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
       allocation,
     };
   }
-  allocation.regularEggsToSell = eggPriceWan > 0 ? Math.ceil((allocation.silverShortageWan - 0.0001) / eggPriceWan) : 0;
-  if (allocation.regularEggsToSell > 0 && allocation.regularEggsToSell <= inventory.regularEggs) {
+  const emergencyEggCount = eggPrices.sellWan > 0
+    ? Math.ceil(Math.max(0, allocation.silverShortageWan - 0.0001) / eggPrices.sellWan)
+    : 0;
+  if (emergencyEggCount > 0 && emergencyEggCount <= inventory.regularEggs) {
+    allocation.regularEggsToSell = emergencyEggCount;
+    allocation.repurchaseLossWan = Math.round(Math.max(0, eggPrices.buyWan - eggPrices.sellWan) * emergencyEggCount * 100) / 100;
+    const repurchaseWarning = allocation.repurchaseLossWan > 0
+      ? `，后续按 ${formatAmount(eggPrices.buyWan)} 万/个买回将多花 ${formatAmount(allocation.repurchaseLossWan)} 万`
+      : "";
     return {
-      ...statusCopy("buyable", `可出售 ${allocation.regularEggsToSell} 个普通蛋补足银子`),
+      ...statusCopy("caution", `还差 ${formatAmount(allocation.silverShortageWan)} 万银子，优先积攒；仅万不得已按 ${formatAmount(eggPrices.sellWan)} 万/个出售 ${emergencyEggCount} 个普通蛋${repurchaseWarning}`),
       requirementKind: "silver" as const,
       requiredAmount,
       allocation,
     };
   }
+  const ordinaryEggNote = inventory.regularEggs && eggPrices.sellWan > 0
+    ? `；现有普通蛋即使全部按 ${formatAmount(eggPrices.sellWan)} 万/个紧急出售也不足，请优先留作任务`
+    : "；普通蛋请优先留作任务";
   return {
-    ...statusCopy("blocked", `还差 ${allocation.silverShortageWan} 万银子`),
+    ...statusCopy("blocked", `还差 ${formatAmount(allocation.silverShortageWan)} 万银子，优先积攒${ordinaryEggNote}`),
     requirementKind: "silver" as const,
     requiredAmount,
     allocation,
@@ -175,11 +209,14 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
 export function buildMainlineProjection(
   taskPlans: AccountTaskPlan[],
   snapshots: InventorySnapshot[],
-  eggPriceWan: number,
+  eggPrices: EggTradePrices,
 ): MainlineAccountProjection[] {
   const { latest, previous } = latestInventoryPair(snapshots);
   const deltas = calculateInventoryDeltas(latest, previous);
-  const normalizedEggPrice = Number.isFinite(eggPriceWan) ? Math.max(0, eggPriceWan) : 0;
+  const normalizedEggPrices = {
+    buyWan: Number.isFinite(eggPrices.buyWan) ? Math.max(0, eggPrices.buyWan) : 0,
+    sellWan: Number.isFinite(eggPrices.sellWan) ? Math.max(0, eggPrices.sellWan) : 0,
+  };
 
   return mainlineAccountIds.map((accountId) => {
     const balance = latest?.accounts[accountId] || {
@@ -189,10 +226,11 @@ export function buildMainlineProjection(
       innerShardCount: null,
     };
     const inventory: MainlineInventory = { ...balance };
-    const tasks = taskPlans.find((plan) => plan.accountId === accountId)?.tasks || [];
+    const taskPlan = taskPlans.find((plan) => plan.accountId === accountId);
+    const tasks = taskPlan?.tasks || [];
     const nextTasks = tasks.filter((task) => !task.done).slice(0, 3);
     const currentTask = nextTasks[0] || null;
-    const requirement = projectRequirement(currentTask, inventory, normalizedEggPrice);
+    const requirement = projectRequirement(currentTask, inventory, normalizedEggPrices);
     const isFallback = !latest;
     const stale = isFallback
       ? statusCopy("stale", currentTask ? "请先录入一份五账号库存快照" : "请录入库存快照以建立主线基线")
@@ -206,6 +244,7 @@ export function buildMainlineProjection(
       ...(stale || {}),
       currentTask,
       nextTasks,
+      finishDate: taskPlan?.finishDate || null,
       inventory,
       delta: deltas?.[accountId] || null,
       snapshot: { effectiveDate, recordedAt, isFallback },
