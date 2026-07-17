@@ -1,5 +1,7 @@
 :root {
-  font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-ui: Inter, "Segoe UI Variable Text", "Segoe UI", "SF Pro Text", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "SFMono-Regular", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+  font-family: var(--font-ui);
   color: #102039;
   background: #fafaf7;
   font-synthesis: none;
@@ -39,11 +41,39 @@
   --text-body: var(--font-body);
   --text-ui: var(--font-body);
   --text-large: var(--font-section);
+
+  /* Radar workbench visual system */
+  --radar-canvas: #030908;
+  --radar-surface: #061310;
+  --radar-surface-2: #081a16;
+  --radar-surface-3: #0a211c;
+  --radar-ink: #dcecea;
+  --radar-muted: #829791;
+  --radar-faint: #71877f;
+  --radar-line: rgba(47, 221, 202, .17);
+  --radar-line-strong: rgba(47, 221, 202, .38);
+  --radar-cyan: #2bdccb;
+  --radar-cyan-strong: #5bf4e3;
+  --radar-cyan-soft: rgba(43, 220, 203, .09);
+  --radar-amber: #f3a000;
+  --radar-amber-strong: #ffc14a;
+  --radar-amber-soft: rgba(243, 160, 0, .12);
+  --radar-success: #4bd38c;
+  --radar-danger: #ff6158;
+  --radar-neutral-chip: #0b211c;
+  --radar-neutral-border: rgba(145, 167, 161, .24);
+  --radar-pending: #86a59e;
+  --radar-account-fc: #58a6cc;
+  --radar-account-lg1: #9a82c6;
+  --radar-account-lg2: #c9944e;
+  --radar-account-pt: #ca716d;
+  --radar-account-myt: #61ad82;
+  --radar-radius: 7px;
 }
 
 * { box-sizing: border-box; }
 html { overflow-x: clip; background: var(--paper); }
-body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.45; }
+body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.5; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button, a { touch-action: manipulation; }
 button { cursor: pointer; }

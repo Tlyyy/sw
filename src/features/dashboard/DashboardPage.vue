@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import AppIcon from "../../components/AppIcon.vue";
 import InventorySnapshotDialog from "../../components/InventorySnapshotDialog.vue";
 import { buildMainlineProjection, type MainlineRequirementKind } from "../../domain/mainline";
 import { buildTaskPlans, formatScheduleDueDate, resolvePlanningStartDate } from "../../domain/plans";
@@ -7,10 +8,12 @@ import type { AccountId, InventoryBalance } from "../../domain/types";
 import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
+import { useUiStore } from "../../stores/ui";
 
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
 const settings = useSettingsStore();
+const ui = useUiStore();
 const inventoryDialogOpen = ref(false);
 const saveNotice = ref("");
 
@@ -42,13 +45,25 @@ const latestInventoryComplete = computed(() => inventory.latestSnapshot
   : false);
 const today = computed(() => settings.planningAsOfDate);
 const readyNowProjections = computed(() => projections.value.filter((projection) => canCompleteNow(projection)));
+const selectedAccount = computed<AccountId>({
+  get: () => ui.recentAccount,
+  set: (value) => { ui.recentAccount = value; },
+});
+const selectedProjection = computed(() => (
+  projections.value.find((projection) => projection.accountId === selectedAccount.value)
+  ?? projections.value[0]
+));
 const accountTone: Record<AccountId, string> = {
-  FC: "#176bb2",
-  LG1: "#7244aa",
-  LG2: "#ed6b00",
-  PT: "#d6372d",
-  MYT: "#12804d",
+  FC: "var(--radar-account-fc)",
+  LG1: "var(--radar-account-lg1)",
+  LG2: "var(--radar-account-lg2)",
+  PT: "var(--radar-account-pt)",
+  MYT: "var(--radar-account-myt)",
 };
+
+function selectAccount(accountId: AccountId) {
+  selectedAccount.value = accountId;
+}
 
 function saveInventorySnapshot(draft: { effectiveDate: string; accounts: Record<AccountId, InventoryBalance> }) {
   const updating = inventory.snapshots.some((item) => item.effectiveDate === draft.effectiveDate);
@@ -188,7 +203,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
 </script>
 
 <template>
-  <main class="workbench-page">
+  <main class="workbench-page radar-workbench">
     <InventorySnapshotDialog
       :open="inventoryDialogOpen"
       :initial-date="today"
@@ -200,162 +215,285 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
     <header class="workbench-titlebar">
       <div>
         <h1>五条主线推进轨道</h1>
-        <p>已成型神兽先推进；半成品神兽完成内丹、护符和打书后，才进入神兽专属养成。排期不会早于今天或库存日期，当前基准为 {{ planningStartDate }}。</p>
+        <p>聚焦当前账号的资源、缺口和下一步，同时保留五号主线的完整推进视野。</p>
       </div>
       <div class="workbench-title-actions">
         <span class="workbench-date">库存所属日期：{{ formatLongDate(latestDate) }}</span>
-        <button class="workbench-primary" type="button" @click="inventoryDialogOpen = true">
-          录入五号库存快照
-        </button>
       </div>
     </header>
 
     <p v-if="saveNotice" class="action-notice" aria-live="polite">{{ saveNotice }}</p>
 
-    <section class="workbench-snapshot-meta" aria-label="最近库存快照">
+    <section class="workbench-snapshot-meta radar-status-strip" aria-label="最近库存快照">
       <div>
-        <strong>最近库存快照：{{ latestDate ? `${formatDate(latestDate)} · ${latestInventoryComplete ? "五号已齐" : "内丹碎片待补录"}` : "尚未建立" }}</strong>
-        <small>{{ latestDate ? "五账号库存与主线排期已同步" : "建立快照后自动生成资源缺口和推进建议" }}</small>
+        <span class="radar-live-dot" aria-hidden="true"></span>
+        <strong>{{ latestDate ? "规划数据已同步" : "等待首份库存" }}</strong>
       </div>
-      <span>{{ latestDate ? `系统按库存所属日期排序；实际录入时间另行保留` : "先录入一份五号总库存，第二份开始计算区间净变化" }}</span>
-      <em class="mainline-scroll-hint">左右滑动查看完整推进信息</em>
+      <span>库存：{{ latestDate ? formatDate(latestDate) : "待录入" }}</span>
+      <span>排期基准：{{ planningStartDate }}</span>
+      <span>可立即完成：{{ readyNowProjections.length }} 项</span>
+      <span :class="{ warning: !latestInventoryComplete }">{{ latestInventoryComplete ? "五号资料完整" : "内丹碎片待补录" }}</span>
     </section>
 
-    <section v-if="readyNowProjections.length" class="ready-now-banner" aria-label="当前可完成任务">
-      <div class="ready-now-banner-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.2 12.2 2.4 2.5 5.4-5.5"/></svg>
-      </div>
-      <div>
-        <strong>现在可完成 {{ readyNowProjections.length }} 项</strong>
-        <span>{{ readyNowProjections.map((projection) => projection.accountId + " · " + taskLabel(projection.currentTask)).join("　") }}</span>
-      </div>
-      <RouterLink to="/plans/tasks">去任务维护标记完成</RouterLink>
-    </section>
+    <div class="radar-command-grid">
+      <aside class="radar-account-rail" aria-label="五号账号总览">
+        <header>
+          <div>
+            <span>五号总览</span>
+            <strong>选择关注账号</strong>
+          </div>
+          <small>库存：{{ latestDate || "待录入" }}</small>
+        </header>
 
-    <div class="mainline-table-scroll">
-      <section class="mainline-table" role="table" aria-label="五账号神兽主线推进轨道">
-        <div class="mainline-grid mainline-head" role="row">
-          <span role="columnheader">账号</span>
-          <span role="columnheader">最新库存<small>有效日期</small></span>
-          <span role="columnheader">当前库存<small>专用蛋 / 普通蛋 / 银子 / 内丹碎片</small></span>
-          <span role="columnheader">库存净变化<small>相对上一快照</small></span>
-          <span role="columnheader">主线推进<small>任务与预计完成日</small></span>
-          <span role="columnheader">当前任务<small>需求量</small></span>
-          <span role="columnheader">资源分配<small>专用蛋优先</small></span>
-          <span role="columnheader">缺口</span>
-          <span role="columnheader">推荐下一步行动</span>
-          <span role="columnheader">明细</span>
-        </div>
-
-        <article
+        <button
           v-for="projection in projections"
           :key="projection.accountId"
-          :class="['mainline-grid', 'mainline-row', { 'ready-now-row': canCompleteNow(projection) }]"
+          type="button"
+          class="radar-account-item"
+          :class="{ active: projection.accountId === selectedAccount, stale: isStaleDate(projection.effectiveDate) }"
           :style="{ '--account-tone': accountTone[projection.accountId] }"
-          role="row"
+          :aria-pressed="projection.accountId === selectedAccount"
+          @click="selectAccount(projection.accountId)"
         >
-          <div class="mainline-cell" role="cell">
-            <span class="account-pill" :class="`account-${projection.accountId.toLowerCase()}`">{{ projection.accountId }}</span>
-          </div>
+          <span class="radar-account-code">{{ projection.accountId }}</span>
+          <span class="radar-account-copy">
+            <b>{{ taskLabel(projection.currentTask) }}</b>
+          </span>
+          <span class="radar-account-gap">
+            <small>资源缺口</small>
+            <strong>{{ shortageValue(projection) ? formatNumber(shortageValue(projection)) + shortageUnit(projection) : "无" }}</strong>
+          </span>
+          <i aria-hidden="true"></i>
+        </button>
+      </aside>
 
-          <div class="mainline-cell snapshot-age" :class="{ stale: isStaleDate(projection.effectiveDate) }" role="cell">
-            <span><b>{{ formatDate(projection.effectiveDate) }}</b><small>{{ dateAge(projection.effectiveDate) }}</small></span>
+      <section v-if="selectedProjection" class="radar-focus-panel" aria-label="当前账号决策">
+        <header class="radar-focus-header">
+          <div>
+            <span>当前账号</span>
+            <h2 :style="{ '--account-tone': accountTone[selectedProjection.accountId] }">
+              <b>{{ selectedProjection.accountId }}</b>
+              <small>{{ taskLabel(selectedProjection.currentTask) }}</small>
+            </h2>
           </div>
+          <span class="radar-focus-date">更新于 {{ formatDate(selectedProjection.effectiveDate) }}</span>
+        </header>
 
-          <div class="mainline-cell" role="cell">
-            <div class="resource-trio">
-              <span><small>专用蛋</small><b>{{ formatNumber(projection.inventory.dedicatedEggs) }}</b></span>
-              <span><small>普通蛋</small><b>{{ formatNumber(projection.inventory.regularEggs) }}</b></span>
-              <span><small>银子/万</small><b>{{ formatNumber(projection.inventory.silverWan) }}</b></span>
-              <span><small>内丹碎片</small><b>{{ projection.inventory.innerShardCount ?? "待补" }}</b></span>
+        <div class="radar-decision-hero">
+          <div>
+            <span>今日决策</span>
+            <h3>{{ statusLabelFor(selectedProjection) }}</h3>
+            <p>{{ selectedProjection.actionHint }}</p>
+          </div>
+          <button class="workbench-primary" type="button" @click="inventoryDialogOpen = true">
+            <span>录入五号库存快照</span>
+            <AppIcon name="chevron-right" />
+          </button>
+        </div>
+
+        <section class="radar-resource-overview" aria-label="当前账号资源概览">
+          <header>
+            <h3>资源概览</h3>
+            <span>当前任务：{{ requirementTitle(selectedProjection.requirementKind, selectedProjection.requiredAmount) }}</span>
+          </header>
+          <div>
+            <span><small>专用蛋</small><b>{{ formatNumber(selectedProjection.inventory.dedicatedEggs) }}</b></span>
+            <span><small>普通蛋</small><b>{{ formatNumber(selectedProjection.inventory.regularEggs) }}</b></span>
+            <span><small>银子 / 万</small><b>{{ formatNumber(selectedProjection.inventory.silverWan) }}</b></span>
+            <span><small>内丹碎片</small><b>{{ selectedProjection.inventory.innerShardCount ?? "待补" }}</b></span>
+            <span class="gap"><small>资源缺口</small><b>{{ shortageValue(selectedProjection) ? formatNumber(shortageValue(selectedProjection)) + shortageUnit(selectedProjection) : "0" }}</b></span>
+          </div>
+        </section>
+
+        <section class="radar-focus-track" aria-label="当前账号主线推进">
+          <header>
+            <div>
+              <h3>主线推进</h3>
+              <span>当前 → 下一步 → 再下一步</span>
             </div>
-          </div>
-
-          <div class="mainline-cell" role="cell">
-            <div v-if="projection.delta" class="delta-trio">
-              <span><small>专用蛋</small><b :class="deltaTone(projection.delta.dedicatedEggs)">{{ signed(projection.delta.dedicatedEggs) }}</b></span>
-              <span><small>普通蛋</small><b :class="deltaTone(projection.delta.regularEggs)">{{ signed(projection.delta.regularEggs) }}</b></span>
-              <span><small>银子/万</small><b :class="deltaTone(projection.delta.silverWan)">{{ signed(projection.delta.silverWan) }}</b></span>
-              <span><small>内丹碎片</small><b :class="projection.delta.innerShardCount === null ? 'neutral' : deltaTone(projection.delta.innerShardCount)">{{ projection.delta.innerShardCount === null ? "—" : signed(projection.delta.innerShardCount) }}</b></span>
+            <small>{{ mainlineFinishLabel(selectedProjection) }}</small>
+          </header>
+          <div class="task-track">
+            <div class="task-track-labels">
+              <span
+                v-for="(task, taskIndex) in selectedProjection.nextTasks"
+                :key="task.id"
+                :class="{ 'ready-now-task': taskIndex === 0 && canCompleteNow(selectedProjection) }"
+              >
+                <b>{{ taskLabel(task) }}</b>
+                <small>{{ taskIndex === 0 && canCompleteNow(selectedProjection) ? "今天可完成" : taskDueLabel(task.dueDate) }}</small>
+              </span>
+              <span v-for="index in Math.max(0, 3 - selectedProjection.nextTasks.length)" :key="`focus-empty-${index}`" class="empty">
+                <b>{{ index === 1 && !selectedProjection.nextTasks.length ? "主线已完成" : "—" }}</b>
+              </span>
             </div>
-            <span v-else class="inventory-baseline-label">{{ latestDate ? "首份基线" : "待录快照" }}</span>
+            <div class="task-track-line" aria-hidden="true"><i></i><i></i><i></i></div>
           </div>
+        </section>
+      </section>
 
-          <div class="mainline-cell" role="cell">
-            <div class="task-track">
-              <div class="task-track-labels">
-                <span v-for="(task, taskIndex) in projection.nextTasks" :key="task.id" :class="{ 'ready-now-task': taskIndex === 0 && canCompleteNow(projection) }">
-                  <b>{{ taskLabel(task) }}<em v-if="taskIndex === 0 && canCompleteNow(projection)" class="task-ready-badge">现在可完成</em></b>
-                  <small>{{ taskIndex === 0 && canCompleteNow(projection) ? "今天可完成" : taskDueLabel(task.dueDate) }}</small>
-                </span>
-                <span v-for="index in Math.max(0, 3 - projection.nextTasks.length)" :key="`empty-${index}`" class="empty"><b>{{ index === 1 && !projection.nextTasks.length ? "主线已完成" : "—" }}</b></span>
-              </div>
-              <div class="task-track-line" aria-hidden="true"><i></i><i></i><i></i></div>
-              <small class="task-track-finish">{{ mainlineFinishLabel(projection) }}</small>
+      <aside v-if="selectedProjection" class="radar-action-rail" aria-label="下一步行动">
+        <header>
+          <div>
+            <h2>下一步行动</h2>
+            <span>按优先级执行</span>
+          </div>
+          <b>{{ selectedProjection.accountId }}</b>
+        </header>
+
+        <button class="radar-action-card primary" type="button" @click="inventoryDialogOpen = true">
+          <span class="radar-action-index">P1</span>
+          <span>
+            <strong>立即录入</strong>
+            <small>更新五号库存，刷新缺口与行动建议。</small>
+          </span>
+          <AppIcon name="chevron-right" />
+        </button>
+
+        <RouterLink class="radar-action-card" :to="`/accounts/${selectedProjection.accountId}`">
+          <span class="radar-action-index">P2</span>
+          <span>
+            <strong>查看账号明细</strong>
+            <small>核对宠物、装备与资源资料。</small>
+          </span>
+          <AppIcon name="chevron-right" />
+        </RouterLink>
+
+        <RouterLink class="radar-action-card" to="/plans/tasks">
+          <span class="radar-action-index">P3</span>
+          <span>
+            <strong>维护任务状态</strong>
+            <small>完成后标记进度，重算后续排期。</small>
+          </span>
+          <AppIcon name="chevron-right" />
+        </RouterLink>
+
+        <section v-if="readyNowProjections.length" class="ready-now-banner" aria-label="当前可完成任务">
+          <div>
+            <strong>现在可完成 {{ readyNowProjections.length }} 项</strong>
+            <span>{{ readyNowProjections.map((projection) => projection.accountId + " · " + taskLabel(projection.currentTask)).join("　") }}</span>
+          </div>
+          <RouterLink to="/plans/tasks">去任务维护标记完成</RouterLink>
+        </section>
+      </aside>
+
+      <section class="radar-timeline-panel">
+        <header>
+          <div>
+            <h2>五号主线推进轨道</h2>
+            <p>完整保留五个账号的当前任务、后续节点、资源分配和预计完成状态。</p>
+          </div>
+          <span>{{ latestDate ? `库存基准 ${formatDate(latestDate)}` : "尚未建立库存基准" }}</span>
+        </header>
+
+        <div class="mainline-table-scroll">
+          <section class="mainline-table" role="table" aria-label="五账号神兽主线推进轨道">
+            <div class="mainline-grid mainline-head" role="row">
+              <span role="columnheader">账号</span>
+              <span role="columnheader">当前 → 下一步 → 再下一步</span>
+              <span role="columnheader">资源分配与行动提示</span>
+              <span role="columnheader">状态 / 缺口</span>
+              <span role="columnheader">明细</span>
             </div>
-          </div>
 
-          <div class="mainline-cell requirement-cell" role="cell">
-            <span><b>{{ requirementTitle(projection.requirementKind, projection.requiredAmount) }}</b><small>{{ requirementCaption(projection.requirementKind) }}</small></span>
-          </div>
-
-          <div class="mainline-cell allocation-cell" role="cell">
-            <span><b>{{ allocationLines(projection)[0] }}</b><small>{{ allocationLines(projection)[1] }}</small></span>
-          </div>
-
-          <div class="mainline-cell shortage-cell" :class="{ none: shortageValue(projection) === 0 }" role="cell">
-            {{ shortageValue(projection) ? `${formatNumber(shortageValue(projection))}${shortageUnit(projection)}` : "—" }}
-          </div>
-
-          <div class="status-cell" role="cell">
-            <span class="status-chip" :class="projection.status">{{ statusLabelFor(projection) }}</span>
-            <small>{{ projection.actionHint }}</small>
-          </div>
-
-          <div class="mainline-detail-cell" role="cell">
-            <RouterLink
-              class="mainline-detail-link"
-              :to="`/accounts/${projection.accountId}`"
-              :aria-label="`查看 ${projection.accountId} 账号明细`"
+            <article
+              v-for="projection in projections"
+              :key="projection.accountId"
+              :class="['mainline-grid', 'mainline-row', { 'ready-now-row': canCompleteNow(projection), active: projection.accountId === selectedAccount }]"
+              :style="{ '--account-tone': accountTone[projection.accountId] }"
+              role="row"
+              @click="selectAccount(projection.accountId)"
             >
-              <span>明细</span>
-              <svg aria-hidden="true" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></svg>
-            </RouterLink>
-          </div>
-        </article>
+              <div class="mainline-cell radar-row-account" role="cell">
+                <span class="account-pill" :class="`account-${projection.accountId.toLowerCase()}`">{{ projection.accountId }}</span>
+                <span>
+                  <b>{{ formatDate(projection.effectiveDate) }}</b>
+                  <small>{{ dateAge(projection.effectiveDate) }}</small>
+                </span>
+              </div>
+
+              <div class="mainline-cell" role="cell">
+                <div class="task-track">
+                  <div class="task-track-labels">
+                    <span
+                      v-for="(task, taskIndex) in projection.nextTasks"
+                      :key="task.id"
+                      :class="{ 'ready-now-task': taskIndex === 0 && canCompleteNow(projection) }"
+                    >
+                      <b>
+                        {{ taskLabel(task) }}
+                        <em v-if="taskIndex === 0 && canCompleteNow(projection)" class="task-ready-badge">现在可完成</em>
+                      </b>
+                      <small>{{ taskIndex === 0 && canCompleteNow(projection) ? "今天可完成" : taskDueLabel(task.dueDate) }}</small>
+                    </span>
+                    <span v-for="index in Math.max(0, 3 - projection.nextTasks.length)" :key="`empty-${index}`" class="empty">
+                      <b>{{ index === 1 && !projection.nextTasks.length ? "主线已完成" : "—" }}</b>
+                    </span>
+                  </div>
+                  <div class="task-track-line" aria-hidden="true"><i></i><i></i><i></i></div>
+                  <small class="task-track-finish">{{ mainlineFinishLabel(projection) }}</small>
+                </div>
+              </div>
+
+              <div class="mainline-cell radar-row-resource" role="cell">
+                <span><b>{{ allocationLines(projection)[0] }}</b><small>{{ allocationLines(projection)[1] }}</small></span>
+                <em>{{ projection.actionHint }}</em>
+              </div>
+
+              <div class="status-cell" role="cell">
+                <span class="status-chip" :class="projection.status">{{ statusLabelFor(projection) }}</span>
+                <small>
+                  {{ shortageValue(projection) ? `缺 ${formatNumber(shortageValue(projection))}${shortageUnit(projection)}` : requirementCaption(projection.requirementKind) }}
+                </small>
+              </div>
+
+              <div class="mainline-detail-cell" role="cell">
+                <RouterLink
+                  class="mainline-detail-link"
+                  :to="`/accounts/${projection.accountId}`"
+                  :aria-label="`查看 ${projection.accountId} 账号明细`"
+                  @click.stop
+                >
+                  <span>明细</span>
+                  <AppIcon name="chevron-right" />
+                </RouterLink>
+              </div>
+            </article>
+          </section>
+        </div>
       </section>
     </div>
 
-    <div class="workbench-bottom-grid">
+    <div class="workbench-bottom-grid radar-lower-grid">
       <section class="workbench-panel">
         <header>
           <h2>五号最近变化</h2>
           <span>{{ previousDate ? `相对上一快照：${formatDate(previousDate)}` : "需要至少两份快照" }}</span>
         </header>
-        <table class="changes-ledger">
-          <thead><tr><th>账号</th><th>专用蛋净变化</th><th>普通蛋净变化</th><th>银子净变化 / 万</th><th>内丹碎片净变化</th><th>说明</th></tr></thead>
-          <tbody>
-            <tr v-for="projection in projections" :key="projection.accountId">
-              <td><strong :style="{ color: accountTone[projection.accountId] }">{{ projection.accountId }}</strong></td>
-              <td :class="projection.delta ? deltaTone(projection.delta.dedicatedEggs) : ''">{{ projection.delta ? signed(projection.delta.dedicatedEggs) : "—" }}</td>
-              <td :class="projection.delta ? deltaTone(projection.delta.regularEggs) : ''">{{ projection.delta ? signed(projection.delta.regularEggs) : "—" }}</td>
-              <td :class="projection.delta ? deltaTone(projection.delta.silverWan) : ''">{{ projection.delta ? signed(projection.delta.silverWan) : "—" }}</td>
-              <td :class="projection.delta?.innerShardCount === null || !projection.delta ? '' : deltaTone(projection.delta.innerShardCount)">{{ projection.delta?.innerShardCount === null || !projection.delta ? "—" : signed(projection.delta.innerShardCount) }}</td>
-              <td>{{ projection.delta ? `间隔 ${projection.delta.intervalDays} 天` : "尚无对比区间" }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="radar-ledger-scroll">
+          <table class="changes-ledger">
+            <thead><tr><th>账号</th><th>专用蛋净变化</th><th>普通蛋净变化</th><th>银子净变化 / 万</th><th>内丹碎片净变化</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr v-for="projection in projections" :key="projection.accountId">
+                <td><strong :style="{ color: accountTone[projection.accountId] }">{{ projection.accountId }}</strong></td>
+                <td :class="projection.delta ? deltaTone(projection.delta.dedicatedEggs) : ''">{{ projection.delta ? signed(projection.delta.dedicatedEggs) : "—" }}</td>
+                <td :class="projection.delta ? deltaTone(projection.delta.regularEggs) : ''">{{ projection.delta ? signed(projection.delta.regularEggs) : "—" }}</td>
+                <td :class="projection.delta ? deltaTone(projection.delta.silverWan) : ''">{{ projection.delta ? signed(projection.delta.silverWan) : "—" }}</td>
+                <td :class="projection.delta?.innerShardCount === null || !projection.delta ? '' : deltaTone(projection.delta.innerShardCount)">{{ projection.delta?.innerShardCount === null || !projection.delta ? "—" : signed(projection.delta.innerShardCount) }}</td>
+                <td>{{ projection.delta ? `间隔 ${projection.delta.intervalDays} 天` : "尚无对比区间" }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section class="workbench-panel">
         <header><h2>共用规则（神兽主线库存）</h2></header>
         <ul class="workbench-rules">
           <li><strong>神兽专属养成：</strong>神兽青蛇和神兽龙马（小马）在打书后按饰品 → 进阶1 → 进阶2 → 皮肤推进；小马完成皮肤后另做马强化，普通宠不进入此任务表。</li>
-          <li><strong>半成品依赖：</strong>需洗护符的神兽整体后置，并严格按内丹前置（如需）→ 洗护符 → 打书 → 神兽专属养成推进；洗护符金额只作预算，不承诺洗成。</li>
+          <li><strong>半成品依赖：</strong>按内丹前置（如需）→ 洗护符 → 打书 → 神兽专属养成推进。</li>
           <li><strong>专用蛋不可出售：</strong>任务消耗时优先使用专用蛋，其次使用普通蛋。</li>
           <li><strong>普通蛋任务优先：</strong>默认保留给神兽任务，只有确实必须立即推进时才考虑出售。</li>
-          <li><strong>买卖存在损耗：</strong>买入 {{ formatNumber(settings.taskSettings.eggPriceWan) }} 万/个，紧急出售仅 {{ formatNumber(catalog.data.beastConfig.eggSellPriceWan) }} 万/个；卖后再买每个损失 {{ formatNumber(Math.max(0, settings.taskSettings.eggPriceWan - catalog.data.beastConfig.eggSellPriceWan)) }} 万。</li>
-          <li><strong>银子方案保持克制：</strong>系统优先提示积攒银子，卖普通蛋只作为明确标注的紧急兜底。</li>
           <li><strong>库存日期和录入时间分开：</strong>补录周一库存时选择周一，系统另存实际录入时间。</li>
           <li><strong>净变化不是收入：</strong>它是两次完整库存之差，包含期间获得、消耗和买卖的最终结果。</li>
         </ul>

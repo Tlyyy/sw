@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "../domain/types";
+import AppIcon from "./AppIcon.vue";
 
 interface InventorySnapshotDraft {
   effectiveDate: string;
@@ -165,7 +166,7 @@ onBeforeUnmount(() => deactivateDialog(false));
             <h2 id="inventory-dialog-title">录入库存快照</h2>
             <p>一次记录 FC、LG1、LG2、PT、MYT；录入时间由系统自动保存。</p>
           </div>
-          <button class="snapshot-dialog-close" type="button" aria-label="关闭库存快照录入" @click="requestClose">×</button>
+          <button class="snapshot-dialog-close" type="button" aria-label="关闭库存快照录入" @click="requestClose"><AppIcon name="close" /></button>
         </header>
 
         <div class="snapshot-date-field">

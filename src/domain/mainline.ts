@@ -124,7 +124,7 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
     }
     if (eggPrices.buyWan <= 0) {
       return {
-        ...statusCopy("blocked", `还差 ${allocation.eggShortage} 个蛋，请先维护普通蛋价格`),
+        ...statusCopy("blocked", `完成当前任务还缺 ${allocation.eggShortage} 个蛋。请先维护普通蛋价格，才能计算购买成本。`),
         requirementKind: "eggs" as const,
         requiredAmount,
         allocation,
@@ -132,14 +132,15 @@ function projectRequirement(task: ScheduledTask | null, inventory: MainlineInven
     }
     if (allocation.purchaseCostWan <= inventory.silverWan + 0.0001) {
       return {
-        ...statusCopy("buyable", `还差 ${allocation.eggShortage} 个蛋，可花 ${formatAmount(allocation.purchaseCostWan)} 万银子购买`),
+        ...statusCopy("buyable", `完成当前任务还缺 ${allocation.eggShortage} 个蛋。按当前价格购买需 ${formatAmount(allocation.purchaseCostWan)} 万银子，现有 ${formatAmount(inventory.silverWan)} 万，可直接购买。`),
         requirementKind: "eggs" as const,
         requiredAmount,
         allocation,
       };
     }
+    const silverGapWan = Math.max(0, allocation.purchaseCostWan - inventory.silverWan);
     return {
-      ...statusCopy("blocked", `还差 ${allocation.eggShortage} 个蛋，购买还缺 ${formatAmount(Math.max(0, allocation.purchaseCostWan - inventory.silverWan))} 万银子`),
+      ...statusCopy("blocked", `完成当前任务还缺 ${allocation.eggShortage} 个蛋。按当前价格买齐需 ${formatAmount(allocation.purchaseCostWan)} 万银子，现有 ${formatAmount(inventory.silverWan)} 万，还差 ${formatAmount(silverGapWan)} 万。`),
       requirementKind: "eggs" as const,
       requiredAmount,
       allocation,

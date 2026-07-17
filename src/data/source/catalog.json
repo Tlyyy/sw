@@ -10129,8 +10129,11 @@
     "innerShardRequirement": 50,
     "taskDefaultSettings": {
       "startDate": "2026-07-02",
-      "thisWeekEggs": 2.5,
-      "weeklyEggs": 16,
+      "thisWeekEggs": 4,
+      "weeklyEggs": 4,
+      "weeklyDedicatedEggs": 2,
+      "weeklyRegularEggs": 2,
+      "weeklySilverWan": 50,
       "thisWeekInnerShards": 0,
       "weeklyInnerShards": 2,
       "eggPriceWan": 5.5
@@ -10165,7 +10168,7 @@
     "taskActionOrder": [
       {
         "key": "innerDan",
-        "label": "幻神兽内丹",
+        "label": "换神兽内丹",
         "kind": "前置",
         "sourceKey": "innerDan",
         "resourceType": "innerShard"

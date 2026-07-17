@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
         :aria-label="mobileDialogOpen ? '关闭导航' : '打开导航'"
         :tabindex="mobileDialogOpen ? -1 : undefined"
         @click="mobileDialogOpen ? closeMobileNavigation() : openMobileNavigation()"
-      >☰</button>
+      ><AppIcon :name="mobileDialogOpen ? 'close' : 'menu'" /></button>
       <RouterLink class="orbit-brand" to="/" :inert="mobileDialogOpen || undefined" :tabindex="mobileDialogOpen ? -1 : undefined" @click="closeMobileNavigation(false)">
         <strong>项目台账</strong>
         <span>进度与资源汇总</span>
@@ -141,7 +141,10 @@ onBeforeUnmount(() => {
         aria-label="主导航"
         @keydown="mobileNavKeydown"
       >
-        <button ref="mobileCloseButton" class="orbit-mobile-nav-close" type="button" @click="closeMobileNavigation()">关闭导航</button>
+        <button ref="mobileCloseButton" class="orbit-mobile-nav-close" type="button" @click="closeMobileNavigation()">
+          <AppIcon name="close" />
+          <span>关闭导航</span>
+        </button>
         <RouterLink
           v-for="link in links"
           :key="link.to"

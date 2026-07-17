@@ -103,8 +103,12 @@ export interface BeastTaskAction {
 }
 export interface BeastTaskSettings {
   startDate: string;
+  /** Legacy combined egg forecast, kept for saved-state compatibility. */
   thisWeekEggs: number;
   weeklyEggs: number;
+  weeklyDedicatedEggs: number;
+  weeklyRegularEggs: number;
+  weeklySilverWan: number;
   thisWeekInnerShards: number;
   weeklyInnerShards: number;
   eggPriceWan: number;

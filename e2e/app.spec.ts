@@ -135,8 +135,9 @@ test.describe("desktop application", () => {
     await expect(page.locator(".task-work-row.done").getByRole("button", { name: /恢复未完成/ })).toBeVisible();
 
     await page.goto("/#/plans/parameters");
-    await expect(page.getByLabel("本周可得蛋")).toHaveValue("2.5");
-    await expect(page.getByLabel("每周可得蛋")).toHaveValue("16");
+    await expect(page.getByLabel("每周专用蛋")).toHaveValue("2");
+    await expect(page.getByLabel("每周普通蛋")).toHaveValue("2");
+    await expect(page.getByLabel("每周银子收入 / 万")).toHaveValue("50");
     await expect(page.getByRole("heading", { name: "单项成本覆盖", exact: true })).toBeVisible();
   });
 
@@ -268,7 +269,7 @@ test.describe("mobile application", () => {
 
     await page.goto("/#/plans/parameters");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
-    await expect(page.getByLabel("本周可得蛋")).toBeVisible();
+    await expect(page.getByLabel("每周专用蛋")).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("plan-parameters-mobile.png") });
 
     await page.goto("/#/plans/beasts");

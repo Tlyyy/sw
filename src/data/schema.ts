@@ -72,7 +72,7 @@ export const catalogSchema = z.object({
     talismanMissingByFolder: z.record(z.string(), z.array(z.string())),
     innerShardRequirement: z.number(),
     taskDefaultSettings: z.object({
-      startDate: z.string(), thisWeekEggs: z.number(), weeklyEggs: z.number(), thisWeekInnerShards: z.number(), weeklyInnerShards: z.number(), eggPriceWan: z.number(),
+      startDate: z.string(), thisWeekEggs: z.number(), weeklyEggs: z.number(), weeklyDedicatedEggs: z.number(), weeklyRegularEggs: z.number(), weeklySilverWan: z.number(), thisWeekInnerShards: z.number(), weeklyInnerShards: z.number(), eggPriceWan: z.number(),
     }),
     taskDefaultResources: z.record(accountId, z.object({ silverWan: z.number(), eggCount: z.number(), innerShardCount: z.number() })),
     taskActionOrder: z.array(z.object({ key: z.string(), label: z.string(), kind: z.string(), sourceKey: z.string(), resourceType: z.literal("innerShard").optional() })),

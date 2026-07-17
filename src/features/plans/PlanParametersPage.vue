@@ -36,7 +36,7 @@ const visiblePriceTasks = computed(() => {
 const priceOverrideCount = computed(() => Object.values(settings.taskOverrides).filter((item) => item.priceWan !== undefined).length);
 const eggRoundTripLossWan = computed(() => Math.max(0, settings.taskSettings.eggPriceWan - eggSellPriceWan));
 
-function setNumericSetting(field: "thisWeekEggs" | "weeklyEggs" | "thisWeekInnerShards" | "weeklyInnerShards" | "eggPriceWan", event: Event) {
+function setNumericSetting(field: "weeklyDedicatedEggs" | "weeklyRegularEggs" | "weeklySilverWan" | "thisWeekInnerShards" | "weeklyInnerShards" | "eggPriceWan", event: Event) {
   settings.setTaskSetting(field, Number((event.target as HTMLInputElement).value));
 }
 
@@ -73,14 +73,15 @@ function resetTaskPrices() {
       </div>
       <div class="planning-parameter-grid">
         <label><span>最早起算日期</span><input type="date" :value="settings.taskSettings.startDate" @change="settings.setTaskSetting('startDate', ($event.target as HTMLInputElement).value)" /></label>
-        <label><span>本周可得蛋</span><input type="number" min="0" step="0.1" :value="settings.taskSettings.thisWeekEggs" @change="setNumericSetting('thisWeekEggs', $event)" /></label>
-        <label><span>每周可得蛋</span><input type="number" min="0" step="0.1" :value="settings.taskSettings.weeklyEggs" @change="setNumericSetting('weeklyEggs', $event)" /></label>
+        <label><span>每周专用蛋</span><input type="number" min="0" step="0.1" :value="settings.taskSettings.weeklyDedicatedEggs" @change="setNumericSetting('weeklyDedicatedEggs', $event)" /></label>
+        <label><span>每周普通蛋</span><input type="number" min="0" step="0.1" :value="settings.taskSettings.weeklyRegularEggs" @change="setNumericSetting('weeklyRegularEggs', $event)" /></label>
+        <label><span>每周银子收入 / 万</span><input type="number" min="0" step="0.1" :value="settings.taskSettings.weeklySilverWan" @change="setNumericSetting('weeklySilverWan', $event)" /></label>
         <label><span>本周内丹碎片</span><input type="number" min="0" :value="settings.taskSettings.thisWeekInnerShards" @change="setNumericSetting('thisWeekInnerShards', $event)" /></label>
         <label><span>每周内丹碎片</span><input type="number" min="0" :value="settings.taskSettings.weeklyInnerShards" @change="setNumericSetting('weeklyInnerShards', $event)" /></label>
         <label><span>普通蛋买入价 / 万</span><input type="number" min="0" step="0.1" :value="settings.taskSettings.eggPriceWan" @change="setNumericSetting('eggPriceWan', $event)" /></label>
         <label class="readonly"><span>普通蛋紧急回收价 / 万</span><input type="number" :value="eggSellPriceWan" readonly /></label>
       </div>
-      <p class="parameter-impact-note">当前卖后再买每个损失 {{ Number(eggRoundTripLossWan.toFixed(2)) }} 万；普通蛋仍默认保留给神兽任务。</p>
+      <p class="parameter-impact-note">排期按每个账号每周获得 {{ settings.taskSettings.weeklyDedicatedEggs }} 个专用蛋、{{ settings.taskSettings.weeklyRegularEggs }} 个普通蛋和 {{ settings.taskSettings.weeklySilverWan }} 万银子计算；当前卖后再买每个损失 {{ Number(eggRoundTripLossWan.toFixed(2)) }} 万，普通蛋仍默认保留给神兽任务。</p>
     </section>
 
     <section class="settings-section task-price-section">

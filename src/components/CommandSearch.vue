@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { commandPages } from "../app/navigation";
 import { useCatalogStore } from "../stores/catalog";
 import { useUiStore } from "../stores/ui";
+import AppIcon from "./AppIcon.vue";
 
 const ui = useUiStore();
 const catalog = useCatalogStore();
@@ -129,7 +130,7 @@ function keyboard(event: KeyboardEvent) {
       <section ref="dialog" class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-search-title" @keydown="keyboard">
         <h2 id="command-search-title" class="visually-hidden">全局搜索</h2>
         <label class="command-input" for="command-search-input">
-          <span aria-hidden="true">⌕</span>
+          <AppIcon name="search" aria-hidden="true" />
           <input id="command-search-input" ref="input" v-model="query" type="search" autocomplete="off" aria-controls="command-search-results" placeholder="搜索账号、宠物、装备、技能或页面" />
         </label>
         <div id="command-search-results" class="command-results" aria-live="polite">

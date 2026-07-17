@@ -237,7 +237,7 @@ test.describe("desktop regressions", () => {
     await expect(page.getByLabel("普通蛋买入价 / 万", { exact: true })).toHaveValue("5.5");
     await expect(page.getByLabel("普通蛋紧急回收价 / 万", { exact: true })).toHaveValue("5.2");
     await expect(page.getByLabel("普通蛋紧急回收价 / 万", { exact: true })).toHaveAttribute("readonly", "");
-    await expect(page.getByText("当前卖后再买每个损失 0.3 万；普通蛋仍默认保留给神兽任务。", { exact: true })).toBeVisible();
+    await expect(page.getByText("排期按每个账号每周获得 2 个专用蛋、2 个普通蛋和 50 万银子计算；当前卖后再买每个损失 0.3 万，普通蛋仍默认保留给神兽任务。", { exact: true })).toBeVisible();
   });
 
   test("装备页展示 2026-07-13 的四处宝石升级", async ({ page }) => {

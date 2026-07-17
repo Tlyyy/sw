@@ -137,13 +137,20 @@ function finishForEggs(targetEggs: number, availableEggs: number, settings: Beas
   const start = parseDate(settings.startDate);
   if (targetEggs <= availableEggs + 0.0001) return dateKey(start);
   const end = weekEnd(start);
-  if (targetEggs <= availableEggs + settings.thisWeekEggs + 0.0001) return dateKey(end);
-  if (!settings.weeklyEggs) return "待补普通蛋";
-  const weeks = Math.ceil((targetEggs - availableEggs - settings.thisWeekEggs - 0.0001) / settings.weeklyEggs);
+  const weeklyEggs = settings.weeklyDedicatedEggs + settings.weeklyRegularEggs;
+  if (targetEggs <= availableEggs + weeklyEggs + 0.0001) return dateKey(end);
+  if (!weeklyEggs) return "待补普通蛋";
+  const weeks = Math.ceil((targetEggs - availableEggs - weeklyEggs - 0.0001) / weeklyEggs);
   return dateKey(new Date(end.getTime() + weeks * 7 * 86_400_000));
 }
 function finishForSilver(targetWan: number, availableWan: number, settings: BeastTaskSettings) {
-  return targetWan <= availableWan + 0.0001 ? dateKey(parseDate(settings.startDate)) : "待补银子";
+  const start = parseDate(settings.startDate);
+  if (targetWan <= availableWan + 0.0001) return dateKey(start);
+  const end = weekEnd(start);
+  if (targetWan <= availableWan + settings.weeklySilverWan + 0.0001) return dateKey(end);
+  if (!settings.weeklySilverWan) return "待补银子";
+  const weeks = Math.ceil((targetWan - availableWan - settings.weeklySilverWan - 0.0001) / settings.weeklySilverWan);
+  return dateKey(new Date(end.getTime() + weeks * 7 * 86_400_000));
 }
 function finishForShards(target: number, available: number, settings: BeastTaskSettings) {
   const start = parseDate(settings.startDate);
@@ -245,8 +252,18 @@ export function buildTaskPlans(catalog: Catalog, rows: PetView[], state: Plannin
           scheduledSilverWan += purchaseCostWan;
           resourceDue = dateKey(parseDate(scheduleSettings.startDate));
         } else {
-          futureEggsNeeded += missingEggs;
-          resourceDue = finishForEggs(futureEggsNeeded, 0, scheduleSettings);
+          const purchaseDue = unitPriceWan > 0
+            ? finishForSilver(scheduledSilverWan + purchaseCostWan, availableWan, scheduleSettings)
+            : "待补银子";
+          const eggsNeeded = futureEggsNeeded + missingEggs;
+          const naturalEggDue = finishForEggs(eggsNeeded, 0, scheduleSettings);
+          if (scheduleDatePattern.test(purchaseDue) && (!scheduleDatePattern.test(naturalEggDue) || purchaseDue <= naturalEggDue)) {
+            scheduledSilverWan += purchaseCostWan;
+            resourceDue = purchaseDue;
+          } else {
+            futureEggsNeeded = eggsNeeded;
+            resourceDue = naturalEggDue;
+          }
         }
       } else {
         scheduledSilverWan += current.remainingWan;

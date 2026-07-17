@@ -284,6 +284,16 @@ describe("five-account mainline projection", () => {
         purchaseCostWan: 11,
       },
     });
+    expect(projections[0].actionHint).toBe("完成当前任务还缺 2 个蛋。按当前价格购买需 11 万银子，现有 20 万，可直接购买。");
+  });
+
+  it("explains an egg purchase shortage as need, available silver and remaining gap", () => {
+    const lowSilverSnapshot = structuredClone(current);
+    lowSilverSnapshot.accounts.FC.silverWan = 5;
+    const projection = buildMainlineProjection([plan("FC", [scheduled()])], [lowSilverSnapshot], eggTradePrices)[0];
+
+    expect(projection.status).toBe("blocked");
+    expect(projection.actionHint).toBe("完成当前任务还缺 2 个蛋。按当前价格买齐需 11 万银子，现有 5 万，还差 6 万。");
   });
 
   it("treats talisman washing as an unbounded estimate instead of a completable silver task", () => {
@@ -468,7 +478,7 @@ describe("five-account mainline projection", () => {
       .toBe("2026-07-13");
   });
 
-  it("keeps eggs on the egg track instead of valuing them as spendable silver", () => {
+  it("keeps eggs on the egg track and schedules silver tasks from weekly silver income", () => {
     const resources = structuredClone(catalog.beastConfig.taskDefaultResources);
     resources.FC = { silverWan: 0, eggCount: 10_000, innerShardCount: 50 };
     const fc = buildTaskPlans(catalog, buildPetViews(catalog), {
@@ -482,7 +492,7 @@ describe("five-account mainline projection", () => {
 
     expect(fc.availableWan).toBe(0);
     expect(fc.requiredWan).toBeGreaterThan(0);
-    expect(moneyTask?.dueDate).toBe("待补银子");
+    expect(moneyTask?.dueDate).toBe("2026-07-26");
   });
 
   it("buys an egg-task shortage with held silver and reserves that silver from later tasks", () => {
@@ -519,6 +529,6 @@ describe("five-account mainline projection", () => {
     const laterMoneyTask = planWithPurchase.tasks.find((task) => task.id === pair.laterMoneyTask.id)!;
 
     expect(purchasedEggTask.dueDate).toBe(catalog.beastConfig.taskDefaultSettings.startDate);
-    expect(laterMoneyTask.dueDate).toBe("待补银子");
+    expect(laterMoneyTask.dueDate).toBe("2026-07-26");
   });
 });
