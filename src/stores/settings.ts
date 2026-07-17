@@ -116,6 +116,19 @@ export const useSettingsStore = defineStore("settings", () => {
   function setTaskSetting(field: keyof BeastTaskSettings, value: string | number) { (taskSettings as Record<string, string | number>)[field] = field === "startDate" ? String(value) : Math.max(0, Number(value) || 0); }
   function setTaskDone(id: string, done: boolean) { taskOverrides[id] = { ...(taskOverrides[id] || {}), done }; }
   function setTaskPrice(id: string, value: number) { taskOverrides[id] = { ...(taskOverrides[id] || {}), priceWan: Math.max(0, Number(value) || 0) }; }
+  function removeTaskOverrideField(id: string, field: keyof TaskOverride) {
+    const override = taskOverrides[id];
+    if (!override) return;
+    delete override[field];
+    if (!Object.keys(override).length) delete taskOverrides[id];
+  }
+  function resetTaskPrice(id: string) { removeTaskOverrideField(id, "priceWan"); }
+  function resetTaskCompletionOverrides() {
+    Object.keys(taskOverrides).forEach((id) => removeTaskOverrideField(id, "done"));
+  }
+  function resetTaskPriceOverrides() {
+    Object.keys(taskOverrides).forEach((id) => removeTaskOverrideField(id, "priceWan"));
+  }
   function resetTaskSettings() {
     Object.assign(taskSettings, clone(catalog.beastConfig.taskDefaultSettings));
   }
@@ -129,6 +142,7 @@ export const useSettingsStore = defineStore("settings", () => {
   return {
     hydrated, gemPriceOverrides, gemPriceHistory, taskSettings, taskOverrides, planningAsOfDate,
     hydrate, snapshot, refreshPlanningAsOfDate, exportState, replaceState, setGemPrice, resetGemPrices, setTaskSetting, setTaskDone, setTaskPrice,
+    resetTaskPrice, resetTaskCompletionOverrides, resetTaskPriceOverrides,
     recordGemPrices, removeGemPriceHistory, clearGemPriceHistory,
     resetTaskSettings, resetTaskOverrides, resetTasks, resetAllPlanningData,
   };

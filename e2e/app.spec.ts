@@ -59,14 +59,15 @@ test.describe("desktop application", () => {
       ["/#/assets/evidence", "截图证据"],
       ["/#/plans/upgrades", "宝石升级参考"],
       ["/#/plans/beasts", "神兽主线任务"],
+      ["/#/plans/tasks", "任务维护"],
       ["/#/plans/timeline", "五号主线概览"],
+      ["/#/plans/parameters", "计划参数"],
       ["/#/analysis/recommendations", "推荐分析"],
       ["/#/analysis/species", "同名对比"],
       ["/#/analysis/matrix", "固定矩阵"],
       ["/#/publish", "内容发布"],
       ["/#/data/market", "数据中心"],
       ["/#/data/resources", "数据中心"],
-      ["/#/data/tasks", "数据中心"],
       ["/#/data/sources", "数据中心"],
       ["/#/settings", "界面设置"],
     ] as const;
@@ -113,6 +114,30 @@ test.describe("desktop application", () => {
     await expect(page.locator(".settings-band input, .resource-table input, .task-list input")).toHaveCount(0);
     await expect(page.getByRole("option", { name: "小马", exact: true })).toHaveCount(1);
     await expect(page.getByText("普通宠不进入此任务表", { exact: false })).toBeVisible();
+
+    await page.goto("/#/data/tasks");
+    await expect(page).toHaveURL(/#\/plans\/tasks$/);
+    await expect(page.getByRole("heading", { name: "任务维护", exact: true })).toBeVisible();
+    const taskStatusFilter = page.getByRole("group", { name: "任务状态筛选" });
+    await expect(taskStatusFilter.getByRole("button", { name: /待完成/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".task-work-row.done")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "计划参数", exact: true })).toBeVisible();
+    await expect(page.getByText("单项可直接标记完成", { exact: false })).toBeVisible();
+
+    await page.getByLabel("任务账号筛选").selectOption("LG1");
+    await page.getByLabel("任务关键词筛选").fill("剑气蛇 皮肤");
+    const completionRow = page.locator(".task-work-row").filter({ hasText: "剑气蛇" });
+    await expect(completionRow).toHaveCount(1);
+    await completionRow.getByRole("button", { name: /标记完成/ }).click();
+    await expect(page.locator(".task-work-row")).toHaveCount(0);
+    await taskStatusFilter.getByRole("button", { name: /已完成/ }).click();
+    await expect(page.locator(".task-work-row.done")).toHaveCount(1);
+    await expect(page.locator(".task-work-row.done").getByRole("button", { name: /恢复未完成/ })).toBeVisible();
+
+    await page.goto("/#/plans/parameters");
+    await expect(page.getByLabel("本周可得蛋")).toHaveValue("2.5");
+    await expect(page.getByLabel("每周可得蛋")).toHaveValue("16");
+    await expect(page.getByRole("heading", { name: "单项成本覆盖", exact: true })).toBeVisible();
   });
 
   test("统一库存快照同时保存蛋、银子和内丹碎片", async ({ page }, testInfo) => {
@@ -148,6 +173,25 @@ test.describe("desktop application", () => {
     await page.goto("/#/accounts/FC");
     await expect(page.getByRole("heading", { name: "FC 单号下钻" })).toBeVisible();
     await expect(page.locator(".resource-line")).toContainText("内丹碎片 44");
+  });
+
+  test("任务维护支持清晰的批量完成流程", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.goto("/#/plans/tasks");
+
+    const pendingRows = page.locator(".task-work-row:not(.done)");
+    const initialCount = await pendingRows.count();
+    await pendingRows.nth(0).getByRole("checkbox").check();
+    await pendingRows.nth(1).getByRole("checkbox").check();
+
+    const bulkBar = page.getByRole("complementary", { name: "批量任务操作" });
+    await expect(bulkBar.getByText("已选 2 项", { exact: true })).toBeVisible();
+    await bulkBar.getByRole("button", { name: "批量标记完成", exact: true }).click();
+    await expect(page.getByText("已将 2 项任务标记为完成", { exact: false })).toBeVisible();
+    await expect(page.locator(".task-work-row:not(.done)")).toHaveCount(initialCount - 2);
+
+    await page.getByRole("group", { name: "任务状态筛选" }).getByRole("button", { name: /已完成/ }).click();
+    await expect(page.locator(".task-work-row.done")).toHaveCount(2);
   });
 
   test("手动发布正文会被复制、保留并可主动重新生成", async ({ page, context, baseURL }, testInfo) => {
@@ -213,15 +257,19 @@ test.describe("mobile application", () => {
     await expect(page.locator(".matrix-table tbody th").first()).toHaveCSS("position", "sticky");
     await page.screenshot({ path: testInfo.outputPath("matrix-mobile.png") });
 
-    await page.goto("/#/data/tasks");
-    await expect(page.locator(".data-task-list")).toBeVisible();
-    const taskLayout = await page.evaluate(() => {
-      const scroller = document.querySelector(".data-task-list")!;
-      return { rootClient: document.documentElement.clientWidth, rootScroll: document.documentElement.scrollWidth, client: scroller.clientWidth, scroll: scroller.scrollWidth };
-    });
-    expect(taskLayout.rootScroll).toBe(taskLayout.rootClient);
-    expect(taskLayout.scroll).toBeGreaterThan(taskLayout.client);
-    await page.screenshot({ path: testInfo.outputPath("data-tasks-mobile.png") });
+    await page.goto("/#/plans/tasks");
+    await expect(page.locator(".task-worklist")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+    await expect(page.getByRole("group", { name: "任务状态筛选" })).toBeVisible();
+    await page.getByRole("button", { name: "更多筛选", exact: true }).click();
+    await expect(page.getByLabel("任务账号筛选")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+    await page.screenshot({ path: testInfo.outputPath("plan-tasks-mobile.png") });
+
+    await page.goto("/#/plans/parameters");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+    await expect(page.getByLabel("本周可得蛋")).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("plan-parameters-mobile.png") });
 
     await page.goto("/#/plans/beasts");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
@@ -233,7 +281,7 @@ test.describe("mobile application", () => {
 test.describe("tablet application", () => {
   test("关键页面无页面级横向溢出", async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith("tablet-"));
-    for (const url of ["/#/", "/#/assets/pets", "/#/plans/beasts", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/data/tasks", "/#/analysis/matrix"]) {
+    for (const url of ["/#/", "/#/assets/pets", "/#/plans/beasts", "/#/plans/tasks", "/#/plans/parameters", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/analysis/matrix"]) {
       await page.goto(url);
       await expect(page.locator(".workbench-page, .page-wrap")).toBeVisible();
       const width = await page.evaluate(() => ({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
@@ -243,13 +291,13 @@ test.describe("tablet application", () => {
     await page.screenshot({ path: testInfo.outputPath(`dashboard-${testInfo.project.name}.png`) });
     await page.goto("/#/plans/beasts");
     await page.screenshot({ path: testInfo.outputPath(`beasts-${testInfo.project.name}.png`) });
-    await page.goto("/#/data/tasks");
-    await page.screenshot({ path: testInfo.outputPath(`data-tasks-${testInfo.project.name}.png`) });
+    await page.goto("/#/plans/tasks");
+    await page.screenshot({ path: testInfo.outputPath(`plan-tasks-${testInfo.project.name}.png`) });
   });
 });
 
 test.describe("schedule completion dates", () => {
-  test("首页轨道和账号任务在各尺寸显示完整预计日期", async ({ page }, testInfo) => {
+  test("首页轨道标记今天可完成，账号任务显示完整预计日期", async ({ page }, testInfo) => {
     await page.clock.setFixedTime(new Date("2026-07-13T02:00:00Z"));
     await page.addInitScript(() => {
       localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
@@ -274,15 +322,24 @@ test.describe("schedule completion dates", () => {
     await page.goto("/#/");
     const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
     const currentTrackTask = ptMainline.locator(".task-track-labels span").first();
-    await expect(currentTrackTask.locator("b")).toHaveText("剑气蛇 · 进阶2");
-    await expect(currentTrackTask.locator("small")).toHaveText("预计 7月13日完成");
+    await expect(currentTrackTask.locator("b")).toContainText("剑气蛇 · 进阶2");
+    await expect(currentTrackTask.locator(".task-ready-badge")).toHaveText("现在可完成");
+    await expect(currentTrackTask.locator("small")).toHaveText("今天可完成");
     await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
     if (testInfo.project.name === "desktop") {
-      const tableWidth = await page.locator(".mainline-table-scroll").evaluate((element) => ({
-        client: element.clientWidth,
-        scroll: element.scrollWidth,
-      }));
+      const tableWidth = await page.locator(".mainline-table-scroll").evaluate((element) => {
+        const table = element.querySelector(".mainline-table")!;
+        const lastCell = element.querySelector(".mainline-row > :last-child")!;
+        return {
+          client: element.clientWidth,
+          scroll: element.scrollWidth,
+          tableRight: table.getBoundingClientRect().right,
+          lastCellRight: lastCell.getBoundingClientRect().right,
+        };
+      });
       expect(tableWidth.scroll).toBe(tableWidth.client);
+      expect(Math.abs(tableWidth.tableRight - tableWidth.lastCellRight)).toBeLessThan(1);
+      await expect(page.getByRole("link", { name: /查看 .* 账号明细/ })).toHaveCount(5);
     }
     await ptMainline.locator(".task-track").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
 

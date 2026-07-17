@@ -149,8 +149,15 @@ test.describe("desktop regressions", () => {
     await page.goto("/#/");
     const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
     const ptTrack = ptMainline.locator(".task-track-labels span");
-    await expect(ptTrack.first().locator("b")).toHaveText("剑气蛇 · 进阶2");
-    await expect(ptTrack.first().locator("small")).toHaveText("预计 7月13日完成");
+    const readyNowBanner = page.getByRole("region", { name: "当前可完成任务" });
+    await expect(readyNowBanner).toContainText("PT · 剑气蛇 · 进阶2");
+    await expect(readyNowBanner.getByRole("link", { name: "去任务维护标记完成" })).toBeVisible();
+    await expect(ptMainline).toHaveClass(/ready-now-row/);
+    await expect(ptMainline.locator(".task-ready-badge")).toHaveText("现在可完成");
+    await expect(ptMainline.locator(".ready-now-task small")).toHaveText("今天可完成");
+    await expect(ptMainline.locator(".status-chip")).toHaveText("现在可完成");
+    await expect(ptTrack.first().locator("b")).toContainText("剑气蛇 · 进阶2");
+    await expect(ptTrack.first().locator("small")).toHaveText("今天可完成");
     await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
 
     await page.goto("/#/accounts/PT");
@@ -158,14 +165,13 @@ test.describe("desktop regressions", () => {
     await expect(accountTask.locator("small")).toHaveText("预计 7月13日完成");
     await expect(page.locator(".account-mainline-finish")).toHaveText("整条主线：待洗护符后排期");
 
-    await page.goto("/#/data/tasks");
-    const maintenanceFilters = page.locator(".inline-filters select");
-    await maintenanceFilters.nth(0).selectOption("PT");
-    const pendingSnakeTasks = page.locator(".data-task-list label").filter({ hasText: "PT · 待打书蛇" });
-    const talismanTask = pendingSnakeTasks.filter({ has: page.locator("em", { hasText: "洗护符 · 预估" }) });
-    const downstreamBook = pendingSnakeTasks.filter({ has: page.locator("em", { hasText: "打书 · 预估" }) });
-    await expect(talismanTask.locator("small")).toHaveText("待洗护符");
-    await expect(downstreamBook.locator("small")).toHaveText("待洗护符");
+    await page.goto("/#/plans/tasks");
+    await page.getByLabel("任务账号筛选").selectOption("PT");
+    const pendingSnakeTasks = page.locator(".task-work-row").filter({ hasText: "待打书蛇" });
+    const talismanTask = pendingSnakeTasks.filter({ has: page.locator(".task-stage-cell", { hasText: "洗护符" }) });
+    const downstreamBook = pendingSnakeTasks.filter({ has: page.locator(".task-stage-cell", { hasText: "打书" }) });
+    await expect(talismanTask.locator(".task-state-label")).toHaveText("待洗护符");
+    await expect(downstreamBook.locator(".task-state-label")).toHaveText("待洗护符");
   });
 
   test("普通蛋默认保留且仅按 5.2 万作为紧急兜底", async ({ page }) => {
@@ -224,10 +230,14 @@ test.describe("desktop regressions", () => {
     await expect(page.getByText("优先留作任务，仅紧急出售", { exact: true })).toBeVisible();
 
     await page.goto("/#/data/inventory");
+    await expect(page.getByLabel("普通蛋买入价 / 万", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("神兽计划辅助参数", { exact: true })).toHaveCount(0);
+
+    await page.goto("/#/plans/parameters");
     await expect(page.getByLabel("普通蛋买入价 / 万", { exact: true })).toHaveValue("5.5");
     await expect(page.getByLabel("普通蛋紧急回收价 / 万", { exact: true })).toHaveValue("5.2");
     await expect(page.getByLabel("普通蛋紧急回收价 / 万", { exact: true })).toHaveAttribute("readonly", "");
-    await expect(page.getByText("普通蛋买入 5.5 万、紧急回收 5.2 万；卖后再买每个损失 0.3 万。实际排期会从最早起算日、今天和库存日期中的较晚日期继续。", { exact: true })).toBeVisible();
+    await expect(page.getByText("当前卖后再买每个损失 0.3 万；普通蛋仍默认保留给神兽任务。", { exact: true })).toBeVisible();
   });
 
   test("装备页展示 2026-07-13 的四处宝石升级", async ({ page }) => {

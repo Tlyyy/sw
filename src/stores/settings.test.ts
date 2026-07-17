@@ -64,4 +64,23 @@ describe("settings store persistence", () => {
     expect(settings.planningAsOfDate).toBe("2026-07-13");
     expect(settings.exportState()).toEqual(persistedBefore);
   });
+
+  it("resets task completion and price overrides independently", () => {
+    const settings = useSettingsStore();
+    settings.hydrate();
+    settings.setTaskDone("FC:snake1:skin", true);
+    settings.setTaskPrice("FC:snake1:skin", 321);
+    settings.setTaskDone("LG1:snake1:skin", true);
+
+    settings.resetTaskCompletionOverrides();
+    expect(settings.taskOverrides).toEqual({ "FC:snake1:skin": { priceWan: 321 } });
+
+    settings.setTaskDone("FC:snake1:skin", true);
+    settings.resetTaskPriceOverrides();
+    expect(settings.taskOverrides).toEqual({ "FC:snake1:skin": { done: true } });
+
+    settings.setTaskPrice("FC:snake1:skin", 456);
+    settings.resetTaskPrice("FC:snake1:skin");
+    expect(settings.taskOverrides).toEqual({ "FC:snake1:skin": { done: true } });
+  });
 });

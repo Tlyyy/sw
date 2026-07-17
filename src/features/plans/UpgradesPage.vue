@@ -6,6 +6,7 @@ import { useSettingsStore } from "../../stores/settings";
 import { useUiStore } from "../../stores/ui";
 import { accountGemPlan, formatCurrency, itemTargetCost, itemTargetGap, marketItems } from "../../domain/gems";
 import type { AccountId } from "../../domain/types";
+import PlansNav from "./PlansNav.vue";
 
 const catalog = useCatalogStore();
 const settings = useSettingsStore();
@@ -23,7 +24,7 @@ const market = computed(() => marketItems(catalog.data, settings.gemPriceOverrid
 
 <template>
   <div class="page-wrap plan-page">
-    <nav class="subnav"><RouterLink to="/plans/beasts">神兽主线</RouterLink><RouterLink to="/plans/timeline">五号概览</RouterLink><RouterLink to="/plans/upgrades">宝石参考</RouterLink></nav>
+    <PlansNav />
     <section class="page-intro">
       <div><h2>宝石升级参考</h2><p>神兽主线完成前暂不把宝石纳入行动优先级；现有装备、行情和 13 段测算仍完整保留。</p></div>
       <RouterLink class="button primary" to="/data/market">维护宝石行情</RouterLink>

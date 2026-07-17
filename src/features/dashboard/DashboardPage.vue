@@ -41,6 +41,7 @@ const latestInventoryComplete = computed(() => inventory.latestSnapshot
   ? Object.values(inventory.latestSnapshot.accounts).every((balance) => balance.innerShardCount !== null)
   : false);
 const today = computed(() => settings.planningAsOfDate);
+const readyNowProjections = computed(() => projections.value.filter((projection) => canCompleteNow(projection)));
 const accountTone: Record<AccountId, string> = {
   FC: "#176bb2",
   LG1: "#7244aa",
@@ -107,6 +108,16 @@ function taskDueLabel(value: string | null) {
   return formatScheduleDueDate(value, planningStartDate.value);
 }
 
+function canCompleteNow(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  const task = projection.currentTask;
+  return Boolean(
+    task
+    && projection.status === "ready"
+    && /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate)
+    && task.dueDate <= today.value,
+  );
+}
+
 function mainlineFinishLabel(projection: ReturnType<typeof buildMainlineProjection>[number]) {
   if (!projection.currentTask) return "整条主线已完成";
   const finish = taskDueLabel(projection.finishDate);
@@ -169,6 +180,7 @@ function allocationLines(projection: ReturnType<typeof buildMainlineProjection>[
 
 function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[number]) {
   if (projection.status === "stale") return "待补库存";
+  if (canCompleteNow(projection)) return "现在可完成";
   if (projection.status === "ready") return "可推进";
   if (projection.status === "buyable" && projection.requirementKind === "eggs") return "银子可补齐";
   return projection.statusLabel;
@@ -201,8 +213,23 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
     <p v-if="saveNotice" class="action-notice" aria-live="polite">{{ saveNotice }}</p>
 
     <section class="workbench-snapshot-meta" aria-label="最近库存快照">
-      <strong>最近库存快照：{{ latestDate ? `${formatDate(latestDate)} · ${latestInventoryComplete ? "五号已齐" : "内丹碎片待补录"}` : "尚未建立" }}</strong>
+      <div>
+        <strong>最近库存快照：{{ latestDate ? `${formatDate(latestDate)} · ${latestInventoryComplete ? "五号已齐" : "内丹碎片待补录"}` : "尚未建立" }}</strong>
+        <small>{{ latestDate ? "五账号库存与主线排期已同步" : "建立快照后自动生成资源缺口和推进建议" }}</small>
+      </div>
       <span>{{ latestDate ? `系统按库存所属日期排序；实际录入时间另行保留` : "先录入一份五号总库存，第二份开始计算区间净变化" }}</span>
+      <em class="mainline-scroll-hint">左右滑动查看完整推进信息</em>
+    </section>
+
+    <section v-if="readyNowProjections.length" class="ready-now-banner" aria-label="当前可完成任务">
+      <div class="ready-now-banner-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.2 12.2 2.4 2.5 5.4-5.5"/></svg>
+      </div>
+      <div>
+        <strong>现在可完成 {{ readyNowProjections.length }} 项</strong>
+        <span>{{ readyNowProjections.map((projection) => projection.accountId + " · " + taskLabel(projection.currentTask)).join("　") }}</span>
+      </div>
+      <RouterLink to="/plans/tasks">去任务维护标记完成</RouterLink>
     </section>
 
     <div class="mainline-table-scroll">
@@ -223,7 +250,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
         <article
           v-for="projection in projections"
           :key="projection.accountId"
-          class="mainline-grid mainline-row"
+          :class="['mainline-grid', 'mainline-row', { 'ready-now-row': canCompleteNow(projection) }]"
           :style="{ '--account-tone': accountTone[projection.accountId] }"
           role="row"
         >
@@ -257,7 +284,10 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
           <div class="mainline-cell" role="cell">
             <div class="task-track">
               <div class="task-track-labels">
-                <span v-for="task in projection.nextTasks" :key="task.id"><b>{{ taskLabel(task) }}</b><small>{{ taskDueLabel(task.dueDate) }}</small></span>
+                <span v-for="(task, taskIndex) in projection.nextTasks" :key="task.id" :class="{ 'ready-now-task': taskIndex === 0 && canCompleteNow(projection) }">
+                  <b>{{ taskLabel(task) }}<em v-if="taskIndex === 0 && canCompleteNow(projection)" class="task-ready-badge">现在可完成</em></b>
+                  <small>{{ taskIndex === 0 && canCompleteNow(projection) ? "今天可完成" : taskDueLabel(task.dueDate) }}</small>
+                </span>
                 <span v-for="index in Math.max(0, 3 - projection.nextTasks.length)" :key="`empty-${index}`" class="empty"><b>{{ index === 1 && !projection.nextTasks.length ? "主线已完成" : "—" }}</b></span>
               </div>
               <div class="task-track-line" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -282,7 +312,16 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
             <small>{{ projection.actionHint }}</small>
           </div>
 
-          <RouterLink class="mainline-detail-link" :to="`/accounts/${projection.accountId}`" role="cell">明细 ›</RouterLink>
+          <div class="mainline-detail-cell" role="cell">
+            <RouterLink
+              class="mainline-detail-link"
+              :to="`/accounts/${projection.accountId}`"
+              :aria-label="`查看 ${projection.accountId} 账号明细`"
+            >
+              <span>明细</span>
+              <svg aria-hidden="true" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" /></svg>
+            </RouterLink>
+          </div>
         </article>
       </section>
     </div>

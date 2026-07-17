@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import InventorySnapshotDialog from "../../components/InventorySnapshotDialog.vue";
-import { catalog } from "../../data/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import type { AccountId, InventoryBalance, InventorySnapshotInput } from "../../domain/types";
@@ -11,8 +10,6 @@ const settings = useSettingsStore();
 const inventoryDialogOpen = ref(false);
 const inventoryNotice = ref("");
 const inventoryAccountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
-const eggSellPriceWan = catalog.beastConfig.eggSellPriceWan;
-const eggRoundTripLossWan = computed(() => Math.max(0, settings.taskSettings.eggPriceWan - eggSellPriceWan));
 
 inventory.hydrate();
 
@@ -152,18 +149,4 @@ function confirmReset(message: string, action: () => void) {
     <p v-else class="empty-state">尚无历史快照。</p>
   </section>
 
-  <section class="settings-section secondary-settings-panel">
-    <div class="section-head">
-      <div><h2>神兽计划辅助参数</h2><p>普通蛋买入 {{ settings.taskSettings.eggPriceWan }} 万、紧急回收 {{ eggSellPriceWan }} 万；卖后再买每个损失 {{ Number(eggRoundTripLossWan.toFixed(2)) }} 万。实际排期会从最早起算日、今天和库存日期中的较晚日期继续。</p></div>
-      <span>次要设置</span>
-    </div>
-    <div class="settings-band data-edit-band compact-settings-band">
-      <label><span>最早起算日期</span><input type="date" :value="settings.taskSettings.startDate" @input="settings.setTaskSetting('startDate', ($event.target as HTMLInputElement).value)" /></label>
-      <label><span>本周内丹碎片</span><input type="number" min="0" :value="settings.taskSettings.thisWeekInnerShards" @input="settings.setTaskSetting('thisWeekInnerShards', Number(($event.target as HTMLInputElement).value))" /></label>
-      <label><span>每周内丹碎片</span><input type="number" min="0" :value="settings.taskSettings.weeklyInnerShards" @input="settings.setTaskSetting('weeklyInnerShards', Number(($event.target as HTMLInputElement).value))" /></label>
-      <label><span>普通蛋买入价 / 万</span><input type="number" min="0" step="0.1" :value="settings.taskSettings.eggPriceWan" @input="settings.setTaskSetting('eggPriceWan', Number(($event.target as HTMLInputElement).value))" /></label>
-      <label><span>普通蛋紧急回收价 / 万</span><input type="number" :value="eggSellPriceWan" readonly /></label>
-      <button class="button secondary" type="button" @click="confirmReset('确认恢复默认神兽计划辅助参数？', settings.resetTaskSettings)">恢复默认参数</button>
-    </div>
-  </section>
 </template>

@@ -6,6 +6,7 @@ import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { buildTaskPlans } from "../../domain/plans";
 import { buildMainlineProjection } from "../../domain/mainline";
+import PlansNav from "./PlansNav.vue";
 
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
@@ -25,7 +26,7 @@ const regularTotal = computed(() => projections.value.reduce((sum, item) => sum 
 </script>
 <template>
   <div class="page-wrap plan-page">
-    <nav class="subnav"><RouterLink to="/plans/beasts">神兽主线</RouterLink><RouterLink to="/plans/timeline">五号概览</RouterLink><RouterLink to="/plans/upgrades">宝石参考</RouterLink></nav>
+    <PlansNav />
     <section class="page-intro"><div><h2>五号主线概览</h2><p>这不是完成时间轴，而是五条主线在同一时刻的状态快照：当前任务、现有资源和下一步动作全部并排核对。</p></div><RouterLink class="button primary" to="/">返回行动推进台</RouterLink></section>
     <StatStrip :items="[{ value: inventory.latestSnapshot?.effectiveDate || '待录', label: '库存日期', note: inventory.latestSnapshot ? '按实际库存日期计算' : '请先录入统一库存' }, { value: activeCount, label: '推进中的账号', note: `共 ${projections.length} 个账号` }, { value: dedicatedTotal, label: '专用蛋总数', note: '任务优先消耗' }, { value: regularTotal, label: '普通蛋总数', note: '优先留作任务，仅紧急出售' }]" />
     <section class="timeline-section">
