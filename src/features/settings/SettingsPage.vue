@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { usePublishStore } from "../../stores/publish";
 import { useUiStore } from "../../stores/ui";
 import { useAuthStore } from "../../stores/auth";
+import { useSyncStore } from "../../stores/sync";
 import { createWorkspaceBackup, parseWorkspaceBackup } from "../../persistence/state";
 import DataCenterNav from "../data/DataCenterNav.vue";
 
@@ -15,8 +16,15 @@ const settings = useSettingsStore();
 const publish = usePublishStore();
 const ui = useUiStore();
 const auth = useAuthStore();
+const cloudSync = useSyncStore();
 const backupInput = ref<HTMLInputElement>();
 const backupNotice = ref("");
+const nextPassword = ref("");
+const confirmPassword = ref("");
+const passwordNotice = ref("");
+const lastSyncText = computed(() => cloudSync.lastSyncedAt
+  ? `上次完成：${new Date(cloudSync.lastSyncedAt).toLocaleString("zh-CN", { hour12: false })}`
+  : "尚未完成首次云同步");
 
 function confirmAction(message: string, action: () => void) {
   if (confirm(message)) action();
@@ -83,12 +91,53 @@ async function importWorkspace(event: Event) {
     input.value = "";
   }
 }
+
+async function rotatePassword() {
+  passwordNotice.value = "";
+  if (nextPassword.value !== confirmPassword.value) {
+    passwordNotice.value = "两次输入的新密码不一致。";
+    return;
+  }
+  if (await auth.changePassword(nextPassword.value)) {
+    nextPassword.value = "";
+    confirmPassword.value = "";
+    passwordNotice.value = "密码已轮换，云端密文已使用新密码重新加密。其他设备需要用新密码登录。";
+  }
+}
 </script>
 
 <template>
   <div class="page-wrap settings-page">
     <DataCenterNav />
-    <section class="page-intro"><div><h2>界面、草稿与本地备份</h2><p>系统只在当前浏览器保存数据；这里管理界面偏好、发布草稿和完整业务数据备份。</p></div></section>
+    <section class="page-intro"><div><h2>界面、同步与备份</h2><p>数据会先保存在当前浏览器，联网时再自动加密同步到云端。</p></div></section>
+    <section class="settings-section workspace-state-section cloud-sync-section" :class="`is-${cloudSync.statusTone}`">
+      <div>
+        <h2>自动云同步</h2>
+        <p>库存、行情与任务、发布草稿和界面偏好会自动同步；云端只保存由访问密码加密后的内容。</p>
+        <p v-if="cloudSync.errorMessage" class="cloud-sync-message" role="alert">{{ cloudSync.errorMessage }}</p>
+        <p v-else-if="cloudSync.conflictMessage" class="cloud-sync-message" role="status">{{ cloudSync.conflictMessage }}</p>
+      </div>
+      <strong aria-live="polite"><span class="cloud-sync-dot" aria-hidden="true"></span>{{ cloudSync.statusLabel }}<small>{{ lastSyncText }}</small></strong>
+      <div v-if="cloudSync.hasConflict" class="cloud-sync-actions">
+        <button class="button" type="button" @click="cloudSync.useRemoteVersion">使用云端</button>
+        <button class="button" type="button" @click="cloudSync.keepLocalVersion">用本机覆盖</button>
+      </div>
+      <button v-else class="button" type="button" :disabled="cloudSync.isBusy" @click="cloudSync.retry">{{ cloudSync.isBusy ? "同步中…" : "立即检查" }}</button>
+    </section>
+    <section class="settings-section password-rotation-section" :class="{ 'is-required': cloudSync.passwordRotationRequired }">
+      <div class="section-head"><div>
+        <h2>{{ cloudSync.passwordRotationRequired ? "必须更换访问密码" : "更换访问密码" }}</h2>
+        <p v-if="cloudSync.passwordRotationRequired">旧版本的密码校验值曾进入公开代码历史。请改用一条从未在其他地方使用过的新长密码，完成后云端数据会原地重新加密。</p>
+        <p v-else>密码只在浏览器内派生加密密钥；更换后，其他设备必须输入新密码。</p>
+      </div></div>
+      <form class="password-rotation-form" @submit.prevent="rotatePassword">
+        <label><span>新密码（至少 16 个字符）</span><input v-model="nextPassword" type="password" autocomplete="new-password" minlength="16" required /></label>
+        <label><span>再次输入新密码</span><input v-model="confirmPassword" type="password" autocomplete="new-password" minlength="16" required /></label>
+        <button class="button primary" type="submit" :disabled="auth.changingPassword || cloudSync.status !== 'synced'">{{ auth.changingPassword ? "正在重新加密…" : "更换并重新加密" }}</button>
+      </form>
+      <p v-if="auth.passwordChangeError || passwordNotice" class="password-rotation-message" role="status">{{ auth.passwordChangeError || passwordNotice }}</p>
+      <p v-else-if="cloudSync.status !== 'synced'" class="password-rotation-message">请先等待上方显示“云端已同步”。密码轮换必须联网且无待同步修改。</p>
+    </section>
     <section class="settings-section">
       <div class="section-head"><div><h2>单号下钻与矩阵偏好</h2><p>行动推进台始终同时展示五个账号；最近账号只影响“单号下钻”的默认入口。</p></div></div>
       <div class="settings-grid ui-settings-grid">
@@ -106,8 +155,8 @@ async function importWorkspace(event: Event) {
       <button class="button" @click="confirmAction('确认清空发布页已选宠物？', publish.clear)">清空发布选择</button>
     </section>
     <section class="settings-section workspace-state-section">
-      <div><h2>完整业务备份</h2><p>包含库存、行情与历史、神兽任务、发布草稿和界面偏好；不包含登录状态和静态基础资料。恢复前会完整校验，任一分区无效都不会覆盖现有数据。</p></div>
-      <strong aria-live="polite">{{ backupNotice || `${inventory.snapshots.length} 份库存快照及其他本地状态保存在本机` }}</strong>
+      <div><h2>完整业务备份</h2><p>包含库存、行情与历史、神兽任务、发布草稿和界面偏好；不包含登录状态和静态基础资料。恢复后会自动同步，任一分区无效都不会覆盖现有数据。</p></div>
+      <strong aria-live="polite">{{ backupNotice || `${inventory.snapshots.length} 份库存快照已保存在本机` }}</strong>
       <div><button class="button" type="button" @click="exportWorkspace">导出完整 JSON</button><button class="button" type="button" @click="backupInput?.click()">恢复备份</button><input ref="backupInput" hidden type="file" accept="application/json,.json" @change="importWorkspace" /></div>
     </section>
     <section class="danger-zone"><div><h2>界面偏好</h2><p>恢复最近账号、矩阵密度和字段显示默认值，不影响数据中心。</p></div><button class="button" @click="confirmAction('确认恢复默认界面偏好？', ui.resetPreferences)">恢复界面默认值</button><button class="button" @click="auth.logout">退出登录</button></section>

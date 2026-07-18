@@ -8,12 +8,14 @@ import { useCatalogStore } from "../stores/catalog";
 import { useInventoryStore } from "../stores/inventory";
 import { useUiStore } from "../stores/ui";
 import { useAuthStore } from "../stores/auth";
+import { useSyncStore } from "../stores/sync";
 
 const route = useRoute();
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
 const ui = useUiStore();
 const auth = useAuthStore();
+const cloudSync = useSyncStore();
 const menuButton = ref<HTMLButtonElement>();
 const mobileNav = ref<HTMLElement>();
 const mobileCloseButton = ref<HTMLButtonElement>();
@@ -163,7 +165,13 @@ onBeforeUnmount(() => {
           <span class="orbit-command-label">搜索全系统</span>
           <AppIcon name="search" />
         </button>
-        <span class="orbit-local-user"><AppIcon name="account" /><b>本地用户</b></span>
+        <RouterLink
+          class="orbit-sync-state"
+          :class="`is-${cloudSync.statusTone}`"
+          to="/settings"
+          :title="cloudSync.errorMessage || cloudSync.conflictMessage || cloudSync.statusLabel"
+          aria-label="查看云同步状态"
+        ><span aria-hidden="true"></span><b aria-live="polite">{{ cloudSync.statusLabel }}</b></RouterLink>
         <button class="orbit-logout" title="退出登录" @click="auth.logout">退出</button>
       </div>
     </header>
@@ -171,6 +179,7 @@ onBeforeUnmount(() => {
     <button v-if="mobileDialogOpen" class="orbit-nav-scrim" aria-label="关闭导航" @click="closeMobileNavigation()"></button>
 
     <main class="orbit-main" :inert="mobileDialogOpen || undefined">
+      <p v-if="auth.warning" class="orbit-auth-warning" role="status">{{ auth.warning }}</p>
       <header v-if="!isDashboard && !isImmersivePage" class="orbit-route-context">
         <div>
           <h1>{{ title }}</h1>
