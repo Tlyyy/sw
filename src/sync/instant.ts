@@ -3,8 +3,21 @@ import schema from "../../instant.schema";
 import { instantAppId } from "../../instant.config";
 import { clearMemoryStorage, MemoryStorage } from "./memoryStorage";
 
+const instantApiUri = "https://api.instantdb.com";
+const instantWebsocketUri = "wss://api.instantdb.com/runtime/session";
+
 function createDatabase() {
-  return init({ appId: instantAppId, schema, devtool: false }, MemoryStorage);
+  // InstantDB deduplicates clients by the config passed to init(), while
+  // shutdown() removes them using the Reactor's resolved config. Supplying
+  // the default endpoints explicitly keeps both keys identical so a stopped
+  // client cannot be returned again during a mobile reconnect.
+  return init({
+    appId: instantAppId,
+    schema,
+    devtool: false,
+    apiURI: instantApiUri,
+    websocketURI: instantWebsocketUri,
+  }, MemoryStorage);
 }
 
 export type SyncDatabase = ReturnType<typeof createDatabase>;

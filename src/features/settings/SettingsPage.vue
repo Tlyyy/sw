@@ -116,6 +116,7 @@ async function rotatePassword() {
         <p>库存、行情与任务、发布草稿和界面偏好会自动同步；云端只保存由访问密码加密后的内容。</p>
         <p v-if="cloudSync.errorMessage" class="cloud-sync-message" role="alert">{{ cloudSync.errorMessage }}</p>
         <p v-else-if="cloudSync.conflictMessage" class="cloud-sync-message" role="status">{{ cloudSync.conflictMessage }}</p>
+        <p v-else-if="cloudSync.status === 'offline'" class="cloud-sync-message" role="status">已自动保存在本机；网络恢复或返回前台后会自动重连。</p>
       </div>
       <strong aria-live="polite"><span class="cloud-sync-dot" aria-hidden="true"></span>{{ cloudSync.statusLabel }}<small>{{ lastSyncText }}</small></strong>
       <div v-if="cloudSync.hasConflict" class="cloud-sync-actions">
