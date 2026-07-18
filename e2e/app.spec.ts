@@ -141,6 +141,60 @@ test.describe("desktop application", () => {
     await expect(page.getByRole("heading", { name: "单项成本覆盖", exact: true })).toBeVisible();
   });
 
+  test("首页同时突出蛋缺口和资金缺口", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    const runtimeErrors: string[] = [];
+    page.on("pageerror", (error) => runtimeErrors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") runtimeErrors.push(message.text());
+    });
+    await page.clock.setFixedTime(new Date("2026-07-18T02:00:00Z"));
+    await page.addInitScript(() => {
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [{
+          effectiveDate: "2026-07-18",
+          recordedAt: "2026-07-18T02:00:00.000Z",
+          accounts: {
+            FC: { dedicatedEggs: 7, regularEggs: 7, silverWan: 122, innerShardCount: 30 },
+            LG1: { dedicatedEggs: 5, regularEggs: 5, silverWan: 100, innerShardCount: 20 },
+            LG2: { dedicatedEggs: 4, regularEggs: 4, silverWan: 100, innerShardCount: 20 },
+            PT: { dedicatedEggs: 1, regularEggs: 0, silverWan: 100, innerShardCount: 20 },
+            MYT: { dedicatedEggs: 4, regularEggs: 4, silverWan: 60, innerShardCount: 20 },
+          },
+        }],
+      }));
+      localStorage.setItem("sw.app.ui.v2", JSON.stringify({
+        version: 2,
+        accountScope: "ALL",
+        recentAccount: "FC",
+        matrixDensity: "compact",
+        matrixDisplay: { stats: true, aptitudes: true, skills: true },
+      }));
+    });
+
+    await page.goto("/#/");
+    const fcAccount = page.locator(".radar-account-item").filter({ hasText: "FC" });
+    await expect(fcAccount.locator(".radar-account-gap strong")).toHaveText("26个蛋");
+    await expect(fcAccount.locator(".radar-account-gap em")).toHaveText("差 21万");
+    const fundingCard = page.locator(".radar-funding-gap");
+    await expect(fundingCard).toContainText("资金缺口");
+    await expect(fundingCard.locator("strong")).toHaveText("21万");
+    await expect(fundingCard).toContainText("买齐当前缺口还需");
+
+    for (const accountId of ["FC", "LG1", "LG2", "PT", "MYT"]) {
+      await page.locator(".radar-account-item").filter({ hasText: accountId }).click();
+      await expect(page.locator(".radar-focus-header h2 b")).toHaveText(accountId);
+      await expect(fundingCard.locator("strong")).toHaveText(/^(?:\d+(?:\.\d+)?万|待计算|待确认)$/);
+    }
+    await fcAccount.click();
+    await expect(fundingCard.locator("strong")).toHaveText("21万");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+    expect(runtimeErrors).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath("dashboard-funding-gap.png") });
+  });
+
   test("统一库存快照同时保存蛋、银子和内丹碎片", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     await page.goto("/#/data/inventory");

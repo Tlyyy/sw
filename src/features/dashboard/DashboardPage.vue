@@ -169,6 +169,43 @@ function shortageUnit(projection: ReturnType<typeof buildMainlineProjection>[num
   return "";
 }
 
+function fundingShortageWan(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (projection.requirementKind === "eggs" || projection.requirementKind === "silver") {
+    return projection.allocation.silverShortageWan;
+  }
+  return 0;
+}
+
+function fundingShortageValue(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (projection.requirementKind === "eggs" && projection.allocation.eggShortage && !projection.allocation.purchaseCostWan) {
+    return "待计算";
+  }
+  if (projection.requirementKind === "estimate") return "待确认";
+  return `${formatNumber(fundingShortageWan(projection))}万`;
+}
+
+function fundingShortagePending(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  return projection.requirementKind === "estimate"
+    || (projection.requirementKind === "eggs" && !!projection.allocation.eggShortage && !projection.allocation.purchaseCostWan);
+}
+
+function accountFundingShortageText(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (fundingShortagePending(projection)) return "金额待算";
+  if (fundingShortageWan(projection)) return `差 ${fundingShortageValue(projection)}`;
+  return "资金够用";
+}
+
+function fundingShortageCaption(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (projection.requirementKind === "eggs" && projection.allocation.eggShortage && !projection.allocation.purchaseCostWan) {
+    return "先维护普通蛋价格";
+  }
+  if (fundingShortageWan(projection)) {
+    return projection.requirementKind === "eggs" ? "买齐当前缺口还需" : "完成当前任务还需";
+  }
+  if (projection.requirementKind === "estimate") return "成本待任务完成后确认";
+  return "当前资金够用";
+}
+
 function allocationLines(projection: ReturnType<typeof buildMainlineProjection>[number]) {
   if (projection.requirementKind === "eggs") {
     return [
@@ -260,8 +297,11 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
             <b>{{ taskLabel(projection.currentTask) }}</b>
           </span>
           <span class="radar-account-gap">
-            <small>资源缺口</small>
+            <small>{{ projection.requirementKind === "eggs" ? "蛋 / 资金缺口" : "资源缺口" }}</small>
             <strong>{{ shortageValue(projection) ? formatNumber(shortageValue(projection)) + shortageUnit(projection) : "无" }}</strong>
+            <em v-if="projection.requirementKind === 'eggs' && projection.allocation.eggShortage">
+              {{ accountFundingShortageText(projection) }}
+            </em>
           </span>
           <i aria-hidden="true"></i>
         </button>
@@ -280,10 +320,22 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
         </header>
 
         <div class="radar-decision-hero">
-          <div>
+          <div class="radar-decision-copy">
             <span>今日决策</span>
             <h3>{{ statusLabelFor(selectedProjection) }}</h3>
             <p>{{ selectedProjection.actionHint }}</p>
+          </div>
+          <div
+            class="radar-funding-gap"
+            :class="{
+              clear: !fundingShortageWan(selectedProjection) && !fundingShortagePending(selectedProjection),
+              pending: fundingShortagePending(selectedProjection),
+            }"
+            aria-live="polite"
+          >
+            <small>资金缺口</small>
+            <strong>{{ fundingShortageValue(selectedProjection) }}</strong>
+            <span>{{ fundingShortageCaption(selectedProjection) }}</span>
           </div>
           <button class="workbench-primary" type="button" @click="inventoryDialogOpen = true">
             <span>录入五号库存快照</span>

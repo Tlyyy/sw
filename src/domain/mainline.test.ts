@@ -293,6 +293,7 @@ describe("five-account mainline projection", () => {
     const projection = buildMainlineProjection([plan("FC", [scheduled()])], [lowSilverSnapshot], eggTradePrices)[0];
 
     expect(projection.status).toBe("blocked");
+    expect(projection.allocation.silverShortageWan).toBe(6);
     expect(projection.actionHint).toBe("完成当前任务还缺 2 个蛋。按当前价格买齐需 11 万银子，现有 5 万，还差 6 万。");
   });
 
