@@ -52,7 +52,7 @@ test.describe("desktop application", () => {
     await page.screenshot({ path: testInfo.outputPath("dashboard-desktop.png") });
 
     const routes = [
-      ["/#/accounts/LG2", "LG2 单号下钻"],
+      ["/#/accounts/LG2", "LG2 账号详情"],
       ["/#/assets/pets", "宠物资产"],
       ["/#/assets/equipment", "装备资产"],
       ["/#/assets/skills", "技能资料"],
@@ -226,7 +226,7 @@ test.describe("desktop application", () => {
     await page.reload();
     await expect(page.locator(".inventory-account-cell").filter({ hasText: "FC" })).toContainText("44");
     await page.goto("/#/accounts/FC");
-    await expect(page.getByRole("heading", { name: "FC 单号下钻" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "FC 账号详情" })).toBeVisible();
     await expect(page.locator(".resource-line")).toContainText("内丹碎片 44");
   });
 

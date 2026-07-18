@@ -29,7 +29,7 @@ const results = computed(() => {
   const q = query.value.trim().toLowerCase();
   if (!q) return commandPages.slice(0, 8).map(([label, path]) => ({ label, meta: "页面", path }));
   const pageRows = commandPages.filter(([label]) => label.toLowerCase().includes(q)).map(([label, path]) => ({ label, meta: "页面", path }));
-  const accountRows = catalog.data.accounts.filter((item) => `${item.id} ${item.label} 账号 单号`.toLowerCase().includes(q)).map((item) => ({ label: `${item.id} · 单号下钻`, meta: "账号", path: `/accounts/${item.id}` }));
+  const accountRows = catalog.data.accounts.filter((item) => `${item.id} ${item.label} 账号 详情 单号`.toLowerCase().includes(q)).map((item) => ({ label: `${item.id} · 账号详情`, meta: "账号", path: `/accounts/${item.id}` }));
   const petRows = catalog.pets.filter((item) => item.searchText.includes(q)).slice(0, 8).map((item) => ({ label: `${item.accountId} · ${item.name}`, meta: item.role.primary, path: `/assets/pets?account=${item.accountId}&selected=${encodeURIComponent(item.id)}` }));
   const equipmentRows = catalog.data.equipment.filter((item) => [item.accountId, item.slot, item.name, item.type, item.gem.name, item.gem.level, ...item.attributes, ...item.effects].join(" ").toLowerCase().includes(q)).slice(0, 8).map((item) => ({ label: `${item.accountId} · ${item.name}`, meta: `${item.slot} · ${item.gem.name}`, path: `/assets/equipment?account=${item.accountId}&q=${encodeURIComponent(item.name)}` }));
   const skillRows = catalog.data.skills.filter((item) => `${item.name} ${item.type}`.toLowerCase().includes(q)).slice(0, 6).map((item) => ({ label: item.name, meta: item.type, path: `/assets/skills?type=${encodeURIComponent(item.type)}&q=${encodeURIComponent(item.name)}` }));

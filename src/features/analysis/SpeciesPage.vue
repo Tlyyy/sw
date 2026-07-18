@@ -5,4 +5,20 @@ const catalog=useCatalogStore();const query=ref('');
 const speciesCount=computed(()=>new Set(catalog.pets.map((pet)=>pet.name)).size);
 const rows=computed(()=>[...catalog.pets.reduce((map,pet)=>{const list=map.get(pet.name)||[];list.push(pet);map.set(pet.name,list);return map},new Map<string,typeof catalog.pets>()).entries()].map(([name,pets])=>({name,pets,accounts:[...new Set(pets.map(p=>p.accountId))],bestTalent:[...pets].sort((a,b)=>(b.talent||0)-(a.talent||0))[0],bestAttack:[...pets].sort((a,b)=>b.attack-a.attack)[0],bestSpeed:[...pets].sort((a,b)=>b.speed-a.speed)[0],bestSpirit:[...pets].sort((a,b)=>b.spirit-a.spirit)[0]})).filter(row=>!query.value||row.name.includes(query.value)||row.accounts.join(' ').toLowerCase().includes(query.value.toLowerCase())).sort((a,b)=>b.pets.length-a.pets.length));
 </script>
-<template><div class="page-wrap analysis-page"><nav class="subnav"><RouterLink to="/analysis/recommendations">推荐分析</RouterLink><RouterLink to="/analysis/species">同名对比</RouterLink><RouterLink to="/analysis/matrix">固定矩阵</RouterLink></nav><section class="page-intro"><div><h2>同名宠物跨账号对比</h2><p>聚合 {{ speciesCount }} 种宠物，直接查看出现账号和最高天资、攻击、速度、灵力。</p></div><input v-model="query" class="page-search" type="search" placeholder="搜索宠物或账号"/></section><div class="species-table"><div class="table-head"><span>宠物</span><span>出现账号</span><span>最高天资</span><span>最高攻击</span><span>最高速度</span><span>最高灵力</span></div><article v-for="row in rows" :key="row.name"><div><strong>{{row.name}}</strong><span>{{row.pets.length}} 组</span></div><span>{{row.accounts.join(' · ')}}</span><RouterLink :to="`/assets/pets?selected=${encodeURIComponent(row.bestTalent.id)}`">{{row.bestTalent.accountId}} {{row.bestTalent.talent||'-'}}</RouterLink><RouterLink :to="`/assets/pets?selected=${encodeURIComponent(row.bestAttack.id)}`">{{row.bestAttack.accountId}} {{row.bestAttack.attack}}</RouterLink><RouterLink :to="`/assets/pets?selected=${encodeURIComponent(row.bestSpeed.id)}`">{{row.bestSpeed.accountId}} {{row.bestSpeed.speed}}</RouterLink><RouterLink :to="`/assets/pets?selected=${encodeURIComponent(row.bestSpirit.id)}`">{{row.bestSpirit.accountId}} {{row.bestSpirit.spirit}}</RouterLink></article></div></div></template>
+<template>
+  <div class="page-wrap analysis-page">
+    <nav class="subnav"><RouterLink to="/analysis/recommendations">推荐分析</RouterLink><RouterLink to="/analysis/species">同名对比</RouterLink><RouterLink to="/analysis/matrix">固定矩阵</RouterLink></nav>
+    <section class="page-intro"><div><h2>同名宠物跨账号对比</h2><p>聚合 {{ speciesCount }} 种宠物，直接查看出现账号和最高天资、攻击、速度、灵力。</p></div><input v-model="query" class="page-search" type="search" placeholder="搜索宠物或账号"/></section>
+    <div class="species-table">
+      <div class="table-head"><span>宠物</span><span>出现账号</span><span>最高天资</span><span>最高攻击</span><span>最高速度</span><span>最高灵力</span></div>
+      <article v-for="row in rows" :key="row.name">
+        <div role="group" :aria-label="`宠物：${row.name}`"><strong>{{row.name}}</strong><span>{{row.pets.length}} 组</span></div>
+        <span data-label="出现账号" :aria-label="`出现账号：${row.accounts.join('、')}`">{{row.accounts.join(' · ')}}</span>
+        <RouterLink data-label="最高天资" :aria-label="`最高天资：${row.bestTalent.accountId} ${row.bestTalent.talent||'-'}`" :to="`/assets/pets?selected=${encodeURIComponent(row.bestTalent.id)}`">{{row.bestTalent.accountId}} {{row.bestTalent.talent||'-'}}</RouterLink>
+        <RouterLink data-label="最高攻击" :aria-label="`最高攻击：${row.bestAttack.accountId} ${row.bestAttack.attack}`" :to="`/assets/pets?selected=${encodeURIComponent(row.bestAttack.id)}`">{{row.bestAttack.accountId}} {{row.bestAttack.attack}}</RouterLink>
+        <RouterLink data-label="最高速度" :aria-label="`最高速度：${row.bestSpeed.accountId} ${row.bestSpeed.speed}`" :to="`/assets/pets?selected=${encodeURIComponent(row.bestSpeed.id)}`">{{row.bestSpeed.accountId}} {{row.bestSpeed.speed}}</RouterLink>
+        <RouterLink data-label="最高灵力" :aria-label="`最高灵力：${row.bestSpirit.accountId} ${row.bestSpirit.spirit}`" :to="`/assets/pets?selected=${encodeURIComponent(row.bestSpirit.id)}`">{{row.bestSpirit.accountId}} {{row.bestSpirit.spirit}}</RouterLink>
+      </article>
+    </div>
+  </div>
+</template>

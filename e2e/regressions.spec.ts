@@ -273,8 +273,8 @@ test.describe("desktop regressions", () => {
     await page.goto("/#/settings");
     await expect(page.getByRole("heading", { name: "完整业务备份" })).toBeVisible();
     await expect(page.getByText(/包含库存、行情与历史、神兽任务、发布草稿和界面偏好/)).toBeVisible();
-    await expect(page.getByLabel("最近账号")).toHaveValue("FC");
-    await expect(page.getByLabel("矩阵密度")).toHaveValue("comfortable");
+    await expect(page.getByLabel("默认账号")).toHaveValue("FC");
+    await expect(page.getByLabel("对比表密度")).toHaveValue("comfortable");
     await expect(page.getByText("1 组宠物已加入发布清单", { exact: true })).toBeVisible();
 
     await expect.poll(() => page.evaluate(() => ({

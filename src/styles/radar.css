@@ -2651,3 +2651,481 @@ body {
 .orbit-route-context p {
   font-weight: 500;
 }
+
+/* Mobile readability and information hierarchy ------------------------- */
+.orbit-sync-label-compact,
+.subnav-label-short {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  body {
+    min-width: 0;
+  }
+
+  .orbit-topbar {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .orbit-menu-button,
+  .orbit-header-tools .orbit-command-trigger,
+  .orbit-header-tools .orbit-sync-state {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .orbit-brand {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .orbit-brand strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .orbit-header-tools {
+    gap: 6px;
+  }
+
+  .orbit-header-tools .orbit-sync-state {
+    display: inline-flex;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    padding-inline: 9px;
+  }
+
+  .orbit-header-tools .orbit-sync-state b {
+    display: block;
+    font-size: 13px;
+  }
+
+  .orbit-sync-label-full,
+  .subnav-label-full {
+    display: none;
+  }
+
+  .orbit-sync-label-compact,
+  .subnav-label-short {
+    display: inline;
+  }
+
+  .orbit-route-context {
+    display: none;
+  }
+
+  .orbit-main .subnav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin: -4px 0 18px;
+    padding-bottom: 10px;
+    overflow: visible;
+  }
+
+  .orbit-main .subnav a {
+    min-width: 0;
+    min-height: 44px;
+    display: grid;
+    place-items: center;
+    padding: 6px 8px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .orbit-main .subnav a:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .radar-status-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+    overflow: visible;
+    font-size: 13px;
+  }
+
+  .radar-status-strip > * {
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--radar-line);
+    white-space: normal;
+  }
+
+  .radar-status-strip > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .radar-status-strip > :nth-child(2n) {
+    border-right: 1px solid var(--radar-line);
+  }
+
+  .radar-status-strip > :nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .radar-account-rail {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  .radar-account-rail > header {
+    position: static;
+    grid-column: 1 / -1;
+  }
+
+  .radar-account-item {
+    min-width: 0;
+    min-height: 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    place-items: center;
+    gap: 0;
+    padding: 4px;
+    border-right: 1px solid var(--radar-line);
+    border-bottom: 0;
+    text-align: center;
+  }
+
+  .radar-account-item:last-child {
+    border-right: 0;
+  }
+
+  .radar-account-code {
+    width: auto;
+    height: auto;
+    border: 0;
+    background: transparent;
+    font-size: 14px;
+  }
+
+  .radar-account-copy,
+  .radar-account-gap {
+    display: none;
+  }
+
+  .radar-account-item > i {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    display: block;
+    width: 6px;
+    height: 6px;
+  }
+
+  .radar-workbench small,
+  .radar-workbench .task-track-finish,
+  .radar-workbench .task-track-labels b {
+    font-size: 13px !important;
+  }
+
+  .orbit-main .matrix-page .matrix-group-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding-bottom: 0;
+    overflow: visible;
+  }
+
+  .orbit-main .matrix-page .matrix-group-tabs button {
+    min-width: 0;
+    width: 100%;
+    min-height: 48px;
+    padding: 7px 9px;
+    white-space: normal;
+  }
+
+  .orbit-main .matrix-page .matrix-group-tabs button span {
+    overflow-wrap: anywhere;
+  }
+
+  .orbit-main :where(.equipment-table, .species-table, .timeline-ledger, .snapshot-history-table) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    border-top: 0;
+    background: transparent;
+  }
+
+  .orbit-main :where(
+    .equipment-table > .table-head,
+    .species-table > .table-head,
+    .timeline-ledger > .table-head,
+    .snapshot-history-head
+  ) {
+    display: none;
+  }
+
+  .orbit-main .equipment-table > .table-head,
+  .orbit-main .species-table > .table-head,
+  .orbit-main .timeline-ledger > .table-head,
+  .orbit-main .snapshot-history-head {
+    display: none;
+  }
+
+  .orbit-main :where(.equipment-table article, .species-table article, .timeline-ledger > a, .snapshot-history-row) {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px 12px;
+    padding: 14px;
+    border: 1px solid var(--radar-line);
+    border-radius: 6px;
+    color: var(--radar-ink);
+    background: var(--radar-surface);
+  }
+
+  .orbit-main .equipment-table article,
+  .orbit-main .species-table article,
+  .orbit-main .timeline-ledger > a,
+  .orbit-main .snapshot-history-row {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px 12px;
+    padding: 14px;
+    border: 1px solid var(--radar-line);
+    border-radius: 6px;
+    color: var(--radar-ink);
+    background: var(--radar-surface);
+  }
+
+  .orbit-main :where(.equipment-table article, .species-table article, .timeline-ledger > a, .snapshot-history-row) > * {
+    min-width: 0;
+  }
+
+  .orbit-main :where(
+    .equipment-table article > div,
+    .equipment-table article > a,
+    .species-table article > span,
+    .species-table article > a,
+    .timeline-ledger > a > *,
+    .snapshot-history-row > *
+  )::before {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--radar-muted);
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .orbit-main .equipment-table article > :where(div, a)::before { content: attr(data-label); }
+
+  .orbit-main .equipment-table article > div:nth-child(3),
+  .orbit-main .equipment-table article > a {
+    grid-column: 1 / -1;
+  }
+
+  .orbit-main .equipment-table article > a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    border: 1px solid var(--radar-line-strong);
+    border-radius: 4px;
+    background: #1a2628;
+  }
+
+  .orbit-main .equipment-table article > a::before {
+    margin-bottom: 0;
+  }
+
+  .orbit-main .equipment-table article span,
+  .orbit-main .species-table article span {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .orbit-main .species-table article > div:first-child,
+  .orbit-main .species-table article > span:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+
+  .orbit-main .species-table article > :where(span, a)::before { content: attr(data-label); }
+
+  .orbit-main .species-table article > a {
+    min-height: 52px;
+    display: grid;
+    align-content: center;
+    padding: 7px 9px;
+    border: 1px solid var(--radar-line);
+    border-radius: 4px;
+    background: #1a2628;
+  }
+
+  .orbit-main .timeline-ledger > a > *::before { content: attr(data-label); }
+
+  .orbit-main .timeline-ledger > a > span:nth-child(3),
+  .orbit-main .timeline-ledger > a > strong {
+    grid-column: 1 / -1;
+  }
+
+  .orbit-main .timeline-ledger > a > strong {
+    text-align: left;
+  }
+
+  .orbit-main .snapshot-history-row > *::before { content: attr(data-label); }
+
+  .orbit-main .snapshot-history-row > strong,
+  .orbit-main .snapshot-history-row > span:nth-child(8) {
+    grid-column: 1 / -1;
+  }
+
+  .orbit-main .snapshot-history-row span {
+    white-space: normal;
+  }
+
+  .orbit-main .snapshot-history-row .text-button {
+    min-height: 44px;
+  }
+
+  .snapshot-dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .snapshot-dialog {
+    width: 100%;
+    max-height: 94dvh;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .snapshot-dialog > header {
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .snapshot-dialog > header p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .snapshot-date-field {
+    border-bottom-color: var(--radar-line);
+    color: var(--radar-ink);
+    background: #141d1f;
+  }
+
+  .snapshot-date-field > label {
+    color: var(--radar-ink);
+  }
+
+  .snapshot-date-field input {
+    color-scheme: dark;
+  }
+
+  .snapshot-date-field small {
+    color: var(--radar-muted);
+  }
+
+  .snapshot-seed-note {
+    border-bottom-color: var(--radar-line);
+    color: #a8c9df;
+    background: rgba(103, 184, 255, .09);
+  }
+
+  .snapshot-seed-note.warning {
+    color: var(--radar-amber-strong);
+    background: var(--radar-amber-soft);
+  }
+
+  .snapshot-entry-scroll {
+    overflow: visible;
+  }
+
+  .snapshot-entry-table {
+    min-width: 0;
+    display: grid;
+    gap: 10px;
+    padding: 0 12px 14px;
+  }
+
+  .snapshot-entry-head {
+    display: none;
+  }
+
+  .snapshot-entry-row {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 10px;
+    padding: 12px;
+    border: 1px solid var(--radar-line);
+    border-radius: 6px;
+    background: var(--radar-surface);
+  }
+
+  .snapshot-entry-row > strong {
+    grid-column: 1 / -1;
+    justify-self: start;
+    font-size: 16px;
+  }
+
+  .snapshot-entry-row > span {
+    display: grid;
+    gap: 4px;
+  }
+
+  .snapshot-entry-row > span::before {
+    content: attr(data-label);
+    color: var(--radar-muted);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .snapshot-entry-row input {
+    min-width: 0;
+    width: 100%;
+    height: 44px;
+  }
+
+  .snapshot-dialog > footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .snapshot-dialog > footer .button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .orbit-main :where(button, .button, input, select),
+  .command-dialog button,
+  .snapshot-dialog button,
+  .auth-dialog button {
+    min-height: 44px;
+  }
+
+  .orbit-main :where(input, select, textarea),
+  .command-dialog input,
+  .snapshot-dialog input,
+  .auth-dialog input {
+    font-size: 16px !important;
+  }
+}

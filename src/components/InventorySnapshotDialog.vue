@@ -29,6 +29,7 @@ const rows = reactive<Record<AccountId, InventoryBalance>>(emptyRows());
 const today = new Date().toLocaleDateString("en-CA");
 let previouslyFocused: HTMLElement | null = null;
 let previousBodyOverflow = "";
+let previousRootOverflow = "";
 
 const matchingSnapshot = computed(() => props.snapshots.find((item) => item.effectiveDate === snapshotDate.value) || null);
 
@@ -133,7 +134,9 @@ function handleKeydown(event: KeyboardEvent) {
 async function activateDialog() {
   previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   previousBodyOverflow = document.body.style.overflow;
+  previousRootOverflow = document.documentElement.style.overflow;
   document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
   document.querySelector("#app")?.setAttribute("inert", "");
   await nextTick();
   dateInput.value?.focus();
@@ -141,6 +144,7 @@ async function activateDialog() {
 
 function deactivateDialog(restoreFocus = true) {
   document.body.style.overflow = previousBodyOverflow;
+  document.documentElement.style.overflow = previousRootOverflow;
   document.querySelector("#app")?.removeAttribute("inert");
   if (restoreFocus) void nextTick(() => previouslyFocused?.focus());
 }
@@ -186,12 +190,12 @@ onBeforeUnmount(() => deactivateDialog(false));
               <span role="columnheader">银子 / 万</span>
               <span role="columnheader">内丹碎片</span>
             </div>
-            <div v-for="accountId in accountOrder" :key="accountId" class="snapshot-entry-row" role="row">
-              <strong role="cell" :class="`account-pill account-${accountId.toLowerCase()}`">{{ accountId }}</strong>
-              <span role="cell"><input v-model.number="rows[accountId].dedicatedEggs" type="number" min="0" step="1" inputmode="numeric" :aria-label="`${accountId}专用蛋库存`" @input="dirty = true" /></span>
-              <span role="cell"><input v-model.number="rows[accountId].regularEggs" type="number" min="0" step="1" inputmode="numeric" :aria-label="`${accountId}普通蛋库存`" @input="dirty = true" /></span>
-              <span role="cell"><input v-model.number="rows[accountId].silverWan" type="number" min="0" step="0.01" inputmode="decimal" :aria-label="`${accountId}银子库存（万）`" @input="dirty = true" /></span>
-              <span role="cell"><input v-model.number="rows[accountId].innerShardCount" type="number" min="0" step="1" inputmode="numeric" required :aria-label="`${accountId}内丹碎片库存`" @input="dirty = true" /></span>
+            <div v-for="accountId in accountOrder" :key="accountId" class="snapshot-entry-row" role="row" :data-label="`${accountId} 账号库存`">
+              <strong role="cell" data-label="账号" :class="`account-pill account-${accountId.toLowerCase()}`">{{ accountId }}</strong>
+              <span role="cell" data-label="专用蛋"><input v-model.number="rows[accountId].dedicatedEggs" type="number" min="0" step="1" inputmode="numeric" data-label="专用蛋" :aria-label="`${accountId}专用蛋库存`" @input="dirty = true" /></span>
+              <span role="cell" data-label="普通蛋"><input v-model.number="rows[accountId].regularEggs" type="number" min="0" step="1" inputmode="numeric" data-label="普通蛋" :aria-label="`${accountId}普通蛋库存`" @input="dirty = true" /></span>
+              <span role="cell" data-label="银子 / 万"><input v-model.number="rows[accountId].silverWan" type="number" min="0" step="0.01" inputmode="decimal" data-label="银子 / 万" :aria-label="`${accountId}银子库存（万）`" @input="dirty = true" /></span>
+              <span role="cell" data-label="内丹碎片"><input v-model.number="rows[accountId].innerShardCount" type="number" min="0" step="1" inputmode="numeric" data-label="内丹碎片" required :aria-label="`${accountId}内丹碎片库存`" @input="dirty = true" /></span>
             </div>
           </div>
         </div>
