@@ -26,8 +26,12 @@ test("同步入口与成功状态卡片在深色主题下清晰可见", async ({
   await expect(page.getByRole("link", { name: "查看云同步状态" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "自动云同步" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "更换访问密码" })).toBeVisible();
-  await expect(page.getByLabel("新密码（至少 16 个字符）")).toBeVisible();
-  await expect(page.getByLabel("再次输入新密码")).toBeVisible();
+  const nextPassword = page.getByLabel("新密码（至少 6 个字符）");
+  const confirmation = page.getByLabel("再次输入新密码");
+  await expect(nextPassword).toBeVisible();
+  await expect(nextPassword).toHaveAttribute("minlength", "6");
+  await expect(confirmation).toBeVisible();
+  await expect(confirmation).toHaveAttribute("minlength", "6");
   const section = page.locator(".cloud-sync-section");
   await expect(section).toBeVisible();
 

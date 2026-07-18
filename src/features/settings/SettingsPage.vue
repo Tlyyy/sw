@@ -5,7 +5,7 @@ import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { usePublishStore } from "../../stores/publish";
 import { useUiStore } from "../../stores/ui";
-import { useAuthStore } from "../../stores/auth";
+import { minimumPasswordLength, useAuthStore } from "../../stores/auth";
 import { useSyncStore } from "../../stores/sync";
 import { createWorkspaceBackup, parseWorkspaceBackup } from "../../persistence/state";
 import DataCenterNav from "../data/DataCenterNav.vue";
@@ -127,12 +127,12 @@ async function rotatePassword() {
     <section class="settings-section password-rotation-section" :class="{ 'is-required': cloudSync.passwordRotationRequired }">
       <div class="section-head"><div>
         <h2>{{ cloudSync.passwordRotationRequired ? "必须更换访问密码" : "更换访问密码" }}</h2>
-        <p v-if="cloudSync.passwordRotationRequired">旧版本的密码校验值曾进入公开代码历史。请改用一条从未在其他地方使用过的新长密码，完成后云端数据会原地重新加密。</p>
+        <p v-if="cloudSync.passwordRotationRequired">旧版本的密码校验值曾进入公开代码历史。请改用一条从未在其他地方使用过的新密码，完成后云端数据会原地重新加密。</p>
         <p v-else>密码只在浏览器内派生加密密钥；更换后，其他设备必须输入新密码。</p>
       </div></div>
       <form class="password-rotation-form" @submit.prevent="rotatePassword">
-        <label><span>新密码（至少 16 个字符）</span><input v-model="nextPassword" type="password" autocomplete="new-password" minlength="16" required /></label>
-        <label><span>再次输入新密码</span><input v-model="confirmPassword" type="password" autocomplete="new-password" minlength="16" required /></label>
+        <label><span>新密码（至少 {{ minimumPasswordLength }} 个字符）</span><input v-model="nextPassword" type="password" autocomplete="new-password" :minlength="minimumPasswordLength" required /></label>
+        <label><span>再次输入新密码</span><input v-model="confirmPassword" type="password" autocomplete="new-password" :minlength="minimumPasswordLength" required /></label>
         <button class="button primary" type="submit" :disabled="auth.changingPassword || cloudSync.status !== 'synced'">{{ auth.changingPassword ? "正在重新加密…" : "更换并重新加密" }}</button>
       </form>
       <p v-if="auth.passwordChangeError || passwordNotice" class="password-rotation-message" role="status">{{ auth.passwordChangeError || passwordNotice }}</p>
