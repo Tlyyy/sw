@@ -2539,3 +2539,115 @@ body {
 .orbit-main .matrix-pet-head > small {
   color: var(--radar-cyan);
 }
+
+/* Eye-comfort calibration ------------------------------------------------
+   Lift near-black surfaces, desaturate accents and remove glow so text
+   remains legible on low-contrast or poorly calibrated displays. */
+.orbit-shell {
+  font-weight: 450;
+}
+
+.orbit-topbar {
+  background: #0f1517;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .16);
+}
+
+.orbit-brand strong,
+.orbit-nav > a::after,
+.orbit-nav > a.active::after,
+.radar-account-item.active::before,
+.radar-workbench .task-track-line i:first-child {
+  text-shadow: none;
+  box-shadow: none;
+}
+
+.orbit-header-tools .orbit-command-trigger,
+.orbit-menu-button {
+  background: #182224;
+}
+
+.radar-status-strip,
+.radar-status-strip::-webkit-scrollbar-track,
+.radar-account-rail::-webkit-scrollbar-track,
+.radar-timeline-panel .mainline-head,
+.radar-timeline-panel .mainline-head > span:first-child,
+.radar-lower-grid > .workbench-panel > header,
+.snapshot-dialog > header,
+.snapshot-dialog > footer,
+.snapshot-entry-head,
+.orbit-main :where(.table-head, .task-worklist-head, .snapshot-history-head, .gem-result-head),
+.orbit-main :where(.filter-bar, .inline-filters, .skill-toolbar, .publish-filters, .preset-row),
+.orbit-main :where(.task-account-header, .task-worklist-head),
+.orbit-main .matrix-page .matrix-table :where(thead th, tbody th),
+.orbit-main :where(.gem-dropzone, .dropzone-mark),
+.orbit-main .empty-state,
+.orbit-nav {
+  background: #141d1f;
+}
+
+.radar-timeline-panel .mainline-table,
+.orbit-main .output-panel textarea {
+  background: #101719;
+}
+
+.radar-action-card,
+.orbit-main :where(.button, .link-button, .text-button) {
+  background: #1a2628;
+}
+
+.snapshot-dialog,
+.orbit-main :where(input, select, textarea),
+.orbit-main :where(.segmented, .account-switch),
+.orbit-main :where(.segmented, .account-switch) button,
+.orbit-main .account-switch a,
+.orbit-main .ui-settings-grid select {
+  background: #192426;
+}
+
+.command-input input,
+.snapshot-dialog input,
+.snapshot-dialog .button.secondary,
+.auth-dialog input[type="password"] {
+  background: #1d292b;
+}
+
+.orbit-main :where(.skill-list span, .pet-tags span),
+.orbit-main :where(.task-state-label, .parameter-source, .gem-history-row em),
+.orbit-main :where(.matrix-pet-head, .matrix-stat-grid > div, .matrix-skills > span),
+.orbit-main .matrix-page .matrix-skills > span {
+  background: var(--radar-neutral-chip);
+}
+
+.orbit-main :where(.task-progress-track, .ocr-progress) {
+  background: #2a3a3b;
+}
+
+.radar-account-rail,
+.radar-focus-panel,
+.radar-action-rail,
+.radar-timeline-panel,
+.radar-lower-grid > .workbench-panel {
+  box-shadow: none;
+}
+
+.radar-live-dot,
+.radar-account-item > i,
+.orbit-sync-state > span {
+  box-shadow: none;
+}
+
+.orbit-brand span,
+.orbit-nav > a,
+.orbit-command-trigger .orbit-command-label,
+.orbit-local-user,
+.orbit-sync-state,
+.orbit-logout,
+.radar-workbench .workbench-date,
+.radar-status-strip {
+  color: var(--radar-muted);
+}
+
+.radar-workbench :where(p, small, dt),
+.orbit-route-context p {
+  font-weight: 500;
+}
