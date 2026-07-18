@@ -9,6 +9,7 @@ const sessionKey = "sw-site-auth-session";
 const rememberKey = "sw-site-auth-until";
 const e2eSessionKey = "sw-e2e-auth-v1";
 const rememberDuration = 7 * 24 * 60 * 60 * 1000;
+export const minimumPasswordLength = 6;
 
 function isLocalAutomationSession() {
   if (typeof location === "undefined" || typeof navigator === "undefined") return false;
@@ -197,8 +198,8 @@ export const useAuthStore = defineStore("auth", () => {
   async function changePassword(nextPassword: string) {
     passwordChangeError.value = "";
     warning.value = "";
-    if (Array.from(nextPassword).length < 16) {
-      passwordChangeError.value = "新密码至少需要 16 个字符，建议使用一条只用于本应用的长口令。";
+    if (Array.from(nextPassword).length < minimumPasswordLength) {
+      passwordChangeError.value = `新密码至少需要 ${minimumPasswordLength} 个字符。`;
       return false;
     }
     if (!credentialKey.value || !unlocked.value) {
