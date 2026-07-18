@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.route(/^https?:\/\/(?!127\.0\.0\.1|localhost)/, (route) => route.abort("blockedbyclient"));
-  await page.addInitScript(() => sessionStorage.setItem("sw-site-auth-session", "1"));
+  await page.addInitScript(() => sessionStorage.setItem("sw-e2e-auth-v1", "1"));
 });
 
 test("粘贴真实行情截图后可识别、记录趋势并在刷新后保留", async ({ page }, testInfo) => {

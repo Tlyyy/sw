@@ -121,6 +121,39 @@ body {
   font-size: 14px;
 }
 
+.orbit-sync-state {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--radar-line);
+  border-radius: 5px;
+  color: #9aaca7;
+  background: rgba(7, 20, 17, .72);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.orbit-sync-state:hover {
+  border-color: var(--radar-line-strong);
+  color: var(--radar-cyan-strong);
+  background: var(--radar-cyan-soft);
+}
+
+.orbit-sync-state > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #75847f;
+  box-shadow: 0 0 0 3px rgba(117, 132, 127, .13);
+}
+
+.orbit-sync-state.is-success > span { background: #47d48a; box-shadow: 0 0 0 3px rgba(71, 212, 138, .15); }
+.orbit-sync-state.is-info > span { background: #4cc8e7; box-shadow: 0 0 0 3px rgba(76, 200, 231, .14); }
+.orbit-sync-state.is-warning > span { background: #f0b657; box-shadow: 0 0 0 3px rgba(240, 182, 87, .14); }
+.orbit-sync-state.is-danger > span { background: #ee7368; box-shadow: 0 0 0 3px rgba(238, 115, 104, .14); }
+
 .orbit-logout {
   min-height: 38px;
   border-color: var(--radar-line);
@@ -1339,6 +1372,11 @@ body {
   background: var(--radar-amber);
 }
 
+.auth-restoring .auth-brand { margin-bottom: 0; }
+.form-warning { margin: 10px 0; color: #9a6200; font-size: 13px; line-height: 1.5; }
+.auth-network-note { margin: 8px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.orbit-auth-warning { margin: 12px 0; padding: 10px 12px; border: 1px solid #d7a64a; background: #fff7df; color: #7b4f00; font-size: 13px; line-height: 1.5; }
+
 /* Shared dark theme for every route outside the command workbench. */
 .orbit-shell {
   --paper: var(--radar-canvas);
@@ -1852,7 +1890,8 @@ body {
     width: 160px;
   }
 
-  .orbit-local-user b {
+  .orbit-local-user b,
+  .orbit-sync-state b {
     display: none;
   }
 }
@@ -1949,6 +1988,7 @@ body {
 
   .orbit-command-trigger .orbit-command-label,
   .orbit-local-user,
+  .orbit-sync-state,
   .orbit-logout {
     display: none;
   }

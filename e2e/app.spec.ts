@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => sessionStorage.setItem("sw-site-auth-session", "1"));
+  await page.addInitScript(() => sessionStorage.setItem("sw-e2e-auth-v1", "1"));
 });
 
 test.describe("desktop application", () => {
