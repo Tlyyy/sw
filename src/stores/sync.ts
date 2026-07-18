@@ -7,6 +7,7 @@ import { createWorkspaceBackup, parseWorkspaceBackup, type WorkspaceBackup } fro
 import { instantWorkspaceId, syncCryptoConfig } from "../../instant.config";
 import { canonicalStringify, decryptWorkspace, deriveCapability, encryptWorkspace, hashWorkspaceContent, type WorkspaceCryptoMetadata } from "../sync/crypto";
 import { getSyncDatabase, resetSyncDatabase, type SyncDatabase } from "../sync/instant";
+import { observeSyncRecovery, reconnectDelayMs, type SyncRecoverySignal } from "../sync/reconnect";
 import { recordMetadata, type CloudWorkspace } from "../sync/types";
 import { validateCloudCredential } from "../sync/validateCredential";
 import { useInventoryStore } from "./inventory";
@@ -17,7 +18,7 @@ import { useUiStore } from "./ui";
 const syncMetaKey = "sw.sync.meta.v1";
 const writerIdKey = "sw.sync.writer.v1";
 const uploadDebounceMs = 900;
-const connectionTimeoutMs = 12_000;
+const connectionTimeoutMs = 20_000;
 const defaultPublishOptions = {
   mode: "sale", format: "markdown", ...publishDefaults.sale,
   includeStats: true, includeSkills: true, includeNotes: true, allShots: true,
@@ -120,6 +121,8 @@ export const useSyncStore = defineStore("sync", () => {
   let uploadTimer: number | undefined;
   let connectionTimer: number | undefined;
   let reconnectTimer: number | undefined;
+  let stopRecoveryObserver: (() => void) | null = null;
+  let reconnectAttempt = 0;
   let connectionTimedOut = false;
   let generation = 0;
   let initialized = false;
@@ -133,6 +136,7 @@ export const useSyncStore = defineStore("sync", () => {
   let localChangeSequence = 0;
   let applyingRemote = false;
   let remoteProcessing: Promise<void> = Promise.resolve();
+  let activeRefreshToken: symbol | null = null;
   let rotationToken: symbol | null = null;
 
   const marketNames = catalog.gemMarketSnapshots.at(-1)?.items.map((item) => item.name) || [];
@@ -197,7 +201,7 @@ export const useSyncStore = defineStore("sync", () => {
 
   function isRetryableSyncError(error: unknown) {
     const raw = error instanceof Error ? error.message : String(error || "");
-    return /network|offline|socket|fetch|connection|timeout|enqueued/i.test(raw);
+    return /network|offline|socket|fetch|connection|timeout|enqueued|网络|离线|连接|超时/i.test(raw);
   }
 
   function clearUploadTimer() {
@@ -215,25 +219,85 @@ export const useSyncStore = defineStore("sync", () => {
     reconnectTimer = undefined;
   }
 
-  function scheduleReconnect(sessionGeneration: number) {
-    clearReconnectTimer();
+  function canReconnectNow() {
+    const online = typeof navigator === "undefined" || navigator.onLine;
+    const visible = typeof document === "undefined" || !document.hidden;
+    return online && visible;
+  }
+
+  function scheduleReconnect(sessionGeneration: number, immediate = false) {
     const key = rootKey;
-    if (!key) return;
+    if (!key || !active.value || rotationToken || !canReconnectNow()) return;
+    if (reconnectTimer !== undefined) {
+      if (!immediate) return;
+      clearReconnectTimer();
+    }
+    const delay = immediate ? 0 : reconnectDelayMs(reconnectAttempt);
     reconnectTimer = window.setTimeout(() => {
       reconnectTimer = undefined;
-      if (generation === sessionGeneration && active.value) void start(key);
-    }, 2_000);
+      if (generation !== sessionGeneration || !active.value || rootKey !== key || !canReconnectNow()) return;
+      reconnectAttempt += 1;
+      void start(key, { reconnecting: true });
+    }, delay);
   }
 
   function armConnectionTimeout(sessionGeneration: number) {
     clearConnectionTimer();
+    if (!canReconnectNow()) return;
     connectionTimedOut = false;
     connectionTimer = window.setTimeout(() => {
       connectionTimer = undefined;
       if (generation !== sessionGeneration || connectionStatus === "authenticated") return;
       connectionTimedOut = true;
       updateStatus();
+      scheduleReconnect(sessionGeneration);
     }, connectionTimeoutMs);
+  }
+
+  function recoverConnection(signal: SyncRecoverySignal) {
+    const key = rootKey;
+    if (!active.value || !key) return;
+    if (!canReconnectNow()) {
+      updateStatus();
+      return;
+    }
+    if (connectionTimedOut || !database || connectionStatus === null) {
+      scheduleReconnect(generation, true);
+      return;
+    }
+    if (connectionStatus === "authenticated") {
+      void refreshRemote().then(() => {
+        if (localDirty && !conflictCandidate.value) scheduleUpload(80);
+      });
+      return;
+    }
+    if (connectionStatus === "errored") {
+      if (signal.forceCheck) {
+        errorMessage.value = "";
+        scheduleReconnect(generation, true);
+      }
+      return;
+    }
+    if (connectionTimer === undefined) {
+      armConnectionTimeout(generation);
+    }
+  }
+
+  function attachRecoveryObserver() {
+    stopRecoveryObserver?.();
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    stopRecoveryObserver = observeSyncRecovery({
+      onRecovery: recoverConnection,
+      onOffline: () => {
+        clearConnectionTimer();
+        clearReconnectTimer();
+        updateStatus();
+      },
+      onHidden: () => {
+        clearConnectionTimer();
+        clearReconnectTimer();
+      },
+    });
   }
 
   function scheduleUpload(delay = uploadDebounceMs) {
@@ -422,6 +486,7 @@ export const useSyncStore = defineStore("sync", () => {
       const matching = rows.filter((row) => row.id === instantWorkspaceId);
       if (matching.length > 1) throw new Error("云端存在重复工作区记录");
       await processRemoteRecord(matching[0] || null, sessionGeneration);
+      if (generation === sessionGeneration) reconnectAttempt = 0;
     } catch (error) {
       if (generation !== sessionGeneration) return;
       errorMessage.value = friendlyError(error);
@@ -514,9 +579,11 @@ export const useSyncStore = defineStore("sync", () => {
     } catch (error) {
       if (generation !== sessionGeneration) return;
       localDirty = true;
-      errorMessage.value = friendlyError(error);
+      const retryable = isRetryableSyncError(error);
+      errorMessage.value = retryable ? "" : friendlyError(error);
+      if (retryable) connectionTimedOut = true;
       void refreshRemote(true);
-      if (isRetryableSyncError(error)) scheduleReconnect(sessionGeneration);
+      if (retryable) scheduleReconnect(sessionGeneration);
     } finally {
       if (generation === sessionGeneration) {
         uploading = false;
@@ -637,8 +704,17 @@ export const useSyncStore = defineStore("sync", () => {
   async function refreshRemote(keepError = false) {
     const sessionGeneration = generation;
     if (!active.value || !database || !capability || connectionStatus !== "authenticated") return;
+    if (activeRefreshToken) return;
+    const refreshToken = Symbol("sync-refresh");
+    activeRefreshToken = refreshToken;
+    let timeout: number | undefined;
     try {
-      const response = await database.queryOnce({ workspaces: { $: { where: { id: instantWorkspaceId } } } }, { ruleParams: { capability } });
+      const response = await Promise.race([
+        database.queryOnce({ workspaces: { $: { where: { id: instantWorkspaceId } } } }, { ruleParams: { capability } }),
+        new Promise<never>((_, reject) => {
+          timeout = window.setTimeout(() => reject(new Error("连接云端超时")), connectionTimeoutMs);
+        }),
+      ]);
       if (generation !== sessionGeneration) return;
       latestRows = response.data.workspaces as CloudWorkspace[];
       hasQueryResult = true;
@@ -646,12 +722,20 @@ export const useSyncStore = defineStore("sync", () => {
       await processLatestQuery(sessionGeneration);
     } catch (error) {
       if (generation !== sessionGeneration) return;
-      errorMessage.value = friendlyError(error);
+      const retryable = isRetryableSyncError(error);
+      errorMessage.value = retryable ? "" : friendlyError(error);
+      if (retryable) {
+        connectionTimedOut = true;
+        scheduleReconnect(sessionGeneration);
+      }
       updateStatus();
+    } finally {
+      if (timeout !== undefined) window.clearTimeout(timeout);
+      if (activeRefreshToken === refreshToken) activeRefreshToken = null;
     }
   }
 
-  function teardown() {
+  function teardown(options: { preserveReconnectAttempt?: boolean } = {}) {
     rotationToken = null;
     generation += 1;
     clearUploadTimer();
@@ -660,6 +744,7 @@ export const useSyncStore = defineStore("sync", () => {
     unsubscribeQuery?.();
     unsubscribeConnection?.();
     stopLocalWatch?.();
+    stopRecoveryObserver?.();
     // A pending Instant transaction may have reached the server without an
     // acknowledgement. Recreate the reactor from a clean remote query on the
     // next session instead of carrying an uncertain optimistic outbox across
@@ -668,6 +753,7 @@ export const useSyncStore = defineStore("sync", () => {
     unsubscribeQuery = null;
     unsubscribeConnection = null;
     stopLocalWatch = null;
+    stopRecoveryObserver = null;
     rootKey = null;
     capability = "";
     writerId = "";
@@ -684,22 +770,24 @@ export const useSyncStore = defineStore("sync", () => {
     pendingMutationId = "";
     applyingRemote = false;
     remoteProcessing = Promise.resolve();
+    activeRefreshToken = null;
     conflictCandidate.value = null;
     conflictMessage.value = "";
     errorMessage.value = "";
+    if (!options.preserveReconnectAttempt) reconnectAttempt = 0;
     active.value = false;
     updateStatus();
   }
 
-  async function start(key: CryptoKey) {
-    teardown();
+  async function start(key: CryptoKey, options: { reconnecting?: boolean } = {}) {
+    teardown({ preserveReconnectAttempt: options.reconnecting });
     const sessionGeneration = generation;
     active.value = true;
     passwordRotationRequired.value = false;
     rootKey = key;
     writerId = getWriterId();
+    attachRecoveryObserver();
     status.value = "connecting";
-    armConnectionTimeout(sessionGeneration);
     try {
       capability = await deriveCapability(key);
       if (generation !== sessionGeneration) return;
@@ -719,11 +807,21 @@ export const useSyncStore = defineStore("sync", () => {
         connectionStatus = nextStatus;
         if (nextStatus === "authenticated") {
           clearConnectionTimer();
+          clearReconnectTimer();
           connectionTimedOut = false;
           errorMessage.value = "";
           void processLatestQuery(sessionGeneration).then(() => {
             if (localDirty && !conflictCandidate.value) scheduleUpload(120);
           });
+        } else if (nextStatus === "connecting" || nextStatus === "opened") {
+          if (connectionTimer === undefined) armConnectionTimeout(sessionGeneration);
+        } else if (nextStatus === "closed") {
+          if (connectionTimer === undefined && canReconnectNow()) armConnectionTimeout(sessionGeneration);
+        } else if (nextStatus === "errored") {
+          clearConnectionTimer();
+          clearReconnectTimer();
+          connectionTimedOut = false;
+          errorMessage.value = "云端拒绝了同步连接，请检查配置或稍后手动重试。";
         }
         updateStatus();
       });
@@ -732,7 +830,12 @@ export const useSyncStore = defineStore("sync", () => {
         (response) => {
           if (generation !== sessionGeneration) return;
           if (response.error) {
-            errorMessage.value = friendlyError(response.error.message);
+            const retryable = isRetryableSyncError(response.error.message);
+            errorMessage.value = retryable ? "" : friendlyError(response.error.message);
+            if (retryable) {
+              connectionTimedOut = true;
+              scheduleReconnect(sessionGeneration);
+            }
             updateStatus();
             return;
           }
@@ -742,6 +845,7 @@ export const useSyncStore = defineStore("sync", () => {
         },
         { ruleParams: { capability } },
       );
+      if (canReconnectNow()) armConnectionTimeout(sessionGeneration);
     } catch (error) {
       if (generation !== sessionGeneration) return;
       errorMessage.value = friendlyError(error);
@@ -779,7 +883,7 @@ export const useSyncStore = defineStore("sync", () => {
 
   function retry() {
     const key = rootKey;
-    if (key && connectionStatus !== "authenticated") {
+    if (key && (connectionTimedOut || !database || connectionStatus !== "authenticated")) {
       void start(key);
       return;
     }
