@@ -231,3 +231,38 @@
 - `npm run test:e2e:core`: 21 passed, 47 skipped, 0 failed.
 
 final result: passed
+
+## Inventory weekly-change alignment — 2026-07-19
+
+### Source truth and browser evidence
+
+- User-reported desktop source: `C:\Users\T\AppData\Local\Temp\codex-clipboard-ddb47475-e6b4-4856-981a-1b1d60dcfeec.png`.
+- User-reported mobile source: `C:\Users\T\AppData\Local\Temp\codex-clipboard-1639ebe5-da33-41c6-b67f-3dd9ae894d60.png`.
+- Revised desktop capture: `C:\Users\T\AppData\Local\Temp\inventory-weekly-alignment-desktop-after.png` at 1980 × 900.
+- Revised mobile capture: `C:\Users\T\AppData\Local\Temp\inventory-weekly-alignment-mobile-after.png` at 390 × 844.
+- State: current natural week with two actual inventory records so the weekly-change table is visible.
+- Full-view and focused evidence: both supplied screenshots and both revised captures were opened in one comparison input; the table itself is the focused region, so no smaller crop was required.
+
+### Findings and comparison history
+
+1. P2 — Numeric headers were left-aligned while numeric values were right-aligned, and account badges were centered below a left-aligned account header. The separation increased on wide screens.
+2. Fix — Aligned the account badge to the start of its grid track and applied the same right alignment to numeric headers and numeric row cells.
+3. Post-fix — Desktop account left edges both measure 56.79px; numeric header/value right edges both measure 792.42px, 1164.24px, 1536.05px, and 1907.86px. Mobile account left edges both measure 23.67px; numeric right edges both measure 149px, 216.33px, 283.67px, and 351px. No P0/P1/P2 mismatch remains.
+
+### Required fidelity surfaces
+
+- Fonts and typography: unchanged; existing weights, sizes, line heights, and tabular numerals are preserved.
+- Spacing and layout rhythm: the existing five-track grid and gaps are preserved; only the alignment inside those tracks changed.
+- Colors and visual tokens: unchanged.
+- Image quality and asset fidelity: no image assets are present in this table and none were introduced or replaced.
+- Copy and content: unchanged.
+
+### Browser verification
+
+- Page identity: `http://127.0.0.1:4173/#/data/inventory`, title `项目台账`.
+- Primary interaction: opened the missing 2026-07-14 day, saved a temporary snapshot, verified the weekly-change table rendered, then deleted the temporary record.
+- Mobile document client and scroll widths are both 375px; there is no page-level horizontal overflow.
+- Console warnings/errors: none. Framework overlay: absent.
+- Temporary authentication and inventory test state were removed after verification.
+
+final result: passed

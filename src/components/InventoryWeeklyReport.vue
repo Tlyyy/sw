@@ -226,6 +226,8 @@ function toggleDay(day: InventoryWeekDaySlot) {
 .weekly-change-row { display: grid; grid-template-columns: minmax(68px, 1fr) repeat(4, minmax(72px, 1fr)); align-items: center; gap: 8px; min-height: 42px; padding: 6px 14px; border-bottom: 1px solid var(--radar-line); font-size: 13px; }
 .weekly-change-head { min-height: 34px; color: var(--radar-muted); background: #141d1f; font-weight: 700; }
 .weekly-change-row:last-child { border-bottom: 0; }
+.weekly-change-row > .account-pill { justify-self: start; }
+.weekly-change-head > :not(:first-child),
 .weekly-change-row > :not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
 .positive { color: var(--radar-success); }
 .negative { color: var(--radar-danger); }
