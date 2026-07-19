@@ -210,6 +210,13 @@ function normalizeWan(value: number) {
   return Object.is(rounded, -0) ? 0 : rounded;
 }
 
+/** Value pure silver plus ordinary eggs at the fixed inventory reporting rate. */
+export function inventorySilverWithRegularEggsWan(
+  value: Pick<InventoryBalance, "regularEggs" | "silverWan">,
+) {
+  return normalizeWan(value.silverWan + value.regularEggs * inventoryRegularEggValueWan);
+}
+
 /**
  * Sum five-account weekly changes and value ordinary eggs at the fixed
  * inventory reporting rate. Monetary outputs are normalized to two decimals.

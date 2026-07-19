@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import {
   buildInventoryWeekReport,
   inventoryRegularEggValueWan,
+  inventorySilverWithRegularEggsWan,
   naturalWeekRange,
   summarizeInventoryWeeklyChange,
   type InventorySnapshotComparison,
@@ -137,7 +138,7 @@ function toggleDay(day: InventoryWeekDaySlot) {
             {{ weeklyBasisLabel() }} · {{ report.weeklyChange.fromEffectiveDate }} → {{ report.weeklyChange.toEffectiveDate }}（{{ report.weeklyChange.intervalDays }} 天）
           </p>
           <p v-if="report.weeklyChange" class="weekly-change-valuation-note">
-            银列仅合计纯银子；普通蛋按 {{ inventoryRegularEggValueWan }} 万/个在表下单独折算
+            银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × {{ inventoryRegularEggValueWan }} 万/个
           </p>
           <p v-else-if="report.recordedDays === 0">本周尚无实际库存记录，周变化暂时留空。</p>
           <p v-else>本周只有一份记录且没有更早基线，暂时无法计算变化。</p>
@@ -145,13 +146,21 @@ function toggleDay(day: InventoryWeekDaySlot) {
       </header>
       <div v-if="report.weeklyChange" class="weekly-change-table" role="table" aria-label="五账号本周库存净变化">
         <div class="weekly-change-head" role="row">
-          <span role="columnheader">账号</span><span role="columnheader">专</span><span role="columnheader">普</span><span role="columnheader">银 / 万</span><span role="columnheader">碎</span>
+          <span role="columnheader">账号</span><span role="columnheader">专</span><span role="columnheader">普</span>
+          <span class="weekly-money-header" role="columnheader"><span>银</span><small> / 万</small></span>
+          <span class="weekly-money-header" role="columnheader"><span>银+蛋</span><small> / 万</small></span>
+          <span role="columnheader">碎</span>
         </div>
         <div v-for="accountId in accountOrder" :key="accountId" class="weekly-change-row" role="row">
           <strong role="cell" :class="`account-pill account-${accountId.toLowerCase()}`">{{ accountId }}</strong>
           <b role="cell" :class="deltaTone(report.weeklyChange.deltas[accountId].dedicatedEggs)">{{ signedValue(report.weeklyChange.deltas[accountId].dedicatedEggs) }}</b>
           <b role="cell" :class="deltaTone(report.weeklyChange.deltas[accountId].regularEggs)">{{ signedValue(report.weeklyChange.deltas[accountId].regularEggs) }}</b>
           <b role="cell" :class="deltaTone(report.weeklyChange.deltas[accountId].silverWan)">{{ signedValue(report.weeklyChange.deltas[accountId].silverWan) }}</b>
+          <b
+            role="cell"
+            :class="deltaTone(inventorySilverWithRegularEggsWan(report.weeklyChange.deltas[accountId]))"
+            :aria-label="`${accountId} 银子加普通蛋折算 ${signedValue(inventorySilverWithRegularEggsWan(report.weeklyChange.deltas[accountId]))} 万`"
+          >{{ signedValue(inventorySilverWithRegularEggsWan(report.weeklyChange.deltas[accountId])) }}</b>
           <b role="cell" :class="deltaTone(report.weeklyChange.deltas[accountId].innerShardCount)">{{ report.weeklyChange.deltas[accountId].innerShardCount === null ? "—" : signedValue(report.weeklyChange.deltas[accountId].innerShardCount) }}</b>
         </div>
         <div v-if="weeklyTotals" class="weekly-change-row weekly-change-total" role="row" aria-label="本周净变化合计">
@@ -163,27 +172,13 @@ function toggleDay(day: InventoryWeekDaySlot) {
             :class="deltaTone(weeklyTotals.directSilverWan)"
             :aria-label="`纯银子净变化合计 ${signedValue(weeklyTotals.directSilverWan)} 万，不含普通蛋折算`"
           >{{ signedValue(weeklyTotals.directSilverWan) }}</b>
+          <b
+            role="cell"
+            :class="deltaTone(weeklyTotals.totalSilverWan)"
+            :aria-label="`银子加普通蛋折算合计 ${signedValue(weeklyTotals.totalSilverWan)} 万，普通蛋按每个 ${inventoryRegularEggValueWan} 万折算`"
+          >{{ signedValue(weeklyTotals.totalSilverWan) }}</b>
           <b role="cell" :class="deltaTone(weeklyTotals.innerShardCount)">{{ weeklyTotals.innerShardCount === null ? "—" : signedValue(weeklyTotals.innerShardCount) }}</b>
         </div>
-      </div>
-      <div
-        v-if="weeklyTotals"
-        class="weekly-change-equivalent"
-        role="group"
-        aria-label="银子加普通蛋折算总值"
-        data-testid="weekly-value-total"
-      >
-        <div>
-          <strong>银子 + 普通蛋折算总值</strong>
-          <span class="weekly-change-equivalent-breakdown">
-            <span>纯银子 <b :class="deltaTone(weeklyTotals.directSilverWan)">{{ signedValue(weeklyTotals.directSilverWan, "万") }}</b></span>
-            <span>
-              普通蛋 {{ signedValue(weeklyTotals.regularEggs) }} × {{ inventoryRegularEggValueWan }}万/个 =
-              <b :class="deltaTone(weeklyTotals.regularEggEquivalentWan)">{{ signedValue(weeklyTotals.regularEggEquivalentWan, "万") }}</b>
-            </span>
-          </span>
-        </div>
-        <b :class="deltaTone(weeklyTotals.totalSilverWan)">{{ signedValue(weeklyTotals.totalSilverWan, "万") }}</b>
       </div>
     </div>
 
@@ -263,19 +258,14 @@ function toggleDay(day: InventoryWeekDaySlot) {
 .weekly-change-panel p { margin-top: 4px; color: var(--radar-muted); font-size: 13px; line-height: 1.5; }
 .weekly-change-panel .weekly-change-valuation-note { color: var(--radar-cyan); }
 .weekly-change-head,
-.weekly-change-row { display: grid; grid-template-columns: minmax(68px, 1fr) repeat(4, minmax(72px, 1fr)); align-items: center; gap: 8px; min-height: 42px; padding: 6px 14px; border-bottom: 1px solid var(--radar-line); font-size: 13px; }
+.weekly-change-row { display: grid; grid-template-columns: minmax(68px, 1fr) repeat(5, minmax(72px, 1fr)); align-items: center; gap: 8px; min-height: 42px; padding: 6px 14px; border-bottom: 1px solid var(--radar-line); font-size: 13px; }
 .weekly-change-head { min-height: 34px; color: var(--radar-muted); background: #141d1f; font-weight: 700; }
+.weekly-money-header small { font: inherit; }
 .weekly-change-row:last-child { border-bottom: 0; }
 .weekly-change-row > .account-pill { justify-self: start; }
 .weekly-change-total { min-height: 50px; background: #141d1f; }
 .weekly-change-total > strong { justify-self: start; white-space: nowrap; }
 .weekly-change-total > b { white-space: nowrap; font-weight: 800; }
-.weekly-change-equivalent { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--radar-line-strong); background: color-mix(in srgb, var(--radar-cyan) 7%, #111a1c); }
-.weekly-change-equivalent > div { min-width: 0; display: grid; gap: 4px; }
-.weekly-change-equivalent > div > strong { font-size: 13px; }
-.weekly-change-equivalent-breakdown { display: flex; flex-wrap: wrap; gap: 3px 12px; color: var(--radar-muted); font-size: 12px; line-height: 1.45; }
-.weekly-change-equivalent-breakdown b { font-variant-numeric: tabular-nums; }
-.weekly-change-equivalent > b { white-space: nowrap; font-size: 18px; font-variant-numeric: tabular-nums; }
 .weekly-change-head > :not(:first-child),
 .weekly-change-row > :not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
 .positive { color: var(--radar-success); }
@@ -321,10 +311,11 @@ function toggleDay(day: InventoryWeekDaySlot) {
   .week-range-title strong { font-size: 14px; }
   .week-current-button { grid-column: 1 / -1; width: 100%; min-height: 44px; }
   .weekly-change-head,
-  .weekly-change-row { grid-template-columns: 58px repeat(4, minmax(0, 1fr)); gap: 5px; padding-inline: 9px; }
-  .weekly-change-row b { font-size: 12px; }
-  .weekly-change-equivalent { gap: 8px; padding-inline: 9px; }
-  .weekly-change-equivalent > b { font-size: 16px; }
+  .weekly-change-row { grid-template-columns: 54px repeat(5, minmax(0, 1fr)); gap: 3px; padding-inline: 7px; }
+  .weekly-change-head { font-size: 11px; }
+  .weekly-money-header { display: grid; justify-items: end; gap: 1px; line-height: 1.05; }
+  .weekly-money-header small { font-size: 9px; font-weight: 650; }
+  .weekly-change-row b { font-size: 11px; }
   .week-day-table-head { display: none; }
   .week-day-row { grid-template-columns: 64px minmax(0, 1fr) 62px; gap: 7px; min-height: 72px; padding: 9px 10px; }
   .week-day-identity { display: grid; gap: 1px; }
