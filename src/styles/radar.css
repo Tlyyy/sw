@@ -1429,8 +1429,9 @@ body {
 }
 
 .auth-restoring .auth-brand { margin-bottom: 0; }
-.form-warning { margin: 10px 0; color: #9a6200; font-size: 13px; line-height: 1.5; }
-.auth-network-note { margin: 8px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.form-warning { margin: 10px 0; color: var(--radar-amber-strong); font-size: var(--font-caption); line-height: 1.55; }
+.auth-network-note { margin: 8px 0; color: var(--radar-muted); font-size: var(--font-caption); font-weight: 500; line-height: 1.55; }
+.auth-dialog .form-error { color: var(--radar-danger); }
 .orbit-auth-warning { margin: 12px 0; padding: 10px 12px; border: 1px solid #d7a64a; background: #fff7df; color: #7b4f00; font-size: 13px; line-height: 1.5; }
 
 /* Shared dark theme for every route outside the command workbench. */
@@ -2544,7 +2545,9 @@ body {
    Lift near-black surfaces, desaturate accents and remove glow so text
    remains legible on low-contrast or poorly calibrated displays. */
 .orbit-shell {
-  font-weight: 450;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.55;
 }
 
 .orbit-topbar {
@@ -2649,7 +2652,85 @@ body {
 
 .radar-workbench :where(p, small, dt),
 .orbit-route-context p {
-  font-weight: 500;
+  font-weight: 550;
+}
+
+/* High-legibility pass --------------------------------------------------
+   Keep the dark workbench character while making secondary text, form
+   controls and dense data rows readable at normal desktop zoom. */
+html {
+  color-scheme: dark;
+}
+
+.orbit-shell :where(p, small, label, dt, dd, th, td, input, select, textarea, button) {
+  letter-spacing: .005em;
+}
+
+.orbit-shell :where(small, .row-status, .parameter-source, .task-state-label) {
+  line-height: 1.55;
+}
+
+.orbit-shell .orbit-main input:not([type="checkbox"]):not([type="radio"]),
+.orbit-shell .orbit-main select,
+.orbit-shell .orbit-main textarea,
+.auth-screen .auth-dialog input[type="password"] {
+  border-color: var(--radar-line-strong);
+  color: var(--radar-ink);
+  background: #1e2b2e;
+  font-weight: 550;
+  color-scheme: dark;
+}
+
+.orbit-shell .orbit-main input::placeholder,
+.orbit-shell .orbit-main textarea::placeholder,
+.auth-screen .auth-dialog input[type="password"]::placeholder {
+  color: var(--radar-faint);
+  opacity: 1;
+}
+
+.orbit-shell .orbit-main input:not([type="checkbox"]):not([type="radio"]):focus,
+.orbit-shell .orbit-main select:focus,
+.orbit-shell .orbit-main textarea:focus,
+.auth-screen .auth-dialog input[type="password"]:focus {
+  border-color: var(--radar-cyan);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(127, 210, 201, .18);
+}
+
+.orbit-shell .orbit-main input:disabled,
+.orbit-shell .orbit-main select:disabled,
+.orbit-shell .orbit-main textarea:disabled {
+  color: var(--radar-muted);
+  background: var(--radar-surface-2);
+  opacity: .8;
+}
+
+.orbit-nav > a,
+.orbit-header-tools :where(button, a),
+.orbit-route-context p {
+  font-weight: 650;
+}
+
+.orbit-brand span,
+.orbit-sync-state {
+  font-size: var(--font-caption);
+}
+
+.orbit-nav > a:hover,
+.orbit-nav > a.active {
+  background: rgba(127, 210, 201, .18);
+}
+
+.orbit-main .subnav a,
+.orbit-main :where(.table-head, .task-worklist-head, .snapshot-history-head, .gem-result-head),
+.orbit-main :where(.pet-identity span, .metric span, .row-status, .detail-panel span, .detail-panel p) {
+  color: var(--radar-muted);
+  font-weight: 600;
+}
+
+.orbit-main :where(.pet-row:hover, .pet-row.selected, .pet-row-action:hover, .pet-row-action:focus-visible, .pet-row.selected .pet-row-content),
+.radar-account-item.active {
+  background: rgba(127, 210, 201, .2);
 }
 
 /* Mobile readability and information hierarchy ------------------------- */
@@ -3269,5 +3350,502 @@ body {
     flex: 0 0 min(78vw, 292px);
     border: 1px solid var(--radar-line);
     scroll-snap-align: start;
+  }
+}
+
+/* High-contrast light skin ---------------------------------------------
+   The workbench is information-dense, so the default skin favors strong
+   luminance contrast, solid white surfaces and a 15px minimum for helper
+   text. Accent colors communicate state instead of carrying body copy. */
+html,
+body,
+#app {
+  color-scheme: light;
+  color: var(--radar-ink);
+  background: var(--radar-canvas);
+}
+
+.orbit-shell {
+  --paper: var(--radar-canvas);
+  --ink: var(--radar-ink);
+  --muted: var(--radar-muted);
+  --soft: var(--radar-surface-2);
+  --line: var(--radar-line);
+  --line-strong: var(--radar-line-strong);
+  --teal: var(--radar-cyan);
+  --teal-dark: var(--radar-cyan-strong);
+  --teal-soft: var(--radar-cyan-soft);
+  --blue-soft: #eaf3fb;
+  --amber: var(--radar-amber);
+  --amber-soft: var(--radar-amber-soft);
+  --red: var(--radar-danger);
+  --red-soft: #fff0ee;
+  --workbench-navy: #ffffff;
+  --workbench-ink: var(--radar-ink);
+  --workbench-muted: var(--radar-muted);
+  --workbench-line: var(--radar-line);
+  --workbench-soft: var(--radar-surface-2);
+  color: var(--radar-ink);
+  background: var(--radar-canvas);
+  font-size: 18px;
+  font-weight: 550;
+  line-height: 1.6;
+}
+
+.orbit-main,
+.orbit-route-context,
+.radar-workbench,
+.orbit-main .page-wrap {
+  color: var(--radar-ink);
+  background: var(--radar-canvas);
+}
+
+.orbit-topbar {
+  border-bottom-color: var(--radar-line-strong);
+  color: var(--radar-ink);
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(17, 24, 39, .1);
+}
+
+.orbit-brand strong {
+  color: var(--radar-cyan-strong);
+}
+
+.orbit-brand span,
+.orbit-nav > a,
+.orbit-command-trigger .orbit-command-label,
+.orbit-local-user,
+.orbit-sync-state,
+.orbit-logout {
+  color: #344054;
+}
+
+.orbit-nav > a:hover,
+.orbit-nav > a.active {
+  color: var(--radar-cyan-strong);
+  background: var(--radar-cyan-soft);
+}
+
+.orbit-nav {
+  background: transparent;
+}
+
+.orbit-header-tools .orbit-command-trigger,
+.orbit-sync-state,
+.orbit-logout,
+.orbit-menu-button {
+  border-color: var(--radar-line-strong);
+  color: var(--radar-ink);
+  background: #ffffff;
+}
+
+.orbit-header-tools .orbit-command-trigger:hover,
+.orbit-sync-state:hover,
+.orbit-logout:hover,
+.orbit-menu-button:hover {
+  border-color: var(--radar-cyan);
+  color: var(--radar-cyan-strong);
+  background: var(--radar-cyan-soft);
+}
+
+.orbit-auth-warning {
+  border-color: #d6a14d;
+  color: #653800;
+  background: #fff4df;
+  font-size: var(--font-caption);
+}
+
+.radar-status-strip,
+.radar-account-rail,
+.radar-focus-panel,
+.radar-action-rail,
+.radar-timeline-panel,
+.radar-lower-grid > .workbench-panel,
+.radar-timeline-panel .mainline-table-scroll,
+.radar-timeline-panel .mainline-table,
+.radar-status-strip::-webkit-scrollbar-track,
+.radar-account-rail::-webkit-scrollbar-track {
+  color: var(--radar-ink);
+  background: #ffffff;
+  box-shadow: none;
+  scrollbar-color: var(--radar-line-strong) var(--radar-surface-2);
+}
+
+.radar-status-strip,
+.radar-timeline-panel .mainline-head,
+.radar-timeline-panel .mainline-head > span:first-child,
+.radar-lower-grid > .workbench-panel > header,
+.radar-account-rail > header,
+.snapshot-entry-head {
+  color: var(--radar-muted);
+  background: var(--radar-surface-2);
+}
+
+.radar-account-code,
+.radar-timeline-panel .account-pill,
+.orbit-main .account-pill {
+  background: #ffffff;
+}
+
+.radar-account-item:hover,
+.radar-account-item.active,
+.radar-timeline-panel .mainline-row:hover,
+.radar-timeline-panel .mainline-row.active,
+.radar-timeline-panel .mainline-row.ready-now-row.active,
+.orbit-main :where(.pet-row:hover, .pet-row.selected, .pet-row-action:hover, .pet-row-action:focus-visible, .pet-row.selected .pet-row-content) {
+  background: var(--radar-cyan-soft);
+}
+
+.radar-account-item.active,
+.radar-timeline-panel .mainline-row.active,
+.radar-timeline-panel .mainline-row.ready-now-row.active {
+  outline-color: var(--radar-cyan);
+}
+
+.radar-action-card,
+.orbit-main :where(.button, .link-button, .text-button),
+.orbit-main :where(.task-work-row, .task-work-row.done, .task-row-action, .task-status-segments button),
+.orbit-main :where(.segmented, .account-switch),
+.orbit-main :where(.segmented, .account-switch) button,
+.orbit-main .account-switch a {
+  border-color: var(--radar-line-strong);
+  color: var(--radar-ink);
+  background: #ffffff;
+}
+
+.radar-workbench .workbench-primary,
+.orbit-main :where(.button.primary, .segmented button.active),
+.orbit-main .button.primary {
+  border-color: var(--radar-amber);
+  color: #ffffff;
+  background: var(--radar-amber);
+  box-shadow: none;
+}
+
+.radar-workbench .workbench-primary:hover,
+.orbit-main :where(.button.primary, .segmented button.active):hover,
+.orbit-main .button.primary:hover {
+  border-color: var(--radar-amber-strong);
+  color: #ffffff;
+  background: var(--radar-amber-strong);
+}
+
+.orbit-main .subnav a.router-link-active,
+.orbit-main :where(.task-status-segments button.active, .matrix-page .matrix-group-tabs button.active),
+.orbit-main :where(.segmented button.active, .account-switch a.active) {
+  border-color: var(--radar-cyan);
+  color: #ffffff;
+  background: var(--radar-cyan);
+  box-shadow: none;
+}
+
+.radar-account-copy b,
+.radar-resource-overview h3,
+.radar-focus-track h3,
+.radar-timeline-panel h2,
+.radar-action-rail h2,
+.radar-resource-overview b,
+.radar-action-card strong,
+.radar-workbench .task-track-labels b,
+.radar-workbench .task-track-labels span:first-child b,
+.radar-row-resource b,
+.radar-lower-grid .workbench-panel h2,
+.radar-lower-grid .workbench-rules strong {
+  color: var(--radar-ink);
+}
+
+.radar-focus-header h2 small,
+.radar-row-account b,
+.radar-row-resource small,
+.radar-row-resource em,
+.radar-lower-grid .changes-ledger :where(th, td) {
+  color: var(--radar-muted);
+}
+
+.radar-action-card.primary strong,
+.radar-action-card.primary .radar-action-index,
+.radar-status-strip .warning {
+  color: var(--radar-amber-strong);
+}
+
+.radar-action-rail .ready-now-banner,
+.radar-action-rail .ready-now-banner strong,
+.radar-action-rail .ready-now-banner span,
+.radar-action-rail .ready-now-banner > a,
+.radar-workbench .action-notice {
+  color: var(--radar-success);
+}
+
+.radar-workbench :where(small, .radar-status-strip, .workbench-date, .radar-focus-date, .radar-action-index, .task-ready-badge),
+.radar-account-rail > header :where(strong, small),
+.radar-focus-header > div > span,
+.radar-decision-hero > div > span,
+.radar-action-rail > header span,
+.radar-action-card small,
+.radar-action-rail .ready-now-banner span,
+.radar-action-rail .ready-now-banner > a,
+.radar-timeline-panel .mainline-head > span,
+.radar-row-account b,
+.radar-row-resource :where(b, em),
+.radar-timeline-panel .status-cell small {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.radar-account-copy b,
+.radar-action-card strong,
+.radar-resource-overview h3,
+.radar-focus-track h3,
+.radar-timeline-panel h2,
+.radar-action-rail h2 {
+  font-size: 17px;
+}
+
+.orbit-command-trigger .orbit-command-label,
+.orbit-logout,
+.radar-workbench small,
+.radar-workbench .workbench-date,
+.radar-status-strip,
+.radar-account-rail > header strong,
+.radar-account-copy b,
+.radar-account-gap strong,
+.radar-account-gap em,
+.radar-focus-header > div > span,
+.radar-decision-hero > div > span,
+.radar-decision-copy p,
+.radar-funding-gap :where(small, span),
+.radar-resource-overview > header span,
+.radar-focus-track > header :where(span, small),
+.radar-action-rail > header span,
+.radar-action-index,
+.radar-action-card :where(strong, small),
+.radar-action-rail .ready-now-banner :where(strong, span, a),
+.radar-row-account b,
+.radar-row-resource :where(b, em),
+.radar-timeline-panel .status-chip,
+.radar-timeline-panel .mainline-detail-link,
+.radar-timeline-panel > header :where(p, span) {
+  font-size: 15px !important;
+  line-height: 1.55;
+}
+
+.radar-workbench .task-track-line::before {
+  background: var(--radar-line-strong);
+}
+
+.radar-workbench .task-track-line i {
+  border-color: var(--radar-line-strong);
+  background: #ffffff;
+}
+
+.orbit-main :where(
+  .pet-list,
+  .detail-panel,
+  .settings-section,
+  .material-pool,
+  .composer-settings,
+  .output-panel,
+  .image-order,
+  .market-band,
+  .plan-detail,
+  .equipment-plan-list,
+  .timeline-ledger,
+  .equipment-table,
+  .species-table,
+  .skill-grid,
+  .evidence-list,
+  .recommendation-board,
+  .resource-table,
+  .task-list,
+  .data-ledger,
+  .gem-ocr-panel,
+  .data-maintenance-table,
+  .gem-history-table,
+  .matrix-control-panel,
+  .matrix-scroll,
+  .inventory-overview-grid,
+  .snapshot-history-table,
+  .preference-options,
+  .task-worklist,
+  .task-progress-overview,
+  .task-filter-bar,
+  .task-bulk-action-bar,
+  .password-rotation-section,
+  .cloud-sync-section
+) {
+  border-color: var(--radar-line);
+  color: var(--radar-ink);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.orbit-main :where(.table-head, .task-worklist-head, .snapshot-history-head, .gem-result-head),
+.orbit-main :where(.filter-bar, .inline-filters, .skill-toolbar, .publish-filters, .preset-row),
+.orbit-main :where(.task-account-header, .task-worklist-head),
+.orbit-main .matrix-page .matrix-table :where(thead th, tbody th),
+.orbit-main :where(.gem-dropzone, .dropzone-mark),
+.orbit-main .empty-state {
+  border-color: var(--radar-line);
+  color: var(--radar-muted);
+  background: var(--radar-surface-2);
+}
+
+.orbit-main :where(.pet-row, .pet-row-content),
+.orbit-main .matrix-page .matrix-table,
+.orbit-main .matrix-page .matrix-table :where(th, td),
+.orbit-main :where(.inventory-account-cell, .data-ledger > div, .source-layers article),
+.orbit-main :where(.skill-list span, .pet-tags span),
+.orbit-main :where(.task-state-label, .parameter-source, .gem-history-row em),
+.orbit-main :where(.matrix-pet-head, .matrix-stat-grid > div, .matrix-skills > span),
+.orbit-main .matrix-page .matrix-skills > span {
+  border-color: var(--radar-line);
+  color: var(--radar-ink);
+  background: #ffffff;
+}
+
+.orbit-main :where(.skill-list span, .pet-tags span),
+.orbit-main :where(.task-state-label, .parameter-source, .gem-history-row em),
+.orbit-main :where(.matrix-pet-head, .matrix-stat-grid > div, .matrix-skills > span),
+.orbit-main .matrix-page .matrix-skills > span {
+  background: var(--radar-neutral-chip);
+}
+
+.orbit-main .pet-tags .magic { color: var(--radar-cyan-strong); }
+.orbit-main .pet-tags .physical { color: var(--radar-amber-strong); }
+.orbit-main .pet-tags .speed { color: var(--radar-success); }
+
+.orbit-shell .orbit-main input:not([type="checkbox"]):not([type="radio"]),
+.orbit-shell .orbit-main select,
+.orbit-shell .orbit-main textarea,
+.auth-screen .auth-dialog input[type="password"],
+.command-input input,
+.snapshot-dialog input {
+  border-color: var(--radar-line-strong);
+  color: var(--radar-ink);
+  background: #ffffff;
+  font-size: 17px;
+  font-weight: 600;
+  color-scheme: light;
+}
+
+.orbit-shell .orbit-main input::placeholder,
+.orbit-shell .orbit-main textarea::placeholder,
+.auth-screen .auth-dialog input[type="password"]::placeholder,
+.command-input input::placeholder {
+  color: var(--radar-faint);
+  opacity: 1;
+}
+
+.orbit-shell .orbit-main input:disabled,
+.orbit-shell .orbit-main select:disabled,
+.orbit-shell .orbit-main textarea:disabled {
+  color: var(--radar-muted);
+  background: var(--radar-surface-2);
+  opacity: 1;
+}
+
+.command-backdrop,
+.snapshot-dialog-backdrop {
+  background: rgba(17, 24, 39, .48);
+}
+
+.command-dialog,
+.snapshot-dialog,
+.auth-dialog {
+  border-color: var(--radar-line-strong);
+  color: var(--radar-ink);
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(17, 24, 39, .22);
+}
+
+.command-input,
+.command-dialog footer,
+.snapshot-dialog > header,
+.snapshot-dialog > footer,
+.snapshot-entry-head {
+  border-color: var(--radar-line);
+  background: var(--radar-surface-2);
+}
+
+.command-close,
+.snapshot-dialog-close,
+.snapshot-dialog .button.secondary {
+  border-color: var(--radar-line-strong);
+  color: var(--radar-ink);
+  background: #ffffff;
+}
+
+.auth-screen {
+  color: var(--radar-ink);
+  background: var(--radar-canvas);
+}
+
+.auth-brand h1 {
+  color: var(--radar-ink);
+}
+
+.auth-brand p,
+.auth-dialog .field > span,
+.auth-dialog .check,
+.auth-network-note {
+  color: var(--radar-muted);
+}
+
+.auth-dialog .button.primary,
+.snapshot-dialog .button.primary {
+  border-color: var(--radar-amber);
+  color: #ffffff;
+  background: var(--radar-amber);
+}
+
+.orbit-mobile-dock {
+  border-top-color: var(--radar-line-strong);
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 -8px 24px rgba(17, 24, 39, .12);
+}
+
+.orbit-mobile-dock :where(a, button) {
+  color: var(--radar-muted);
+}
+
+.orbit-mobile-dock :where(a, button).active {
+  color: var(--radar-cyan-strong);
+  background: var(--radar-cyan-soft);
+}
+
+@media (max-width: 980px) {
+  .orbit-nav {
+    border-right-color: var(--radar-line-strong);
+    color: var(--radar-ink);
+    background: #ffffff;
+    box-shadow: 18px 0 45px rgba(17, 24, 39, .2);
+  }
+
+  .orbit-nav > a,
+  .orbit-mobile-logout {
+    border-color: var(--radar-line);
+    color: var(--radar-ink);
+    background: #ffffff;
+  }
+
+  .orbit-mobile-nav-close {
+    border-color: var(--radar-line);
+    color: var(--radar-cyan-strong);
+    background: var(--radar-cyan-soft);
+  }
+}
+
+/* Keep supporting copy legible on compact screens. */
+@media (max-width: 760px) {
+  .orbit-sync-label-compact,
+  .radar-workbench > header p,
+  .radar-account-rail > header span,
+  .radar-action-rail > header > b,
+  .radar-account-code,
+  .radar-workbench .task-track-finish,
+  .radar-workbench .task-track-labels b,
+  .radar-workbench .task-track-labels span:first-child b {
+    font-size: 15px !important;
+    line-height: 1.5;
   }
 }
