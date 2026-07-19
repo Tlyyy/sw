@@ -23,6 +23,17 @@ export interface InventorySnapshotComparison {
   deltas: Record<AccountId, InventoryAccountDelta>;
 }
 
+export const inventoryRegularEggValueWan = 5.5;
+
+export interface InventoryWeeklyChangeSummary {
+  dedicatedEggs: number;
+  regularEggs: number;
+  directSilverWan: number;
+  regularEggEquivalentWan: number;
+  totalSilverWan: number;
+  innerShardCount: number | null;
+}
+
 export interface InventoryWeekDaySlot {
   /** Monday is 1 and Sunday is 7. */
   weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -192,6 +203,38 @@ export function calculateInventoryDeltas(
         : current.innerShardCount - prior.innerShardCount,
     } satisfies InventoryAccountDelta];
   })) as Record<AccountId, InventoryAccountDelta>;
+}
+
+function normalizeWan(value: number) {
+  const rounded = Math.round((value + Math.sign(value) * Number.EPSILON) * 100) / 100;
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+/**
+ * Sum five-account weekly changes and value ordinary eggs at the fixed
+ * inventory reporting rate. Monetary outputs are normalized to two decimals.
+ */
+export function summarizeInventoryWeeklyChange(
+  deltas: Record<AccountId, InventoryAccountDelta>,
+): InventoryWeeklyChangeSummary {
+  const rows = accountIds.map((accountId) => deltas[accountId]);
+  const dedicatedEggs = rows.reduce((sum, row) => sum + row.dedicatedEggs, 0);
+  const regularEggs = rows.reduce((sum, row) => sum + row.regularEggs, 0);
+  const directSilverWan = normalizeWan(rows.reduce((sum, row) => sum + row.silverWan, 0));
+  const regularEggEquivalentWan = normalizeWan(regularEggs * inventoryRegularEggValueWan);
+  const totalSilverWan = normalizeWan(directSilverWan + regularEggEquivalentWan);
+  const innerShardCount = rows.some((row) => row.innerShardCount === null)
+    ? null
+    : rows.reduce((sum, row) => sum + (row.innerShardCount ?? 0), 0);
+
+  return {
+    dedicatedEggs,
+    regularEggs,
+    directSilverWan,
+    regularEggEquivalentWan,
+    totalSilverWan,
+    innerShardCount,
+  };
 }
 
 function compareInventorySnapshots(

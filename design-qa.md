@@ -266,3 +266,48 @@ final result: passed
 - Temporary authentication and inventory test state were removed after verification.
 
 final result: passed
+
+## Inventory weekly-change total — 2026-07-19
+
+### Source truth and browser evidence
+
+- Source visual truth: `C:\Users\T\.codex\codex-remote-attachments\019f781d-a7ac-7471-ae59-a4bfd1b48214\DED73E1C-14BC-4F9E-94A8-9A220025B845\1-照片-1.jpg`.
+- Desktop implementation screenshot: `C:\Users\T\AppData\Local\Temp\sw-weekly-total-desktop-focused.png`.
+- Mobile implementation screenshot: `C:\Users\T\AppData\Local\Temp\sw-weekly-total-mobile.png`.
+- Combined source/implementation comparison: `C:\Users\T\AppData\Local\Temp\sw-weekly-total-comparison.png`.
+- Viewports: default in-app desktop viewport (1265px captured client width) and a 390 × 844 mobile override (375px client width after the native scrollbar).
+- State: authenticated localhost automation session with isolated snapshots for 2026-07-12 and 2026-07-18. The five account deltas exactly match the supplied source; the requested total is `专 +1 / 普 +4 / 银 +220 / 碎 +10`.
+- Full-view evidence: the combined image places the complete supplied source and the complete revised implementation in one comparison input.
+- Focused evidence: both source and implementation show the entire five-column change table at readable scale; the implementation capture additionally includes the requested valuation note and total row, so no smaller crop was needed.
+
+### Findings and comparison history
+
+#### Pass 1 — supplied screenshot
+
+- P1 missing result: the table exposed five account rows but no cross-account total.
+- P1 calculation gap: there was no visible total-silver figure that included ordinary eggs valued at 5.5万 each.
+
+#### Pass 2 — implementation and post-fix evidence
+
+- Added one total row to the existing five-track table instead of introducing a second grid. Dedicated eggs, ordinary eggs, and fragments are summed directly; total silver is direct silver change plus signed ordinary-egg change × 5.5万.
+- Added the visible formula `银子合计 = 银子净变化 + 普通蛋净变化 × 5.5 万/个` and an accessible total-silver description.
+- Desktop and mobile header/row edge differences are 0px across all five columns. Mobile document and body widths both equal the 375px client width, with no page-level horizontal overflow.
+- Weekly navigation was exercised from the current week to the previous week and back; the `+220` total returned correctly. No P0/P1/P2 issue remains.
+
+### Required fidelity surfaces
+
+- Fonts and typography: the total inherits the table's existing UI font, tabular numerals, 12–13px responsive numeric scale, sign formatting, and semantic weights. No text clips or wraps in the mobile row.
+- Spacing and layout rhythm: the original five-column tracks, padding, gaps, dividers, and left/right alignment are preserved. The 50px total row gives the summary slightly stronger separation without changing table width.
+- Colors and visual tokens: the total reuses the existing dark header surface and positive/negative/neutral tokens; the formula uses the established cyan informational accent.
+- Image quality and asset fidelity: this data table contains no product imagery or custom graphic assets. No placeholder, SVG, emoji, CSS illustration, or substitute asset was introduced.
+- Copy and content: the new formula names the exact fixed rate and makes clear that only ordinary eggs are converted. Dedicated eggs are not priced into silver.
+- Accessibility and interaction: the total row has the accessible name `本周净变化合计`; total silver announces that the value includes ordinary eggs at 5.5万 each. Week switching remains operable.
+
+### Verification
+
+- `npm test`: 86 passed.
+- `npm run build`: passed (data check, Vue/TypeScript check, Vite build, and 298-asset integrity check).
+- Mobile Playwright release gate: 6 passed, including the weekly total values, all-row alignment, expanded daily report, and no horizontal overflow.
+- Browser page identity: `http://127.0.0.1:4173/#/data/inventory`, title `项目台账`; framework overlay absent; console warnings/errors empty.
+
+final result: passed
