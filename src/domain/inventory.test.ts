@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildInventoryWeekReport,
   calculateInventoryDeltas,
   createInventoryExport,
   latestInventoryPair,
+  naturalWeekRange,
   normalizeInventorySnapshots,
   parseInventoryExport,
   upsertInventorySnapshot,
@@ -82,5 +84,190 @@ describe("inventory snapshots", () => {
     });
     expect(migrated.version).toBe(2);
     expect(migrated.snapshots[0].accounts.FC.innerShardCount).toBeNull();
+  });
+});
+
+describe("inventory natural-week reports", () => {
+  it("resolves Monday-to-Sunday ranges with UTC date arithmetic", () => {
+    expect(naturalWeekRange("2026-07-13")).toEqual({
+      weekStart: "2026-07-13",
+      weekEnd: "2026-07-19",
+    });
+    expect(naturalWeekRange("2026-07-19")).toEqual({
+      weekStart: "2026-07-13",
+      weekEnd: "2026-07-19",
+    });
+    expect(naturalWeekRange("2027-01-01")).toEqual({
+      weekStart: "2026-12-28",
+      weekEnd: "2027-01-03",
+    });
+    expect(naturalWeekRange("2028-02-29")).toEqual({
+      weekStart: "2028-02-28",
+      weekEnd: "2028-03-05",
+    });
+    expect(() => naturalWeekRange("2026-02-29")).toThrow(/YYYY-MM-DD/);
+  });
+
+  it("always returns seven slots and leaves missing dates empty", () => {
+    const report = buildInventoryWeekReport([
+      snapshot("2026-07-12", 1),
+      snapshot("2026-07-13", 2),
+      snapshot("2026-07-15", 5),
+      snapshot("2026-07-19", 8),
+    ], "2026-07-16");
+
+    expect(report.days).toHaveLength(7);
+    expect(report.days.map((day) => day.date)).toEqual([
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-18",
+      "2026-07-19",
+    ]);
+    expect(report.days.map((day) => day.weekday)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(report.days.map((day) => day.snapshot?.effectiveDate || null)).toEqual([
+      "2026-07-13",
+      null,
+      "2026-07-15",
+      null,
+      null,
+      null,
+      "2026-07-19",
+    ]);
+    expect(report.recordedDays).toBe(3);
+    expect(report.days[1].comparison).toBeNull();
+    expect(report.days[3].comparison).toBeNull();
+  });
+
+  it("compares each recorded day with the nearest earlier real snapshot", () => {
+    const report = buildInventoryWeekReport([
+      snapshot("2026-07-19", 8),
+      snapshot("2026-07-12", 1),
+      snapshot("2026-07-15", 5),
+      snapshot("2026-07-13", 2),
+    ], "2026-07-13");
+
+    expect(report.days[0].comparison).toMatchObject({
+      fromEffectiveDate: "2026-07-12",
+      toEffectiveDate: "2026-07-13",
+      intervalDays: 1,
+      deltas: {
+        FC: { dedicatedEggs: 1, regularEggs: 2, silverWan: 10, innerShardCount: 3 },
+      },
+    });
+    expect(report.days[2].comparison).toMatchObject({
+      fromEffectiveDate: "2026-07-13",
+      toEffectiveDate: "2026-07-15",
+      intervalDays: 2,
+      deltas: {
+        FC: { dedicatedEggs: 3, regularEggs: 6, silverWan: 30, innerShardCount: 9 },
+      },
+    });
+    expect(report.days[6].comparison).toMatchObject({
+      fromEffectiveDate: "2026-07-15",
+      toEffectiveDate: "2026-07-19",
+      intervalDays: 4,
+      deltas: {
+        FC: { dedicatedEggs: 3, regularEggs: 6, silverWan: 30, innerShardCount: 9 },
+      },
+    });
+  });
+
+  it("prefers the nearest pre-week snapshot for the weekly change", () => {
+    const report = buildInventoryWeekReport([
+      snapshot("2026-07-01", 1),
+      snapshot("2026-07-12", 3),
+      snapshot("2026-07-13", 4),
+      snapshot("2026-07-16", 7),
+    ], "2026-07-16");
+
+    expect(report.weeklyChangeBasis).toBe("before-week");
+    expect(report.weeklyChange).toMatchObject({
+      fromEffectiveDate: "2026-07-12",
+      toEffectiveDate: "2026-07-16",
+      intervalDays: 4,
+      deltas: {
+        FC: { dedicatedEggs: 4, regularEggs: 8, silverWan: 40, innerShardCount: 12 },
+      },
+    });
+  });
+
+  it("falls back to the first and last in-week snapshots without a baseline", () => {
+    const report = buildInventoryWeekReport([
+      snapshot("2026-07-13", 2),
+      snapshot("2026-07-15", 4),
+      snapshot("2026-07-18", 9),
+      snapshot("2026-07-20", 20),
+    ], "2026-07-19");
+
+    expect(report.weeklyChangeBasis).toBe("within-week");
+    expect(report.weeklyChange).toMatchObject({
+      fromEffectiveDate: "2026-07-13",
+      toEffectiveDate: "2026-07-18",
+      intervalDays: 5,
+      deltas: {
+        FC: { dedicatedEggs: 7, regularEggs: 14, silverWan: 70, innerShardCount: 21 },
+      },
+    });
+  });
+
+  it("has no weekly change when the week has only one observation and no baseline", () => {
+    const report = buildInventoryWeekReport([
+      snapshot("2026-07-15", 4),
+      snapshot("2026-07-20", 20),
+    ], "2026-07-15");
+
+    expect(report.recordedDays).toBe(1);
+    expect(report.days[2].comparison).toBeNull();
+    expect(report.weeklyChange).toBeNull();
+    expect(report.weeklyChangeBasis).toBeNull();
+  });
+
+  it("uses a pre-week baseline even when the week has only one observation", () => {
+    const report = buildInventoryWeekReport([
+      snapshot("2026-06-30", 1),
+      snapshot("2026-07-15", 4),
+    ], "2026-07-15");
+
+    expect(report.recordedDays).toBe(1);
+    expect(report.weeklyChangeBasis).toBe("before-week");
+    expect(report.weeklyChange).toMatchObject({
+      fromEffectiveDate: "2026-06-30",
+      toEffectiveDate: "2026-07-15",
+      intervalDays: 15,
+    });
+  });
+
+  it("keeps nullable fragment deltas unknown and collapses duplicate dates", () => {
+    const missingFragments = snapshot("2026-07-12", 1);
+    missingFragments.accounts.FC.innerShardCount = null;
+    const firstMonday = snapshot("2026-07-13", 2);
+    const correctedMonday = snapshot("2026-07-13", 7);
+    const report = buildInventoryWeekReport([
+      missingFragments,
+      firstMonday,
+      correctedMonday,
+    ], "2026-07-13");
+
+    expect(report.recordedDays).toBe(1);
+    expect(report.days[0].snapshot?.accounts.FC.dedicatedEggs).toBe(7);
+    expect(report.days[0].comparison?.deltas.FC).toMatchObject({
+      dedicatedEggs: 6,
+      innerShardCount: null,
+    });
+  });
+
+  it("returns an empty seven-day report when the selected week has no snapshots", () => {
+    const report = buildInventoryWeekReport([
+      snapshot("2026-07-01", 1),
+      snapshot("2026-07-20", 2),
+    ], "2026-07-15");
+
+    expect(report.recordedDays).toBe(0);
+    expect(report.days.every((day) => day.snapshot === null && day.comparison === null)).toBe(true);
+    expect(report.weeklyChange).toBeNull();
+    expect(report.weeklyChangeBasis).toBeNull();
   });
 });

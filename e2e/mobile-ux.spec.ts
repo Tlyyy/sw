@@ -41,6 +41,8 @@ const primaryTargetSelector = [
   ".orbit-header-tools .orbit-command-trigger",
   ".orbit-nav.open > a",
   ".orbit-nav.open > button",
+  ".orbit-mobile-dock > a",
+  ".orbit-mobile-dock > button",
   ".subnav a",
   "main .button",
   "main .workbench-primary",
@@ -48,6 +50,18 @@ const primaryTargetSelector = [
   "main [role='tab']",
   "main button[aria-pressed]",
 ].join(",");
+
+function dateKey(date: Date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function currentShanghaiWeek() {
+  const shanghaiNow = new Date(Date.now() + 8 * 60 * 60 * 1_000);
+  const currentDay = new Date(Date.UTC(shanghaiNow.getUTCFullYear(), shanghaiNow.getUTCMonth(), shanghaiNow.getUTCDate()));
+  const monday = new Date(currentDay.getTime() - ((currentDay.getUTCDay() + 6) % 7) * 86_400_000);
+  const at = (offset: number) => dateKey(new Date(monday.getTime() + offset * 86_400_000));
+  return { baseline: at(-1), monday: at(0), tuesday: at(1), wednesday: at(2) };
+}
 
 async function waitForApplicationPage(page: Page) {
   await expect(page.locator(".workbench-page, .page-wrap, .matrix-page").first()).toBeVisible();
@@ -282,6 +296,48 @@ test.describe("mobile UX release gate", () => {
     await dialog.getByRole("button", { name: "取消" }).tap();
     await expect(dialog).toBeHidden();
     expect(await page.locator("html").evaluate((element) => element.style.overflow)).not.toBe("hidden");
+  });
+
+  test("库存周报固定展示七天、保留空缺并可展开日报", async ({ page }) => {
+    const week = currentShanghaiWeek();
+    const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
+    const makeAccounts = (seed: number) => Object.fromEntries(accountIds.map((accountId, index) => [accountId, {
+      dedicatedEggs: seed + index,
+      regularEggs: seed * 2 + index,
+      silverWan: seed * 10 + index,
+      innerShardCount: seed * 3 + index,
+    }]));
+    const snapshots = [
+      { effectiveDate: week.baseline, recordedAt: `${week.baseline}T12:00:00.000Z`, accounts: makeAccounts(1) },
+      { effectiveDate: week.monday, recordedAt: `${week.monday}T12:00:00.000Z`, accounts: makeAccounts(2) },
+      { effectiveDate: week.wednesday, recordedAt: `${week.wednesday}T12:00:00.000Z`, accounts: makeAccounts(5) },
+    ];
+    await page.addInitScript((payload) => {
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify(payload));
+    }, { version: 2, snapshots });
+
+    await page.goto("/#/data/inventory");
+    await waitForApplicationPage(page);
+
+    const report = page.getByTestId("inventory-week-report");
+    await expect(report).toBeVisible();
+    await expect(report.getByText("2 / 7 天有记录", { exact: true })).toBeVisible();
+    await expect(report.locator(".week-day-entry")).toHaveCount(7);
+    await expect(report.getByRole("button", { name: `补录${week.tuesday}库存`, exact: true })).toBeVisible();
+    await expect(report.getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
+
+    await report.getByRole("button", { name: `查看${week.wednesday}库存日报`, exact: true }).tap();
+    await expect(report.getByText(`${week.wednesday} 日报`, { exact: true })).toBeVisible();
+    await expect(report.getByRole("table", { name: `${week.wednesday} 五账号库存明细`, exact: true })).toBeVisible();
+
+    const dock = page.getByRole("navigation", { name: "手机快捷导航", exact: true });
+    await expect(dock).toBeVisible();
+    await expect(dock.locator("a, button")).toHaveCount(5);
+    await expect(dock.getByRole("link", { name: "数据", exact: true })).toHaveAttribute("aria-current", "page");
+
+    const overflow = await pageOverflowReport(page);
+    expect(overflow.offenders, "展开手机日报后不应产生页面级横向裁切").toEqual([]);
+    expect(overflow.documentScrollWidth).toBeLessThanOrEqual(overflow.documentClientWidth + 1);
   });
 
   test("规划与数据分区末项在直接进入时保持可见", async ({ page }) => {

@@ -11,6 +11,41 @@ import type {
 
 const dayMs = 86_400_000;
 
+export interface InventoryWeekRange {
+  weekStart: string;
+  weekEnd: string;
+}
+
+export interface InventorySnapshotComparison {
+  fromEffectiveDate: string;
+  toEffectiveDate: string;
+  intervalDays: number;
+  deltas: Record<AccountId, InventoryAccountDelta>;
+}
+
+export interface InventoryWeekDaySlot {
+  /** Monday is 1 and Sunday is 7. */
+  weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  date: string;
+  snapshot: InventorySnapshot | null;
+  /** The comparison is against the nearest earlier real snapshot, if one exists. */
+  comparison: InventorySnapshotComparison | null;
+}
+
+export type InventoryWeeklyChangeBasis = "before-week" | "within-week";
+
+export interface InventoryWeekReport extends InventoryWeekRange {
+  anchorDate: string;
+  recordedDays: number;
+  days: InventoryWeekDaySlot[];
+  /**
+   * Prefer the nearest snapshot before Monday as the baseline. If none exists,
+   * compare the first and last observations inside the week when possible.
+   */
+  weeklyChange: InventorySnapshotComparison | null;
+  weeklyChangeBasis: InventoryWeeklyChangeBasis | null;
+}
+
 function isDateKey(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return false;
@@ -69,6 +104,28 @@ function cloneBalance(value: InventoryBalance): InventoryBalance {
     silverWan: value.silverWan,
     innerShardCount: value.innerShardCount,
   };
+}
+
+function parseDateKey(value: string) {
+  if (!isDateKey(value)) throw new Error("date must be a real YYYY-MM-DD date");
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatDateKey(date: Date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function addDateKeyDays(value: string, days: number) {
+  return formatDateKey(new Date(parseDateKey(value).getTime() + days * dayMs));
+}
+
+/** Return the Monday-to-Sunday natural week containing a YYYY-MM-DD date. */
+export function naturalWeekRange(anchorDate: string): InventoryWeekRange {
+  const anchor = parseDateKey(anchorDate);
+  const daysSinceMonday = (anchor.getUTCDay() + 6) % 7;
+  const weekStart = formatDateKey(new Date(anchor.getTime() - daysSinceMonday * dayMs));
+  return { weekStart, weekEnd: addDateKeyDays(weekStart, 6) };
 }
 
 function cloneSnapshot(value: InventorySnapshot): InventorySnapshot {
@@ -135,6 +192,80 @@ export function calculateInventoryDeltas(
         : current.innerShardCount - prior.innerShardCount,
     } satisfies InventoryAccountDelta];
   })) as Record<AccountId, InventoryAccountDelta>;
+}
+
+function compareInventorySnapshots(
+  latest: InventorySnapshot | null | undefined,
+  previous: InventorySnapshot | null | undefined,
+): InventorySnapshotComparison | null {
+  const deltas = calculateInventoryDeltas(latest, previous);
+  if (!latest || !previous || !deltas) return null;
+  return {
+    fromEffectiveDate: previous.effectiveDate,
+    toEffectiveDate: latest.effectiveDate,
+    intervalDays: deltas.FC.intervalDays,
+    deltas,
+  };
+}
+
+/**
+ * Derive one natural-week report without inventing observations for missing
+ * dates. Every recorded day compares with the nearest earlier real snapshot,
+ * even when that snapshot belongs to an earlier week.
+ */
+export function buildInventoryWeekReport(
+  snapshots: InventorySnapshot[],
+  anchorDate: string,
+): InventoryWeekReport {
+  const { weekStart, weekEnd } = naturalWeekRange(anchorDate);
+  const normalized = normalizeInventorySnapshots(snapshots);
+  const snapshotsByDate = new Map(normalized.map((snapshot) => [snapshot.effectiveDate, snapshot]));
+  const previousByDate = new Map<string, InventorySnapshot | null>();
+  let previousSnapshot: InventorySnapshot | null = null;
+
+  normalized.forEach((snapshot) => {
+    previousByDate.set(snapshot.effectiveDate, previousSnapshot);
+    previousSnapshot = snapshot;
+  });
+
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = addDateKeyDays(weekStart, index);
+    const snapshot = snapshotsByDate.get(date) || null;
+    return {
+      weekday: (index + 1) as InventoryWeekDaySlot["weekday"],
+      date,
+      snapshot,
+      comparison: snapshot
+        ? compareInventorySnapshots(snapshot, previousByDate.get(date))
+        : null,
+    } satisfies InventoryWeekDaySlot;
+  });
+
+  const weekSnapshots = normalized.filter((snapshot) => (
+    snapshot.effectiveDate >= weekStart && snapshot.effectiveDate <= weekEnd
+  ));
+  const baseline = normalized.filter((snapshot) => snapshot.effectiveDate < weekStart).at(-1) || null;
+  const latestInWeek = weekSnapshots.at(-1) || null;
+  let weeklyChange: InventorySnapshotComparison | null = null;
+  let weeklyChangeBasis: InventoryWeeklyChangeBasis | null = null;
+
+  if (baseline && latestInWeek) {
+    weeklyChange = compareInventorySnapshots(latestInWeek, baseline);
+    weeklyChangeBasis = weeklyChange ? "before-week" : null;
+  } else if (weekSnapshots.length >= 2) {
+    weeklyChange = compareInventorySnapshots(weekSnapshots.at(-1), weekSnapshots[0]);
+    weeklyChangeBasis = weeklyChange ? "within-week" : null;
+  }
+
+  return {
+    anchorDate,
+    weekStart,
+    weekEnd,
+    recordedDays: weekSnapshots.length,
+    days,
+    weeklyChange,
+    weeklyChangeBasis,
+  };
 }
 
 export function parseInventoryExport(value: string | unknown): InventoryExportPayload {
