@@ -206,8 +206,11 @@ test.describe("desktop application", () => {
     await dialog.getByLabel("FC银子库存（万）").fill("33.5");
     await dialog.getByLabel("FC内丹碎片库存").fill("44");
     await dialog.getByRole("button", { name: "保存五号快照" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("status")).toContainText(/已保存|已更新/);
 
     const fcCard = page.locator(".inventory-account-cell").filter({ hasText: "FC" });
+    await expect(fcCard).toBeVisible();
     await expect(fcCard).toContainText("内丹碎片");
     await expect(fcCard).toContainText("44");
     const persisted = await page.evaluate(() => ({

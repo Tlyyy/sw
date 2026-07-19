@@ -2744,6 +2744,25 @@ body {
     grid-column: 1 / -1;
   }
 
+  .orbit-main .skill-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .orbit-main .skill-toolbar .segmented {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .orbit-main .skill-toolbar .segmented button,
+  .orbit-main .skill-toolbar input {
+    min-width: 0;
+    width: 100%;
+  }
+
   .radar-status-strip {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
