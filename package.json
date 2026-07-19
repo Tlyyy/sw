@@ -12,9 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:core": "playwright test e2e/app.spec.ts e2e/regressions.spec.ts",
+    "test:e2e:core": "playwright test e2e/app.spec.ts e2e/regressions.spec.ts e2e/mobile-ux.spec.ts",
     "test:e2e:ocr": "playwright test e2e/gem-market-ocr.spec.ts --project=desktop",
-    "test:e2e:ci": "playwright test e2e/app.spec.ts e2e/regressions.spec.ts e2e/gem-market-ocr.spec.ts"
+    "test:e2e:ci": "playwright test e2e/app.spec.ts e2e/regressions.spec.ts e2e/mobile-ux.spec.ts e2e/gem-market-ocr.spec.ts"
   },
   "dependencies": {
     "@instantdb/core": "^1.0.49",

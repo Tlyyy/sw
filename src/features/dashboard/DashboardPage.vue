@@ -264,7 +264,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
     <section class="workbench-snapshot-meta radar-status-strip" aria-label="最近库存快照">
       <div>
         <span class="radar-live-dot" aria-hidden="true"></span>
-        <strong>{{ latestDate ? "规划数据已同步" : "等待首份库存" }}</strong>
+        <strong>{{ latestDate ? "已按最新库存更新" : "等待首份库存" }}</strong>
       </div>
       <span>库存：{{ latestDate ? formatDate(latestDate) : "待录入" }}</span>
       <span>排期基准：{{ planningStartDate }}</span>

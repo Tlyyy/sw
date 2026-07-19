@@ -140,14 +140,14 @@ async function rotatePassword() {
       <p v-else-if="cloudSync.status !== 'synced'" class="password-rotation-message">请先等待上方显示“云端已同步”。密码轮换必须联网且无待同步修改。</p>
     </section>
     <section class="settings-section">
-      <div class="section-head"><div><h2>单号下钻与矩阵偏好</h2><p>行动推进台始终同时展示五个账号；最近账号只影响“单号下钻”的默认入口。</p></div></div>
+      <div class="section-head"><div><h2>默认账号与对比表显示</h2><p>行动推进台始终同时展示五个账号；默认账号只影响“账号详情”的默认入口。</p></div></div>
       <div class="settings-grid ui-settings-grid">
-        <label><span>最近账号</span><select v-model="ui.recentAccount" aria-label="最近账号"><option v-for="item in catalog.data.accounts" :key="item.id" :value="item.id">{{ item.id }}</option></select></label>
-        <label><span>矩阵密度</span><select v-model="ui.matrixDensity" aria-label="矩阵密度"><option value="compact">紧凑</option><option value="comfortable">舒展</option></select></label>
+        <label><span>默认账号</span><select v-model="ui.recentAccount" aria-label="默认账号"><option v-for="item in catalog.data.accounts" :key="item.id" :value="item.id">{{ item.id }}</option></select></label>
+        <label><span>对比表密度</span><select v-model="ui.matrixDensity" aria-label="对比表密度"><option value="compact">紧凑</option><option value="comfortable">舒展</option></select></label>
       </div>
     </section>
     <section class="settings-section">
-      <div class="section-head"><div><h2>矩阵显示字段</h2><p>控制固定矩阵默认展示哪些信息。</p></div></div>
+      <div class="section-head"><div><h2>宠物对比表显示内容</h2><p>控制宠物对比表默认展示哪些信息。</p></div></div>
       <div class="preference-options"><label><input v-model="ui.matrixDisplay.stats" type="checkbox" />属性</label><label><input v-model="ui.matrixDisplay.aptitudes" type="checkbox" />资质</label><label><input v-model="ui.matrixDisplay.skills" type="checkbox" />技能</label></div>
     </section>
     <section class="settings-section workspace-state-section">
@@ -160,6 +160,6 @@ async function rotatePassword() {
       <strong aria-live="polite">{{ backupNotice || `${inventory.snapshots.length} 份库存快照已保存在本机` }}</strong>
       <div><button class="button" type="button" @click="exportWorkspace">导出完整 JSON</button><button class="button" type="button" @click="backupInput?.click()">恢复备份</button><input ref="backupInput" hidden type="file" accept="application/json,.json" @change="importWorkspace" /></div>
     </section>
-    <section class="danger-zone"><div><h2>界面偏好</h2><p>恢复最近账号、矩阵密度和字段显示默认值，不影响数据中心。</p></div><button class="button" @click="confirmAction('确认恢复默认界面偏好？', ui.resetPreferences)">恢复界面默认值</button><button class="button" @click="auth.logout">退出登录</button></section>
+    <section class="danger-zone"><div><h2>界面偏好</h2><p>恢复默认账号、对比表密度和显示内容，不影响数据中心。</p></div><button class="button" @click="confirmAction('确认恢复默认界面偏好？', ui.resetPreferences)">恢复界面默认值</button><button class="button" @click="auth.logout">退出登录</button></section>
   </div>
 </template>

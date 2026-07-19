@@ -33,6 +33,15 @@ const isImmersivePage = computed(() => route.name === "matrix");
 const date = computed(() => inventory.latestSnapshot?.effectiveDate || catalog.data.generatedAt.slice(0, 10));
 const mobileDialogOpen = computed(() => isMobile.value && ui.mobileNavOpen);
 const mobileNavClosed = computed(() => isMobile.value && !ui.mobileNavOpen);
+const compactSyncLabel = computed(() => ({
+  local: "仅本机",
+  connecting: "连接中",
+  syncing: "同步中",
+  synced: "已同步",
+  offline: "离线",
+  conflict: "需处理",
+  error: "失败",
+})[cloudSync.status]);
 
 function closeMobileNavigation(restoreFocus = true) {
   if (!ui.mobileNavOpen) return;
@@ -171,7 +180,7 @@ onBeforeUnmount(() => {
           to="/settings"
           :title="cloudSync.errorMessage || cloudSync.conflictMessage || cloudSync.statusLabel"
           aria-label="查看云同步状态"
-        ><span aria-hidden="true"></span><b aria-live="polite">{{ cloudSync.statusLabel }}</b></RouterLink>
+        ><span aria-hidden="true"></span><b aria-live="polite"><span class="orbit-sync-label-full">{{ cloudSync.statusLabel }}</span><span class="orbit-sync-label-compact">{{ compactSyncLabel }}</span></b></RouterLink>
         <button class="orbit-logout" title="退出登录" @click="auth.logout">退出</button>
       </div>
     </header>

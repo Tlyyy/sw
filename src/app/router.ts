@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-rou
 
 export const routes: RouteRecordRaw[] = [
   { path: "/", name: "dashboard", component: () => import("../features/dashboard/DashboardPage.vue"), meta: { title: "行动推进台", section: "home" } },
-  { path: "/accounts/:accountId(FC|LG1|PT|LG2|MYT)", name: "account", component: () => import("../features/accounts/AccountPage.vue"), meta: { title: "单号下钻", section: "accounts" } },
+  { path: "/accounts/:accountId(FC|LG1|PT|LG2|MYT)", name: "account", component: () => import("../features/accounts/AccountPage.vue"), meta: { title: "账号详情", section: "accounts" } },
   { path: "/assets/pets", name: "pets", component: () => import("../features/assets/PetsPage.vue"), meta: { title: "宠物资产", section: "assets" } },
   { path: "/assets/equipment", name: "equipment", component: () => import("../features/assets/EquipmentPage.vue"), meta: { title: "装备资产", section: "assets" } },
   { path: "/assets/skills", name: "skills", component: () => import("../features/assets/SkillsPage.vue"), meta: { title: "技能资料", section: "assets" } },

@@ -59,7 +59,7 @@ function mainlineFinishLabel() {
 
 <template>
   <div class="page-wrap account-page">
-    <section class="page-intro"><div><h2>{{ accountId }} 单号下钻</h2><p>从五号推进台进入某一个账号，核对当前神兽任务、库存和后续资料；排期不会早于今天或库存日期，当前基准为 {{ planningStartDate }}。</p></div><div class="account-switch"><RouterLink v-for="account in catalog.data.accounts" :key="account.id" :to="`/accounts/${account.id}`" :class="{ active: account.id === accountId }">{{ account.id }}</RouterLink></div></section>
+    <section class="page-intro"><div><h2>{{ accountId }} 账号详情</h2><p>查看这个账号的当前神兽任务、库存和后续资料；排期不会早于今天或库存日期，当前基准为 {{ planningStartDate }}。</p></div><div class="account-switch"><RouterLink v-for="account in catalog.data.accounts" :key="account.id" :to="`/accounts/${account.id}`" :class="{ active: account.id === accountId }">{{ account.id }}</RouterLink></div></section>
     <StatStrip :items="[{value:projection.inventory.dedicatedEggs,label:'专用蛋',note:'任务时优先消耗'},{value:projection.inventory.regularEggs,label:'普通蛋',note:'优先留作任务，仅紧急出售'},{value:`${projection.inventory.silverWan}万`,label:'银子',note:projection.effectiveDate ? `${projection.effectiveDate} 库存` : '待录库存快照'},{value:projection.statusLabel,label:'当前状态',note:projection.actionHint}]" />
     <section class="split-workspace">
       <div><div class="section-head"><div><h2>优先宠物</h2><p>按天资和输出面板优先展示</p></div><RouterLink :to="`/assets/pets?account=${accountId}`">全部宠物 →</RouterLink></div><div class="pet-list"><PetRow v-for="pet in topPets" :key="pet.id" :pet="pet" /></div></div>

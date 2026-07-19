@@ -138,12 +138,12 @@ function confirmReset(message: string, action: () => void) {
         <span role="columnheader">操作</span>
       </div>
       <div v-for="snapshot in inventoryHistory" :key="snapshot.effectiveDate" class="snapshot-history-row" role="row">
-        <strong role="cell">{{ snapshot.effectiveDate }}</strong>
-        <span role="cell">{{ formatHistoryTime(snapshot.recordedAt) }}</span>
-        <span v-for="accountId in inventoryAccountOrder" :key="accountId" role="cell">
+        <strong role="cell" data-label="库存日期" :aria-label="`库存日期：${snapshot.effectiveDate}`">{{ snapshot.effectiveDate }}</strong>
+        <span role="cell" data-label="实际录入" :aria-label="`实际录入：${formatHistoryTime(snapshot.recordedAt)}`">{{ formatHistoryTime(snapshot.recordedAt) }}</span>
+        <span v-for="accountId in inventoryAccountOrder" :key="accountId" role="cell" :data-label="accountId" :aria-label="`${accountId}：专用蛋 ${snapshot.accounts[accountId].dedicatedEggs}，普通蛋 ${snapshot.accounts[accountId].regularEggs}，银子 ${snapshot.accounts[accountId].silverWan.toLocaleString()} 万，内丹碎片 ${snapshot.accounts[accountId].innerShardCount ?? '待补'}`">
           专{{ snapshot.accounts[accountId].dedicatedEggs }} · 普{{ snapshot.accounts[accountId].regularEggs }} · 银{{ snapshot.accounts[accountId].silverWan.toLocaleString() }}万 · 碎{{ snapshot.accounts[accountId].innerShardCount ?? "待补" }}
         </span>
-        <span role="cell"><button class="text-button danger-text" type="button" :aria-label="`删除${snapshot.effectiveDate}库存快照`" @click="removeInventorySnapshot(snapshot.effectiveDate)">删除</button></span>
+        <span role="cell" data-label="操作" aria-label="操作"><button class="text-button danger-text" type="button" :aria-label="`删除${snapshot.effectiveDate}库存快照`" @click="removeInventorySnapshot(snapshot.effectiveDate)">删除</button></span>
       </div>
     </div>
     <p v-else class="empty-state">尚无历史快照。</p>

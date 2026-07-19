@@ -52,7 +52,7 @@ test.describe("desktop application", () => {
     await page.screenshot({ path: testInfo.outputPath("dashboard-desktop.png") });
 
     const routes = [
-      ["/#/accounts/LG2", "LG2 单号下钻"],
+      ["/#/accounts/LG2", "LG2 账号详情"],
       ["/#/assets/pets", "宠物资产"],
       ["/#/assets/equipment", "装备资产"],
       ["/#/assets/skills", "技能资料"],
@@ -206,8 +206,11 @@ test.describe("desktop application", () => {
     await dialog.getByLabel("FC银子库存（万）").fill("33.5");
     await dialog.getByLabel("FC内丹碎片库存").fill("44");
     await dialog.getByRole("button", { name: "保存五号快照" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("status")).toContainText(/已保存|已更新/);
 
     const fcCard = page.locator(".inventory-account-cell").filter({ hasText: "FC" });
+    await expect(fcCard).toBeVisible();
     await expect(fcCard).toContainText("内丹碎片");
     await expect(fcCard).toContainText("44");
     const persisted = await page.evaluate(() => ({
@@ -226,7 +229,7 @@ test.describe("desktop application", () => {
     await page.reload();
     await expect(page.locator(".inventory-account-cell").filter({ hasText: "FC" })).toContainText("44");
     await page.goto("/#/accounts/FC");
-    await expect(page.getByRole("heading", { name: "FC 单号下钻" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "FC 账号详情" })).toBeVisible();
     await expect(page.locator(".resource-line")).toContainText("内丹碎片 44");
   });
 
