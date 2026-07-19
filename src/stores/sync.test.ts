@@ -1,23 +1,32 @@
 import type { ConnectionStatus } from "@instantdb/core";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { instantWorkspaceId, syncCryptoConfig } from "../../instant.config";
+import { createWorkspaceBackup } from "../persistence/state";
 import type { SyncDatabase } from "../sync/instant";
 import { syncReconnectConfig } from "../sync/reconnect";
+import type { CloudWorkspace } from "../sync/types";
+import { useInventoryStore } from "./inventory";
+import { usePublishStore } from "./publish";
+import { useSettingsStore } from "./settings";
 import { useSyncStore } from "./sync";
+import { uiStorageKey, useUiStore } from "./ui";
 
 const instant = vi.hoisted(() => ({
   getSyncDatabase: vi.fn(),
   resetSyncDatabase: vi.fn(),
 }));
+const syncCrypto = vi.hoisted(() => ({
+  deriveCapability: vi.fn(async (_key: unknown) => "test-capability"),
+  hashWorkspaceContent: vi.fn(async (_value: unknown) => "test-hash"),
+  decryptWorkspace: vi.fn(async () => ""),
+  encryptWorkspace: vi.fn(async () => ({ iv: "test-iv", ciphertext: "test-ciphertext" })),
+}));
 
 vi.mock("../sync/instant", () => instant);
 vi.mock("../sync/crypto", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../sync/crypto")>();
-  return {
-    ...actual,
-    deriveCapability: vi.fn(async () => "test-capability"),
-    hashWorkspaceContent: vi.fn(async () => "test-hash"),
-  };
+  return { ...actual, ...syncCrypto };
 });
 
 class MemoryStorage implements Storage {
@@ -85,7 +94,11 @@ beforeEach(() => {
   setActivePinia(createPinia());
   databases = [];
   instant.getSyncDatabase.mockReset();
-  instant.resetSyncDatabase.mockReset();
+  instant.resetSyncDatabase.mockReset().mockReturnValue(true);
+  syncCrypto.deriveCapability.mockReset().mockResolvedValue("test-capability");
+  syncCrypto.hashWorkspaceContent.mockReset().mockResolvedValue("test-hash");
+  syncCrypto.decryptWorkspace.mockReset().mockResolvedValue("");
+  syncCrypto.encryptWorkspace.mockReset().mockResolvedValue({ iv: "test-iv", ciphertext: "test-ciphertext" });
   instant.getSyncDatabase.mockImplementation(() => {
     const fixture = createFakeDatabase();
     databases.push(fixture);
@@ -185,5 +198,67 @@ describe("sync store mobile recovery", () => {
     fakeWindow.dispatchEvent(new Event("online"));
     await vi.advanceTimersByTimeAsync(120_000);
     expect(databases).toHaveLength(1);
+  });
+
+  it("abandons a timed-out cloud write, preserves the local edit, and reconnects", async () => {
+    syncCrypto.hashWorkspaceContent.mockImplementation(async (value) => JSON.stringify(value));
+    const inventory = useInventoryStore();
+    const settings = useSettingsStore();
+    const publish = usePublishStore();
+    const ui = useUiStore();
+    const remoteBackup = createWorkspaceBackup({
+      inventory: inventory.exportState(),
+      settings: settings.exportState(),
+      publish: publish.exportState(),
+      ui: ui.exportState(),
+    }, () => new Date("2026-07-19T00:00:00.000Z"));
+    syncCrypto.decryptWorkspace.mockResolvedValue(JSON.stringify(remoteBackup));
+
+    const remoteRecord: CloudWorkspace = {
+      id: instantWorkspaceId,
+      capability: "test-capability",
+      cryptoVersion: syncCryptoConfig.version,
+      payloadVersion: syncCryptoConfig.payloadVersion,
+      revision: 1,
+      mutationId: "remote-mutation-1",
+      writerId: "remote-writer",
+      updatedAt: Date.parse("2026-07-19T00:00:00.000Z"),
+      iv: "remote-iv",
+      ciphertext: "remote-ciphertext",
+    };
+
+    const store = await startStore();
+    databases[0].emitConnection("authenticated");
+    databases[0].emitRows([remoteRecord]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.status).toBe("synced");
+
+    databases[0].raw.transact.mockImplementation(() => new Promise<never>(() => undefined));
+    ui.recentAccount = "FC";
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.status).toBe("syncing");
+
+    await vi.advanceTimersByTimeAsync(900);
+    expect(databases[0].raw.transact).toHaveBeenCalledTimes(1);
+    expect(store.status).toBe("syncing");
+
+    await vi.advanceTimersByTimeAsync(20_000);
+    await vi.advanceTimersByTimeAsync(syncReconnectConfig.baseDelayMs);
+
+    expect(store.status).not.toBe("syncing");
+    expect(ui.recentAccount).toBe("FC");
+    expect(JSON.parse(localStorage.getItem(uiStorageKey) || "null")?.recentAccount).toBe("FC");
+    expect(instant.resetSyncDatabase).toHaveBeenCalledWith(databases[0].db);
+    expect(databases).toHaveLength(2);
+
+    databases[1].emitConnection("authenticated");
+    databases[1].emitRows([remoteRecord]);
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(120);
+    expect(databases[1].raw.transact).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(store.status).toBe("synced");
+    expect(ui.recentAccount).toBe("FC");
+    store.stop();
   });
 });

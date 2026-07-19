@@ -19,6 +19,44 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem("sw-e2e-auth-v1", "1"));
 });
 
+test("automation 本机状态在桌面与手机端提供可访问的同步入口", async ({ page }, testInfo) => {
+  test.skip(!["desktop", "mobile"].includes(testInfo.project.name), "仅覆盖桌面与手机断点");
+  await page.goto("/#/");
+
+  const entry = page.getByRole("link", { name: "查看云同步状态" });
+  const liveRegion = entry.locator('[aria-live="polite"]');
+  const fullLabel = entry.locator(".orbit-sync-label-full");
+  const compactLabel = entry.locator(".orbit-sync-label-compact");
+
+  await expect(entry).toBeVisible();
+  await expect(entry).toHaveAttribute("href", "#/settings");
+  await expect(entry).toHaveAttribute("title", "仅本机");
+  await expect(entry).toHaveClass(/(?:^|\s)is-neutral(?:\s|$)/);
+  await expect(entry).not.toHaveClass(/(?:^|\s)is-(?:info|success|warning|danger)(?:\s|$)/);
+  await expect(liveRegion).toHaveCount(1);
+  await expect(liveRegion).toHaveAttribute("aria-live", "polite");
+  await expect(fullLabel).toHaveText("仅本机");
+  await expect(compactLabel).toHaveText("仅本机");
+
+  if (testInfo.project.name === "desktop") {
+    await expect(fullLabel).toBeVisible();
+    await expect(compactLabel).not.toBeVisible();
+  } else {
+    await expect(fullLabel).not.toBeVisible();
+    await expect(compactLabel).toBeVisible();
+
+    const touchTarget = await entry.boundingBox();
+    expect(touchTarget).not.toBeNull();
+    expect(touchTarget!.width).toBeGreaterThanOrEqual(44);
+    expect(touchTarget!.height).toBeGreaterThanOrEqual(44);
+  }
+
+  await entry.click();
+  await expect(page).toHaveURL(/#\/settings$/);
+  await expect(page.getByRole("heading", { name: "界面、同步与备份", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "自动云同步", exact: true })).toBeVisible();
+});
+
 test("同步入口与成功状态卡片在深色主题下清晰可见", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop");
   await page.goto("/#/settings");

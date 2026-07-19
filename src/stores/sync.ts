@@ -19,6 +19,7 @@ const syncMetaKey = "sw.sync.meta.v1";
 const writerIdKey = "sw.sync.writer.v1";
 const uploadDebounceMs = 900;
 const connectionTimeoutMs = 20_000;
+const transactionTimeoutMs = 20_000;
 const defaultPublishOptions = {
   mode: "sale", format: "markdown", ...publishDefaults.sale,
   includeStats: true, includeSkills: true, includeNotes: true, allShots: true,
@@ -29,6 +30,13 @@ const defaultUiState = {
 };
 
 type SyncStatus = "local" | "connecting" | "syncing" | "synced" | "offline" | "conflict" | "error";
+
+class SyncTransactionTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SyncTransactionTimeoutError";
+  }
+}
 
 interface WorkspaceParts {
   inventory: ReturnType<ReturnType<typeof useInventoryStore>["exportState"]>;
@@ -138,6 +146,7 @@ export const useSyncStore = defineStore("sync", () => {
   let remoteProcessing: Promise<void> = Promise.resolve();
   let activeRefreshToken: symbol | null = null;
   let rotationToken: symbol | null = null;
+  let cancelTransactionWait: (() => void) | null = null;
 
   const marketNames = catalog.gemMarketSnapshots.at(-1)?.items.map((item) => item.name) || [];
 
@@ -219,6 +228,42 @@ export const useSyncStore = defineStore("sync", () => {
     reconnectTimer = undefined;
   }
 
+  function waitForCloudTransaction<T>(transaction: Promise<T>, message: string) {
+    return new Promise<T>((resolve, reject) => {
+      let settled = false;
+      let timeout: number | undefined;
+      let cancel: () => void = () => undefined;
+      const finish = (settle: () => void) => {
+        if (settled) return;
+        settled = true;
+        if (timeout !== undefined) window.clearTimeout(timeout);
+        if (cancelTransactionWait === cancel) cancelTransactionWait = null;
+        settle();
+      };
+      cancel = () => finish(() => reject(new Error("同步会话已结束")));
+      cancelTransactionWait = cancel;
+      timeout = window.setTimeout(
+        () => finish(() => reject(new SyncTransactionTimeoutError(message))),
+        transactionTimeoutMs,
+      );
+      transaction.then(
+        (value) => finish(() => resolve(value)),
+        (error) => finish(() => reject(error)),
+      );
+    });
+  }
+
+  function discardUncertainDatabase(sessionDatabase: SyncDatabase) {
+    if (database !== sessionDatabase) return;
+    unsubscribeQuery?.();
+    unsubscribeConnection?.();
+    unsubscribeQuery = null;
+    unsubscribeConnection = null;
+    if (resetSyncDatabase(sessionDatabase)) database = null;
+    connectionStatus = "closed";
+    connectionTimedOut = true;
+  }
+
   function canReconnectNow() {
     const online = typeof navigator === "undefined" || navigator.onLine;
     const visible = typeof document === "undefined" || !document.hidden;
@@ -259,6 +304,15 @@ export const useSyncStore = defineStore("sync", () => {
     if (!active.value || !key) return;
     if (!canReconnectNow()) {
       updateStatus();
+      return;
+    }
+    if (signal.forceCheck && uploading && database) {
+      // Mobile browsers can suspend the SDK transaction timer while the app
+      // is in the background. Rebuild from a fresh remote query instead of
+      // leaving the header stuck on “syncing” after the app resumes.
+      discardUncertainDatabase(database);
+      updateStatus();
+      scheduleReconnect(generation, true);
       return;
     }
     if (connectionTimedOut || !database || connectionStatus === null) {
@@ -495,6 +549,11 @@ export const useSyncStore = defineStore("sync", () => {
   }
 
   function processLatestQuery(sessionGeneration: number) {
+    // An authenticated connection can arrive before the first query result.
+    // Do not enqueue the placeholder empty row set: if the real result lands
+    // before the queued task runs, that stale snapshot would be mistaken for
+    // a missing cloud workspace and could open a false conflict.
+    if (!hasQueryResult) return Promise.resolve();
     const rows = [...latestRows];
     const processing = remoteProcessing.then(() => processQueryRows(rows, sessionGeneration));
     remoteProcessing = processing.catch(() => undefined);
@@ -550,21 +609,17 @@ export const useSyncStore = defineStore("sync", () => {
       if (generation !== sessionGeneration || database !== sessionDatabase || rootKey !== sessionKey || !active.value || conflictCandidate.value) return;
       const record: CloudWorkspace = { id: instantWorkspaceId, ...metadata, ...encrypted };
       pendingMutationId = metadata.mutationId;
-      const transaction = await sessionDatabase.transact(sessionDatabase.tx.workspaces[instantWorkspaceId]
-        .ruleParams({ capability })
-        .update({ ...metadata, ...encrypted }));
+      const transaction = await waitForCloudTransaction(
+        sessionDatabase.transact(sessionDatabase.tx.workspaces[instantWorkspaceId]
+          .ruleParams({ capability })
+          .update({ ...metadata, ...encrypted })),
+        "云端写入超时",
+      );
       if (generation !== sessionGeneration) return;
       if (transaction.status !== "synced") {
         // MemoryStorage deliberately has no durable outbox. Drop the queued
         // reactor so a refresh cannot mistake an optimistic write for an ack.
-        unsubscribeQuery?.();
-        unsubscribeConnection?.();
-        unsubscribeQuery = null;
-        unsubscribeConnection = null;
-        resetSyncDatabase(sessionDatabase);
-        database = null;
-        connectionStatus = "closed";
-        connectionTimedOut = true;
+        discardUncertainDatabase(sessionDatabase);
         throw new Error("network transaction enqueued");
       }
       if (remoteHasAdvancedPast(record)) {
@@ -581,6 +636,7 @@ export const useSyncStore = defineStore("sync", () => {
       localDirty = true;
       const retryable = isRetryableSyncError(error);
       errorMessage.value = retryable ? "" : friendlyError(error);
+      if (error instanceof SyncTransactionTimeoutError) discardUncertainDatabase(sessionDatabase);
       if (retryable) connectionTimedOut = true;
       void refreshRemote(true);
       if (retryable) scheduleReconnect(sessionGeneration);
@@ -738,6 +794,8 @@ export const useSyncStore = defineStore("sync", () => {
   function teardown(options: { preserveReconnectAttempt?: boolean } = {}) {
     rotationToken = null;
     generation += 1;
+    cancelTransactionWait?.();
+    cancelTransactionWait = null;
     clearUploadTimer();
     clearConnectionTimer();
     clearReconnectTimer();
