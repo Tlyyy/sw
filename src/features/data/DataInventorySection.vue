@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import InventorySnapshotDialog from "../../components/InventorySnapshotDialog.vue";
+import InventoryWeeklyReport from "../../components/InventoryWeeklyReport.vue";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import type { AccountId, InventoryBalance, InventorySnapshotInput } from "../../domain/types";
@@ -8,6 +9,7 @@ import type { AccountId, InventoryBalance, InventorySnapshotInput } from "../../
 const inventory = useInventoryStore();
 const settings = useSettingsStore();
 const inventoryDialogOpen = ref(false);
+const inventoryDialogDate = ref("");
 const inventoryNotice = ref("");
 const inventoryAccountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
 
@@ -22,7 +24,6 @@ const latestInventoryRows = computed(() => inventoryAccountOrder.map((accountId)
   };
 }));
 const latestInventoryIntervalDays = computed(() => inventory.latestDeltas?.FC.intervalDays || 0);
-const inventoryHistory = computed(() => [...inventory.snapshots].reverse());
 const latestInventoryComplete = computed(() => inventory.latestSnapshot
   ? inventoryAccountOrder.every((accountId) => inventory.latestSnapshot!.accounts[accountId].innerShardCount !== null)
   : false);
@@ -33,6 +34,11 @@ function emptyBalance(): InventoryBalance {
 
 function todayDate() {
   return settings.planningAsOfDate;
+}
+
+function openInventoryDialog(date = todayDate()) {
+  inventoryDialogDate.value = date;
+  inventoryDialogOpen.value = true;
 }
 
 function signedValue(value: number, unit = "") {
@@ -59,7 +65,7 @@ function removeInventorySnapshot(effectiveDate: string) {
 }
 
 function formatHistoryTime(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
+  return new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Shanghai" }).format(new Date(value));
 }
 
 function confirmReset(message: string, action: () => void) {
@@ -70,7 +76,7 @@ function confirmReset(message: string, action: () => void) {
 <template>
   <InventorySnapshotDialog
     :open="inventoryDialogOpen"
-    :initial-date="todayDate()"
+    :initial-date="inventoryDialogDate || todayDate()"
     :snapshots="inventory.snapshots"
     @close="inventoryDialogOpen = false"
     @save="saveInventorySnapshot"
@@ -79,9 +85,9 @@ function confirmReset(message: string, action: () => void) {
   <section class="page-intro ledger-page-head">
     <div>
       <h2>五号库存台账</h2>
-      <p>不用先选账号。每次在同一张表录入五个号的实际库存，系统按库存所属日期计算净变化。</p>
+      <p>一次录入五个号的实际库存；系统按周一到周日生成周报，有记录的日期显示日报，没记录的日期保持空白。</p>
     </div>
-    <button class="button primary" type="button" @click="inventoryDialogOpen = true">录入五号快照</button>
+    <button class="button primary" type="button" @click="openInventoryDialog()">录入五号快照</button>
   </section>
   <p v-if="inventoryNotice" class="action-notice" role="status" aria-live="polite">{{ inventoryNotice }}</p>
 
@@ -122,31 +128,14 @@ function confirmReset(message: string, action: () => void) {
       <h2>先记录五个号现在有多少</h2>
       <p>第一份快照只建立基线，不计算进账。第二次录入后才会显示与前次相比的变化。</p>
     </div>
-    <button class="button primary" type="button" @click="inventoryDialogOpen = true">建立库存基线</button>
+    <button class="button primary" type="button" @click="openInventoryDialog()">建立库存基线</button>
   </section>
 
-  <section class="settings-section inventory-history-section">
-    <div class="section-head">
-      <div><h2>历史批次</h2><p>按库存所属日期倒序排列；补录过去日期后会自动插入正确位置。</p></div>
-      <span>{{ inventory.snapshots.length }} 批</span>
-    </div>
-    <div v-if="inventoryHistory.length" class="snapshot-history-table" role="table" aria-label="库存快照历史批次">
-      <div class="snapshot-history-head" role="row">
-        <span role="columnheader">库存日期</span>
-        <span role="columnheader">实际录入</span>
-        <span v-for="accountId in inventoryAccountOrder" :key="accountId" role="columnheader">{{ accountId }}</span>
-        <span role="columnheader">操作</span>
-      </div>
-      <div v-for="snapshot in inventoryHistory" :key="snapshot.effectiveDate" class="snapshot-history-row" role="row">
-        <strong role="cell" data-label="库存日期" :aria-label="`库存日期：${snapshot.effectiveDate}`">{{ snapshot.effectiveDate }}</strong>
-        <span role="cell" data-label="实际录入" :aria-label="`实际录入：${formatHistoryTime(snapshot.recordedAt)}`">{{ formatHistoryTime(snapshot.recordedAt) }}</span>
-        <span v-for="accountId in inventoryAccountOrder" :key="accountId" role="cell" :data-label="accountId" :aria-label="`${accountId}：专用蛋 ${snapshot.accounts[accountId].dedicatedEggs}，普通蛋 ${snapshot.accounts[accountId].regularEggs}，银子 ${snapshot.accounts[accountId].silverWan.toLocaleString()} 万，内丹碎片 ${snapshot.accounts[accountId].innerShardCount ?? '待补'}`">
-          专{{ snapshot.accounts[accountId].dedicatedEggs }} · 普{{ snapshot.accounts[accountId].regularEggs }} · 银{{ snapshot.accounts[accountId].silverWan.toLocaleString() }}万 · 碎{{ snapshot.accounts[accountId].innerShardCount ?? "待补" }}
-        </span>
-        <span role="cell" data-label="操作" aria-label="操作"><button class="text-button danger-text" type="button" :aria-label="`删除${snapshot.effectiveDate}库存快照`" @click="removeInventorySnapshot(snapshot.effectiveDate)">删除</button></span>
-      </div>
-    </div>
-    <p v-else class="empty-state">尚无历史快照。</p>
-  </section>
+  <InventoryWeeklyReport
+    :snapshots="inventory.snapshots"
+    :current-date="todayDate()"
+    @record="openInventoryDialog"
+    @remove="removeInventorySnapshot"
+  />
 
 </template>

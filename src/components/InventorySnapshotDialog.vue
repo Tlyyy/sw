@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "../domain/types";
+import { shanghaiDateKey } from "../domain/plans";
 import AppIcon from "./AppIcon.vue";
 
 interface InventorySnapshotDraft {
@@ -26,7 +27,7 @@ const submitted = ref(false);
 const dirty = ref(false);
 const seedDescription = ref("");
 const rows = reactive<Record<AccountId, InventoryBalance>>(emptyRows());
-const today = new Date().toLocaleDateString("en-CA");
+const today = shanghaiDateKey();
 let previouslyFocused: HTMLElement | null = null;
 let previousBodyOverflow = "";
 let previousRootOverflow = "";

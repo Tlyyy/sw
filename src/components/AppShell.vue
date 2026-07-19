@@ -26,6 +26,14 @@ let previousBodyOverflow = "";
 let restoreMobileFocus = true;
 
 const links = computed(() => buildPrimaryNavigation(ui.recentAccount));
+const mobileDockLinks = computed(() => {
+  const labels = { home: "首页", accounts: "账号", plans: "计划", data: "数据" } as const;
+  return (["home", "accounts", "plans", "data"] as const).map((section) => {
+    const link = links.value.find((item) => item.section === section)!;
+    return { ...link, text: labels[section] };
+  });
+});
+const mobileDockMoreActive = computed(() => !mobileDockLinks.value.some((link) => link.section === route.meta.section));
 
 const title = computed(() => String(route.meta.title || "项目台账"));
 const isDashboard = computed(() => route.meta.section === "home");
@@ -197,6 +205,30 @@ onBeforeUnmount(() => {
       </header>
       <RouterView />
     </main>
+    <nav class="orbit-mobile-dock" aria-label="手机快捷导航" :inert="mobileDialogOpen || undefined">
+      <RouterLink
+        v-for="link in mobileDockLinks"
+        :key="link.to"
+        :to="link.to"
+        :class="{ active: route.meta.section === link.section }"
+        :aria-current="route.meta.section === link.section ? 'page' : undefined"
+        @click="closeMobileNavigation(false)"
+      >
+        <AppIcon :name="link.icon" />
+        <span>{{ link.text }}</span>
+      </RouterLink>
+      <button
+        type="button"
+        :class="{ active: mobileDockMoreActive || mobileDialogOpen }"
+        aria-controls="orbit-primary-navigation"
+        :aria-expanded="mobileDialogOpen"
+        aria-label="打开全部导航"
+        @click="openMobileNavigation"
+      >
+        <AppIcon name="menu" />
+        <span>更多</span>
+      </button>
+    </nav>
     <CommandSearch />
   </div>
 </template>
