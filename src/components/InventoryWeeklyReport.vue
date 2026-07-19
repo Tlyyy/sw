@@ -137,7 +137,7 @@ function toggleDay(day: InventoryWeekDaySlot) {
             {{ weeklyBasisLabel() }} · {{ report.weeklyChange.fromEffectiveDate }} → {{ report.weeklyChange.toEffectiveDate }}（{{ report.weeklyChange.intervalDays }} 天）
           </p>
           <p v-if="report.weeklyChange" class="weekly-change-valuation-note">
-            银子合计 = 银子净变化 + 普通蛋净变化 × {{ inventoryRegularEggValueWan }} 万/个
+            银列仅合计纯银子；普通蛋按 {{ inventoryRegularEggValueWan }} 万/个在表下单独折算
           </p>
           <p v-else-if="report.recordedDays === 0">本周尚无实际库存记录，周变化暂时留空。</p>
           <p v-else>本周只有一份记录且没有更早基线，暂时无法计算变化。</p>
@@ -160,11 +160,30 @@ function toggleDay(day: InventoryWeekDaySlot) {
           <b role="cell" :class="deltaTone(weeklyTotals.regularEggs)">{{ signedValue(weeklyTotals.regularEggs) }}</b>
           <b
             role="cell"
-            :class="deltaTone(weeklyTotals.totalSilverWan)"
-            :aria-label="`总计银子 ${signedValue(weeklyTotals.totalSilverWan)} 万，已含普通蛋按每个 ${inventoryRegularEggValueWan} 万折算`"
-          >{{ signedValue(weeklyTotals.totalSilverWan) }}</b>
+            :class="deltaTone(weeklyTotals.directSilverWan)"
+            :aria-label="`纯银子净变化合计 ${signedValue(weeklyTotals.directSilverWan)} 万，不含普通蛋折算`"
+          >{{ signedValue(weeklyTotals.directSilverWan) }}</b>
           <b role="cell" :class="deltaTone(weeklyTotals.innerShardCount)">{{ weeklyTotals.innerShardCount === null ? "—" : signedValue(weeklyTotals.innerShardCount) }}</b>
         </div>
+      </div>
+      <div
+        v-if="weeklyTotals"
+        class="weekly-change-equivalent"
+        role="group"
+        aria-label="银子加普通蛋折算总值"
+        data-testid="weekly-value-total"
+      >
+        <div>
+          <strong>银子 + 普通蛋折算总值</strong>
+          <span class="weekly-change-equivalent-breakdown">
+            <span>纯银子 <b :class="deltaTone(weeklyTotals.directSilverWan)">{{ signedValue(weeklyTotals.directSilverWan, "万") }}</b></span>
+            <span>
+              普通蛋 {{ signedValue(weeklyTotals.regularEggs) }} × {{ inventoryRegularEggValueWan }}万/个 =
+              <b :class="deltaTone(weeklyTotals.regularEggEquivalentWan)">{{ signedValue(weeklyTotals.regularEggEquivalentWan, "万") }}</b>
+            </span>
+          </span>
+        </div>
+        <b :class="deltaTone(weeklyTotals.totalSilverWan)">{{ signedValue(weeklyTotals.totalSilverWan, "万") }}</b>
       </div>
     </div>
 
@@ -251,6 +270,12 @@ function toggleDay(day: InventoryWeekDaySlot) {
 .weekly-change-total { min-height: 50px; background: #141d1f; }
 .weekly-change-total > strong { justify-self: start; white-space: nowrap; }
 .weekly-change-total > b { white-space: nowrap; font-weight: 800; }
+.weekly-change-equivalent { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--radar-line-strong); background: color-mix(in srgb, var(--radar-cyan) 7%, #111a1c); }
+.weekly-change-equivalent > div { min-width: 0; display: grid; gap: 4px; }
+.weekly-change-equivalent > div > strong { font-size: 13px; }
+.weekly-change-equivalent-breakdown { display: flex; flex-wrap: wrap; gap: 3px 12px; color: var(--radar-muted); font-size: 12px; line-height: 1.45; }
+.weekly-change-equivalent-breakdown b { font-variant-numeric: tabular-nums; }
+.weekly-change-equivalent > b { white-space: nowrap; font-size: 18px; font-variant-numeric: tabular-nums; }
 .weekly-change-head > :not(:first-child),
 .weekly-change-row > :not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
 .positive { color: var(--radar-success); }
@@ -298,6 +323,8 @@ function toggleDay(day: InventoryWeekDaySlot) {
   .weekly-change-head,
   .weekly-change-row { grid-template-columns: 58px repeat(4, minmax(0, 1fr)); gap: 5px; padding-inline: 9px; }
   .weekly-change-row b { font-size: 12px; }
+  .weekly-change-equivalent { gap: 8px; padding-inline: 9px; }
+  .weekly-change-equivalent > b { font-size: 16px; }
   .week-day-table-head { display: none; }
   .week-day-row { grid-template-columns: 64px minmax(0, 1fr) 62px; gap: 7px; min-height: 72px; padding: 9px 10px; }
   .week-day-identity { display: grid; gap: 1px; }
