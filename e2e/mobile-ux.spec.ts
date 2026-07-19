@@ -325,17 +325,19 @@ test.describe("mobile UX release gate", () => {
     await expect(report.locator(".week-day-entry")).toHaveCount(7);
     await expect(report.getByRole("button", { name: `补录${week.tuesday}库存`, exact: true })).toBeVisible();
     await expect(report.getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
-    await expect(report.getByText("银列仅合计纯银子；普通蛋按 5.5 万/个在表下单独折算", { exact: true })).toBeVisible();
+    await expect(report.getByText("银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × 5.5 万/个", { exact: true })).toBeVisible();
+
+    await expect(report.getByRole("columnheader")).toHaveText(["账号", "专", "普", "银 / 万", "银+蛋 / 万", "碎"]);
+
+    for (const accountId of accountIds) {
+      const accountRow = report.locator(".weekly-change-row:not(.weekly-change-total)").filter({ hasText: accountId });
+      await expect(accountRow).toHaveCount(1);
+      await expect(accountRow.locator(":scope > *")).toHaveText([accountId, "+4", "+8", "+40", "+84", "+12"]);
+    }
 
     const weeklyTotal = report.getByRole("row", { name: "本周净变化合计", exact: true });
     await expect(weeklyTotal).toBeVisible();
-    await expect(weeklyTotal.locator(":scope > *")).toHaveText(["合计", "+20", "+40", "+200", "+60"]);
-
-    const weeklyValueTotal = report.getByTestId("weekly-value-total");
-    await expect(weeklyValueTotal).toBeVisible();
-    await expect(weeklyValueTotal.getByText("纯银子 +200万", { exact: true })).toBeVisible();
-    await expect(weeklyValueTotal.getByText("普通蛋 +40 × 5.5万/个 = +220万", { exact: true })).toBeVisible();
-    await expect(weeklyValueTotal.locator(":scope > b")).toHaveText("+420万");
+    await expect(weeklyTotal.locator(":scope > *")).toHaveText(["合计", "+20", "+40", "+200", "+420", "+60"]);
 
     const weeklyChangeEdgeDeltas = await report.locator(".weekly-change-table").evaluate((table) => {
       const headers = Array.from(table.querySelector(".weekly-change-head")!.children);

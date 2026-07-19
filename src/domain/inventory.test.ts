@@ -4,6 +4,7 @@ import {
   calculateInventoryDeltas,
   createInventoryExport,
   inventoryRegularEggValueWan,
+  inventorySilverWithRegularEggsWan,
   latestInventoryPair,
   naturalWeekRange,
   normalizeInventorySnapshots,
@@ -90,6 +91,11 @@ describe("inventory snapshots", () => {
 });
 
 describe("inventory weekly change summary", () => {
+  it("values each account's pure silver plus ordinary-egg change", () => {
+    expect(inventorySilverWithRegularEggsWan({ regularEggs: 4, silverWan: 52 })).toBe(74);
+    expect(inventorySilverWithRegularEggsWan({ regularEggs: -7, silverWan: -16 })).toBe(-54.5);
+  });
+
   it("sums five accounts and includes ordinary eggs valued at 5.5 wan each", () => {
     const deltas = calculateInventoryDeltas(
       snapshot("2026-07-19", 5),

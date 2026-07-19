@@ -272,10 +272,11 @@ final result: passed
 ### Source truth and browser evidence
 
 - Source visual truth: `C:\Users\T\.codex\codex-remote-attachments\019f781d-a7ac-7471-ae59-a4bfd1b48214\DED73E1C-14BC-4F9E-94A8-9A220025B845\1-照片-1.jpg`.
-- Desktop implementation screenshot: `C:\Users\T\AppData\Local\Temp\sw-weekly-total-split-desktop.png` at 1280 × 720.
-- Mobile implementation screenshot: `C:\Users\T\AppData\Local\Temp\sw-weekly-total-split-mobile.png` at 390 × 844.
-- State: authenticated localhost automation session with isolated snapshots for 2026-07-12 and 2026-07-18. The five account deltas exactly match the supplied source. The table total is `专 +1 / 普 +4 / 纯银 +198 / 碎 +10`; the separate valuation summary is `纯银 +198万 + 普通蛋 4 × 5.5万 = +220万`.
-- Focused evidence: both captures show the complete five-column change table, its pure-silver total row, and the separate silver-plus-ordinary-egg valuation summary at readable scale.
+- User placement annotation: `C:\Users\T\AppData\Local\Temp\codex-clipboard-58f51d38-441b-4c07-9296-520109df2ad6.png`; the red box marks the requested column between `银 / 万` and `碎`.
+- Desktop implementation screenshot: `C:\Users\T\AppData\Local\Temp\sw-weekly-silver-egg-column-desktop-final-2.png` at 1280 × 720.
+- Mobile implementation screenshot: `C:\Users\T\AppData\Local\Temp\sw-weekly-silver-egg-column-mobile-total.png` at 390 × 844.
+- State: authenticated localhost automation session with isolated snapshots for 2026-07-12 and 2026-07-18. The six-column table total is `专 +1 / 普 +4 / 纯银 +198 / 银+蛋 +220 / 碎 +10`.
+- Focused evidence: both captures show the new `银+蛋 / 万` column in the exact annotated position, all five account values, and the total row at readable scale.
 
 ### Findings and comparison history
 
@@ -292,21 +293,27 @@ final result: passed
 
 - The five-column table now remains semantically literal: `银 / 万` totals pure silver only (`+198` in the supplied example).
 - A separate full-width summary below the table shows `银子 + 普通蛋折算总值`, with the visible breakdown `纯银子 +198万` and `普通蛋 +4 × 5.5万/个 = +22万`, yielding `+220万`.
-- Desktop and 390px-mobile numeric header/row edge differences are 0px. Document, report, table, and summary horizontal overflow are all 0px.
-- Weekly navigation was exercised from 2026-07-13—2026-07-19 to the previous week and back; the pure-silver row and separate `+220万` valuation returned correctly. No P0/P1/P2 issue remains.
+- The user clarified that the combined valuation belongs inside the table, not in a separate band below it.
+
+#### Pass 4 — exact annotated column placement
+
+- Added `银+蛋 / 万` directly between `银 / 万` and `碎`. The pure-silver column is unchanged; the new column calculates each account as `纯银变化 + 普通蛋变化 × 5.5万`.
+- Screenshot-matching values are `FC +74 / LG1 +73.5 / LG2 +54 / PT -54.5 / MYT +73`; their total is `+220` while the pure-silver total remains `+198`.
+- Desktop and 390px-mobile header/row edge differences are 0px. Document, report, table, headers, and data cells all have 0px horizontal overflow. Mobile monetary headers stack the unit below the label for legibility.
+- Weekly navigation was exercised from 2026-07-13—2026-07-19 to the previous week and back; the new column and `+220` total returned correctly. No P0/P1/P2 issue remains.
 
 ### Required fidelity surfaces
 
-- Fonts and typography: the pure-silver total inherits the table's existing tabular numerals, responsive numeric scale, sign formatting, and semantic weights. The separate valuation uses a larger final value and a compact readable breakdown.
-- Spacing and layout rhythm: the original five-column tracks, padding, gaps, dividers, and left/right alignment are preserved. The separate valuation occupies its own full-width band and does not create a misleading sixth column.
-- Colors and visual tokens: both totals reuse the existing dark surfaces and positive/negative/neutral tokens; the explanatory note uses the established cyan informational accent.
+- Fonts and typography: both monetary columns use tabular numerals, sign formatting, and semantic weights. At 390px the two monetary unit labels stack to avoid crowding while every numeric value remains single-line.
+- Spacing and layout rhythm: the grid now has six explicit tracks in the requested order. The new track fills the annotated gap without changing the outer table width or introducing horizontal scrolling.
+- Colors and visual tokens: the new column reuses the existing positive/negative/neutral tokens; the explanatory formula uses the established cyan informational accent.
 - Image quality and asset fidelity: this data table contains no product imagery or custom graphic assets. No placeholder, SVG, emoji, CSS illustration, or substitute asset was introduced.
-- Copy and content: the formula names the exact fixed rate and visibly separates pure silver, ordinary-egg equivalent, and combined valuation. Dedicated eggs are not priced into silver.
-- Accessibility and interaction: the total row has the accessible name `本周净变化合计`; its silver cell announces that it excludes ordinary-egg conversion. The separate summary is exposed as `银子加普通蛋折算总值`. Week switching remains operable.
+- Copy and content: the formula `银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × 5.5 万/个` makes the two monetary meanings explicit. Dedicated eggs are not priced into silver.
+- Accessibility and interaction: every `银+蛋` account cell announces the account, folded value, and unit; the total cell announces the fixed 5.5万 rate. Week switching remains operable.
 
 ### Verification
 
-- `npm test`: 86 passed.
+- `npm test`: 87 passed.
 - `npm run build`: passed (data check, Vue/TypeScript check, Vite build, and 298-asset integrity check).
 - Mobile Playwright release gate: 6 passed, including the weekly total values, all-row alignment, expanded daily report, and no horizontal overflow.
 - Browser page identity: `http://127.0.0.1:4173/#/data/inventory`, title `项目台账`; framework overlay absent; console warnings/errors empty.
