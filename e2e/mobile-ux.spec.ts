@@ -326,6 +326,17 @@ test.describe("mobile UX release gate", () => {
     await expect(report.getByRole("button", { name: `补录${week.tuesday}库存`, exact: true })).toBeVisible();
     await expect(report.getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
 
+    const weeklyChangeEdgeDeltas = await report.locator(".weekly-change-table").evaluate((table) => {
+      const headers = Array.from(table.querySelector(".weekly-change-head")!.children);
+      const firstRow = Array.from(table.querySelector(".weekly-change-row")!.children);
+      return headers.map((header, index) => {
+        const headerRect = header.getBoundingClientRect();
+        const rowRect = firstRow[index].getBoundingClientRect();
+        return Math.abs(index === 0 ? headerRect.left - rowRect.left : headerRect.right - rowRect.right);
+      });
+    });
+    weeklyChangeEdgeDeltas.forEach((delta) => expect(delta).toBeLessThanOrEqual(1));
+
     await report.getByRole("button", { name: `查看${week.wednesday}库存日报`, exact: true }).tap();
     await expect(report.getByText(`${week.wednesday} 日报`, { exact: true })).toBeVisible();
     await expect(report.getByRole("table", { name: `${week.wednesday} 五账号库存明细`, exact: true })).toBeVisible();
