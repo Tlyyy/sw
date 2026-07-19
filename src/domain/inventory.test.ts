@@ -3,10 +3,12 @@ import {
   buildInventoryWeekReport,
   calculateInventoryDeltas,
   createInventoryExport,
+  inventoryRegularEggValueWan,
   latestInventoryPair,
   naturalWeekRange,
   normalizeInventorySnapshots,
   parseInventoryExport,
+  summarizeInventoryWeeklyChange,
   upsertInventorySnapshot,
 } from "./inventory";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "./types";
@@ -84,6 +86,56 @@ describe("inventory snapshots", () => {
     });
     expect(migrated.version).toBe(2);
     expect(migrated.snapshots[0].accounts.FC.innerShardCount).toBeNull();
+  });
+});
+
+describe("inventory weekly change summary", () => {
+  it("sums five accounts and includes ordinary eggs valued at 5.5 wan each", () => {
+    const deltas = calculateInventoryDeltas(
+      snapshot("2026-07-19", 5),
+      snapshot("2026-07-12", 1),
+    );
+
+    expect(inventoryRegularEggValueWan).toBe(5.5);
+    expect(summarizeInventoryWeeklyChange(deltas!)).toEqual({
+      dedicatedEggs: 20,
+      regularEggs: 40,
+      directSilverWan: 200,
+      regularEggEquivalentWan: 220,
+      totalSilverWan: 420,
+      innerShardCount: 60,
+    });
+  });
+
+  it("supports negative ordinary-egg changes and normalizes wan amounts to two decimals", () => {
+    const prior = snapshot("2026-07-12", 5);
+    const latest = snapshot("2026-07-19", 5);
+    ids.forEach((accountId) => {
+      latest.accounts[accountId].regularEggs -= 1;
+    });
+    latest.accounts.FC.silverWan += 0.105;
+    latest.accounts.LG1.silverWan += 0.206;
+
+    const summary = summarizeInventoryWeeklyChange(calculateInventoryDeltas(latest, prior)!);
+
+    expect(summary).toMatchObject({
+      regularEggs: -5,
+      directSilverWan: 0.31,
+      regularEggEquivalentWan: -27.5,
+      totalSilverWan: -27.19,
+    });
+  });
+
+  it("keeps the fragment total unknown when any account delta is unknown", () => {
+    const prior = snapshot("2026-07-12", 1);
+    const latest = snapshot("2026-07-19", 2);
+    prior.accounts.LG2.innerShardCount = null;
+
+    const summary = summarizeInventoryWeeklyChange(calculateInventoryDeltas(latest, prior)!);
+
+    expect(summary.innerShardCount).toBeNull();
+    expect(summary.dedicatedEggs).toBe(5);
+    expect(summary.regularEggs).toBe(10);
   });
 });
 

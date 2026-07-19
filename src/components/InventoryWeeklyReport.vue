@@ -2,7 +2,9 @@
 import { computed, ref, watch } from "vue";
 import {
   buildInventoryWeekReport,
+  inventoryRegularEggValueWan,
   naturalWeekRange,
+  summarizeInventoryWeeklyChange,
   type InventorySnapshotComparison,
   type InventoryWeekDaySlot,
 } from "../domain/inventory";
@@ -24,6 +26,9 @@ const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六
 const selectedAnchor = ref(props.currentDate);
 const expandedDate = ref<string | null>(null);
 const report = computed(() => buildInventoryWeekReport(props.snapshots, selectedAnchor.value));
+const weeklyTotals = computed(() => report.value.weeklyChange
+  ? summarizeInventoryWeeklyChange(report.value.weeklyChange.deltas)
+  : null);
 const currentWeek = computed(() => naturalWeekRange(props.currentDate));
 const isCurrentWeek = computed(() => report.value.weekStart === currentWeek.value.weekStart);
 const canViewNextWeek = computed(() => report.value.weekStart < currentWeek.value.weekStart);
@@ -73,8 +78,9 @@ function numberLabel(value: number) {
 }
 
 function signedValue(value: number, unit = "") {
-  if (value === 0) return `0${unit}`;
-  return `${value > 0 ? "+" : ""}${numberLabel(value)}${unit}`;
+  const normalized = Number(value.toFixed(2));
+  if (normalized === 0) return `0${unit}`;
+  return `${normalized > 0 ? "+" : ""}${numberLabel(normalized)}${unit}`;
 }
 
 function deltaTone(value: number | null) {
@@ -130,6 +136,9 @@ function toggleDay(day: InventoryWeekDaySlot) {
           <p v-if="report.weeklyChange">
             {{ weeklyBasisLabel() }} · {{ report.weeklyChange.fromEffectiveDate }} → {{ report.weeklyChange.toEffectiveDate }}（{{ report.weeklyChange.intervalDays }} 天）
           </p>
+          <p v-if="report.weeklyChange" class="weekly-change-valuation-note">
+            银子合计 = 银子净变化 + 普通蛋净变化 × {{ inventoryRegularEggValueWan }} 万/个
+          </p>
           <p v-else-if="report.recordedDays === 0">本周尚无实际库存记录，周变化暂时留空。</p>
           <p v-else>本周只有一份记录且没有更早基线，暂时无法计算变化。</p>
         </div>
@@ -144,6 +153,17 @@ function toggleDay(day: InventoryWeekDaySlot) {
           <b role="cell" :class="deltaTone(report.weeklyChange.deltas[accountId].regularEggs)">{{ signedValue(report.weeklyChange.deltas[accountId].regularEggs) }}</b>
           <b role="cell" :class="deltaTone(report.weeklyChange.deltas[accountId].silverWan)">{{ signedValue(report.weeklyChange.deltas[accountId].silverWan) }}</b>
           <b role="cell" :class="deltaTone(report.weeklyChange.deltas[accountId].innerShardCount)">{{ report.weeklyChange.deltas[accountId].innerShardCount === null ? "—" : signedValue(report.weeklyChange.deltas[accountId].innerShardCount) }}</b>
+        </div>
+        <div v-if="weeklyTotals" class="weekly-change-row weekly-change-total" role="row" aria-label="本周净变化合计">
+          <strong role="rowheader">合计</strong>
+          <b role="cell" :class="deltaTone(weeklyTotals.dedicatedEggs)">{{ signedValue(weeklyTotals.dedicatedEggs) }}</b>
+          <b role="cell" :class="deltaTone(weeklyTotals.regularEggs)">{{ signedValue(weeklyTotals.regularEggs) }}</b>
+          <b
+            role="cell"
+            :class="deltaTone(weeklyTotals.totalSilverWan)"
+            :aria-label="`总计银子 ${signedValue(weeklyTotals.totalSilverWan)} 万，已含普通蛋按每个 ${inventoryRegularEggValueWan} 万折算`"
+          >{{ signedValue(weeklyTotals.totalSilverWan) }}</b>
+          <b role="cell" :class="deltaTone(weeklyTotals.innerShardCount)">{{ weeklyTotals.innerShardCount === null ? "—" : signedValue(weeklyTotals.innerShardCount) }}</b>
         </div>
       </div>
     </div>
@@ -222,11 +242,15 @@ function toggleDay(day: InventoryWeekDaySlot) {
 .weekly-change-panel > header { padding: 13px 14px; border-bottom: 1px solid var(--radar-line); }
 .weekly-change-panel h3 { font-size: 16px; }
 .weekly-change-panel p { margin-top: 4px; color: var(--radar-muted); font-size: 13px; line-height: 1.5; }
+.weekly-change-panel .weekly-change-valuation-note { color: var(--radar-cyan); }
 .weekly-change-head,
 .weekly-change-row { display: grid; grid-template-columns: minmax(68px, 1fr) repeat(4, minmax(72px, 1fr)); align-items: center; gap: 8px; min-height: 42px; padding: 6px 14px; border-bottom: 1px solid var(--radar-line); font-size: 13px; }
 .weekly-change-head { min-height: 34px; color: var(--radar-muted); background: #141d1f; font-weight: 700; }
 .weekly-change-row:last-child { border-bottom: 0; }
 .weekly-change-row > .account-pill { justify-self: start; }
+.weekly-change-total { min-height: 50px; background: #141d1f; }
+.weekly-change-total > strong { justify-self: start; white-space: nowrap; }
+.weekly-change-total > b { white-space: nowrap; font-weight: 800; }
 .weekly-change-head > :not(:first-child),
 .weekly-change-row > :not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
 .positive { color: var(--radar-success); }

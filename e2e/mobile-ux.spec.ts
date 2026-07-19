@@ -325,14 +325,22 @@ test.describe("mobile UX release gate", () => {
     await expect(report.locator(".week-day-entry")).toHaveCount(7);
     await expect(report.getByRole("button", { name: `补录${week.tuesday}库存`, exact: true })).toBeVisible();
     await expect(report.getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
+    await expect(report.getByText("银子合计 = 银子净变化 + 普通蛋净变化 × 5.5 万/个", { exact: true })).toBeVisible();
+
+    const weeklyTotal = report.getByRole("row", { name: "本周净变化合计", exact: true });
+    await expect(weeklyTotal).toBeVisible();
+    await expect(weeklyTotal.locator(":scope > *")).toHaveText(["合计", "+20", "+40", "+420", "+60"]);
 
     const weeklyChangeEdgeDeltas = await report.locator(".weekly-change-table").evaluate((table) => {
       const headers = Array.from(table.querySelector(".weekly-change-head")!.children);
-      const firstRow = Array.from(table.querySelector(".weekly-change-row")!.children);
-      return headers.map((header, index) => {
-        const headerRect = header.getBoundingClientRect();
-        const rowRect = firstRow[index].getBoundingClientRect();
-        return Math.abs(index === 0 ? headerRect.left - rowRect.left : headerRect.right - rowRect.right);
+      const rows = Array.from(table.querySelectorAll(".weekly-change-row"));
+      return rows.flatMap((row) => {
+        const cells = Array.from(row.children);
+        return headers.map((header, index) => {
+          const headerRect = header.getBoundingClientRect();
+          const cellRect = cells[index].getBoundingClientRect();
+          return Math.abs(index === 0 ? headerRect.left - cellRect.left : headerRect.right - cellRect.right);
+        });
       });
     });
     weeklyChangeEdgeDeltas.forEach((delta) => expect(delta).toBeLessThanOrEqual(1));
