@@ -154,17 +154,17 @@ function drawAccountCard(context: CanvasRenderingContext2D, account: MainlineOve
   setFont(context, 16, 650);
   context.fillText(fitText(context, currentTask?.due || "全部完成", 520), 196, y + 67);
 
-  fillRoundedRect(context, 814, y + 16, 188, 44, 13, palette.background);
+  fillRoundedRect(context, 782, y + 16, 220, 44, 13, palette.background);
   context.fillStyle = palette.foreground;
-  setFont(context, 19, 850);
+  setFont(context, 18, 850);
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(fitText(context, account.status, 156), 908, y + 38);
+  context.fillText(fitText(context, account.resourceStatus, 188), 892, y + 38);
   context.fillStyle = "#71817e";
   setFont(context, 14, 650);
   context.textAlign = "right";
   context.textBaseline = "top";
-  context.fillText(fitText(context, account.finish, 260), 1002, y + 67);
+  context.fillText(fitText(context, `整线 ${account.finish}`, 300), 1002, y + 67);
 
   context.strokeStyle = "#dfe7e5";
   context.lineWidth = 1;
@@ -182,15 +182,15 @@ function drawAccountCard(context: CanvasRenderingContext2D, account: MainlineOve
   context.lineTo(586, y + 184);
   context.stroke();
 
-  context.fillStyle = palette.foreground;
-  setFont(context, 19, 850);
+  context.fillStyle = "#71817e";
+  setFont(context, 15, 750);
   context.textAlign = "left";
   context.textBaseline = "top";
-  context.fillText(fitText(context, account.resourceStatus, 390), 614, y + 109);
-  context.fillStyle = "#647975";
+  context.fillText("当前库存", 614, y + 109);
+  context.fillStyle = "#40534f";
   setFont(context, 16, 700);
   const resourceLine = `专 ${account.resources.dedicatedEggs}　普 ${account.resources.regularEggs}　银 ${account.resources.silverWan}万　碎 ${account.resources.innerShards}`;
-  context.fillText(fitText(context, resourceLine, 388), 614, y + 145);
+  context.fillText(fitText(context, resourceLine, 388), 614, y + 139);
 }
 
 export function createMainlineOverviewShareImage(data: MainlineOverviewShareData) {
@@ -223,22 +223,14 @@ export function createMainlineOverviewShareImage(data: MainlineOverviewShareData
   context.fillStyle = "#142522";
   setFont(context, 38, 850);
   context.fillText("五号主线推进轨道", 56, 96);
-  fillRoundedRect(context, 852, 98, 172, 46, 13, "#e5f3ef");
-  context.fillStyle = "#08765a";
-  setFont(context, 18, 850);
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.fillText(`${data.accounts.length} 个账号`, 938, 121);
 
   data.accounts.slice(0, 5).forEach((account, index) => drawAccountCard(context, account, 166 + index * 214));
 
   context.fillStyle = "#899793";
   setFont(context, 17, 650);
-  context.textAlign = "left";
+  context.textAlign = "center";
   context.textBaseline = "top";
-  context.fillText("项目台账", 56, 1305);
-  context.textAlign = "right";
-  context.fillText(data.inventoryDate, 1024, 1305);
+  context.fillText(`五号主线 · ${data.accounts.length} 个账号`, WIDTH / 2, 1305);
 
   return dataUrlToBlob(canvas.toDataURL("image/png"));
 }
