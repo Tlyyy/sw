@@ -336,6 +336,33 @@ test.describe("mobile application", () => {
   });
 });
 
+test.describe("pet detail sharing", () => {
+  test("desktop and mobile can generate a pet profile image", async ({ page }, testInfo) => {
+    test.skip(!["desktop", "mobile"].includes(testInfo.project.name));
+    const runtimeErrors: string[] = [];
+    page.on("pageerror", (error) => runtimeErrors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") runtimeErrors.push(message.text());
+    });
+
+    await page.goto("/#/assets/pets?selected=FC%3Apet%3A01");
+    const detail = page.locator(".detail-panel");
+    await expect(detail.getByRole("heading", { name: "祸斗", exact: true })).toBeVisible();
+    const shareButton = detail.getByRole("button", { name: "分享 FC 的 祸斗宠物档案" });
+    await expect(shareButton).toBeVisible();
+
+    const downloadPromise = page.waitForEvent("download");
+    await shareButton.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("FC-祸斗-宠物档案.png");
+    await download.saveAs(testInfo.outputPath(`FC-祸斗-宠物档案-${testInfo.project.name}.png`));
+    await expect(page.getByRole("status")).toContainText("宠物图片已下载");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+    expect(runtimeErrors).toEqual([]);
+    await detail.screenshot({ path: testInfo.outputPath(`pet-detail-share-${testInfo.project.name}.png`) });
+  });
+});
+
 test.describe("tablet application", () => {
   test("关键页面无页面级横向溢出", async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith("tablet-"));
