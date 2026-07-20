@@ -361,6 +361,66 @@ test.describe("pet detail sharing", () => {
     expect(runtimeErrors).toEqual([]);
     await detail.screenshot({ path: testInfo.outputPath(`pet-detail-share-${testInfo.project.name}.png`) });
   });
+
+  test("selected pets can be shared as multiple images in one action", async ({ page }, testInfo) => {
+    test.skip(!["desktop", "mobile"].includes(testInfo.project.name));
+    const runtimeErrors: string[] = [];
+    page.on("pageerror", (error) => runtimeErrors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") runtimeErrors.push(message.text());
+    });
+
+    if (testInfo.project.name === "mobile") {
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, "canShare", {
+          configurable: true,
+          value: (data: ShareData) => Boolean(data.files?.length),
+        });
+        Object.defineProperty(navigator, "share", {
+          configurable: true,
+          value: async (data: ShareData) => {
+            (window as typeof window & { __petBatchShare?: Array<{ name: string; type: string; size: number }> }).__petBatchShare = Array.from(data.files || []).map((file) => ({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+            }));
+          },
+        });
+      });
+    }
+
+    await page.goto("/#/assets/pets?account=FC");
+    const petCheckboxes = page.getByRole("checkbox", { name: /选择 FC 的/ });
+    await petCheckboxes.nth(0).check();
+    await petCheckboxes.nth(1).check();
+    const batchBar = page.getByRole("complementary", { name: "批量分享宠物" });
+    await expect(batchBar.getByText("2 只宠物", { exact: true })).toBeVisible();
+    const shareButton = batchBar.getByRole("button", { name: "批量分享 2 只宠物" });
+
+    if (testInfo.project.name === "mobile") {
+      await shareButton.click();
+      await expect(batchBar.getByRole("status")).toHaveText("已生成 2 张图片");
+      const sharedFiles = await page.evaluate(() => (window as typeof window & { __petBatchShare?: Array<{ name: string; type: string; size: number }> }).__petBatchShare);
+      expect(sharedFiles).toHaveLength(2);
+      expect(sharedFiles?.map((file) => file.name)).toEqual([
+        "01-FC-祸斗-宠物档案.png",
+        "02-FC-雷司-宠物档案.png",
+      ]);
+      expect(sharedFiles?.every((file) => file.type === "image/png" && file.size > 0)).toBeTruthy();
+    } else {
+      const downloadPromise = page.waitForEvent("download");
+      await shareButton.click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toBe("宠物档案-2026-07-13-2只.zip");
+      await download.saveAs(testInfo.outputPath("宠物档案-2只.zip"));
+      await expect(batchBar.getByRole("status")).toHaveText("2 张图片已打包下载");
+    }
+
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+    expect(runtimeErrors).toEqual([]);
+    await batchBar.screenshot({ path: testInfo.outputPath(`pet-batch-share-${testInfo.project.name}.png`) });
+    await page.screenshot({ path: testInfo.outputPath(`pet-batch-page-${testInfo.project.name}.png`) });
+  });
 });
 
 test.describe("tablet application", () => {

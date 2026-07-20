@@ -1,31 +1,20 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from "vue";
 import { useCatalogStore } from "../stores/catalog";
-import type { AccountId, EvidenceSource, PetView, StatValue } from "../domain/types";
+import type { EvidenceSource, PetView } from "../domain/types";
 import { publicAsset } from "../utils/publicAsset";
 import AppIcon from "./AppIcon.vue";
-import { createPetDetailShareImage } from "./petDetailShareImage";
+import { createPetShareFile } from "./petShare";
 
 const props = defineProps<{ pet: PetView }>();
 const catalog = useCatalogStore();
 const sharing = ref(false);
 const shareNotice = ref("");
 let shareNoticeTimer: number | null = null;
-const accountImageTone: Record<AccountId, string> = {
-  FC: "#12678f",
-  LG1: "#6446a6",
-  LG2: "#8a5a00",
-  PT: "#a33838",
-  MYT: "#28764a",
-};
 const evidence = computed(() => props.pet.evidenceIds
   .map((id) => catalog.evidenceById.get(id))
   .filter((item): item is EvidenceSource => Boolean(item)));
 const webPath = (path?: string) => path ? publicAsset(path) : "";
-
-function valueFor(rows: StatValue[], label: string, fallback = "—") {
-  return rows.find(([name]) => name === label)?.[1] || fallback;
-}
 
 function showShareNotice(message: string) {
   shareNotice.value = message;
@@ -51,30 +40,8 @@ async function sharePetDetail() {
 
   try {
     const primaryEvidence = evidence.value[0];
-    const blob = await createPetDetailShareImage({
-      accountId: props.pet.accountId,
-      accountTone: accountImageTone[props.pet.accountId],
-      petName: props.pet.name,
-      levelLabel: props.pet.level ? `${props.pet.level}级` : "等级待确认",
-      role: props.pet.role.primary,
-      meta: props.pet.meta,
-      advice: props.pet.role.advice,
-      tags: props.pet.role.tags,
-      capturedAt: primaryEvidence?.capturedAt || catalog.data.generatedAt.slice(0, 10),
-      screenshotUrl: primaryEvidence ? webPath(primaryEvidence.sourcePath) : undefined,
-      stats: [
-        { label: "气血", value: String(props.pet.hp || valueFor(props.pet.panel, "气血")) },
-        { label: "攻击", value: String(props.pet.attack || valueFor(props.pet.panel, "攻击")) },
-        { label: "防御", value: String(props.pet.defense || valueFor(props.pet.panel, "防御")) },
-        { label: "速度", value: String(props.pet.speed || valueFor(props.pet.panel, "速度")) },
-        { label: "灵力", value: String(props.pet.spirit || valueFor(props.pet.panel, "灵力")) },
-      ],
-      aptitudes: props.pet.aptitudes.slice(0, 6).map(([label, value]) => ({ label, value })),
-      skills: props.pet.skills.filter((skill) => skill !== "空"),
-    });
-    const safePetName = props.pet.name.replace(/[\\/:*?"<>|]/g, "-");
-    const fileName = `${props.pet.accountId}-${safePetName}-宠物档案.png`;
-    const file = new File([blob], fileName, { type: "image/png" });
+    const file = await createPetShareFile(props.pet, primaryEvidence, catalog.data.generatedAt);
+    const fileName = file.name;
     const shareData: ShareData = { files: [file], title: `${props.pet.accountId} · ${props.pet.name}宠物档案` };
     const supportsFileShare = typeof navigator.share === "function"
       && typeof navigator.canShare === "function"
@@ -90,7 +57,7 @@ async function sharePetDetail() {
       }
     }
 
-    downloadShareImage(blob, fileName);
+    downloadShareImage(file, fileName);
     showShareNotice("宠物图片已下载");
   } catch {
     showShareNotice("图片生成失败，请重试");
