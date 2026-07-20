@@ -4,13 +4,12 @@ import { useRoute, useRouter } from "vue-router";
 import AppIcon from "../../components/AppIcon.vue";
 import PetRow from "../../components/PetRow.vue";
 import PetDetail from "../../components/PetDetail.vue";
-import { createPetShareFile } from "../../components/petShare";
+import { createPetBatchShareFile } from "../../components/petShare";
 import { useCatalogStore } from "../../stores/catalog";
 import { usePublishStore } from "../../stores/publish";
 import { useUiStore } from "../../stores/ui";
 import { queryChoice, queryText } from "../../app/queryState";
 import { accountIds, type AccountScope } from "../../domain/types";
-import { createZipArchive } from "../../utils/zipArchive";
 
 const catalog = useCatalogStore(); const publish = usePublishStore(); const ui = useUiStore(); const route = useRoute(); const router = useRouter();
 const roles = computed(() => [...new Set(catalog.pets.map((item) => item.role.primary))].sort());
@@ -92,16 +91,17 @@ async function shareSelectedPets() {
   showBatchNotice("");
 
   try {
-    const files: File[] = [];
-    for (const [index, pet] of pets.entries()) {
-      const primaryEvidence = catalog.evidenceById.get(pet.evidenceIds[0]);
-      const prefix = `${String(index + 1).padStart(2, "0")}-`;
-      files.push(await createPetShareFile(pet, primaryEvidence, catalog.data.generatedAt, prefix));
-      batchProgress.value = index + 1;
-      await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
-    }
+    const file = await createPetBatchShareFile(
+      pets,
+      catalog.evidenceById,
+      catalog.data.generatedAt,
+      (current, total) => {
+        batchProgress.value = current;
+        batchTotal.value = total;
+      },
+    );
 
-    const shareData: ShareData = { files, title: `${files.length} 只宠物档案` };
+    const shareData: ShareData = { files: [file], title: `${pets.length} 只宠物合集` };
     const supportsFileShare = typeof navigator.share === "function"
       && typeof navigator.canShare === "function"
       && navigator.canShare(shareData);
@@ -109,19 +109,17 @@ async function shareSelectedPets() {
     if (supportsFileShare) {
       try {
         await navigator.share(shareData);
-        showBatchNotice(`已生成 ${files.length} 张图片`);
+        showBatchNotice("已生成 1 张合集图");
         return;
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
     }
 
-    const archive = await createZipArchive(files.map((file) => ({ name: file.name, blob: file })));
-    const dataDate = catalog.data.generatedAt.slice(0, 10);
-    downloadBlob(archive, `宠物档案-${dataDate}-${files.length}只.zip`);
-    showBatchNotice(`${files.length} 张图片已打包下载`);
+    downloadBlob(file, file.name);
+    showBatchNotice("宠物合集图已下载");
   } catch {
-    showBatchNotice("批量图片生成失败，请重试");
+    showBatchNotice("合集图生成失败，请重试");
   } finally {
     batchSharing.value = false;
     batchProgress.value = 0;

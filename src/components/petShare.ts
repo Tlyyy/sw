@@ -1,5 +1,6 @@
 import type { AccountId, EvidenceSource, PetView, StatValue } from "../domain/types";
 import { publicAsset } from "../utils/publicAsset";
+import { createPetBatchShareImage } from "./petBatchShareImage";
 import { createPetDetailShareImage, type PetDetailShareData } from "./petDetailShareImage";
 
 const accountImageTone: Record<AccountId, string> = {
@@ -55,4 +56,26 @@ export async function createPetShareFile(
 ) {
   const blob = await createPetDetailShareImage(buildPetDetailShareData(pet, primaryEvidence, generatedAt));
   return new File([blob], petShareFileName(pet, prefix), { type: "image/png" });
+}
+
+export function petBatchShareFileName(generatedAt: string, count: number) {
+  return `宠物合集-${generatedAt.slice(0, 10)}-${count}只.png`;
+}
+
+export async function createPetBatchShareFile(
+  pets: PetView[],
+  evidenceById: ReadonlyMap<string, EvidenceSource>,
+  generatedAt: string,
+  onProgress?: (current: number, total: number) => void,
+) {
+  const shareData = pets.map((pet) => buildPetDetailShareData(
+    pet,
+    evidenceById.get(pet.evidenceIds[0]),
+    generatedAt,
+  ));
+  const blob = await createPetBatchShareImage(shareData, {
+    dataDate: generatedAt.slice(0, 10),
+    onProgress,
+  });
+  return new File([blob], petBatchShareFileName(generatedAt, pets.length), { type: "image/png" });
 }

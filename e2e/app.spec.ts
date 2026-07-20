@@ -362,7 +362,7 @@ test.describe("pet detail sharing", () => {
     await detail.screenshot({ path: testInfo.outputPath(`pet-detail-share-${testInfo.project.name}.png`) });
   });
 
-  test("selected pets can be shared as multiple images in one action", async ({ page }, testInfo) => {
+  test("selected pets are combined into one share image", async ({ page }, testInfo) => {
     test.skip(!["desktop", "mobile"].includes(testInfo.project.name));
     const runtimeErrors: string[] = [];
     page.on("pageerror", (error) => runtimeErrors.push(error.message));
@@ -391,29 +391,25 @@ test.describe("pet detail sharing", () => {
 
     await page.goto("/#/assets/pets?account=FC");
     const petCheckboxes = page.getByRole("checkbox", { name: /选择 FC 的/ });
-    await petCheckboxes.nth(0).check();
-    await petCheckboxes.nth(1).check();
+    for (let index = 0; index < 5; index += 1) await petCheckboxes.nth(index).check();
     const batchBar = page.getByRole("complementary", { name: "批量分享宠物" });
-    await expect(batchBar.getByText("2 只宠物", { exact: true })).toBeVisible();
-    const shareButton = batchBar.getByRole("button", { name: "批量分享 2 只宠物" });
+    await expect(batchBar.getByText("5 只宠物", { exact: true })).toBeVisible();
+    const shareButton = batchBar.getByRole("button", { name: "批量分享 5 只宠物" });
 
     if (testInfo.project.name === "mobile") {
       await shareButton.click();
-      await expect(batchBar.getByRole("status")).toHaveText("已生成 2 张图片");
+      await expect(batchBar.getByRole("status")).toHaveText("已生成 1 张合集图");
       const sharedFiles = await page.evaluate(() => (window as typeof window & { __petBatchShare?: Array<{ name: string; type: string; size: number }> }).__petBatchShare);
-      expect(sharedFiles).toHaveLength(2);
-      expect(sharedFiles?.map((file) => file.name)).toEqual([
-        "01-FC-祸斗-宠物档案.png",
-        "02-FC-雷司-宠物档案.png",
-      ]);
+      expect(sharedFiles).toHaveLength(1);
+      expect(sharedFiles?.[0]?.name).toBe("宠物合集-2026-07-13-5只.png");
       expect(sharedFiles?.every((file) => file.type === "image/png" && file.size > 0)).toBeTruthy();
     } else {
       const downloadPromise = page.waitForEvent("download");
       await shareButton.click();
       const download = await downloadPromise;
-      expect(download.suggestedFilename()).toBe("宠物档案-2026-07-13-2只.zip");
-      await download.saveAs(testInfo.outputPath("宠物档案-2只.zip"));
-      await expect(batchBar.getByRole("status")).toHaveText("2 张图片已打包下载");
+      expect(download.suggestedFilename()).toBe("宠物合集-2026-07-13-5只.png");
+      await download.saveAs(testInfo.outputPath("宠物合集-5只.png"));
+      await expect(batchBar.getByRole("status")).toHaveText("宠物合集图已下载");
     }
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
