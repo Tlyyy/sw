@@ -155,7 +155,7 @@ test.describe("desktop regressions", () => {
     await expect(ptMainline).toHaveClass(/ready-now-row/);
     await expect(ptMainline.locator(".task-ready-badge")).toHaveText("现在可完成");
     await expect(ptMainline.locator(".ready-now-task small")).toHaveText("今天可完成");
-    await expect(ptMainline.locator(".status-chip")).toHaveText("现在可完成");
+    await expect(ptMainline.locator(".status-cell .status-chip")).toHaveText("现在可完成");
     await expect(ptTrack.first().locator("b")).toContainText("剑气蛇 · 进阶2");
     await expect(ptTrack.first().locator("small")).toHaveText("今天可完成");
     await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
@@ -216,8 +216,11 @@ test.describe("desktop regressions", () => {
     await expect(page.getByText("卖普通蛋可补齐", { exact: true })).toHaveCount(0);
 
     await page.goto("/#/accounts/PT");
-    await expect(page.getByText("优先攒银子", { exact: true })).toBeVisible();
-    await expect(page.getByText("优先留作任务，仅紧急出售", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "PT 账号详情", exact: true })).toBeVisible();
+    const accountStatus = page.locator(".stat-strip > div").filter({ hasText: "当前状态" });
+    const regularEggStatus = page.locator(".stat-strip > div").filter({ hasText: "普通蛋" });
+    await expect(accountStatus.locator("strong")).toHaveText("优先攒银子");
+    await expect(regularEggStatus.locator("small")).toHaveText("优先留作任务，仅紧急出售");
 
     await page.goto("/#/plans/timeline");
     const timelineRow = page.locator(".timeline-ledger > a").filter({ hasText: "PT" });
@@ -317,6 +320,7 @@ test("移动导航是可关闭、可困住焦点并恢复焦点的对话框", as
   await expect(navigation).toBeVisible();
   await expect(menuButton).toHaveAttribute("aria-expanded", "true");
   await expect(closeButton).toBeFocused();
+  await expect.poll(() => navigationPanel.evaluate((element) => Math.abs(element.getBoundingClientRect().left) < 0.5)).toBe(true);
 
   const viewportCoverage = await page.evaluate(() => {
     const navigationElement = document.querySelector<HTMLElement>(".orbit-nav.open");

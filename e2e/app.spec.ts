@@ -379,11 +379,19 @@ test.describe("schedule completion dates", () => {
 
     await page.goto("/#/");
     const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
-    const currentTrackTask = ptMainline.locator(".task-track-labels span").first();
-    await expect(currentTrackTask.locator("b")).toContainText("剑气蛇 · 进阶2");
-    await expect(currentTrackTask.locator(".task-ready-badge")).toHaveText("现在可完成");
-    await expect(currentTrackTask.locator("small")).toHaveText("今天可完成");
-    await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
+    if (testInfo.project.name === "mobile") {
+      const currentTrackTask = ptMainline.locator(".mainline-mobile-identity");
+      await expect(currentTrackTask.locator("b")).toContainText("剑气蛇 · 进阶2");
+      await expect(currentTrackTask.locator("small")).toHaveText("今天可完成");
+      await expect(ptMainline.locator(".mainline-mobile-state .status-chip")).toHaveText("现在可完成");
+      await expect(ptMainline.locator(".mainline-mobile-finish")).toHaveText("待洗护符后排期");
+    } else {
+      const currentTrackTask = ptMainline.locator(".task-track-labels span").first();
+      await expect(currentTrackTask.locator("b")).toContainText("剑气蛇 · 进阶2");
+      await expect(currentTrackTask.locator(".task-ready-badge")).toHaveText("现在可完成");
+      await expect(currentTrackTask.locator("small")).toHaveText("今天可完成");
+      await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
+    }
     if (testInfo.project.name === "desktop") {
       const tableWidth = await page.locator(".mainline-table-scroll").evaluate((element) => {
         const table = element.querySelector(".mainline-table")!;
@@ -399,7 +407,10 @@ test.describe("schedule completion dates", () => {
       expect(Math.abs(tableWidth.tableRight - tableWidth.lastCellRight)).toBeLessThan(1);
       await expect(page.getByRole("link", { name: /查看 .* 账号明细/ })).toHaveCount(5);
     }
-    await ptMainline.locator(".task-track").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
+    const visibleTrack = testInfo.project.name === "mobile"
+      ? ptMainline.locator(".mainline-mobile-card")
+      : ptMainline.locator(".task-track");
+    await visibleTrack.screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
 
     await page.goto("/#/accounts/PT");
     const accountTask = page.locator(".task-mini-list > div").filter({ hasText: "剑气蛇 · 进阶2" }).first();
