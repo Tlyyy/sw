@@ -4080,6 +4080,7 @@ body,
     inset: 0;
     background: rgba(17, 24, 39, .56);
     will-change: opacity;
+    transition: opacity 180ms ease-out;
   }
 
   .orbit-nav-scrim-enter-active,

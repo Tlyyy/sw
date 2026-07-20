@@ -218,7 +218,9 @@ test.describe("desktop regressions", () => {
     await page.goto("/#/accounts/PT");
     await expect(page.getByRole("heading", { name: "PT 账号详情", exact: true })).toBeVisible();
     const accountStatus = page.locator(".stat-strip > div").filter({ hasText: "当前状态" });
-    const regularEggStatus = page.locator(".stat-strip > div").filter({ hasText: "普通蛋" });
+    const regularEggStatus = page.locator(".stat-strip > div").filter({
+      has: page.locator("span", { hasText: /^普通蛋$/ }),
+    });
     await expect(accountStatus.locator("strong")).toHaveText("优先攒银子");
     await expect(regularEggStatus.locator("small")).toHaveText("优先留作任务，仅紧急出售");
 
