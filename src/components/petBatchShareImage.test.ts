@@ -70,6 +70,10 @@ describe("pet batch share image", () => {
     expect(renderedText).toContain("祸斗");
     expect(renderedText).toContain("雷司");
     expect(renderedText).toContain("冥卫");
+    expect(renderedText).toContain("面板");
+    expect(renderedText).toContain("资质");
+    expect(renderedText).toContain("技能 · 2");
+    expect(renderedText).not.toContain("暂无截图");
     expect(canvas.width).toBe(1080);
     expect(canvas.height).toBeGreaterThan(600);
     expect(onProgress).toHaveBeenLastCalledWith(3, 3);

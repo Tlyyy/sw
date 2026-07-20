@@ -9,7 +9,7 @@ const WIDTH = 1080;
 const PAGE_X = 48;
 const GRID_Y = 168;
 const GRID_GAP = 18;
-const FOOTER_HEIGHT = 72;
+const FOOTER_HEIGHT = 48;
 const FONT_FAMILY = '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif';
 
 function roundedRect(
@@ -91,37 +91,27 @@ function canvasToBlob(canvas: HTMLCanvasElement) {
   });
 }
 
-function loadImage(source: string) {
-  return new Promise<HTMLImageElement | null>((resolve) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => resolve(null);
-    image.src = source;
+function yieldToBrowser() {
+  return new Promise<void>((resolve) => {
+    if (typeof window.requestAnimationFrame === "function") window.requestAnimationFrame(() => resolve());
+    else resolve();
   });
 }
 
-function drawContainedImage(
-  context: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
-  const renderedWidth = image.naturalWidth * scale;
-  const renderedHeight = image.naturalHeight * scale;
-  context.drawImage(
-    image,
-    x + (width - renderedWidth) / 2,
-    y + (height - renderedHeight) / 2,
-    renderedWidth,
-    renderedHeight,
-  );
+function compactMeta(meta: string) {
+  return meta
+    .replace(/血脉[： ]*(\d+)级血脉/, "血脉 $1级")
+    .replaceAll("｜", " · ")
+    .replaceAll("：", " ");
 }
 
-function metricValue(metrics: PetDetailShareMetric[], label: string) {
-  return metrics.find((metric) => metric.label === label)?.value || "—";
+function compactAptitudeLabel(label: string) {
+  return label
+    .replace("攻击资质", "攻资")
+    .replace("防御资质", "防资")
+    .replace("体力资质", "体资")
+    .replace("法力资质", "法资")
+    .replace("速度资质", "速资");
 }
 
 function drawHeader(
@@ -158,45 +148,87 @@ function drawHeader(
   context.stroke();
 }
 
-function drawMetricStrip(
+function drawDataBand(
   context: CanvasRenderingContext2D,
-  data: PetDetailShareData,
+  title: string,
+  metrics: PetDetailShareMetric[],
   x: number,
   y: number,
   width: number,
+  accountTone: string,
+  valueSize: number,
 ) {
-  const metrics = ["攻击", "速度", "灵力", "气血"];
-  const cellWidth = width / metrics.length;
-  metrics.forEach((label, index) => {
-    const centerX = x + cellWidth * index + cellWidth / 2;
+  const titleWidth = 58;
+  const cellWidth = (width - titleWidth) / Math.max(metrics.length, 1);
+  fillRoundedRect(context, x, y, width, 60, 10, "#f4f8f7");
+  context.fillStyle = accountTone;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  setFont(context, 13, 850);
+  context.fillText(title, x + titleWidth / 2, y + 30);
+  context.strokeStyle = "#dce6e3";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(x + titleWidth, y + 10);
+  context.lineTo(x + titleWidth, y + 50);
+  context.stroke();
+
+  metrics.forEach((metric, index) => {
+    const centerX = x + titleWidth + cellWidth * index + cellWidth / 2;
     context.textAlign = "center";
     context.textBaseline = "top";
     context.fillStyle = "#7a8986";
-    setFont(context, 12, 750);
-    context.fillText(label, centerX, y);
+    setFont(context, 11, 750);
+    context.fillText(fitText(context, metric.label, cellWidth - 8), centerX, y + 9);
     context.fillStyle = "#152724";
-    setFont(context, 18, 850);
-    context.fillText(fitText(context, metricValue(data.stats, label), cellWidth - 14), centerX, y + 20);
+    setFont(context, valueSize, 850);
+    context.fillText(fitText(context, metric.value || "—", cellWidth - 8), centerX, y + 29);
 
     if (index < metrics.length - 1) {
       context.strokeStyle = "#e0e8e6";
       context.lineWidth = 1;
       context.beginPath();
-      context.moveTo(x + cellWidth * (index + 1), y + 2);
-      context.lineTo(x + cellWidth * (index + 1), y + 43);
+      context.moveTo(x + titleWidth + cellWidth * (index + 1), y + 10);
+      context.lineTo(x + titleWidth + cellWidth * (index + 1), y + 50);
       context.stroke();
     }
   });
 }
 
-async function drawPetCard(
+function skillLines(
+  context: CanvasRenderingContext2D,
+  skills: string[],
+  maxWidth: number,
+  maxLines: number,
+) {
+  if (!skills.length) return ["待确认"];
+  const lines: string[] = [];
+  let current = "";
+  for (const [index, skill] of skills.entries()) {
+    const candidate = current ? `${current} · ${skill}` : skill;
+    if (!current || context.measureText(candidate).width <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+    lines.push(current);
+    current = skill;
+    if (lines.length === maxLines - 1) {
+      const remaining = [current, ...skills.slice(index + 1)].join(" · ");
+      lines.push(fitText(context, remaining, maxWidth));
+      return lines;
+    }
+  }
+  if (current) lines.push(fitText(context, current, maxWidth));
+  return lines.slice(0, maxLines);
+}
+
+function drawPetCard(
   context: CanvasRenderingContext2D,
   data: PetDetailShareData,
   x: number,
   y: number,
   width: number,
   height: number,
-  screenshotHeight: number,
 ) {
   context.save();
   context.shadowColor = "rgba(10, 41, 35, .08)";
@@ -222,34 +254,46 @@ async function drawPetCard(
   context.fillText(fitText(context, data.petName, width - 130), x + 106, y + 13);
   context.fillStyle = "#6f7f7c";
   setFont(context, 13, 700);
-  const secondary = `${data.role} · ${data.levelLabel} · ${data.skills.length}技能`;
+  const secondary = `${data.role} · ${data.levelLabel}`;
   context.fillText(fitText(context, secondary, width - 132), x + 106, y + 44);
 
-  const screenshotX = x + 18;
-  const screenshotY = y + 74;
-  const screenshotWidth = width - 36;
-  fillRoundedRect(context, screenshotX, screenshotY, screenshotWidth, screenshotHeight, 12, "#10201e");
-  const screenshot = data.screenshotUrl ? await loadImage(data.screenshotUrl) : null;
-  context.save();
-  roundedRect(context, screenshotX, screenshotY, screenshotWidth, screenshotHeight, 12);
-  context.clip();
-  if (screenshot) {
-    drawContainedImage(context, screenshot, screenshotX, screenshotY, screenshotWidth, screenshotHeight);
-  } else {
-    const placeholder = context.createLinearGradient(screenshotX, screenshotY, screenshotX + screenshotWidth, screenshotY + screenshotHeight);
-    placeholder.addColorStop(0, "#142b27");
-    placeholder.addColorStop(1, `${data.accountTone}cc`);
-    context.fillStyle = placeholder;
-    context.fillRect(screenshotX, screenshotY, screenshotWidth, screenshotHeight);
-    context.fillStyle = "rgba(255, 255, 255, .68)";
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    setFont(context, 18, 750);
-    context.fillText("暂无截图", screenshotX + screenshotWidth / 2, screenshotY + screenshotHeight / 2);
-  }
-  context.restore();
+  const life = data.aptitudes.find((metric) => metric.label === "寿命")?.value;
+  const metadata = [compactMeta(data.meta), life ? `寿命 ${life}` : ""].filter(Boolean).join(" · ");
+  fillRoundedRect(context, x + 18, y + 68, width - 36, 32, 9, `${data.accountTone}0d`);
+  context.fillStyle = "#526762";
+  context.textAlign = "left";
+  context.textBaseline = "middle";
+  setFont(context, 12, 750);
+  context.fillText(fitText(context, metadata, width - 64), x + 32, y + 84);
 
-  drawMetricStrip(context, data, x + 18, screenshotY + screenshotHeight + 15, width - 36);
+  drawDataBand(context, "面板", data.stats.slice(0, 5), x + 18, y + 110, width - 36, data.accountTone, 17);
+  drawDataBand(
+    context,
+    "资质",
+    data.aptitudes.slice(0, 5).map((metric) => ({ ...metric, label: compactAptitudeLabel(metric.label) })),
+    x + 18,
+    y + 180,
+    width - 36,
+    data.accountTone,
+    12,
+  );
+
+  context.strokeStyle = "#dce6e3";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(x + 20, y + 254);
+  context.lineTo(x + width - 20, y + 254);
+  context.stroke();
+  context.fillStyle = data.accountTone;
+  context.textAlign = "left";
+  context.textBaseline = "top";
+  setFont(context, 13, 850);
+  context.fillText(`技能 · ${data.skills.length}`, x + 20, y + 268);
+  context.fillStyle = "#314641";
+  setFont(context, 13, 700);
+  skillLines(context, data.skills, width - 40, 3).forEach((line, index) => {
+    context.fillText(line, x + 20, y + 292 + index * 20);
+  });
 }
 
 export async function createPetBatchShareImage(
@@ -257,10 +301,9 @@ export async function createPetBatchShareImage(
   options: PetBatchShareImageOptions,
 ) {
   if (!pets.length) throw new Error("至少选择一只宠物");
-  const columns = pets.length > 12 ? 3 : 2;
+  const columns = 2;
   const cardWidth = (WIDTH - PAGE_X * 2 - GRID_GAP * (columns - 1)) / columns;
-  const screenshotHeight = Math.round((cardWidth - 36) / 1.49);
-  const cardHeight = 74 + screenshotHeight + 68;
+  const cardHeight = 366;
   const rows = Math.ceil(pets.length / columns);
   const gridHeight = rows * cardHeight + Math.max(rows - 1, 0) * GRID_GAP;
   const height = GRID_Y + gridHeight + FOOTER_HEIGHT;
@@ -292,17 +335,10 @@ export async function createPetBatchShareImage(
     const rowX = (WIDTH - rowWidth) / 2;
     const x = rowX + column * (cardWidth + GRID_GAP);
     const y = GRID_Y + row * (cardHeight + GRID_GAP);
-    await drawPetCard(context, pet, x, y, cardWidth, cardHeight, screenshotHeight);
+    drawPetCard(context, pet, x, y, cardWidth, cardHeight);
     options.onProgress?.(index + 1, pets.length);
+    if ((index + 1) % 4 === 0 && index < pets.length - 1) await yieldToBrowser();
   }
-
-  context.fillStyle = "#81908d";
-  context.textBaseline = "middle";
-  setFont(context, 15, 650);
-  context.textAlign = "left";
-  context.fillText("项目台账", 52, height - 34);
-  context.textAlign = "right";
-  context.fillText(options.dataDate, 1028, height - 34);
 
   return canvasToBlob(canvas);
 }
