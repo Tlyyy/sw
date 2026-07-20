@@ -160,22 +160,50 @@ onBeforeUnmount(() => {
         aria-label="主导航"
         @keydown="mobileNavKeydown"
       >
-        <button ref="mobileCloseButton" class="orbit-mobile-nav-close" type="button" @click="closeMobileNavigation()">
-          <AppIcon name="close" />
-          <span>关闭导航</span>
-        </button>
+        <div class="orbit-mobile-nav-head">
+          <div class="orbit-mobile-nav-identity">
+            <strong>项目台账</strong>
+            <span>功能导航</span>
+          </div>
+          <button
+            ref="mobileCloseButton"
+            class="orbit-mobile-nav-close"
+            type="button"
+            aria-label="关闭导航"
+            @click="closeMobileNavigation()"
+          >
+            <AppIcon name="close" />
+            <span class="visually-hidden">关闭导航</span>
+          </button>
+        </div>
+        <p class="orbit-mobile-nav-label">主要功能</p>
         <RouterLink
           v-for="link in links"
           :key="link.to"
           :to="link.to"
           :class="{ active: route.meta.section === link.section }"
+          :aria-current="route.meta.section === link.section ? 'page' : undefined"
           @click="closeMobileNavigation(false)"
         >
           <AppIcon :name="link.icon" />
           <span>{{ link.text }}</span>
         </RouterLink>
-        <button class="orbit-mobile-logout" @click="closeMobileNavigation(false); auth.logout()">退出登录</button>
+        <button class="orbit-mobile-logout" type="button" @click="closeMobileNavigation(false); auth.logout()">
+          <span>退出登录</span>
+          <small>结束当前设备会话</small>
+        </button>
       </nav>
+
+      <Transition name="orbit-nav-scrim">
+        <button
+          v-if="mobileDialogOpen"
+          class="orbit-nav-scrim"
+          type="button"
+          tabindex="-1"
+          aria-label="关闭导航"
+          @click="closeMobileNavigation()"
+        ></button>
+      </Transition>
 
       <div class="orbit-header-tools" :inert="mobileDialogOpen || undefined">
         <button class="orbit-command-trigger" aria-label="搜索全系统" title="搜索全系统（Ctrl+K）" @click="openCommandSearch">
@@ -192,8 +220,6 @@ onBeforeUnmount(() => {
         <button class="orbit-logout" title="退出登录" @click="auth.logout">退出</button>
       </div>
     </header>
-
-    <button v-if="mobileDialogOpen" class="orbit-nav-scrim" aria-label="关闭导航" @click="closeMobileNavigation()"></button>
 
     <main class="orbit-main" :inert="mobileDialogOpen || undefined">
       <p v-if="auth.warning" class="orbit-auth-warning" role="status">{{ auth.warning }}</p>

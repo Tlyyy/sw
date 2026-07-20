@@ -310,19 +310,76 @@ test("移动导航是可关闭、可困住焦点并恢复焦点的对话框", as
   await menuButton.click();
 
   const navigation = page.getByRole("dialog", { name: "主导航" });
+  const navigationPanel = page.locator("#orbit-primary-navigation");
+  const scrim = page.locator(".orbit-nav-scrim");
   const closeButton = navigation.getByRole("button", { name: "关闭导航" });
   const logoutButton = navigation.getByRole("button", { name: "退出登录" });
   await expect(navigation).toBeVisible();
   await expect(menuButton).toHaveAttribute("aria-expanded", "true");
   await expect(closeButton).toBeFocused();
+
+  const viewportCoverage = await page.evaluate(() => {
+    const navigationElement = document.querySelector<HTMLElement>(".orbit-nav.open");
+    const scrimElement = document.querySelector<HTMLElement>(".orbit-nav-scrim");
+    if (!navigationElement || !scrimElement) throw new Error("移动导航或遮罩未渲染");
+    const navigationRect = navigationElement.getBoundingClientRect();
+    const scrimRect = scrimElement.getBoundingClientRect();
+    const navigationStyle = getComputedStyle(navigationElement);
+    const scrimStyle = getComputedStyle(scrimElement);
+    return {
+      viewportHeight: window.innerHeight,
+      navigationTop: navigationRect.top,
+      navigationBottom: navigationRect.bottom,
+      scrimTop: scrimRect.top,
+      scrimBottom: scrimRect.bottom,
+      navigationZ: Number(navigationStyle.zIndex),
+      scrimZ: Number(scrimStyle.zIndex),
+      navigationTransition: navigationStyle.transitionProperty,
+      scrimTransition: scrimStyle.transitionProperty,
+      scrimBackdropFilter: scrimStyle.backdropFilter,
+      navigationIsTopLayer: Boolean(
+        document
+          .elementFromPoint(
+            navigationRect.left + Math.min(24, navigationRect.width / 2),
+            navigationRect.top + Math.min(24, navigationRect.height / 2),
+          )
+          ?.closest(".orbit-nav.open"),
+      ),
+      scrimIsTopLayer: Boolean(
+        document
+          .elementFromPoint(
+            navigationRect.right + (window.innerWidth - navigationRect.right) / 2,
+            window.innerHeight / 2,
+          )
+          ?.closest(".orbit-nav-scrim"),
+      ),
+    };
+  });
+
+  expect(viewportCoverage.navigationTop).toBe(0);
+  expect(viewportCoverage.navigationBottom).toBe(viewportCoverage.viewportHeight);
+  expect(viewportCoverage.scrimTop).toBe(0);
+  expect(viewportCoverage.scrimBottom).toBe(viewportCoverage.viewportHeight);
+  expect(viewportCoverage.navigationZ).toBeGreaterThan(viewportCoverage.scrimZ);
+  expect(viewportCoverage.navigationIsTopLayer).toBe(true);
+  expect(viewportCoverage.scrimIsTopLayer).toBe(true);
+  expect(viewportCoverage.navigationTransition).toContain("transform");
+  expect(viewportCoverage.scrimTransition).toContain("opacity");
+  expect(viewportCoverage.scrimBackdropFilter).toBe("none");
+
   await closeButton.press("Shift+Tab");
   await expect(logoutButton).toBeFocused();
   await logoutButton.press("Tab");
   await expect(closeButton).toBeFocused();
 
   await page.keyboard.press("Escape");
+  await expect(navigationPanel).toHaveCSS("visibility", "visible");
+  await expect(scrim).toHaveCount(1);
   await expect(navigation).toHaveCount(0);
   await expect(menuButton).toHaveAttribute("aria-expanded", "false");
   await expect(menuButton).toHaveAttribute("aria-label", "打开导航");
   await expect(menuButton).toBeFocused();
+  await page.waitForTimeout(240);
+  await expect(navigationPanel).toHaveCSS("visibility", "hidden");
+  await expect(scrim).toHaveCount(0);
 });

@@ -9,6 +9,7 @@ import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { useUiStore } from "../../stores/ui";
+import { createMainlineOverviewShareImage } from "./mainlineOverviewShareImage";
 
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
@@ -16,6 +17,9 @@ const settings = useSettingsStore();
 const ui = useUiStore();
 const inventoryDialogOpen = ref(false);
 const saveNotice = ref("");
+const sharingTimeline = ref(false);
+const shareNotice = ref("");
+let shareNoticeTimer: number | null = null;
 
 inventory.hydrate();
 
@@ -59,6 +63,13 @@ const accountTone: Record<AccountId, string> = {
   LG2: "var(--radar-account-lg2)",
   PT: "var(--radar-account-pt)",
   MYT: "var(--radar-account-myt)",
+};
+const accountImageTone: Record<AccountId, string> = {
+  FC: "#12678f",
+  LG1: "#6446a6",
+  LG2: "#8a5a00",
+  PT: "#a33838",
+  MYT: "#28764a",
 };
 
 function selectAccount(accountId: AccountId) {
@@ -139,6 +150,11 @@ function mainlineFinishLabel(projection: ReturnType<typeof buildMainlineProjecti
   return finish.startsWith("预计 ") ? `整条主线${finish}` : `整条主线：${finish}`;
 }
 
+function mainlineFinishCompactLabel(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  if (!projection.currentTask) return "主线已完成";
+  return taskDueLabel(projection.finishDate);
+}
+
 function requirementTitle(kind: MainlineRequirementKind, amount: number) {
   if (kind === "eggs") return `${formatNumber(amount)} 个蛋`;
   if (kind === "silver") return `${formatNumber(amount)} 万`;
@@ -189,6 +205,13 @@ function fundingShortagePending(projection: ReturnType<typeof buildMainlineProje
     || (projection.requirementKind === "eggs" && !!projection.allocation.eggShortage && !projection.allocation.purchaseCostWan);
 }
 
+function fundingCovered(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  return projection.status !== "stale"
+    && (projection.requirementKind === "eggs" || projection.requirementKind === "silver")
+    && !fundingShortagePending(projection)
+    && fundingShortageWan(projection) === 0;
+}
+
 function accountFundingShortageText(projection: ReturnType<typeof buildMainlineProjection>[number]) {
   if (fundingShortagePending(projection)) return "金额待算";
   if (fundingShortageWan(projection)) return `差 ${fundingShortageValue(projection)}`;
@@ -203,7 +226,19 @@ function fundingShortageCaption(projection: ReturnType<typeof buildMainlineProje
     return projection.requirementKind === "eggs" ? "买齐当前缺口还需" : "完成当前任务还需";
   }
   if (projection.requirementKind === "estimate") return "成本待任务完成后确认";
+  if (fundingCovered(projection)) {
+    return projection.requirementKind === "eggs" ? "可直接补齐当前缺口" : "可满足当前任务";
+  }
   return "当前资金够用";
+}
+
+function statusDetailText(projection: ReturnType<typeof buildMainlineProjection>[number]) {
+  const shortage = shortageValue(projection);
+  if (shortage && fundingCovered(projection)) {
+    return `可补 ${formatNumber(shortage)}${shortageUnit(projection)}`;
+  }
+  if (shortage) return `缺 ${formatNumber(shortage)}${shortageUnit(projection)}`;
+  return fundingCovered(projection) ? "资金够用" : requirementCaption(projection.requirementKind);
 }
 
 function allocationLines(projection: ReturnType<typeof buildMainlineProjection>[number]) {
@@ -234,8 +269,81 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
   if (projection.status === "stale") return "待补库存";
   if (canCompleteNow(projection)) return "现在可完成";
   if (projection.status === "ready") return "可推进";
-  if (projection.status === "buyable" && projection.requirementKind === "eggs") return "银子可补齐";
+  if (projection.status === "buyable" && projection.requirementKind === "eggs") return "资金够用";
   return projection.statusLabel;
+}
+
+function showShareNotice(message: string) {
+  shareNotice.value = message;
+  if (shareNoticeTimer !== null) window.clearTimeout(shareNoticeTimer);
+  shareNoticeTimer = window.setTimeout(() => {
+    shareNotice.value = "";
+    shareNoticeTimer = null;
+  }, 2_800);
+}
+
+function downloadShareImage(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+async function shareMainlineOverview() {
+  if (sharingTimeline.value) return;
+  sharingTimeline.value = true;
+
+  try {
+    const blob = createMainlineOverviewShareImage({
+      inventoryDate: latestDate.value || "待录入",
+      accounts: projections.value.map((projection) => ({
+        accountId: projection.accountId,
+        accountTone: accountImageTone[projection.accountId],
+        status: statusLabelFor(projection),
+        statusTone: projection.status === "blocked" || projection.status === "stale"
+          ? "danger"
+          : projection.status === "caution" ? "warning" : "positive",
+        resourceStatus: statusDetailText(projection),
+        tasks: projection.nextTasks.slice(0, 3).map((task, index) => ({
+          stage: ["当前", "下一步", "再下一步"][index],
+          title: taskLabel(task),
+          due: index === 0 && canCompleteNow(projection) ? "今天可完成" : taskDueLabel(task.dueDate),
+        })),
+        finish: mainlineFinishCompactLabel(projection),
+        resources: {
+          dedicatedEggs: formatNumber(projection.inventory.dedicatedEggs),
+          regularEggs: formatNumber(projection.inventory.regularEggs),
+          silverWan: formatNumber(projection.inventory.silverWan),
+          innerShards: projection.inventory.innerShardCount === null ? "待补" : formatNumber(projection.inventory.innerShardCount),
+        },
+      })),
+    });
+    const fileName = `五号主线进度-${latestDate.value || today.value}.png`;
+    const file = new File([blob], fileName, { type: "image/png" });
+    const shareData: ShareData = { files: [file], title: "五号主线进度" };
+    const supportsFileShare = typeof navigator.share === "function"
+      && typeof navigator.canShare === "function"
+      && navigator.canShare(shareData);
+
+    if (supportsFileShare) {
+      try {
+        await navigator.share(shareData);
+        showShareNotice("五号进度图片已生成");
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    downloadShareImage(blob, fileName);
+    showShareNotice("五号进度图片已下载");
+  } catch {
+    showShareNotice("图片生成失败，请重试");
+  } finally {
+    sharingTimeline.value = false;
+  }
 }
 </script>
 
@@ -255,21 +363,32 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
         <p>聚焦当前账号的资源、缺口和下一步，同时保留五号主线的完整推进视野。</p>
       </div>
       <div class="workbench-title-actions">
-        <span class="workbench-date">库存所属日期：{{ formatLongDate(latestDate) }}</span>
+        <span class="workbench-date workbench-date-full">库存所属日期：{{ formatLongDate(latestDate) }}</span>
+        <span class="workbench-date workbench-date-compact">库存 {{ latestDate ? formatDate(latestDate) : "待录入" }}</span>
       </div>
     </header>
 
     <p v-if="saveNotice" class="action-notice" aria-live="polite">{{ saveNotice }}</p>
+    <p v-if="shareNotice" class="mainline-share-notice" role="status">{{ shareNotice }}</p>
 
     <section class="workbench-snapshot-meta radar-status-strip" aria-label="最近库存快照">
-      <div>
+      <div class="radar-status-current">
         <span class="radar-live-dot" aria-hidden="true"></span>
-        <strong>{{ latestDate ? "已按最新库存更新" : "等待首份库存" }}</strong>
+        <strong>
+          <span class="radar-status-full">{{ latestDate ? "已按最新库存更新" : "等待首份库存" }}</span>
+          <span class="radar-status-compact">{{ latestDate ? "库存已更新" : "等待库存" }}</span>
+        </strong>
       </div>
-      <span>库存：{{ latestDate ? formatDate(latestDate) : "待录入" }}</span>
-      <span>排期基准：{{ planningStartDate }}</span>
-      <span>可立即完成：{{ readyNowProjections.length }} 项</span>
-      <span :class="{ warning: !latestInventoryComplete }">{{ latestInventoryComplete ? "五号资料完整" : "内丹碎片待补录" }}</span>
+      <span class="radar-status-inventory">库存：{{ latestDate ? formatDate(latestDate) : "待录入" }}</span>
+      <span class="radar-status-baseline">排期基准：{{ planningStartDate }}</span>
+      <span class="radar-status-ready">
+        <span class="radar-status-full">可立即完成：{{ readyNowProjections.length }} 项</span>
+        <span class="radar-status-compact">{{ readyNowProjections.length }} 项可完成</span>
+      </span>
+      <span class="radar-status-completeness" :class="{ warning: !latestInventoryComplete }">
+        <span class="radar-status-full">{{ latestInventoryComplete ? "五号资料完整" : "内丹碎片待补录" }}</span>
+        <span class="radar-status-compact">{{ latestInventoryComplete ? "资料完整" : "碎片待补" }}</span>
+      </span>
     </section>
 
     <div class="radar-command-grid">
@@ -298,8 +417,11 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
           </span>
           <span class="radar-account-gap">
             <small>{{ projection.requirementKind === "eggs" ? "蛋 / 资金缺口" : "资源缺口" }}</small>
-            <strong>{{ shortageValue(projection) ? formatNumber(shortageValue(projection)) + shortageUnit(projection) : "无" }}</strong>
-            <em v-if="projection.requirementKind === 'eggs' && projection.allocation.eggShortage">
+            <strong :class="{ clear: !shortageValue(projection) }">{{ shortageValue(projection) ? formatNumber(shortageValue(projection)) + shortageUnit(projection) : "无" }}</strong>
+            <em
+              v-if="projection.requirementKind === 'eggs' || projection.requirementKind === 'silver'"
+              :class="{ covered: fundingCovered(projection) }"
+            >
               {{ accountFundingShortageText(projection) }}
             </em>
           </span>
@@ -320,7 +442,7 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
         </header>
 
         <div class="radar-decision-hero">
-          <div class="radar-decision-copy">
+          <div class="radar-decision-copy" :class="{ covered: fundingCovered(selectedProjection) }">
             <span>今日决策</span>
             <h3>{{ statusLabelFor(selectedProjection) }}</h3>
             <p>{{ selectedProjection.actionHint }}</p>
@@ -328,13 +450,13 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
           <div
             class="radar-funding-gap"
             :class="{
-              clear: !fundingShortageWan(selectedProjection) && !fundingShortagePending(selectedProjection),
+              clear: fundingCovered(selectedProjection),
               pending: fundingShortagePending(selectedProjection),
             }"
             aria-live="polite"
           >
-            <small>资金缺口</small>
-            <strong>{{ fundingShortageValue(selectedProjection) }}</strong>
+            <small>{{ fundingCovered(selectedProjection) ? "资金状态" : "资金缺口" }}</small>
+            <strong>{{ fundingCovered(selectedProjection) ? "够用" : fundingShortageValue(selectedProjection) }}</strong>
             <span>{{ fundingShortageCaption(selectedProjection) }}</span>
           </div>
           <button class="workbench-primary" type="button" @click="inventoryDialogOpen = true">
@@ -353,7 +475,11 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
             <span><small>普通蛋</small><b>{{ formatNumber(selectedProjection.inventory.regularEggs) }}</b></span>
             <span><small>银子 / 万</small><b>{{ formatNumber(selectedProjection.inventory.silverWan) }}</b></span>
             <span><small>内丹碎片</small><b>{{ selectedProjection.inventory.innerShardCount ?? "待补" }}</b></span>
-            <span class="gap"><small>资源缺口</small><b>{{ shortageValue(selectedProjection) ? formatNumber(shortageValue(selectedProjection)) + shortageUnit(selectedProjection) : "0" }}</b></span>
+            <span class="gap" :class="{ covered: fundingCovered(selectedProjection) }">
+              <small>资源缺口</small>
+              <b>{{ shortageValue(selectedProjection) ? formatNumber(shortageValue(selectedProjection)) + shortageUnit(selectedProjection) : "0" }}</b>
+              <em v-if="fundingCovered(selectedProjection)" class="funding-covered-note">资金已覆盖</em>
+            </span>
           </div>
         </section>
 
@@ -363,7 +489,10 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
               <h3>主线推进</h3>
               <span>当前 → 下一步 → 再下一步</span>
             </div>
-            <small>{{ mainlineFinishLabel(selectedProjection) }}</small>
+            <small>
+              <span class="radar-track-finish-full">{{ mainlineFinishLabel(selectedProjection) }}</span>
+              <span class="radar-track-finish-compact">{{ mainlineFinishCompactLabel(selectedProjection) }}</span>
+            </small>
           </header>
           <div class="task-track">
             <div class="task-track-labels">
@@ -435,7 +564,22 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
             <h2>五号主线推进轨道</h2>
             <p>完整保留五个账号的当前任务、后续节点、资源分配和预计完成状态。</p>
           </div>
-          <span>{{ latestDate ? `库存基准 ${formatDate(latestDate)}` : "尚未建立库存基准" }}</span>
+          <div class="mainline-overview-actions">
+            <span>{{ latestDate ? `库存基准 ${formatDate(latestDate)}` : "尚未建立库存基准" }}</span>
+            <button
+              type="button"
+              class="mainline-overview-share-button"
+              :class="{ loading: sharingTimeline }"
+              :disabled="sharingTimeline"
+              :aria-busy="sharingTimeline"
+              aria-label="分享五号主线进度"
+              title="分享五号主线进度"
+              @click="shareMainlineOverview"
+            >
+              <AppIcon :name="sharingTimeline ? 'refresh' : 'share'" />
+              <span>分享五号进度</span>
+            </button>
+          </div>
         </header>
 
         <div class="mainline-table-scroll">
@@ -456,6 +600,54 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
               role="row"
               @click="selectAccount(projection.accountId)"
             >
+              <div class="mainline-mobile-card" role="cell">
+                <header class="mainline-mobile-header">
+                  <div class="mainline-mobile-identity">
+                    <span class="account-pill" :class="`account-${projection.accountId.toLowerCase()}`">{{ projection.accountId }}</span>
+                    <span>
+                      <b>{{ taskLabel(projection.currentTask) }}</b>
+                      <small>
+                        {{ projection.currentTask
+                          ? (canCompleteNow(projection) ? "今天可完成" : taskDueLabel(projection.currentTask.dueDate))
+                          : "主线已完成" }}
+                      </small>
+                    </span>
+                  </div>
+                  <div class="mainline-mobile-state">
+                    <span class="status-chip" :class="projection.status">{{ statusLabelFor(projection) }}</span>
+                    <RouterLink
+                      class="mainline-detail-link"
+                      :to="`/accounts/${projection.accountId}`"
+                      :aria-label="`查看 ${projection.accountId} 账号明细`"
+                      @click.stop
+                    >
+                      <span>明细</span>
+                      <AppIcon name="chevron-right" />
+                    </RouterLink>
+                  </div>
+                </header>
+
+                <div class="mainline-mobile-next">
+                  <span v-for="(task, taskIndex) in projection.nextTasks.slice(1, 3)" :key="`mobile-${task.id}`">
+                    <small>{{ taskIndex === 0 ? "下一步" : "再下一步" }}</small>
+                    <b>{{ taskLabel(task) }}</b>
+                    <em>{{ taskDueLabel(task.dueDate) }}</em>
+                  </span>
+                  <span v-if="projection.nextTasks.length <= 1" class="empty">
+                    <b>{{ projection.currentTask ? "—" : "主线已完成" }}</b>
+                  </span>
+                  <small class="mainline-mobile-finish">{{ mainlineFinishCompactLabel(projection) }}</small>
+                </div>
+
+                <div class="mainline-mobile-resources" aria-label="账号资源摘要">
+                  <span><small>专</small><b>{{ formatNumber(projection.inventory.dedicatedEggs) }}</b></span>
+                  <span><small>普</small><b>{{ formatNumber(projection.inventory.regularEggs) }}</b></span>
+                  <span><small>银/万</small><b>{{ formatNumber(projection.inventory.silverWan) }}</b></span>
+                  <span><small>碎</small><b>{{ projection.inventory.innerShardCount ?? "待补" }}</b></span>
+                  <span class="mainline-mobile-gap"><small>资源</small><b>{{ statusDetailText(projection) }}</b></span>
+                </div>
+              </div>
+
               <div class="mainline-cell radar-row-account" role="cell">
                 <span class="account-pill" :class="`account-${projection.accountId.toLowerCase()}`">{{ projection.accountId }}</span>
                 <span>
@@ -492,11 +684,9 @@ function statusLabelFor(projection: ReturnType<typeof buildMainlineProjection>[n
                 <em>{{ projection.actionHint }}</em>
               </div>
 
-              <div class="status-cell" role="cell">
+              <div class="status-cell" :class="{ covered: fundingCovered(projection) }" role="cell">
                 <span class="status-chip" :class="projection.status">{{ statusLabelFor(projection) }}</span>
-                <small>
-                  {{ shortageValue(projection) ? `缺 ${formatNumber(shortageValue(projection))}${shortageUnit(projection)}` : requirementCaption(projection.requirementKind) }}
-                </small>
+                <small>{{ statusDetailText(projection) }}</small>
               </div>
 
               <div class="mainline-detail-cell" role="cell">

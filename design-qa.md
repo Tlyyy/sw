@@ -319,3 +319,210 @@ final result: passed
 - Browser page identity: `http://127.0.0.1:4173/#/data/inventory`, title `项目台账`; framework overlay absent; console warnings/errors empty.
 
 final result: passed
+
+## Inventory daily comparison matrix — 2026-07-20
+
+### Source truth and target state
+
+- Source reference: `C:\Users\T\AppData\Local\Temp\codex-clipboard-7d1926ed-c9e2-4c53-ba44-a97d951651d2.png`.
+- Implementation: `src/components/InventoryWeeklyReport.vue`.
+- Target route/state: `http://127.0.0.1:5173/#/data/inventory` → 每周库存报表 → 按日对比 → 银子.
+- Intended viewport coverage: desktop and 390 × 844 mobile.
+
+### Comparison evidence
+
+- Full-view comparison: blocked. The in-app browser reaches the application's access-password gate, so the authenticated inventory screen cannot be captured.
+- Focused matrix comparison: blocked for the same reason; no implementation screenshot was available for a valid side-by-side comparison with the source reference.
+- Chrome fallback: unavailable. Chrome was not running and the ChatGPT Chrome Extension was not installed in the selected profile, so the existing signed-in application state could not be used.
+
+### Findings and iteration history
+
+1. Retained the reference's useful structure: dates are rows, the five accounts are columns, and the combined total is the final column.
+2. Replaced Excel-blue styling with the product's existing teal surfaces, account pills, borders, spacing, and semantic positive/negative colors.
+3. Kept the existing summary and record actions as the default workflow; the matrix is an optional `按日对比` view.
+4. Added one-metric-at-a-time switching for silver, dedicated eggs, regular eggs, and inner-shard fragments, plus weekly total and interval daily average footer rows.
+5. Constrained narrow-screen overflow to the matrix container and kept pressed-state controls at a 44px minimum mobile touch height.
+6. Verified type checking, production build, 87 unit tests, and whitespace checks. Visual comparison remains blocked by authentication/browser availability.
+
+final result: blocked
+
+## Five-account mainline overview share — 2026-07-20
+
+### Source truth and target state
+
+- Source evidence: `C:\Users\T\AppData\Local\Temp\codex-clipboard-2b662fb9-0615-4c42-8382-b799c6fca0b5.png`, mobile five-account mainline overview.
+- Problem: each account card exposed its own share action, so the result described only one account even though this section is a five-account overview.
+- Target flow: dashboard → 五号主线推进轨道 → 分享五号进度 → one combined PNG containing FC, LG1, LG2, PT, and MYT.
+- Implementation: `src/features/dashboard/DashboardPage.vue`, `src/features/dashboard/mainlineOverviewShareImage.ts`, and `src/styles/radar.css`.
+
+### Implemented behavior
+
+- Replaced the five per-card share controls with one section-level share control beside the inventory baseline.
+- The generated 1080 × 1350 image contains all five accounts in order and preserves each account's current task, following two tasks, due dates, mainline finish estimate, semantic resource status, and dedicated eggs / regular eggs / silver / shards.
+- Native file sharing remains the first choice. Unsupported sharing downloads the same PNG; cancelling the native share sheet does not trigger a download.
+- The mobile share control remains a compact 44 × 44 icon target, while desktop keeps the explicit `分享五号进度` label.
+
+### Browser evidence
+
+- Browser plugin classification: available.
+- Page identity passed at `http://127.0.0.1:4173/#/`, title `项目台账`.
+- Meaningful authenticated dashboard rendering and share interaction remain blocked by the application's access-password gate; browser console output contained only the normal Vite connection messages.
+- No authentication bypass or alternate browser fallback was used.
+
+### Verification
+
+- `npm run build`: passed, including Vue/TypeScript checking and the 298-asset integrity check.
+- `npm test`: 90 passed, including the combined five-account canvas-generation branch.
+- Standalone TypeScript check for `e2e/mobile-ux.spec.ts`: passed.
+- The mobile end-to-end assertion now requires exactly one five-account share control, confirms the five old account-specific controls are absent, and covers native file sharing plus PNG download fallback.
+- `git diff --check`: passed with line-ending warnings only.
+
+final result: blocked
+
+## Mobile account share image — 2026-07-20
+
+### Source truth and target state
+
+- Requested flow: authenticated mobile dashboard → tap one account card's share control → generate that account's PNG → open the native file share sheet when supported, otherwise download the PNG.
+- Implementation: `src/features/dashboard/DashboardPage.vue`, `src/features/dashboard/accountShareImage.ts`, `src/components/AppIcon.vue`, and `src/styles/radar.css`.
+- Intended viewport: mobile widths up to 720px; the generated image is a fixed 1080 × 1350 (4:5) PNG.
+
+### Implemented behavior
+
+- Added a compact 44px share icon beside each mobile account summary without adding another text row.
+- The share image contains the inventory date, account identity, current status, four resources, current/next two tasks, and whole-line completion estimate.
+- Status colors remain semantic in the generated asset: positive green, caution amber, and blocked/stale red.
+- File-capable Web Share is used first; unsupported or failed file sharing falls back to an automatic PNG download. Cancelling the native share sheet does not trigger a download.
+- The generation state disables duplicate taps, animates the share control, respects reduced-motion preferences, and reports a short result toast above the mobile dock.
+
+### Browser evidence
+
+- Authenticated button interaction: blocked by the application's access-password gate; the browser session was not read or bypassed.
+- The actual Vite-loaded image module was exercised in an isolated temporary preview page, then the preview file was removed.
+- Generated asset: visible 1080 × 1350 PNG, 320,303 bytes, with readable account, task, resource, status, and completion sections.
+
+### Verification
+
+- `npm run build`: passed after the final status-color change, including Vue/TypeScript checking and the 298-asset integrity check.
+- `npm test`: 87 passed.
+- Standalone TypeScript check for `e2e/mobile-ux.spec.ts`: passed.
+- Added an end-to-end assertion for a 44px share target, PNG file metadata/content size, native file sharing, and download fallback; execution remains pending authenticated browser access.
+- `git diff --check`: passed with line-ending warnings only.
+
+final result: blocked
+
+## Mobile dashboard density — 2026-07-20
+
+### Source truth and target state
+
+- Source problem evidence: `C:\Users\T\AppData\Local\Temp\codex-clipboard-a08ab713-3356-4736-84ce-58c83e28661f.png` at 353 × 764.
+- Implementation: `src/features/dashboard/DashboardPage.vue` and `src/styles/radar.css`.
+- Target route/state: `http://127.0.0.1:5173/#/`, authenticated mobile dashboard with FC selected.
+- Intended viewport: 390 × 844, with additional protection for widths down to 320px.
+
+### Design changes
+
+- Reduced the resource overview from a two-column, three-row block to one five-column summary row on mobile.
+- Kept all five values visible while shortening padding, type scale, and divider spacing; the covered-shortage state remains explicit.
+- Merged the mainline heading and total completion date into one row, removed the redundant mobile step legend, and tightened task labels, due dates, and track markers.
+- Reduced the focus panel bottom inset so the next-action panel enters the viewport earlier without changing any action or data behavior.
+- Added regression limits of 100px each for the resource overview and mainline track, plus the existing page-overflow and dock-clearance assertions.
+
+### Comparison evidence
+
+- Full-view browser comparison: blocked. The in-app browser reaches the application's access-password gate before the authenticated dashboard is rendered.
+- Focused resource/track comparison: blocked for the same reason; no valid post-change implementation screenshot can be captured without user authentication.
+- Browser console warning/error query at the gate returned an empty list.
+
+### Required fidelity surfaces
+
+- Fonts and typography: the existing local UI and monospaced stacks are retained. Mobile resource values use 17px type, labels use 11px, and task titles use 12px with single-line truncation protection.
+- Spacing and layout rhythm: only the mobile dashboard breakpoint changes. Desktop/tablet geometry remains unchanged; the compact sections are capped by regression assertions.
+- Colors and visual tokens: existing teal, success, danger, border, and surface tokens are reused unchanged.
+- Image quality and asset fidelity: this dashboard region contains no image assets, and no placeholder or substitute graphic was introduced.
+- Copy and content: all resource values, task labels, due dates, shortage values, and actions remain present. Only the redundant mobile step legend is hidden.
+- Accessibility and interaction: semantic sections and headings remain intact; no control or route behavior changed.
+
+### Verification
+
+- `npm run build`: passed, including Vue/TypeScript checking and the 298-asset integrity check.
+- `npm test`: 87 passed.
+- Standalone TypeScript check for `e2e/mobile-ux.spec.ts`: passed.
+- `git diff --check`: passed with line-ending warnings only.
+
+final result: blocked
+
+## Mobile mainline account cards — 2026-07-20
+
+### Source truth and target state
+
+- Source problem evidence: `C:\Users\T\AppData\Local\Temp\codex-clipboard-7fbef8b5-4487-4f49-911b-f3d08c151773.png` at 353 × 527.
+- Implementation: `src/features/dashboard/DashboardPage.vue` and `src/styles/radar.css`.
+- Target route/state: authenticated dashboard at `http://127.0.0.1:5173/#/`, five-account timeline, mobile width.
+- Intended verification viewport: 390 × 844.
+
+### Audit findings and implemented changes
+
+1. P1 — Three tasks and three dates shared one narrow row, causing every useful label to be ellipsized. The mobile card now gives the current task a full identity row and the two later steps one half-width column each with wrapping instead of forced truncation.
+2. P2 — The current task and resource advice were repeated in a large paragraph below the timeline. The mobile-only card replaces that duplicate paragraph with a compact five-part resource strip: dedicated eggs, regular eggs, silver, shards, and actionable resource status.
+3. P2 — Status and detail occupied a separate full-width footer, increasing every account card's height. They now sit with the account/current-task header while the detail link retains a 44px touch height.
+4. P2 — The selected-account state relied mostly on background tint. The revised card uses the account tone on both the border and a 3px inset marker.
+5. Desktop and tablet continue to render the original five-column table; the new summary markup is visible only at the mobile breakpoint.
+
+### Comparison evidence
+
+- Full-view browser comparison: blocked. The in-app browser stops at the application's access-password gate before the authenticated dashboard can render.
+- Focused card comparison: blocked for the same reason. Chrome fallback is unavailable because Chrome is not running and the ChatGPT Chrome Extension is not installed in the selected profile.
+- Browser console warning/error query at the access gate returned an empty list.
+
+### Required fidelity surfaces
+
+- Fonts and typography: existing UI and monospaced stacks remain. Current and next task names use wrapping and 12–13px hierarchy; metadata uses 10–11px labels.
+- Spacing and layout rhythm: the mobile card targets a maximum height of 210px and removes the old account column, repeated paragraph, and standalone footer. Desktop tracks are unchanged.
+- Colors and visual tokens: existing account, interaction, success, danger, surface, and divider tokens are reused.
+- Image quality and asset fidelity: the card contains no image assets; the existing `AppIcon` chevron is retained and no substitute art was introduced.
+- Copy and content: current task, next two tasks, dates, finish estimate, four inventory values, resource status, and account detail link remain available.
+- Accessibility and interaction: visible detail links retain a 44px touch target, account selection behavior remains on each row, and mobile content does not add a new route or control model.
+
+### Verification
+
+- `npm run build`: passed after the component and layout changes.
+- `npm test`: 87 passed.
+- Standalone TypeScript check for `e2e/mobile-ux.spec.ts`: passed.
+- The new release assertion checks five visible mobile summary cards, a maximum 210px card height, unclipped task titles, 44px detail targets, and no page-level horizontal overflow.
+
+final result: blocked
+
+## Inventory report share images — 2026-07-20
+
+### Source truth and target state
+
+- Source evidence: `C:\Users\T\AppData\Local\Temp\codex-clipboard-c497c920-191c-481e-8401-a4ae12308722.png`, mobile inventory daily-comparison view.
+- Target flow: data center → inventory weekly report → choose summary or daily comparison/metric → share → native image share or PNG download fallback.
+- Implementation: `src/components/InventoryWeeklyReport.vue` and `src/components/inventoryReportShareImage.ts`.
+- Generated asset: fixed 1080 × 1350 PNG.
+
+### Implemented behavior
+
+- Added a desktop text/share control and a compact 44px mobile share icon beside the report view switch.
+- Summary mode generates the five-account latest inventory table plus the current week's net-change table.
+- Daily comparison mode generates the currently selected metric matrix, including all seven days, five accounts, total, weekly total, and interval average.
+- The silver-plus-eggs image retains the fixed `silver + regular eggs × 5.5 万/个` conversion note.
+- File-capable Web Share is preferred; unsupported sharing falls back to a download, while native-share cancellation does not download.
+
+### Browser evidence
+
+- Browser plugin classification: available.
+- Page identity passed at `http://127.0.0.1:4173/#/data/inventory`, title `项目台账`.
+- Meaningful authenticated report rendering and interaction remain blocked by the application's access-password gate; console warning/error query returned no entries.
+- An isolated data-URL preview was rejected by the Browser security policy, so no alternate browser surface or Playwright fallback was used.
+
+### Verification
+
+- `npm run build`: passed, including Vue/TypeScript checking and the 298-asset integrity check.
+- `npm test`: 89 passed, including both summary and matrix canvas-generation branches.
+- Standalone TypeScript check for `e2e/mobile-ux.spec.ts`: passed.
+- Added mobile end-to-end assertions for the 44px share target, current-view filenames, PNG size, native file sharing, and download fallback; runtime execution remains pending authenticated browser access.
+- `git diff --check`: passed with line-ending warnings only.
+
+final result: blocked

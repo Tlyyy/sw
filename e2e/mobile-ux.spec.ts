@@ -243,6 +243,136 @@ test.describe("mobile UX release gate", () => {
     }
   });
 
+  test("首页首屏优先展示决策且主操作不被底部导航遮挡", async ({ page }) => {
+    await page.goto("/#/");
+    await waitForApplicationPage(page);
+
+    await expect(page.locator(".workbench-titlebar p")).toBeHidden();
+    await expect(page.locator(".workbench-date-compact")).toBeVisible();
+    await expect(page.locator(".radar-status-inventory")).toBeHidden();
+    await expect(page.locator(".radar-status-baseline")).toBeHidden();
+    await expect(page.locator(".radar-decision-hero p")).toBeHidden();
+    await expect(page.locator(".radar-action-rail > header span")).toBeHidden();
+    await expect(page.locator(".radar-action-card small").first()).toBeHidden();
+    await expect(page.locator(".radar-timeline-panel > header p")).toBeHidden();
+
+    const layout = await page.evaluate(() => {
+      const title = document.querySelector<HTMLElement>(".workbench-titlebar");
+      const status = document.querySelector<HTMLElement>(".radar-status-strip");
+      const accountHeader = document.querySelector<HTMLElement>(".radar-account-rail > header");
+      const primaryAction = document.querySelector<HTMLElement>(".radar-decision-hero .workbench-primary");
+      const resourceOverview = document.querySelector<HTMLElement>(".radar-resource-overview");
+      const focusTrack = document.querySelector<HTMLElement>(".radar-focus-track");
+      const mobileDock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
+      if (!title || !status || !accountHeader || !primaryAction || !resourceOverview || !focusTrack || !mobileDock) {
+        throw new Error("首页移动首屏关键区域未完整渲染");
+      }
+      const primaryRect = primaryAction.getBoundingClientRect();
+      const dockRect = mobileDock.getBoundingClientRect();
+      return {
+        titleHeight: title.getBoundingClientRect().height,
+        statusHeight: status.getBoundingClientRect().height,
+        accountHeaderHeight: accountHeader.getBoundingClientRect().height,
+        resourceOverviewHeight: resourceOverview.getBoundingClientRect().height,
+        focusTrackHeight: focusTrack.getBoundingClientRect().height,
+        primaryBottom: primaryRect.bottom,
+        dockTop: dockRect.top,
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: document.documentElement.clientWidth,
+      };
+    });
+
+    expect(layout.titleHeight, "手机标题区应保持紧凑").toBeLessThanOrEqual(48);
+    expect(layout.statusHeight, "库存状态应压缩为单行摘要").toBeLessThanOrEqual(48);
+    expect(layout.accountHeaderHeight, "账号选择标题不应占据两行高度").toBeLessThanOrEqual(50);
+    expect(layout.resourceOverviewHeight, "资源概览不应占据多行卡片高度").toBeLessThanOrEqual(100);
+    expect(layout.focusTrackHeight, "主线推进应保持紧凑").toBeLessThanOrEqual(100);
+    expect(layout.primaryBottom, "主操作不应被底部导航遮挡").toBeLessThanOrEqual(layout.dockTop - 6);
+    expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
+  });
+
+  test("五账号主线在手机端使用紧凑摘要卡", async ({ page }) => {
+    await page.goto("/#/");
+    await waitForApplicationPage(page);
+
+    const cards = page.locator(".mainline-mobile-card");
+    await expect(cards).toHaveCount(5);
+    await expect(cards.first()).toBeVisible();
+    await expect(page.locator(".mainline-row > .radar-row-account").first()).toBeHidden();
+
+    const layout = await cards.evaluateAll((elements) => {
+      const cards = elements as HTMLElement[];
+      const taskTitles = cards.flatMap((card) => Array.from(card.querySelectorAll<HTMLElement>(".mainline-mobile-identity b, .mainline-mobile-next b")));
+      const detailLinks = cards.map((card) => card.querySelector<HTMLElement>(".mainline-detail-link"));
+      return {
+        cardCount: cards.length,
+        maxCardHeight: Math.max(...cards.map((card) => card.getBoundingClientRect().height)),
+        clippedTaskTitles: taskTitles.filter((title) => title.scrollWidth > title.clientWidth + 1).map((title) => title.textContent),
+        undersizedDetailLinks: detailLinks.filter((link) => !link || link.getBoundingClientRect().height < 44).length,
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: document.documentElement.clientWidth,
+      };
+    });
+
+    expect(layout.cardCount).toBe(5);
+    expect(layout.maxCardHeight, "移动账号摘要卡不应继续保持桌面表格的高密度高度").toBeLessThanOrEqual(210);
+    expect(layout.clippedTaskTitles, "当前与后续任务名称不应被横向裁切").toEqual([]);
+    expect(layout.undersizedDetailLinks, "明细入口应保持 44px 触控高度").toBe(0);
+    expect(layout.documentWidth, "账号摘要卡不应导致页面横向滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
+  });
+
+  test("五账号主线总览可生成一张图片并调用手机分享", async ({ page }) => {
+    await page.addInitScript(() => {
+      const state = window as typeof window & {
+        __allowMainlineOverviewShare?: boolean;
+        __mainlineOverviewShare?: { name: string; type: string; size: number };
+      };
+      state.__allowMainlineOverviewShare = true;
+      Object.defineProperty(navigator, "canShare", {
+        configurable: true,
+        value: (data: ShareData) => Boolean(state.__allowMainlineOverviewShare && data.files?.length),
+      });
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async (data: ShareData) => {
+          const file = data.files?.[0];
+          if (file) state.__mainlineOverviewShare = { name: file.name, type: file.type, size: file.size };
+        },
+      });
+    });
+
+    await page.goto("/#/");
+    await waitForApplicationPage(page);
+
+    const overviewShare = page.getByRole("button", { name: "分享五号主线进度", exact: true });
+    await expect(overviewShare).toBeVisible();
+    await expect(page.getByRole("button", { name: /生成 (FC|LG1|LG2|PT|MYT) 分享图片/ })).toHaveCount(0);
+    const target = await overviewShare.boundingBox();
+    expect(target?.height, "五号进度分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await overviewShare.tap();
+
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & { __mainlineOverviewShare?: { name: string; type: string; size: number } }
+    ).__mainlineOverviewShare)).toEqual(expect.objectContaining({
+      name: expect.stringMatching(/^五号主线进度-.*\.png$/),
+      type: "image/png",
+    }));
+    const shared = await page.evaluate(() => (
+      window as typeof window & { __mainlineOverviewShare?: { name: string; type: string; size: number } }
+    ).__mainlineOverviewShare);
+    expect(shared?.size, "五账号总进度 PNG 不应为空白文件").toBeGreaterThan(10_000);
+    await expect(page.getByRole("status")).toHaveText("五号进度图片已生成");
+
+    await page.evaluate(() => {
+      (window as typeof window & { __allowMainlineOverviewShare?: boolean }).__allowMainlineOverviewShare = false;
+    });
+    const downloadPromise = page.waitForEvent("download");
+    await overviewShare.tap();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/^五号主线进度-.*\.png$/);
+    await expect(page.getByRole("status")).toHaveText("五号进度图片已下载");
+  });
+
   test("移动表单输入字号不触发浏览器自动缩放", async ({ page }) => {
     test.setTimeout(60_000);
     let auditedFields = 0;
@@ -314,6 +444,22 @@ test.describe("mobile UX release gate", () => {
     ];
     await page.addInitScript((payload) => {
       localStorage.setItem("sw.app.inventory.v2", JSON.stringify(payload));
+      const state = window as typeof window & {
+        __allowInventoryImageShare?: boolean;
+        __inventoryImageShare?: { name: string; type: string; size: number };
+      };
+      state.__allowInventoryImageShare = true;
+      Object.defineProperty(navigator, "canShare", {
+        configurable: true,
+        value: (data: ShareData) => Boolean(state.__allowInventoryImageShare && data.files?.length),
+      });
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async (data: ShareData) => {
+          const file = data.files?.[0];
+          if (file) state.__inventoryImageShare = { name: file.name, type: file.type, size: file.size };
+        },
+      });
     }, { version: 2, snapshots });
 
     await page.goto("/#/data/inventory");
@@ -338,6 +484,64 @@ test.describe("mobile UX release gate", () => {
     const weeklyTotal = report.getByRole("row", { name: "本周净变化合计", exact: true });
     await expect(weeklyTotal).toBeVisible();
     await expect(weeklyTotal.locator(":scope > *")).toHaveText(["合计", "+20", "+40", "+200", "+420", "+60"]);
+
+    const summaryShare = report.getByRole("button", { name: "分享当前库存汇总", exact: true });
+    await expect(summaryShare).toBeVisible();
+    expect((await summaryShare.boundingBox())?.height, "库存分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await summaryShare.tap();
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & { __inventoryImageShare?: { name: string; type: string; size: number } }
+    ).__inventoryImageShare)).toEqual(expect.objectContaining({
+      name: expect.stringMatching(/^库存汇总-.*\.png$/),
+      type: "image/png",
+    }));
+    const sharedInventory = await page.evaluate(() => (
+      window as typeof window & { __inventoryImageShare?: { name: string; type: string; size: number } }
+    ).__inventoryImageShare);
+    expect(sharedInventory?.size, "库存汇总 PNG 不应为空白文件").toBeGreaterThan(10_000);
+    await expect(report.locator(".inventory-share-notice")).toHaveText("库存图片已生成");
+
+    await report.getByRole("button", { name: "按日对比", exact: true }).tap();
+    const metricSwitch = report.locator(".matrix-metric-switch");
+    await expect(metricSwitch.locator("button")).toHaveText(["银子", "银+蛋", "专用蛋", "普通蛋", "内丹碎片"]);
+    const convertedSilverButton = report.getByRole("button", {
+      name: "银子加普通蛋，普通蛋按每个 5.5 万折算",
+      exact: true,
+    });
+    await convertedSilverButton.tap();
+    await expect(convertedSilverButton).toHaveAttribute("aria-pressed", "true");
+    await expect(report.getByText("折算：银子 + 普通蛋 × 5.5 万/个", { exact: true })).toBeVisible();
+
+    await page.evaluate(() => {
+      (window as typeof window & { __allowInventoryImageShare?: boolean }).__allowInventoryImageShare = false;
+    });
+    const matrixDownloadPromise = page.waitForEvent("download");
+    await report.getByRole("button", { name: "分享银+蛋按日对比", exact: true }).tap();
+    const matrixDownload = await matrixDownloadPromise;
+    expect(matrixDownload.suggestedFilename()).toMatch(/^银\+蛋按日对比-.*\.png$/);
+    await expect(report.locator(".inventory-share-notice")).toHaveText("库存图片已下载");
+
+    const matrixTable = report.locator(".inventory-matrix-table");
+    await expect(matrixTable).toBeVisible();
+    await expect(matrixTable.locator("tfoot .matrix-week-total > *")).toHaveText([
+      "本周合计3 天区间",
+      "+84",
+      "+84",
+      "+84",
+      "+84",
+      "+84",
+      "+420",
+    ]);
+    await expect(matrixTable.locator("tfoot .matrix-week-average > *")).toHaveText([
+      "区间日均按实际间隔天数折算",
+      "+28",
+      "+28",
+      "+28",
+      "+28",
+      "+28",
+      "+140",
+    ]);
+    await report.getByRole("button", { name: "汇总视图", exact: true }).tap();
 
     const weeklyChangeEdgeDeltas = await report.locator(".weekly-change-table").evaluate((table) => {
       const headers = Array.from(table.querySelector(".weekly-change-head")!.children);
