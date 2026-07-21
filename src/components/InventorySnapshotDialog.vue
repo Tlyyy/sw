@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
+import { canRecordInventoryDate } from "../domain/inventory";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "../domain/types";
 import { shanghaiDateKey } from "../domain/plans";
 import AppIcon from "./AppIcon.vue";
@@ -13,6 +14,7 @@ const accountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
 const props = defineProps<{
   open: boolean;
   initialDate: string;
+  maxDate?: string;
   snapshots: InventorySnapshot[];
 }>();
 const emit = defineEmits<{
@@ -27,12 +29,13 @@ const submitted = ref(false);
 const dirty = ref(false);
 const seedDescription = ref("");
 const rows = reactive<Record<AccountId, InventoryBalance>>(emptyRows());
-const today = shanghaiDateKey();
 let previouslyFocused: HTMLElement | null = null;
 let previousBodyOverflow = "";
 let previousRootOverflow = "";
 
 const matchingSnapshot = computed(() => props.snapshots.find((item) => item.effectiveDate === snapshotDate.value) || null);
+const maxDate = computed(() => props.maxDate || shanghaiDateKey());
+const dateOutOfRange = computed(() => Boolean(snapshotDate.value) && !canRecordInventoryDate(snapshotDate.value, maxDate.value));
 
 function emptyRows(): Record<AccountId, InventoryBalance> {
   return Object.fromEntries(accountOrder.map((accountId) => [accountId, {
@@ -68,7 +71,8 @@ function seedRowsForDate(date: string) {
 }
 
 function resetDraft() {
-  snapshotDate.value = props.initialDate || today;
+  const requestedDate = props.initialDate || maxDate.value;
+  snapshotDate.value = canRecordInventoryDate(requestedDate, maxDate.value) ? requestedDate : maxDate.value;
   submitted.value = false;
   dirty.value = false;
   seedRowsForDate(snapshotDate.value);
@@ -81,6 +85,10 @@ function normalizedNumber(value: number) {
 
 function handleDateChange() {
   dirty.value = true;
+  if (dateOutOfRange.value) {
+    seedDescription.value = `库存日期不能晚于 ${maxDate.value}。`;
+    return;
+  }
   seedRowsForDate(snapshotDate.value);
 }
 
@@ -92,7 +100,7 @@ function requestClose() {
 
 function submit() {
   submitted.value = true;
-  if (!snapshotDate.value) return;
+  if (!snapshotDate.value || dateOutOfRange.value) return;
   const payloadRows = emptyRows();
   accountOrder.forEach((accountId) => {
     payloadRows[accountId] = {
@@ -176,11 +184,12 @@ onBeforeUnmount(() => deactivateDialog(false));
 
         <div class="snapshot-date-field">
           <label for="inventory-snapshot-date">库存所属日期</label>
-          <input id="inventory-snapshot-date" ref="dateInput" v-model="snapshotDate" type="date" :max="today" aria-describedby="snapshot-date-help snapshot-seed-help" required @change="handleDateChange" />
+          <input id="inventory-snapshot-date" ref="dateInput" v-model="snapshotDate" type="date" :max="maxDate" aria-describedby="snapshot-date-help snapshot-seed-help" required @change="handleDateChange" />
           <small id="snapshot-date-help">可以补录过去日期；系统按实际日期与前一份快照比较。</small>
         </div>
         <p id="snapshot-seed-help" class="snapshot-seed-note" :class="{ warning: matchingSnapshot }">{{ seedDescription }}</p>
         <p v-if="submitted && !snapshotDate" class="snapshot-dialog-error" role="alert">请选择库存所属日期</p>
+        <p v-else-if="submitted && dateOutOfRange" class="snapshot-dialog-error" role="alert">库存日期不能晚于 {{ maxDate }}</p>
 
         <div class="snapshot-entry-scroll">
           <div class="snapshot-entry-table" role="table" aria-label="五账号库存录入">
@@ -209,3 +218,24 @@ onBeforeUnmount(() => deactivateDialog(false));
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.snapshot-date-field {
+  color: var(--radar-ink);
+  background: var(--radar-surface-2);
+}
+
+.snapshot-date-field > label {
+  color: var(--radar-ink);
+}
+
+.snapshot-date-field small {
+  color: var(--radar-muted);
+}
+
+.snapshot-date-field input {
+  color: var(--radar-ink);
+  background: #ffffff;
+  color-scheme: light;
+}
+</style>

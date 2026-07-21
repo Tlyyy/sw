@@ -60,7 +60,17 @@ function currentShanghaiWeek() {
   const currentDay = new Date(Date.UTC(shanghaiNow.getUTCFullYear(), shanghaiNow.getUTCMonth(), shanghaiNow.getUTCDate()));
   const monday = new Date(currentDay.getTime() - ((currentDay.getUTCDay() + 6) % 7) * 86_400_000);
   const at = (offset: number) => dateKey(new Date(monday.getTime() + offset * 86_400_000));
-  return { baseline: at(-1), monday: at(0), tuesday: at(1), wednesday: at(2) };
+  return {
+    baseline: at(-1),
+    monday: at(0),
+    tuesday: at(1),
+    wednesday: at(2),
+    thursday: at(3),
+    friday: at(4),
+    saturday: at(5),
+    sunday: at(6),
+    today: dateKey(currentDay),
+  };
 }
 
 async function waitForApplicationPage(page: Page) {
@@ -393,7 +403,7 @@ test.describe("mobile UX release gate", () => {
   test("库存录入弹窗锁住背景并保持操作栏可见", async ({ page }) => {
     await page.goto("/#/data/inventory");
     await waitForApplicationPage(page);
-    await page.getByRole("button", { name: /录入五号快照|建立库存基线/ }).first().tap();
+    await page.getByRole("button", { name: /录入今天库存|建立库存基线/ }).first().tap();
 
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(dialog).toBeVisible();
@@ -465,11 +475,11 @@ test.describe("mobile UX release gate", () => {
     await page.goto("/#/data/inventory");
     await waitForApplicationPage(page);
 
+    await page.getByRole("button", { name: "周报分析", exact: true }).tap();
+    const weeklyTask = page.getByTestId("inventory-task-panel");
     const report = page.getByTestId("inventory-week-report");
     await expect(report).toBeVisible();
-    await expect(report.getByText("2 / 7 天有记录", { exact: true })).toBeVisible();
-    await expect(report.locator(".week-day-entry")).toHaveCount(7);
-    await expect(report.getByRole("button", { name: `补录${week.tuesday}库存`, exact: true })).toBeVisible();
+    await expect(weeklyTask.getByText("2 / 7 天有记录", { exact: true })).toBeVisible();
     await expect(report.getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
     await expect(report.getByText("银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × 5.5 万/个", { exact: true })).toBeVisible();
 
@@ -557,9 +567,22 @@ test.describe("mobile UX release gate", () => {
     });
     weeklyChangeEdgeDeltas.forEach((delta) => expect(delta).toBeLessThanOrEqual(1));
 
-    await report.getByRole("button", { name: `查看${week.wednesday}库存日报`, exact: true }).tap();
-    await expect(report.getByText(`${week.wednesday} 日报`, { exact: true })).toBeVisible();
-    await expect(report.getByRole("table", { name: `${week.wednesday} 五账号库存明细`, exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "记录管理", exact: true }).tap();
+    const records = page.getByTestId("inventory-task-panel");
+    await expect(records.locator(".inventory-record-entry")).toHaveCount(7);
+    const emptyDates = [week.tuesday, week.thursday, week.friday, week.saturday, week.sunday];
+    const recordableEmptyDate = emptyDates.find((date) => date <= week.today);
+    const upcomingEmptyDate = emptyDates.find((date) => date > week.today);
+    if (recordableEmptyDate) {
+      await expect(records.getByRole("button", { name: `补录${recordableEmptyDate}库存`, exact: true })).toBeVisible();
+    }
+    if (upcomingEmptyDate) {
+      await expect(records.getByLabel(`${upcomingEmptyDate}尚未到日期`, { exact: true })).toBeVisible();
+      await expect(records.getByRole("button", { name: `补录${upcomingEmptyDate}库存`, exact: true })).toHaveCount(0);
+    }
+    await records.getByRole("button", { name: `查看${week.wednesday}库存日报`, exact: true }).tap();
+    await expect(records.getByText(`${week.wednesday} 日报`, { exact: true })).toBeVisible();
+    await expect(records.getByRole("table", { name: `${week.wednesday} 五账号库存明细`, exact: true })).toBeVisible();
 
     const dock = page.getByRole("navigation", { name: "手机快捷导航", exact: true });
     await expect(dock).toBeVisible();

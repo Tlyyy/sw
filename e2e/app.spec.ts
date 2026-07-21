@@ -200,7 +200,7 @@ test.describe("desktop application", () => {
   test("统一库存快照同时保存蛋、银子和内丹碎片", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     await page.goto("/#/data/inventory");
-    await page.getByRole("button", { name: "录入五号快照", exact: true }).click();
+    await page.getByRole("button", { name: "录入今天库存", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
     await dialog.getByLabel("FC专用蛋库存").fill("11");
@@ -211,7 +211,7 @@ test.describe("desktop application", () => {
     await expect(dialog).toBeHidden();
     await expect(page.getByRole("status")).toContainText(/已保存|已更新/);
 
-    const fcCard = page.locator(".inventory-account-cell").filter({ hasText: "FC" });
+    const fcCard = page.getByTestId("inventory-current-account-FC");
     await expect(fcCard).toBeVisible();
     await expect(fcCard).toContainText("内丹碎片");
     await expect(fcCard).toContainText("44");
@@ -229,7 +229,7 @@ test.describe("desktop application", () => {
     expect(persisted.settings).not.toHaveProperty("resources");
 
     await page.reload();
-    await expect(page.locator(".inventory-account-cell").filter({ hasText: "FC" })).toContainText("44");
+    await expect(page.getByTestId("inventory-current-account-FC")).toContainText("44");
     await page.goto("/#/accounts/FC");
     await expect(page.getByRole("heading", { name: "FC 账号详情" })).toBeVisible();
     await expect(page.locator(".resource-line")).toContainText("内丹碎片 44");

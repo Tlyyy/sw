@@ -131,6 +131,10 @@ function addDateKeyDays(value: string, days: number) {
   return formatDateKey(new Date(parseDateKey(value).getTime() + days * dayMs));
 }
 
+export function canRecordInventoryDate(effectiveDate: string, currentDate: string) {
+  return parseDateKey(effectiveDate).getTime() <= parseDateKey(currentDate).getTime();
+}
+
 /** Return the Monday-to-Sunday natural week containing a YYYY-MM-DD date. */
 export function naturalWeekRange(anchorDate: string): InventoryWeekRange {
   const anchor = parseDateKey(anchorDate);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildInventoryWeekReport,
+  canRecordInventoryDate,
   calculateInventoryDeltas,
   createInventoryExport,
   inventoryRegularEggValueWan,
@@ -146,6 +147,12 @@ describe("inventory weekly change summary", () => {
 });
 
 describe("inventory natural-week reports", () => {
+  it("only allows inventory records for today or an earlier date", () => {
+    expect(canRecordInventoryDate("2026-07-20", "2026-07-21")).toBe(true);
+    expect(canRecordInventoryDate("2026-07-21", "2026-07-21")).toBe(true);
+    expect(canRecordInventoryDate("2026-07-22", "2026-07-21")).toBe(false);
+  });
+
   it("resolves Monday-to-Sunday ranges with UTC date arithmetic", () => {
     expect(naturalWeekRange("2026-07-13")).toEqual({
       weekStart: "2026-07-13",
