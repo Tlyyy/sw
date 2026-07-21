@@ -124,6 +124,194 @@ async function advanceToWatchdogReconnect() {
   await vi.advanceTimersByTimeAsync(syncReconnectConfig.baseDelayMs);
 }
 
+describe("sync store schema compatibility", () => {
+  it("upgrades a legacy confirmed hash when the same cloud record gains default fields", async () => {
+    syncCrypto.hashWorkspaceContent.mockImplementation(async (value) => {
+      const parts = value as { settings?: { gemPlan?: unknown } };
+      return parts.settings?.gemPlan ? "normalized-hash" : "legacy-hash";
+    });
+    const inventory = useInventoryStore();
+    const settings = useSettingsStore();
+    const publish = usePublishStore();
+    const ui = useUiStore();
+    const updatedAt = Date.parse("2026-07-20T14:46:11.000Z");
+    const remoteBackup = createWorkspaceBackup({
+      inventory: inventory.exportState(),
+      settings: settings.exportState(),
+      publish: publish.exportState(),
+      ui: ui.exportState(),
+    }, () => new Date(updatedAt));
+    delete (remoteBackup.settings as Partial<typeof remoteBackup.settings>).gemPlan;
+    syncCrypto.decryptWorkspace.mockResolvedValue(JSON.stringify(remoteBackup));
+    localStorage.setItem("sw.sync.meta.v1", JSON.stringify({
+      version: 1,
+      revision: 7,
+      contentHash: "legacy-hash",
+      mutationId: "confirmed-mutation",
+      updatedAt,
+    }));
+    const remoteRecord: CloudWorkspace = {
+      id: instantWorkspaceId,
+      capability: "test-capability",
+      cryptoVersion: syncCryptoConfig.legacyVersion,
+      payloadVersion: syncCryptoConfig.payloadVersion,
+      revision: 7,
+      mutationId: "confirmed-mutation",
+      writerId: "remote-writer",
+      updatedAt,
+      iv: "remote-iv",
+      ciphertext: "remote-ciphertext",
+    };
+
+    const store = await startStore();
+    databases[0].emitConnection("authenticated");
+    databases[0].emitRows([remoteRecord]);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(store.status).toBe("synced");
+    expect(store.errorMessage).toBe("");
+    expect(store.hasConflict).toBe(false);
+    expect(store.passwordRotationRequired).toBe(true);
+    expect(databases[0].raw.transact).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem("sw.sync.meta.v1") || "null")).toMatchObject({
+      version: 2,
+      revision: 7,
+      contentHash: "normalized-hash",
+      mutationId: "confirmed-mutation",
+      updatedAt,
+    });
+    store.stop();
+  });
+
+  it("continues to reject an older cloud revision", async () => {
+    const inventory = useInventoryStore();
+    const settings = useSettingsStore();
+    const publish = usePublishStore();
+    const ui = useUiStore();
+    const remoteBackup = createWorkspaceBackup({
+      inventory: inventory.exportState(), settings: settings.exportState(),
+      publish: publish.exportState(), ui: ui.exportState(),
+    });
+    syncCrypto.decryptWorkspace.mockResolvedValue(JSON.stringify(remoteBackup));
+    localStorage.setItem("sw.sync.meta.v1", JSON.stringify({
+      version: 2,
+      revision: 8,
+      contentHash: "test-hash",
+      mutationId: "newer-mutation",
+      updatedAt: 8_000,
+    }));
+    const remoteRecord: CloudWorkspace = {
+      id: instantWorkspaceId,
+      capability: "test-capability",
+      cryptoVersion: syncCryptoConfig.version,
+      payloadVersion: syncCryptoConfig.payloadVersion,
+      revision: 7,
+      mutationId: "older-mutation",
+      writerId: "remote-writer",
+      updatedAt: 7_000,
+      iv: "remote-iv",
+      ciphertext: "remote-ciphertext",
+    };
+
+    const store = await startStore();
+    databases[0].emitConnection("authenticated");
+    databases[0].emitRows([remoteRecord]);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(store.status).toBe("error");
+    expect(store.errorMessage).toContain("早于本机已确认记录");
+    expect(databases[0].raw.transact).not.toHaveBeenCalled();
+    store.stop();
+  });
+
+  it("continues to reject a fork with the same revision", async () => {
+    const inventory = useInventoryStore();
+    const settings = useSettingsStore();
+    const publish = usePublishStore();
+    const ui = useUiStore();
+    const updatedAt = 8_000;
+    const remoteBackup = createWorkspaceBackup({
+      inventory: inventory.exportState(), settings: settings.exportState(),
+      publish: publish.exportState(), ui: ui.exportState(),
+    });
+    syncCrypto.decryptWorkspace.mockResolvedValue(JSON.stringify(remoteBackup));
+    localStorage.setItem("sw.sync.meta.v1", JSON.stringify({
+      version: 2,
+      revision: 8,
+      contentHash: "test-hash",
+      mutationId: "confirmed-mutation",
+      updatedAt,
+    }));
+    const remoteRecord: CloudWorkspace = {
+      id: instantWorkspaceId,
+      capability: "test-capability",
+      cryptoVersion: syncCryptoConfig.version,
+      payloadVersion: syncCryptoConfig.payloadVersion,
+      revision: 8,
+      mutationId: "forked-mutation",
+      writerId: "remote-writer",
+      updatedAt,
+      iv: "remote-iv",
+      ciphertext: "remote-ciphertext",
+    };
+
+    const store = await startStore();
+    databases[0].emitConnection("authenticated");
+    databases[0].emitRows([remoteRecord]);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(store.status).toBe("error");
+    expect(store.errorMessage).toContain("同版本的不同数据");
+    expect(databases[0].raw.transact).not.toHaveBeenCalled();
+    store.stop();
+  });
+
+  it("keeps strict hash checks after the local metadata has been upgraded", async () => {
+    syncCrypto.hashWorkspaceContent
+      .mockResolvedValueOnce("confirmed-hash")
+      .mockResolvedValueOnce("changed-hash");
+    const inventory = useInventoryStore();
+    const settings = useSettingsStore();
+    const publish = usePublishStore();
+    const ui = useUiStore();
+    const updatedAt = 9_000;
+    const remoteBackup = createWorkspaceBackup({
+      inventory: inventory.exportState(), settings: settings.exportState(),
+      publish: publish.exportState(), ui: ui.exportState(),
+    });
+    syncCrypto.decryptWorkspace.mockResolvedValue(JSON.stringify(remoteBackup));
+    localStorage.setItem("sw.sync.meta.v1", JSON.stringify({
+      version: 2,
+      revision: 9,
+      contentHash: "confirmed-hash",
+      mutationId: "confirmed-mutation",
+      updatedAt,
+    }));
+    const remoteRecord: CloudWorkspace = {
+      id: instantWorkspaceId,
+      capability: "test-capability",
+      cryptoVersion: syncCryptoConfig.version,
+      payloadVersion: syncCryptoConfig.payloadVersion,
+      revision: 9,
+      mutationId: "confirmed-mutation",
+      writerId: "remote-writer",
+      updatedAt,
+      iv: "remote-iv",
+      ciphertext: "changed-ciphertext",
+    };
+
+    const store = await startStore();
+    databases[0].emitConnection("authenticated");
+    databases[0].emitRows([remoteRecord]);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(store.status).toBe("error");
+    expect(store.errorMessage).toContain("同版本的不同数据");
+    expect(databases[0].raw.transact).not.toHaveBeenCalled();
+    store.stop();
+  });
+});
+
 describe("sync store mobile recovery", () => {
   it("rebuilds a connection that never authenticates", async () => {
     const store = await startStore();

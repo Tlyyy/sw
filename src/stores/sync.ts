@@ -16,6 +16,7 @@ import { useSettingsStore } from "./settings";
 import { useUiStore } from "./ui";
 
 const syncMetaKey = "sw.sync.meta.v1";
+const syncMetaVersion = 2;
 const writerIdKey = "sw.sync.writer.v1";
 const uploadDebounceMs = 900;
 const connectionTimeoutMs = 20_000;
@@ -46,7 +47,7 @@ interface WorkspaceParts {
 }
 
 interface SyncMeta {
-  version: 1;
+  version: 1 | typeof syncMetaVersion;
   revision: number;
   contentHash: string;
   mutationId: string;
@@ -62,7 +63,8 @@ interface RemoteCandidate {
 function loadSyncMeta(): SyncMeta | null {
   try {
     const value = JSON.parse(localStorage.getItem(syncMetaKey) || "null") as Partial<SyncMeta> | null;
-    if (!value || value.version !== 1 || !Number.isInteger(value.revision) || Number(value.revision) < 1
+    if (!value || (value.version !== 1 && value.version !== syncMetaVersion)
+      || !Number.isInteger(value.revision) || Number(value.revision) < 1
       || typeof value.contentHash !== "string" || typeof value.mutationId !== "string" || !Number.isFinite(value.updatedAt)) return null;
     return value as SyncMeta;
   } catch {
@@ -76,6 +78,20 @@ function saveSyncMeta(meta: SyncMeta) {
   } catch {
     // Local business state remains the source of recovery if metadata storage is unavailable.
   }
+}
+
+function matchesConfirmedRecord(record: CloudWorkspace, meta: SyncMeta) {
+  return record.revision === meta.revision
+    && record.mutationId === meta.mutationId
+    && record.updatedAt === meta.updatedAt;
+}
+
+function confirmedContentMatches(meta: SyncMeta, contentHash: string) {
+  // Version 1 hashes were calculated after schema normalization without
+  // recording the schema version. An additive default can therefore change
+  // the hash of the same authenticated cloud record. Trust its stable record
+  // identity once, then persist a strict version 2 hash for future checks.
+  return meta.version === 1 || contentHash === meta.contentHash;
 }
 
 function getWriterId() {
@@ -394,7 +410,7 @@ export const useSyncStore = defineStore("sync", () => {
     passwordRotationRequired.value = candidate.record.cryptoVersion < syncCryptoConfig.version;
     lastSyncedAt.value = candidate.record.updatedAt;
     saveSyncMeta({
-      version: 1,
+      version: syncMetaVersion,
       revision: candidate.record.revision,
       contentHash: candidate.contentHash,
       mutationId: candidate.record.mutationId,
@@ -458,12 +474,15 @@ export const useSyncStore = defineStore("sync", () => {
     passwordRotationRequired.value = candidate.record.cryptoVersion < syncCryptoConfig.version;
 
     const confirmedMeta = loadSyncMeta();
-    if (confirmedMeta && (
-      candidate.record.revision < confirmedMeta.revision
-      || (candidate.record.revision === confirmedMeta.revision
-        && (candidate.record.mutationId !== confirmedMeta.mutationId || candidate.contentHash !== confirmedMeta.contentHash))
-    )) {
+    if (confirmedMeta && candidate.record.revision < confirmedMeta.revision) {
       errorMessage.value = "云端返回了早于本机已确认记录的数据，已停止自动覆盖。";
+      updateStatus();
+      return;
+    }
+    if (confirmedMeta && candidate.record.revision === confirmedMeta.revision
+      && (!matchesConfirmedRecord(candidate.record, confirmedMeta)
+        || !confirmedContentMatches(confirmedMeta, candidate.contentHash))) {
+      errorMessage.value = "云端返回了同版本的不同数据，已停止自动覆盖。";
       updateStatus();
       return;
     }
@@ -504,9 +523,8 @@ export const useSyncStore = defineStore("sync", () => {
       initialized = true;
       const meta = loadSyncMeta();
       const remoteMatchesLastConfirmed = Boolean(meta
-        && candidate.record.revision === meta.revision
-        && candidate.record.mutationId === meta.mutationId
-        && candidate.contentHash === meta.contentHash);
+        && matchesConfirmedRecord(candidate.record, meta)
+        && confirmedContentMatches(meta, candidate.contentHash));
       if (remoteMatchesLastConfirmed && localHash !== candidate.contentHash) {
         // Only this device changed since the last confirmed base, so an
         // offline edit can resume automatically without a false conflict.
