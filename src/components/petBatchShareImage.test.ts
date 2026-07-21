@@ -36,7 +36,7 @@ function pet(accountId: string, petName: string, accountTone: string): PetDetail
     petName,
     levelLabel: "145级",
     role: "隐攻",
-    meta: "天资：极",
+    meta: "天资：极(16945)｜血脉：125级血脉",
     advice: "",
     tags: ["隐攻"],
     capturedAt: "2026-07-01",
@@ -47,8 +47,15 @@ function pet(accountId: string, petName: string, accountTone: string): PetDetail
       { label: "速度", value: "470" },
       { label: "灵力", value: "1473" },
     ],
-    aptitudes: [],
-    skills: ["高级连击", "高级隐身(符)", "护盾(驭)", "觉醒 3/5", "物抗强化"],
+    aptitudes: [
+      { label: "攻击资质", value: "1446" },
+      { label: "防御资质", value: "1426" },
+      { label: "体力资质", value: "1560" },
+      { label: "法力资质", value: "1615" },
+      { label: "速度资质", value: "1620" },
+      { label: "寿命", value: "15961" },
+    ],
+    skills: ["高级连击", "低级夜战(符)", "护盾(驭)", "觉醒 3/5", "物抗强化"],
   };
 }
 
@@ -66,14 +73,29 @@ describe("pet batch share image", () => {
 
     const renderedText = fillText.mock.calls.map(([text]) => String(text));
     expect(renderedText).toContain("宠物合集");
-    expect(renderedText).toContain("3 只宠物");
+    expect(renderedText).not.toContain("3 只宠物");
+    expect(renderedText.some((text) => text.includes("天资"))).toBeFalsy();
+    expect(renderedText.some((text) => text.includes("血脉"))).toBeFalsy();
+    expect(renderedText.some((text) => text.includes("寿命"))).toBeFalsy();
     expect(renderedText).toContain("祸斗");
     expect(renderedText).toContain("雷司");
     expect(renderedText).toContain("冥卫");
+    expect(renderedText).not.toContain("145级");
     expect(renderedText).toContain("面板");
     expect(renderedText).toContain("资质");
     expect(renderedText).toContain("技能 · 3");
-    expect(renderedText.some((text) => text.includes("物抗强化"))).toBeTruthy();
+    expect(renderedText).toContain("高级连击");
+    expect(renderedText).not.toContain("护符");
+    expect(renderedText).toContain("低级夜战");
+    expect(renderedText).not.toContain("低级夜战(符)");
+    expect(renderedText).toContain("物抗强化");
+    const regularSkill = fillText.mock.calls.find(([text]) => text === "高级连击");
+    const strengtheningSkill = fillText.mock.calls.find(([text]) => text === "物抗强化");
+    const charmSkill = fillText.mock.calls.find(([text]) => text === "低级夜战");
+    expect(Number(strengtheningSkill?.[1])).toBeGreaterThan(Number(regularSkill?.[1]));
+    expect(strengtheningSkill?.[2]).toBe(regularSkill?.[2]);
+    expect(Number(charmSkill?.[2])).toBeGreaterThan(Number(strengtheningSkill?.[2]));
+    expect(renderedText.filter((text) => text.includes("高级")).every((text) => !text.includes(" · "))).toBeTruthy();
     expect(renderedText.some((text) => text.includes("觉醒 3/5"))).toBeFalsy();
     expect(renderedText.some((text) => text.includes("护盾(驭)"))).toBeFalsy();
     expect(renderedText).not.toContain("暂无截图");

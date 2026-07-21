@@ -24,7 +24,18 @@ describe("settings store persistence", () => {
     const settings = useSettingsStore();
     settings.hydrate();
     expect(settings.taskSettings.weeklyEggs).toBe(7.5);
+    expect(settings.gemPlan).toEqual({ targetLevel: "13", weeklyIncomeWan: 88 });
     expect(JSON.parse(localStorage.getItem(settingsStorageKey) || "null").version).toBe(3);
+  });
+
+  it("persists the standalone gem target and weekly input", () => {
+    const settings = useSettingsStore();
+    settings.hydrate();
+    expect(settings.setGemPlanTargetLevel("14★★")).toBe(true);
+    settings.setGemPlanWeeklyIncome(120);
+    expect(settings.exportState().gemPlan).toEqual({ targetLevel: "14★★", weeklyIncomeWan: 120 });
+    expect(settings.setGemPlanTargetLevel("不存在")).toBe(false);
+    expect(settings.gemPlan.targetLevel).toBe("14★★");
   });
 
   it("does not report success or append history for incomplete, duplicate or invalid prices", () => {

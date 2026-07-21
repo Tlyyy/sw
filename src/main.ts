@@ -7,6 +7,7 @@ import "./styles/app.css";
 import "./styles/orbit.css";
 import "./styles/workbench.css";
 import "./styles/radar.css";
+import "./styles/gem-plan.css";
 
 const app = createApp(App);
 app.use(createPinia());

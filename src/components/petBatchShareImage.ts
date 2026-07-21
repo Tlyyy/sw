@@ -98,13 +98,6 @@ function yieldToBrowser() {
   });
 }
 
-function compactMeta(meta: string) {
-  return meta
-    .replace(/血脉[： ]*(\d+)级血脉/, "血脉 $1级")
-    .replaceAll("｜", " · ")
-    .replaceAll("：", " ");
-}
-
 function compactAptitudeLabel(label: string) {
   return label
     .replace("攻击资质", "攻资")
@@ -120,7 +113,6 @@ function visibleSkills(skills: string[]) {
 
 function drawHeader(
   context: CanvasRenderingContext2D,
-  count: number,
   dataDate: string,
 ) {
   context.textBaseline = "top";
@@ -137,12 +129,6 @@ function drawHeader(
   context.fillStyle = "#6f817d";
   setFont(context, 17, 700);
   context.fillText(`数据 · ${dataDate}`, 1028, 39);
-
-  fillRoundedRect(context, 850, 80, 178, 48, 14, "#e2f2ed");
-  context.fillStyle = "#08765a";
-  setFont(context, 19, 850);
-  context.textBaseline = "middle";
-  context.fillText(`${count} 只宠物`, 998, 104);
 
   context.strokeStyle = "#cfddda";
   context.lineWidth = 2;
@@ -199,31 +185,107 @@ function drawDataBand(
   });
 }
 
-function skillLines(
+function isStrengtheningSkill(skill: string) {
+  return skill.includes("强化") || skill.includes("之心");
+}
+
+function skillChipColors(skill: string, accountTone: string, charm: boolean) {
+  if (charm) {
+    return { fill: "#fff6e6", stroke: "#ead3a8", text: "#755006" };
+  }
+  if (isStrengtheningSkill(skill)) {
+    return { fill: "#e8f4ef", stroke: "#b9dcca", text: "#08765a" };
+  }
+  return { fill: `${accountTone}0d`, stroke: `${accountTone}2e`, text: "#314641" };
+}
+
+function displaySkillLabel(skill: string, charm: boolean) {
+  return charm ? skill.replace(/\(符\)$/, "") : skill;
+}
+
+function naturalSkillRowWidth(
   context: CanvasRenderingContext2D,
   skills: string[],
-  maxWidth: number,
-  maxLines: number,
+  charm = false,
 ) {
-  if (!skills.length) return ["待确认"];
-  const lines: string[] = [];
-  let current = "";
-  for (const [index, skill] of skills.entries()) {
-    const candidate = current ? `${current} · ${skill}` : skill;
-    if (!current || context.measureText(candidate).width <= maxWidth) {
-      current = candidate;
-      continue;
-    }
-    lines.push(current);
-    current = skill;
-    if (lines.length === maxLines - 1) {
-      const remaining = [current, ...skills.slice(index + 1)].join(" · ");
-      lines.push(fitText(context, remaining, maxWidth));
-      return lines;
-    }
+  if (!skills.length) return 0;
+  const labels = skills.map((skill) => displaySkillLabel(skill, charm));
+  setFont(context, 11, 750);
+  return labels.reduce((total, label) => total + Math.ceil(context.measureText(label).width) + 12, 0)
+    + 5 * Math.max(labels.length - 1, 0);
+}
+
+function drawSkillRow(
+  context: CanvasRenderingContext2D,
+  skills: string[],
+  x: number,
+  y: number,
+  maxWidth: number,
+  accountTone: string,
+  charm = false,
+  align: "left" | "right" = "left",
+) {
+  if (!skills.length) return;
+  const chipHeight = 22;
+  const gap = 5;
+  const horizontalPadding = 12;
+  const labels = skills.map((skill) => displaySkillLabel(skill, charm));
+  context.textAlign = "left";
+  context.textBaseline = "middle";
+  setFont(context, 11, 750);
+
+  const desiredWidths = labels.map((label) => Math.ceil(context.measureText(label).width) + horizontalPadding);
+  const availableWidth = maxWidth - gap * Math.max(labels.length - 1, 0);
+  const scale = Math.min(1, availableWidth / desiredWidths.reduce((total, width) => total + width, 0));
+  const chipWidths = desiredWidths.map((width) => Math.floor(width * scale));
+  const renderedWidth = chipWidths.reduce((total, width) => total + width, 0)
+    + gap * Math.max(labels.length - 1, 0);
+  let cursorX = align === "right" ? x + maxWidth - renderedWidth : x;
+
+  skills.forEach((skill, index) => {
+    const label = labels[index];
+    const chipWidth = chipWidths[index];
+    const colors = skillChipColors(skill, accountTone, charm);
+    fillRoundedRect(context, cursorX, y, chipWidth, chipHeight, 7, colors.fill);
+    strokeRoundedRect(context, cursorX, y, chipWidth, chipHeight, 7, colors.stroke, 1);
+    context.fillStyle = colors.text;
+    context.fillText(fitText(context, label, chipWidth - horizontalPadding), cursorX + horizontalPadding / 2, y + chipHeight / 2);
+    cursorX += chipWidth + gap;
+  });
+}
+
+function drawSkillGroups(
+  context: CanvasRenderingContext2D,
+  skills: string[],
+  x: number,
+  y: number,
+  maxWidth: number,
+  accountTone: string,
+) {
+  const charms = skills.filter((skill) => skill.includes("(符)"));
+  const baseSkills = skills.filter((skill) => !skill.includes("(符)"));
+  if (!baseSkills.length && !charms.length) {
+    context.fillStyle = "#7a8986";
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    setFont(context, 12, 700);
+    context.fillText("待确认", x, y + 11);
+    return;
   }
-  if (current) lines.push(fitText(context, current, maxWidth));
-  return lines.slice(0, maxLines);
+
+  const strengtheningSkills = baseSkills.filter(isStrengtheningSkill);
+  const regularSkills = baseSkills.filter((skill) => !isStrengtheningSkill(skill));
+  if (strengtheningSkills.length) {
+    const strengtheningWidth = Math.min(naturalSkillRowWidth(context, strengtheningSkills), maxWidth);
+    drawSkillRow(context, regularSkills, x, y, Math.max(maxWidth - strengtheningWidth - 12, 0), accountTone);
+    drawSkillRow(context, strengtheningSkills, x, y, maxWidth, accountTone, false, "right");
+  } else {
+    drawSkillRow(context, regularSkills, x, y, maxWidth, accountTone);
+  }
+  if (!charms.length) return;
+
+  const charmY = y + 28;
+  drawSkillRow(context, charms, x, charmY, maxWidth, accountTone, true);
 }
 
 function drawPetCard(
@@ -258,25 +320,15 @@ function drawPetCard(
   context.fillText(fitText(context, data.petName, width - 130), x + 106, y + 13);
   context.fillStyle = "#6f7f7c";
   setFont(context, 13, 700);
-  const secondary = `${data.role} · ${data.levelLabel}`;
-  context.fillText(fitText(context, secondary, width - 132), x + 106, y + 44);
+  context.fillText(fitText(context, data.role, width - 132), x + 106, y + 44);
 
-  const life = data.aptitudes.find((metric) => metric.label === "寿命")?.value;
-  const metadata = [compactMeta(data.meta), life ? `寿命 ${life}` : ""].filter(Boolean).join(" · ");
-  fillRoundedRect(context, x + 18, y + 68, width - 36, 32, 9, `${data.accountTone}0d`);
-  context.fillStyle = "#526762";
-  context.textAlign = "left";
-  context.textBaseline = "middle";
-  setFont(context, 12, 750);
-  context.fillText(fitText(context, metadata, width - 64), x + 32, y + 84);
-
-  drawDataBand(context, "面板", data.stats.slice(0, 5), x + 18, y + 110, width - 36, data.accountTone, 17);
+  drawDataBand(context, "面板", data.stats.slice(0, 5), x + 18, y + 78, width - 36, data.accountTone, 17);
   drawDataBand(
     context,
     "资质",
     data.aptitudes.slice(0, 5).map((metric) => ({ ...metric, label: compactAptitudeLabel(metric.label) })),
     x + 18,
-    y + 180,
+    y + 148,
     width - 36,
     data.accountTone,
     12,
@@ -285,20 +337,16 @@ function drawPetCard(
   context.strokeStyle = "#dce6e3";
   context.lineWidth = 1;
   context.beginPath();
-  context.moveTo(x + 20, y + 254);
-  context.lineTo(x + width - 20, y + 254);
+  context.moveTo(x + 20, y + 222);
+  context.lineTo(x + width - 20, y + 222);
   context.stroke();
   context.fillStyle = data.accountTone;
   context.textAlign = "left";
   context.textBaseline = "top";
   setFont(context, 13, 850);
   const skills = visibleSkills(data.skills);
-  context.fillText(`技能 · ${skills.length}`, x + 20, y + 268);
-  context.fillStyle = "#314641";
-  setFont(context, 13, 700);
-  skillLines(context, skills, width - 40, 3).forEach((line, index) => {
-    context.fillText(line, x + 20, y + 292 + index * 20);
-  });
+  context.fillText(`技能 · ${skills.length}`, x + 20, y + 236);
+  drawSkillGroups(context, skills, x + 20, y + 260, width - 40, data.accountTone);
 }
 
 export async function createPetBatchShareImage(
@@ -308,7 +356,7 @@ export async function createPetBatchShareImage(
   if (!pets.length) throw new Error("至少选择一只宠物");
   const columns = 2;
   const cardWidth = (WIDTH - PAGE_X * 2 - GRID_GAP * (columns - 1)) / columns;
-  const cardHeight = 366;
+  const cardHeight = 334;
   const rows = Math.ceil(pets.length / columns);
   const gridHeight = rows * cardHeight + Math.max(rows - 1, 0) * GRID_GAP;
   const height = GRID_Y + gridHeight + FOOTER_HEIGHT;
@@ -330,7 +378,7 @@ export async function createPetBatchShareImage(
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, height);
 
-  drawHeader(context, pets.length, options.dataDate);
+  drawHeader(context, options.dataDate);
 
   for (const [index, pet] of pets.entries()) {
     const column = index % columns;

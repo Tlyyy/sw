@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { defaultGemPlanSettings } from "../domain/gems";
 import { parseInventoryExport } from "../domain/inventory";
 import type { PublishOptions } from "../domain/publish";
-import type { BeastTaskSettings, GemPriceHistoryEntry, InventoryExportPayload } from "../domain/types";
+import type { BeastTaskSettings, GemPlanSettings, GemPriceHistoryEntry, InventoryExportPayload } from "../domain/types";
 import type { TaskOverride } from "../domain/plans";
 
 const nonNegativeNumber = z.number().finite().nonnegative();
@@ -25,6 +26,10 @@ const historyEntrySchema = z.object({
   source: z.enum(["screenshot", "manual"]),
   items: z.array(z.object({ name: z.string().min(1), price: z.number().finite().positive() }).strict()),
 }).strict();
+const gemPlanSettingsSchema = z.object({
+  targetLevel: z.string().min(1),
+  weeklyIncomeWan: nonNegativeNumber,
+}).strict().default({ ...defaultGemPlanSettings });
 
 export interface SettingsState {
   version: 3;
@@ -32,6 +37,7 @@ export interface SettingsState {
   settings: BeastTaskSettings;
   overrides: Record<string, TaskOverride>;
   gemPriceHistory: GemPriceHistoryEntry[];
+  gemPlan: GemPlanSettings;
 }
 
 const settingsStateSchema = z.object({
@@ -40,6 +46,7 @@ const settingsStateSchema = z.object({
   settings: taskSettingsSchema,
   overrides: z.record(z.string(), taskOverrideSchema),
   gemPriceHistory: z.array(historyEntrySchema),
+  gemPlan: gemPlanSettingsSchema,
 }).strict();
 
 const legacySettingsSchema = z.object({
@@ -48,6 +55,7 @@ const legacySettingsSchema = z.object({
   settings: taskSettingsSchema.partial().optional(),
   overrides: z.record(z.string(), taskOverrideSchema).optional(),
   gemPriceHistory: z.array(historyEntrySchema).optional(),
+  gemPlan: gemPlanSettingsSchema.optional(),
 }).passthrough();
 
 function validateMarketState(state: SettingsState, marketNames: string[]) {
@@ -71,6 +79,7 @@ export function parseSettingsState(value: unknown, defaults: BeastTaskSettings, 
       settings: { ...defaults, ...(legacy.settings || {}) },
       overrides: legacy.overrides || {},
       gemPriceHistory: legacy.gemPriceHistory || [],
+      gemPlan: legacy.gemPlan,
     }) as SettingsState, marketNames);
   }
   return validateMarketState(settingsStateSchema.parse(raw) as SettingsState, marketNames);

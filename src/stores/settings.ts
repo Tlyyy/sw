@@ -1,9 +1,10 @@
 import { reactive, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { catalog } from "../data/catalog";
-import type { AccountId, BeastResource, BeastTaskSettings, GemMarketItem, GemPriceHistoryEntry, GemPriceHistorySource } from "../domain/types";
+import type { AccountId, BeastResource, BeastTaskSettings, GemMarketItem, GemPlanSettings, GemPriceHistoryEntry, GemPriceHistorySource } from "../domain/types";
 import { shanghaiDateKey, type PlanningState, type TaskOverride } from "../domain/plans";
 import { createGemPriceHistoryEntry, normalizeGemPriceHistory } from "../domain/gemPriceHistory";
+import { defaultGemPlanSettings } from "../domain/gems";
 import { parseSettingsState, type SettingsState } from "../persistence/state";
 
 export const settingsStorageKey = "sw.app.settings.v3";
@@ -16,6 +17,7 @@ export const useSettingsStore = defineStore("settings", () => {
   const taskSettings = reactive<BeastTaskSettings>(clone(catalog.beastConfig.taskDefaultSettings));
   const taskOverrides = reactive<Record<string, TaskOverride>>({});
   const gemPriceHistory = ref<GemPriceHistoryEntry[]>([]);
+  const gemPlan = reactive<GemPlanSettings>({ ...defaultGemPlanSettings });
   const planningAsOfDate = ref(shanghaiDateKey());
 
   const marketNames = catalog.gemMarketSnapshots.at(-1)?.items.map((item) => item.name) || [];
@@ -28,6 +30,8 @@ export const useSettingsStore = defineStore("settings", () => {
     Object.assign(taskSettings, value.settings);
     Object.assign(taskOverrides, value.overrides);
     gemPriceHistory.value = normalizeGemPriceHistory(value.gemPriceHistory, marketNames);
+    Object.assign(gemPlan, value.gemPlan);
+    if (!catalog.gemUpgradeSteps.some((step) => step.to === gemPlan.targetLevel)) gemPlan.targetLevel = defaultGemPlanSettings.targetLevel;
   }
 
   function snapshot(
@@ -65,6 +69,7 @@ export const useSettingsStore = defineStore("settings", () => {
       settings: { ...taskSettings },
       overrides: clone(taskOverrides),
       gemPriceHistory: clone(gemPriceHistory.value),
+      gemPlan: { ...gemPlan },
     };
   }
 
@@ -113,6 +118,16 @@ export const useSettingsStore = defineStore("settings", () => {
     gemPriceHistory.value = gemPriceHistory.value.filter((entry) => entry.id !== id);
   }
   function clearGemPriceHistory() { gemPriceHistory.value = []; }
+  function setGemPlanTargetLevel(value: string) {
+    if (!catalog.gemUpgradeSteps.some((step) => step.to === value)) return false;
+    gemPlan.targetLevel = value;
+    return true;
+  }
+  function setGemPlanWeeklyIncome(value: number) {
+    const candidate = Number(value);
+    const normalized = Number.isFinite(candidate) ? Math.max(0, candidate) : 0;
+    gemPlan.weeklyIncomeWan = normalized;
+  }
   function setTaskSetting(field: keyof BeastTaskSettings, value: string | number) { (taskSettings as Record<string, string | number>)[field] = field === "startDate" ? String(value) : Math.max(0, Number(value) || 0); }
   function setTaskDone(id: string, done: boolean) { taskOverrides[id] = { ...(taskOverrides[id] || {}), done }; }
   function setTaskPrice(id: string, value: number) { taskOverrides[id] = { ...(taskOverrides[id] || {}), priceWan: Math.max(0, Number(value) || 0) }; }
@@ -136,14 +151,16 @@ export const useSettingsStore = defineStore("settings", () => {
     Object.keys(taskOverrides).forEach((key) => delete taskOverrides[key]);
   }
   function resetTasks() { resetTaskSettings(); resetTaskOverrides(); }
-  function resetAllPlanningData() { resetGemPrices(); clearGemPriceHistory(); resetTasks(); }
+  function resetGemPlan() { Object.assign(gemPlan, defaultGemPlanSettings); }
+  function resetAllPlanningData() { resetGemPrices(); clearGemPriceHistory(); resetTasks(); resetGemPlan(); }
 
-  watch([gemPriceOverrides, taskSettings, taskOverrides, gemPriceHistory], persist, { deep: true });
+  watch([gemPriceOverrides, taskSettings, taskOverrides, gemPriceHistory, gemPlan], persist, { deep: true });
   return {
-    hydrated, gemPriceOverrides, gemPriceHistory, taskSettings, taskOverrides, planningAsOfDate,
+    hydrated, gemPriceOverrides, gemPriceHistory, gemPlan, taskSettings, taskOverrides, planningAsOfDate,
     hydrate, snapshot, refreshPlanningAsOfDate, exportState, replaceState, setGemPrice, resetGemPrices, setTaskSetting, setTaskDone, setTaskPrice,
     resetTaskPrice, resetTaskCompletionOverrides, resetTaskPriceOverrides,
     recordGemPrices, removeGemPriceHistory, clearGemPriceHistory,
+    setGemPlanTargetLevel, setGemPlanWeeklyIncome, resetGemPlan,
     resetTaskSettings, resetTaskOverrides, resetTasks, resetAllPlanningData,
   };
 });

@@ -16,7 +16,9 @@ test.describe("desktop application", () => {
 
     const accountIds = ["FC", "LG1", "LG2", "PT", "MYT"];
     await page.goto("/#/analysis/recommendations");
-    const recommendationAccounts = await page.locator(".recommendation-board .account-code").allTextContents();
+    const recommendationCodes = page.locator(".recommendation-board .account-code");
+    await expect(recommendationCodes.first()).toBeVisible();
+    const recommendationAccounts = await recommendationCodes.allTextContents();
     expect([...new Set(recommendationAccounts)].sort()).toEqual([...accountIds].sort());
 
     await page.goto("/#/analysis/species");
@@ -57,7 +59,7 @@ test.describe("desktop application", () => {
       ["/#/assets/equipment", "装备资产"],
       ["/#/assets/skills", "技能资料"],
       ["/#/assets/evidence", "截图证据"],
-      ["/#/plans/upgrades", "宝石升级参考"],
+      ["/#/plans/upgrades", "宝石计划"],
       ["/#/plans/beasts", "神兽主线任务"],
       ["/#/plans/tasks", "任务维护"],
       ["/#/plans/timeline", "五号主线概览"],
@@ -506,5 +508,34 @@ test.describe("schedule completion dates", () => {
     }));
     expect(accountWidth.scroll).toBe(accountWidth.client);
     await page.screenshot({ path: testInfo.outputPath(`account-schedule-${testInfo.project.name}.png`) });
+  });
+});
+
+test.describe("standalone gem plan", () => {
+  test("target dropdown recalculates five accounts and generates one share image", async ({ page }, testInfo) => {
+    await page.clock.setFixedTime(new Date("2026-07-21T02:00:00Z"));
+    await page.goto("/#/plans/gems");
+
+    await expect(page.getByRole("heading", { name: "宝石计划", exact: true })).toBeVisible();
+    const target = page.getByLabel("目标段位");
+    expect(await target.locator("option").count()).toBeGreaterThan(10);
+    await target.selectOption("14");
+    await page.getByRole("button", { name: "查看 FC 宝石计划" }).click();
+    await expect(page.getByRole("heading", { name: "FC · 到 14 段", exact: true })).toBeVisible();
+
+    const weeklyIncome = page.getByLabel("每号每周投入");
+    await weeklyIncome.fill("120");
+    await weeklyIncome.press("Tab");
+    await expect(page.getByText("每个账号按 120 万 / 周独立计算", { exact: true })).toBeVisible();
+    await expect(page.locator(".gem-account-row")).toHaveCount(5);
+    await page.getByRole("button", { name: "查看 LG1 宝石计划" }).click();
+    await expect(page.getByRole("heading", { name: "LG1 · 到 14 段", exact: true })).toBeVisible();
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "分享宝石计划" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("宝石计划-14-2026-07-21.png");
+    await download.saveAs(testInfo.outputPath(`宝石计划-14-${testInfo.project.name}.png`));
+    await page.screenshot({ path: testInfo.outputPath(`gem-plan-${testInfo.project.name}.png`), fullPage: true });
   });
 });

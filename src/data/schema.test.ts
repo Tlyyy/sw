@@ -9,6 +9,12 @@ describe("catalogSchema relationships", () => {
     expect(catalogSchema.safeParse(rawCatalog).success).toBe(true);
   });
 
+  it("stores low-level skill names canonically", () => {
+    const legacySkillNames = rawCatalog.pets.flatMap((pet) => pet.skills)
+      .filter((skill) => skill.startsWith("小"));
+    expect(legacySkillNames).toEqual([]);
+  });
+
   it("rejects duplicate skill identities", () => {
     const invalid = clone(rawCatalog);
     invalid.skills.push(clone(invalid.skills[0]));

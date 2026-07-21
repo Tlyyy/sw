@@ -78,6 +78,11 @@ export interface GemMarketSnapshot {
   items: GemMarketItem[];
 }
 
+export interface GemPlanSettings {
+  targetLevel: string;
+  weeklyIncomeWan: number;
+}
+
 export type GemPriceHistorySource = "screenshot" | "manual";
 export interface GemPriceHistoryEntry {
   id: string;

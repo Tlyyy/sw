@@ -21,6 +21,7 @@ describe("versioned local state", () => {
     expect(settings.version).toBe(3);
     expect(settings.settings.weeklyEggs).toBe(9);
     expect(settings.settings.startDate).toBe(taskDefaults.startDate);
+    expect(settings.gemPlan).toEqual({ targetLevel: "13", weeklyIncomeWan: 88 });
 
     const publish = parsePublishState({ selectedIds: ["a", "a"], options: { mode: "record" }, draft: "手改正文" }, publishDefaults);
     expect(publish).toMatchObject({ version: 2, selectedIds: ["a"], draft: "手改正文", generatedSource: "手改正文" });

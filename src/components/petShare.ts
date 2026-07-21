@@ -15,6 +15,11 @@ function valueFor(rows: StatValue[], label: string, fallback = "—") {
   return rows.find(([name]) => name === label)?.[1] || fallback;
 }
 
+function aptitudeUpperLimit(label: string, value: string) {
+  if (!label.includes("资质")) return value;
+  return value.split(/[\/／]/).at(-1)?.trim() || value;
+}
+
 export function buildPetDetailShareData(
   pet: PetView,
   primaryEvidence: EvidenceSource | undefined,
@@ -38,7 +43,10 @@ export function buildPetDetailShareData(
       { label: "速度", value: String(pet.speed || valueFor(pet.panel, "速度")) },
       { label: "灵力", value: String(pet.spirit || valueFor(pet.panel, "灵力")) },
     ],
-    aptitudes: pet.aptitudes.slice(0, 6).map(([label, value]) => ({ label, value })),
+    aptitudes: pet.aptitudes.slice(0, 6).map(([label, value]) => ({
+      label,
+      value: aptitudeUpperLimit(label, value),
+    })),
     skills: pet.skills.filter((skill) => skill !== "空"),
   };
 }

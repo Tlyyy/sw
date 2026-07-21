@@ -273,7 +273,6 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
   setFont(context, 16, 700);
   const highlightedSkills = data.skills
     .slice(0, 5)
-    .map((skill) => skill.replace(/^小/, "低级"))
     .join(" / ");
   const skillSummary = data.skills.length > 5
     ? `${highlightedSkills}　共 ${data.skills.length} 技能`

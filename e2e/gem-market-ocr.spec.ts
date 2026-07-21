@@ -88,7 +88,8 @@ test("粘贴真实行情截图后可识别、记录趋势并在刷新后保留",
   await expect(page.locator(".gem-history-row")).toHaveCount(3);
 
   await page.goto("/#/plans/upgrades");
-  await expect(page.locator(".readonly-market-band article").first().locator("strong")).toHaveText("801");
-  await expect(page.locator(".market-band input, .gem-ocr-panel")).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/plans\/gems$/);
+  await expect(page.locator(".gem-market-strip > div > span").first().locator("strong")).toHaveText("801");
+  await expect(page.locator(".gem-market-strip input, .gem-ocr-panel")).toHaveCount(0);
   expect(externalRequests).toEqual([]);
 });

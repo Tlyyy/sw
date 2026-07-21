@@ -26,7 +26,7 @@ export const commandPages = [
   ["神兽主线任务", "/plans/beasts"],
   ["任务维护", "/plans/tasks"],
   ["五号主线概览", "/plans/timeline"],
-  ["宝石升级参考", "/plans/upgrades"],
+  ["宝石计划", "/plans/gems"],
   ["计划参数", "/plans/parameters"],
   ["推荐分析", "/analysis/recommendations"],
   ["同名宠物对比", "/analysis/species"],
