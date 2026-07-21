@@ -391,7 +391,7 @@ test.describe("pet detail sharing", () => {
 
     await page.goto("/#/assets/pets?account=FC");
     const petCheckboxes = page.getByRole("checkbox", { name: /选择 FC 的/ });
-    for (let index = 0; index < 5; index += 1) await petCheckboxes.nth(index).check();
+    for (const index of [0, 1, 2, 3, 6]) await petCheckboxes.nth(index).check();
     const batchBar = page.getByRole("complementary", { name: "批量分享宠物" });
     await expect(batchBar.getByText("5 只宠物", { exact: true })).toBeVisible();
     const shareButton = batchBar.getByRole("button", { name: "批量分享 5 只宠物" });

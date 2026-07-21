@@ -48,7 +48,7 @@ function pet(accountId: string, petName: string, accountTone: string): PetDetail
       { label: "灵力", value: "1473" },
     ],
     aptitudes: [],
-    skills: ["高级连击", "高级隐身"],
+    skills: ["高级连击", "高级隐身(符)", "护盾(驭)", "觉醒 3/5", "物抗强化"],
   };
 }
 
@@ -72,7 +72,10 @@ describe("pet batch share image", () => {
     expect(renderedText).toContain("冥卫");
     expect(renderedText).toContain("面板");
     expect(renderedText).toContain("资质");
-    expect(renderedText).toContain("技能 · 2");
+    expect(renderedText).toContain("技能 · 3");
+    expect(renderedText.some((text) => text.includes("物抗强化"))).toBeTruthy();
+    expect(renderedText.some((text) => text.includes("觉醒 3/5"))).toBeFalsy();
+    expect(renderedText.some((text) => text.includes("护盾(驭)"))).toBeFalsy();
     expect(renderedText).not.toContain("暂无截图");
     expect(canvas.width).toBe(1080);
     expect(canvas.height).toBeGreaterThan(600);

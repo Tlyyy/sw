@@ -114,6 +114,10 @@ function compactAptitudeLabel(label: string) {
     .replace("速度资质", "速资");
 }
 
+function visibleSkills(skills: string[]) {
+  return skills.filter((skill) => !skill.includes("(驭)") && !skill.startsWith("觉醒"));
+}
+
 function drawHeader(
   context: CanvasRenderingContext2D,
   count: number,
@@ -288,10 +292,11 @@ function drawPetCard(
   context.textAlign = "left";
   context.textBaseline = "top";
   setFont(context, 13, 850);
-  context.fillText(`技能 · ${data.skills.length}`, x + 20, y + 268);
+  const skills = visibleSkills(data.skills);
+  context.fillText(`技能 · ${skills.length}`, x + 20, y + 268);
   context.fillStyle = "#314641";
   setFont(context, 13, 700);
-  skillLines(context, data.skills, width - 40, 3).forEach((line, index) => {
+  skillLines(context, skills, width - 40, 3).forEach((line, index) => {
     context.fillText(line, x + 20, y + 292 + index * 20);
   });
 }
