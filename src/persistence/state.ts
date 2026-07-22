@@ -2,12 +2,21 @@ import { z } from "zod";
 import { defaultGemPlanSettings } from "../domain/gems";
 import { parseInventoryExport } from "../domain/inventory";
 import type { PublishOptions } from "../domain/publish";
-import type { BeastTaskSettings, GemPlanSettings, GemPriceHistoryEntry, InventoryExportPayload } from "../domain/types";
+import type {
+  BeastTaskSettings,
+  GemPlanSettings,
+  GemPriceHistoryEntry,
+  InventoryExportPayload,
+  SilverExpenseRecord,
+  TaskCompletionRecord,
+} from "../domain/types";
 import type { TaskOverride } from "../domain/plans";
 
 const nonNegativeNumber = z.number().finite().nonnegative();
 const nonNegativeInteger = nonNegativeNumber.int();
 const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const timestamp = z.string().refine((value) => Number.isFinite(Date.parse(value)));
+const accountId = z.enum(["FC", "LG1", "PT", "LG2", "MYT"]);
 const taskSettingsSchema = z.object({
   startDate: dateKey,
   thisWeekEggs: nonNegativeNumber,
@@ -20,9 +29,28 @@ const taskSettingsSchema = z.object({
   eggPriceWan: nonNegativeNumber,
 }).strict();
 const taskOverrideSchema = z.object({ done: z.boolean().optional(), priceWan: nonNegativeNumber.optional() }).strict();
+const taskCompletionSchema: z.ZodType<TaskCompletionRecord> = z.object({
+  taskId: z.string().min(1),
+  completedOn: dateKey,
+  recordedAt: timestamp,
+  accountId,
+  typeLabel: z.string().min(1),
+  actionLabel: z.string().min(1),
+  taskKind: z.string().min(1),
+  resourceKind: z.enum(["silver", "eggs", "innerShards"]),
+  resourceAmount: nonNegativeNumber,
+  silverSpentWan: nonNegativeNumber,
+}).strict();
+const silverExpenseSchema: z.ZodType<SilverExpenseRecord> = z.object({
+  id: z.string().min(1),
+  effectiveDate: dateKey,
+  recordedAt: timestamp,
+  amountWan: z.number().finite().positive(),
+  note: z.string().trim().min(1).max(80),
+}).strict();
 const historyEntrySchema = z.object({
   id: z.string().min(1),
-  capturedAt: z.string().refine((value) => Number.isFinite(Date.parse(value))),
+  capturedAt: timestamp,
   source: z.enum(["screenshot", "manual"]),
   items: z.array(z.object({ name: z.string().min(1), price: z.number().finite().positive() }).strict()),
 }).strict();
@@ -32,15 +60,28 @@ const gemPlanSettingsSchema = z.object({
 }).strict().default({ ...defaultGemPlanSettings });
 
 export interface SettingsState {
-  version: 3;
+  version: 4;
   gemPriceOverrides: Record<string, number>;
   settings: BeastTaskSettings;
   overrides: Record<string, TaskOverride>;
+  taskCompletions: TaskCompletionRecord[];
+  silverExpenses: SilverExpenseRecord[];
   gemPriceHistory: GemPriceHistoryEntry[];
   gemPlan: GemPlanSettings;
 }
 
 const settingsStateSchema = z.object({
+  version: z.literal(4),
+  gemPriceOverrides: z.record(z.string(), nonNegativeNumber),
+  settings: taskSettingsSchema,
+  overrides: z.record(z.string(), taskOverrideSchema),
+  taskCompletions: z.array(taskCompletionSchema),
+  silverExpenses: z.array(silverExpenseSchema),
+  gemPriceHistory: z.array(historyEntrySchema),
+  gemPlan: gemPlanSettingsSchema,
+}).strict();
+
+const previousSettingsSchema = z.object({
   version: z.literal(3),
   gemPriceOverrides: z.record(z.string(), nonNegativeNumber),
   settings: taskSettingsSchema,
@@ -71,13 +112,24 @@ function validateMarketState(state: SettingsState, marketNames: string[]) {
 
 export function parseSettingsState(value: unknown, defaults: BeastTaskSettings, marketNames: string[]): SettingsState {
   const raw = typeof value === "string" ? JSON.parse(value) : value;
+  if ((raw as { version?: unknown } | null)?.version === 3) {
+    const previous = previousSettingsSchema.parse(raw);
+    return validateMarketState(settingsStateSchema.parse({
+      ...previous,
+      version: 4,
+      taskCompletions: [],
+      silverExpenses: [],
+    }) as SettingsState, marketNames);
+  }
   if ((raw as { version?: unknown } | null)?.version === 2) {
     const legacy = legacySettingsSchema.parse(raw);
     return validateMarketState(settingsStateSchema.parse({
-      version: 3,
+      version: 4,
       gemPriceOverrides: legacy.gemPriceOverrides || {},
       settings: { ...defaults, ...(legacy.settings || {}) },
       overrides: legacy.overrides || {},
+      taskCompletions: [],
+      silverExpenses: [],
       gemPriceHistory: legacy.gemPriceHistory || [],
       gemPlan: legacy.gemPlan,
     }) as SettingsState, marketNames);

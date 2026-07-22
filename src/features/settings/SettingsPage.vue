@@ -156,7 +156,7 @@ async function rotatePassword() {
       <button class="button" @click="confirmAction('确认清空发布页已选宠物？', publish.clear)">清空发布选择</button>
     </section>
     <section class="settings-section workspace-state-section">
-      <div><h2>完整业务备份</h2><p>包含库存、行情与历史、神兽任务、发布草稿和界面偏好；不包含登录状态和静态基础资料。恢复后会自动同步，任一分区无效都不会覆盖现有数据。</p></div>
+      <div><h2>完整业务备份</h2><p>包含库存、行情与历史、任务完成日期、银子支出、发布草稿和界面偏好；不包含登录状态和静态基础资料。恢复后会自动同步，任一分区无效都不会覆盖现有数据。</p></div>
       <strong aria-live="polite">{{ backupNotice || `${inventory.snapshots.length} 份库存快照已保存在本机` }}</strong>
       <div><button class="button" type="button" @click="exportWorkspace">导出完整 JSON</button><button class="button" type="button" @click="backupInput?.click()">恢复备份</button><input ref="backupInput" hidden type="file" accept="application/json,.json" @change="importWorkspace" /></div>
     </section>

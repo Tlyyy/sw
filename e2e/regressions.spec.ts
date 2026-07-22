@@ -71,7 +71,7 @@ test.describe("desktop regressions", () => {
   test("无效手动行情会报告失败且不会新增历史", async ({ page }) => {
     await page.goto("/#/data/market");
     const historyCountBefore = await page.evaluate(() => {
-      const state = JSON.parse(localStorage.getItem("sw.app.settings.v3") || "null");
+      const state = JSON.parse(localStorage.getItem("sw.app.settings.v4") || "null");
       return state?.gemPriceHistory?.length || 0;
     });
 
@@ -79,7 +79,7 @@ test.describe("desktop regressions", () => {
     await page.getByRole("button", { name: "记录当前价格" }).click();
     await expect(page.getByText("记录失败：六项价格必须都是大于 0 的有效数字", { exact: true })).toBeVisible();
     await expect.poll(() => page.evaluate(() => {
-      const state = JSON.parse(localStorage.getItem("sw.app.settings.v3") || "null");
+      const state = JSON.parse(localStorage.getItem("sw.app.settings.v4") || "null");
       return state?.gemPriceHistory?.length || 0;
     })).toBe(historyCountBefore);
   });
@@ -277,16 +277,16 @@ test.describe("desktop regressions", () => {
 
     await page.goto("/#/settings");
     await expect(page.getByRole("heading", { name: "完整业务备份" })).toBeVisible();
-    await expect(page.getByText(/包含库存、行情与历史、神兽任务、发布草稿和界面偏好/)).toBeVisible();
+    await expect(page.getByText(/包含库存、行情与历史、任务完成日期、银子支出、发布草稿和界面偏好/)).toBeVisible();
     await expect(page.getByLabel("默认账号")).toHaveValue("FC");
     await expect(page.getByLabel("对比表密度")).toHaveValue("comfortable");
     await expect(page.getByText("1 组宠物已加入发布清单", { exact: true })).toBeVisible();
 
     await expect.poll(() => page.evaluate(() => ({
-      settings: JSON.parse(localStorage.getItem("sw.app.settings.v3") || "null")?.version,
+      settings: JSON.parse(localStorage.getItem("sw.app.settings.v4") || "null")?.version,
       publish: JSON.parse(localStorage.getItem("sw.app.publish.v2") || "null")?.version,
       ui: JSON.parse(localStorage.getItem("sw.app.ui.v2") || "null")?.version,
-    }))).toEqual({ settings: 3, publish: 2, ui: 2 });
+    }))).toEqual({ settings: 4, publish: 2, ui: 2 });
 
     const [download] = await Promise.all([
       page.waitForEvent("download"),
@@ -299,7 +299,7 @@ test.describe("desktop regressions", () => {
       format: "sw-workspace-backup",
       version: 1,
       inventory: { version: 2 },
-      settings: { version: 3, settings: { startDate: "2026-01-02" } },
+      settings: { version: 4, settings: { startDate: "2026-01-02" } },
       publish: { version: 2, selectedIds: ["FC:pet:01"], draft: "旧版发布草稿" },
       ui: { version: 2, recentAccount: "FC", matrixDensity: "comfortable" },
     });

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { catalog } from "../data/catalog";
-import { legacySettingsStorageKey, settingsStorageKey, useSettingsStore } from "./settings";
+import { legacySettingsStorageKey, previousSettingsStorageKey, settingsStorageKey, useSettingsStore } from "./settings";
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -19,13 +19,31 @@ describe("settings store persistence", () => {
     setActivePinia(createPinia());
   });
 
-  it("migrates the v2 envelope and writes validated v3 state", () => {
+  it("migrates the v2 envelope and writes validated v4 state", () => {
     localStorage.setItem(legacySettingsStorageKey, JSON.stringify({ version: 2, settings: { weeklyEggs: 7.5 } }));
     const settings = useSettingsStore();
     settings.hydrate();
     expect(settings.taskSettings.weeklyEggs).toBe(7.5);
     expect(settings.gemPlan).toEqual({ targetLevel: "13", weeklyIncomeWan: 88 });
-    expect(JSON.parse(localStorage.getItem(settingsStorageKey) || "null").version).toBe(3);
+    expect(JSON.parse(localStorage.getItem(settingsStorageKey) || "null").version).toBe(4);
+  });
+
+  it("prefers and migrates v3 state before an older v2 fallback", () => {
+    const previous = {
+      ...useSettingsStore().exportState(),
+      version: 3,
+      settings: { ...catalog.beastConfig.taskDefaultSettings, weeklySilverWan: 77 },
+    } as Record<string, unknown>;
+    delete previous.taskCompletions;
+    delete previous.silverExpenses;
+    localStorage.setItem(previousSettingsStorageKey, JSON.stringify(previous));
+    localStorage.setItem(legacySettingsStorageKey, JSON.stringify({ version: 2, settings: { weeklySilverWan: 11 } }));
+
+    setActivePinia(createPinia());
+    const settings = useSettingsStore();
+    settings.hydrate();
+    expect(settings.taskSettings.weeklySilverWan).toBe(77);
+    expect(settings.exportState()).toMatchObject({ version: 4, taskCompletions: [], silverExpenses: [] });
   });
 
   it("persists the standalone gem target and weekly input", () => {
@@ -93,5 +111,36 @@ describe("settings store persistence", () => {
     settings.setTaskPrice("FC:snake1:skin", 456);
     settings.resetTaskPrice("FC:snake1:skin");
     expect(settings.taskOverrides).toEqual({ "FC:snake1:skin": { done: true } });
+  });
+
+  it("records task completion facts and manual silver expenses for weekly reports", () => {
+    const settings = useSettingsStore();
+    settings.hydrate();
+    const completion = settings.completeTask({
+      id: "FC:snake1:skin",
+      accountId: "FC",
+      typeLabel: "剑气蛇",
+      actionLabel: "皮肤",
+      kind: "进阶",
+      resourceType: "wan",
+      priceWan: 30,
+      eggCount: 0,
+      shardCount: 0,
+    }, "2026-07-22", () => new Date("2026-07-22T02:00:00.000Z"));
+    const expense = settings.addSilverExpense({
+      effectiveDate: "2026-07-22",
+      amountWan: 12.5,
+      note: " 购买材料 ",
+    }, () => new Date("2026-07-22T03:00:00.000Z"));
+
+    expect(completion).toMatchObject({ completedOn: "2026-07-22", silverSpentWan: 30, resourceKind: "silver" });
+    expect(expense).toMatchObject({ effectiveDate: "2026-07-22", amountWan: 12.5, note: "购买材料" });
+    expect(settings.exportState().taskCompletions).toHaveLength(1);
+    expect(settings.exportState().silverExpenses).toHaveLength(1);
+
+    settings.setTaskDone("FC:snake1:skin", false);
+    expect(settings.taskCompletions).toEqual([]);
+    settings.removeSilverExpense(expense!.id);
+    expect(settings.silverExpenses).toEqual([]);
   });
 });

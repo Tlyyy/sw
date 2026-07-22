@@ -9,6 +9,7 @@ import {
 } from "../domain/inventory";
 import type { AccountId, InventoryAccountDelta, InventoryBalance, InventorySnapshot } from "../domain/types";
 import AppIcon from "./AppIcon.vue";
+import WeeklyActivityPanel from "./WeeklyActivityPanel.vue";
 import {
   createInventoryReportShareImage,
   type InventoryReportShareData,
@@ -306,6 +307,8 @@ async function shareInventoryReport() {
     </div>
 
     <p v-if="shareNotice" class="inventory-share-notice" role="status">{{ shareNotice }}</p>
+
+    <WeeklyActivityPanel :report="report" :current-date="currentDate" />
 
     <template v-if="reportView === 'summary'">
       <div class="weekly-change-panel">

@@ -5,6 +5,7 @@ import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { buildTaskPlans, taskDisplayTypeOptions, type ScheduledTask } from "../../domain/plans";
 import { formatWan } from "../../domain/gems";
+import { taskCompletionResourceLabel } from "../../domain/weeklyActivity";
 import PlansNav from "./PlansNav.vue";
 
 type TaskStatusFilter = "pending" | "done" | "ALL";
@@ -48,6 +49,7 @@ const pendingTaskCount = computed(() => allTasks.value.filter((task) => !task.do
 const doneTaskCount = computed(() => allTasks.value.length - pendingTaskCount.value);
 const completionRate = computed(() => allTasks.value.length ? Math.round(doneTaskCount.value / allTasks.value.length * 100) : 0);
 const completionOverrideCount = computed(() => Object.values(settings.taskOverrides).filter((item) => item.done !== undefined).length);
+const completionByTask = computed(() => new Map(settings.taskCompletions.map((entry) => [entry.taskId, entry])));
 const visiblePendingTasks = computed(() => tasks.value.filter((task) => !task.done));
 const selectedTaskCount = computed(() => selectedTaskIds.value.length);
 const allVisiblePendingSelected = computed(() => Boolean(visiblePendingTasks.value.length)
@@ -64,6 +66,8 @@ function requirementLabel(task: ScheduledTask) {
 }
 
 function scheduleLabel(task: ScheduledTask) {
+  const completion = completionByTask.value.get(task.id);
+  if (task.done) return completion ? `完成于 ${completion.completedOn}` : "已完成";
   return /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate) ? task.dueDate : "等待条件";
 }
 
@@ -101,18 +105,23 @@ function toggleVisibleSelection(checked: boolean) {
 }
 
 function setTaskCompletion(task: ScheduledTask, done: boolean) {
-  settings.setTaskDone(task.id, done);
+  const completion = done ? settings.completeTask(task) : null;
+  if (!done) settings.setTaskDone(task.id, false);
   selectedTaskIds.value = selectedTaskIds.value.filter((id) => id !== task.id);
   actionFeedback.value = done
-    ? `已将 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel} 标记为完成。`
-    : `已将 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel} 恢复为未完成。`;
+    ? `已完成 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel}${completion ? `，并记录 ${taskCompletionResourceLabel(completion)}支出` : ""}。`
+    : `已将 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel} 恢复为未完成，关联支出已撤销。`;
 }
 
 function completeSelectedTasks() {
   const selected = allTasks.value.filter((task) => selectedTaskIds.value.includes(task.id) && !task.done);
-  selected.forEach((task) => settings.setTaskDone(task.id, true));
+  const completions = selected.flatMap((task) => {
+    const completion = settings.completeTask(task);
+    return completion ? [completion] : [];
+  });
+  const silverSpentWan = completions.reduce((sum, entry) => sum + entry.silverSpentWan, 0);
   selectedTaskIds.value = [];
-  actionFeedback.value = `已将 ${selected.length} 项任务标记为完成，可在“已完成”中查看。`;
+  actionFeedback.value = `已完成 ${selected.length} 项任务并记录完成日期${silverSpentWan ? `，其中银子支出 ${formatWan(silverSpentWan)}` : ""}。`;
 }
 
 function resetCompletion() {
@@ -133,7 +142,7 @@ function resetCompletion() {
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10.7v6M12 7.3h.01" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
       <div>
         <strong>操作指引</strong>
-        <p>单项可直接标记完成；多项先勾选，再批量完成。完成项会移入“已完成”，随时可以恢复。</p>
+        <p>单项可直接标记完成；多项先勾选，再批量完成。系统会同时记录完成日期和对应资源支出，恢复未完成时一并撤销。</p>
       </div>
       <button v-if="completionOverrideCount" class="button danger task-reset-action" type="button" @click="resetCompletion">清除全部完成记录</button>
     </section>

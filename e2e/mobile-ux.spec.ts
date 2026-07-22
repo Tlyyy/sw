@@ -480,7 +480,7 @@ test.describe("mobile UX release gate", () => {
     const report = page.getByTestId("inventory-week-report");
     await expect(report).toBeVisible();
     await expect(weeklyTask.getByText("2 / 7 天有记录", { exact: true })).toBeVisible();
-    await expect(report.getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
+    await expect(report.locator(".weekly-change-panel > header").getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
     await expect(report.getByText("银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × 5.5 万/个", { exact: true })).toBeVisible();
 
     await expect(report.getByRole("columnheader")).toHaveText(["账号", "专", "普", "银 / 万", "银+蛋 / 万", "碎"]);

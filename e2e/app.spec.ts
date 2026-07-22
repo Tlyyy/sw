@@ -217,7 +217,7 @@ test.describe("desktop application", () => {
     await expect(fcCard).toContainText("44");
     const persisted = await page.evaluate(() => ({
       inventory: JSON.parse(localStorage.getItem("sw.app.inventory.v2") || "null"),
-      settings: JSON.parse(localStorage.getItem("sw.app.settings.v3") || localStorage.getItem("sw.app.settings.v2") || "null"),
+      settings: JSON.parse(localStorage.getItem("sw.app.settings.v4") || localStorage.getItem("sw.app.settings.v3") || localStorage.getItem("sw.app.settings.v2") || "null"),
     }));
     expect(persisted.inventory.version).toBe(2);
     expect(persisted.inventory.snapshots[0].accounts.FC).toEqual({
@@ -247,7 +247,7 @@ test.describe("desktop application", () => {
     const bulkBar = page.getByRole("complementary", { name: "批量任务操作" });
     await expect(bulkBar.getByText("已选 2 项", { exact: true })).toBeVisible();
     await bulkBar.getByRole("button", { name: "批量标记完成", exact: true }).click();
-    await expect(page.getByText("已将 2 项任务标记为完成", { exact: false })).toBeVisible();
+    await expect(page.getByText("已完成 2 项任务并记录完成日期", { exact: false })).toBeVisible();
     await expect(page.locator(".task-work-row:not(.done)")).toHaveCount(initialCount - 2);
 
     await page.getByRole("group", { name: "任务状态筛选" }).getByRole("button", { name: /已完成/ }).click();
@@ -537,5 +537,82 @@ test.describe("standalone gem plan", () => {
     expect(download.suggestedFilename()).toBe("宝石计划-14-2026-07-21.png");
     await download.saveAs(testInfo.outputPath(`宝石计划-14-${testInfo.project.name}.png`));
     await page.screenshot({ path: testInfo.outputPath(`gem-plan-${testInfo.project.name}.png`), fullPage: true });
+  });
+});
+
+test.describe("week-to-date activity report", () => {
+  test("task spending is reconciled into harvest and a report image can be generated manually", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.startsWith("tablet-"));
+    const runtimeErrors: string[] = [];
+    page.on("pageerror", (error) => runtimeErrors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") runtimeErrors.push(message.text());
+    });
+    await page.clock.setFixedTime(new Date("2026-07-22T02:00:00.000Z"));
+    await page.addInitScript(() => {
+      const accountIds = ["FC", "LG1", "LG2", "PT", "MYT"];
+      const balances = (silverWan: number) => Object.fromEntries(accountIds.map((id) => [id, {
+        dedicatedEggs: 10,
+        regularEggs: 10,
+        silverWan,
+        innerShardCount: 20,
+      }]));
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [
+          { effectiveDate: "2026-07-19", recordedAt: "2026-07-19T02:00:00.000Z", accounts: balances(100) },
+          { effectiveDate: "2026-07-22", recordedAt: "2026-07-22T02:00:00.000Z", accounts: balances(104) },
+        ],
+      }));
+    });
+
+    await page.goto("/#/plans/tasks");
+    const silverTask = page.locator(".task-work-row").filter({ hasText: /万/ }).first();
+    await expect(silverTask).toBeVisible();
+    const resourceText = (await silverTask.locator(".task-resource-cell").innerText()).replaceAll(",", "");
+    const taskExpense = Number(resourceText.match(/[\d.]+/)?.[0]);
+    expect(taskExpense).toBeGreaterThan(0);
+    await silverTask.getByRole("button", { name: /标记完成/ }).click();
+    await expect(page.getByRole("status")).toContainText("银子支出");
+
+    await page.goto("/#/data/inventory");
+    await expect(page).toHaveURL(/#\/data\/inventory$/);
+    await page.getByRole("button", { name: "周报分析", exact: true }).click();
+    const activity = page.getByTestId("weekly-activity-panel");
+    await expect(activity.getByText("本周截至 7月22日", { exact: true })).toBeVisible();
+    await expect(activity.getByText("2026-07-20 至 2026-07-22", { exact: true })).toBeVisible();
+    await expect(activity.getByText("本周收获 = 库存净变化 + 已记录的银子支出", { exact: true })).toBeVisible();
+
+    await activity.getByRole("button", { name: "补记其他支出", exact: true }).click();
+    await activity.getByLabel("其他支出金额（万）").fill("10");
+    await activity.getByLabel("其他支出用途").fill("购买材料");
+    await activity.getByRole("button", { name: "保存支出", exact: true }).click();
+    await expect(activity.getByText("购买材料", { exact: true })).toBeVisible();
+
+    const expectedExpense = taskExpense + 10;
+    const expenseMetric = activity.locator(".weekly-cashflow-metrics > div").filter({ hasText: "本周支出" });
+    const harvestMetric = activity.locator(".weekly-cashflow-metrics > div").filter({ hasText: "本周收获" });
+    await expect(expenseMetric.locator("dd")).toHaveText(`${expectedExpense.toLocaleString("zh-CN")} 万`);
+    await expect(harvestMetric.locator("dd")).toHaveText(`${(20 + expectedExpense).toLocaleString("zh-CN")} 万`);
+
+    await activity.getByRole("button", { name: "生成本周周报", exact: true }).click();
+    const preview = page.getByRole("dialog", { name: "本周周报图片" });
+    await expect(preview).toBeVisible();
+    await expect(preview.getByRole("img", { name: "生成的本周银子与任务周报图片预览" })).toHaveJSProperty("naturalWidth", 1080);
+    const downloadPromise = page.waitForEvent("download");
+    await preview.getByRole("button", { name: "下载 PNG", exact: true }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("本周周报-2026-07-20-2026-07-22.png");
+    await download.saveAs(testInfo.outputPath(`weekly-activity-report-${testInfo.project.name}.png`));
+    await preview.getByRole("button", { name: "关闭周报图片预览" }).click();
+    await expect(preview).toHaveCount(0);
+
+    const pageWidth = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(pageWidth.scroll).toBe(pageWidth.client);
+    expect(runtimeErrors).toEqual([]);
+    await activity.screenshot({ path: testInfo.outputPath(`weekly-activity-panel-${testInfo.project.name}.png`) });
   });
 });
