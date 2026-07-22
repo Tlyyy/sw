@@ -253,6 +253,56 @@ test.describe("mobile UX release gate", () => {
     }
   });
 
+  test("iPhone 16 Pro Max 底栏避开 Home Indicator 且账号操作保持单行", async ({ page }) => {
+    await page.setViewportSize({ width: 440, height: 956 });
+    await page.goto("/#/accounts/FC");
+    await waitForApplicationPage(page);
+    await page.addStyleTag({
+      content: ":root{--orbit-safe-area-top:59px!important;--orbit-safe-area-bottom:34px!important}",
+    });
+
+    const mainlineSection = page.locator(".account-page .split-workspace > div").filter({ hasText: "主线任务与资源" });
+    const inventoryLink = mainlineSection.getByRole("link", { name: /更新库存/ });
+    await expect(inventoryLink).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const dock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
+      const main = document.querySelector<HTMLElement>(".orbit-main");
+      const topbar = document.querySelector<HTMLElement>(".orbit-topbar");
+      const menu = document.querySelector<HTMLElement>(".orbit-menu-button");
+      const link = [...document.querySelectorAll<HTMLElement>(".account-page .section-head > a")]
+        .find((element) => element.textContent?.includes("更新库存"));
+      if (!dock || !main || !topbar || !menu || !link) throw new Error("iPhone 安全区审查缺少目标元素");
+      const dockRect = dock.getBoundingClientRect();
+      const buttonBottom = Math.max(...[...dock.querySelectorAll<HTMLElement>("a, button")]
+        .map((element) => element.getBoundingClientRect().bottom));
+      const linkStyle = getComputedStyle(link);
+      return {
+        viewportHeight: window.innerHeight,
+        topbarHeight: topbar.getBoundingClientRect().height,
+        menuTop: menu.getBoundingClientRect().top,
+        dockHeight: dockRect.height,
+        dockTop: dockRect.top,
+        dockPaddingBottom: Number.parseFloat(getComputedStyle(dock).paddingBottom),
+        buttonBottom,
+        mainPaddingBottom: Number.parseFloat(getComputedStyle(main).paddingBottom),
+        linkHeight: link.getBoundingClientRect().height,
+        linkWhiteSpace: linkStyle.whiteSpace,
+        linkFits: link.scrollWidth <= link.clientWidth + 1,
+      };
+    });
+
+    expect(layout.topbarHeight, "顶部栏应包含 iPhone 状态栏安全区").toBeGreaterThanOrEqual(116);
+    expect(layout.menuTop, "菜单按钮不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
+    expect(layout.dockPaddingBottom, "底栏应为 Home Indicator 留出安全区").toBeGreaterThanOrEqual(34);
+    expect(layout.dockHeight, "底栏总高度应包含按钮区与底部安全区").toBeGreaterThanOrEqual(103);
+    expect(layout.buttonBottom, "底部按钮不能进入 Home Indicator 区域").toBeLessThanOrEqual(layout.viewportHeight - 34);
+    expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(layout.dockHeight + 10);
+    expect(layout.linkHeight, "更新库存应保持可触控高度").toBeGreaterThanOrEqual(44);
+    expect(layout.linkWhiteSpace).toBe("nowrap");
+    expect(layout.linkFits, "更新库存不能被挤成两行").toBe(true);
+  });
+
   test("首页首屏优先展示决策且主操作不被底部导航遮挡", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);

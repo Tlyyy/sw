@@ -45,6 +45,7 @@ const silverExpenseSchema: z.ZodType<SilverExpenseRecord> = z.object({
   id: z.string().min(1),
   effectiveDate: dateKey,
   recordedAt: timestamp,
+  accountId: accountId.optional(),
   amountWan: z.number().finite().positive(),
   note: z.string().trim().min(1).max(80),
 }).strict();

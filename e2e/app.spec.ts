@@ -584,10 +584,14 @@ test.describe("week-to-date activity report", () => {
     await expect(activity.getByText("本周收获 = 库存净变化 + 已记录的银子支出", { exact: true })).toBeVisible();
 
     await activity.getByRole("button", { name: "补记其他支出", exact: true }).click();
+    await activity.getByLabel("其他支出账号").selectOption("LG1");
     await activity.getByLabel("其他支出金额（万）").fill("10");
     await activity.getByLabel("其他支出用途").fill("购买材料");
     await activity.getByRole("button", { name: "保存支出", exact: true }).click();
     await expect(activity.getByText("购买材料", { exact: true })).toBeVisible();
+    const accountRows = activity.locator(".weekly-account-row");
+    await expect(accountRows).toHaveCount(5);
+    await expect(activity.locator(".weekly-account-row[data-account-id='LG1'] .account-expense small")).toContainText("其他 10");
 
     const expectedExpense = taskExpense + 10;
     const expenseMetric = activity.locator(".weekly-cashflow-metrics > div").filter({ hasText: "本周支出" });
@@ -598,7 +602,9 @@ test.describe("week-to-date activity report", () => {
     await activity.getByRole("button", { name: "生成本周周报", exact: true }).click();
     const preview = page.getByRole("dialog", { name: "本周周报图片" });
     await expect(preview).toBeVisible();
-    await expect(preview.getByRole("img", { name: "生成的本周银子与任务周报图片预览" })).toHaveJSProperty("naturalWidth", 1080);
+    const reportImage = preview.getByRole("img", { name: "生成的本周银子与任务周报图片预览" });
+    await expect(reportImage).toHaveJSProperty("naturalWidth", 1080);
+    expect(await reportImage.evaluate((image: HTMLImageElement) => image.naturalHeight)).toBeGreaterThan(1_300);
     const downloadPromise = page.waitForEvent("download");
     await preview.getByRole("button", { name: "下载 PNG", exact: true }).click();
     const download = await downloadPromise;

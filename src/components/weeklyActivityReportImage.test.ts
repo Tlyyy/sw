@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WeeklyActivityReportImageData } from "./weeklyActivityReportImage";
 import { createWeeklyActivityReportImage } from "./weeklyActivityReportImage";
+import type { SilverExpenseRecord, TaskCompletionRecord } from "../domain/types";
 
 function installCanvasStub() {
   const renderedText: string[] = [];
@@ -33,6 +34,26 @@ afterEach(() => vi.unstubAllGlobals());
 describe("weekly activity report image", () => {
   it("renders the week-to-date cashflow and task sections", () => {
     const renderedText = installCanvasStub();
+    const completion: TaskCompletionRecord = {
+      taskId: "FC:snake1:skin",
+      completedOn: "2026-07-21",
+      recordedAt: "2026-07-21T02:00:00.000Z",
+      accountId: "FC",
+      typeLabel: "剑气蛇",
+      actionLabel: "皮肤",
+      taskKind: "进阶",
+      resourceKind: "silver",
+      resourceAmount: 30,
+      silverSpentWan: 30,
+    };
+    const expense: SilverExpenseRecord = {
+      id: "expense-1",
+      effectiveDate: "2026-07-22",
+      recordedAt: "2026-07-22T02:00:00.000Z",
+      accountId: "FC",
+      amountWan: 10,
+      note: "购买材料",
+    };
     const data: WeeklyActivityReportImageData = {
       weekStart: "2026-07-20",
       reportEnd: "2026-07-22",
@@ -47,25 +68,20 @@ describe("weekly activity report image", () => {
       manualSilverExpenseWan: 10,
       totalSilverExpenseWan: 40,
       harvestedSilverWan: 60,
-      taskCompletions: [{
-        taskId: "FC:snake1:skin",
-        completedOn: "2026-07-21",
-        recordedAt: "2026-07-21T02:00:00.000Z",
-        accountId: "FC",
-        typeLabel: "剑气蛇",
-        actionLabel: "皮肤",
-        taskKind: "进阶",
-        resourceKind: "silver",
-        resourceAmount: 30,
-        silverSpentWan: 30,
-      }],
-      manualExpenses: [{
-        id: "expense-1",
-        effectiveDate: "2026-07-22",
-        recordedAt: "2026-07-22T02:00:00.000Z",
-        amountWan: 10,
-        note: "购买材料",
-      }],
+      unassignedManualSilverExpenseWan: 0,
+      accountSummaries: ["FC", "LG1", "PT", "LG2", "MYT"].map((accountId) => ({
+        accountId: accountId as "FC" | "LG1" | "PT" | "LG2" | "MYT",
+        currentSilverWan: 104,
+        inventoryNetChangeWan: 4,
+        taskSilverExpenseWan: accountId === "FC" ? 30 : 0,
+        manualSilverExpenseWan: accountId === "FC" ? 10 : 0,
+        totalSilverExpenseWan: accountId === "FC" ? 40 : 0,
+        harvestedSilverWan: accountId === "FC" ? 44 : 4,
+        taskCompletions: accountId === "FC" ? [completion] : [],
+        manualExpenses: accountId === "FC" ? [expense] : [],
+      })),
+      taskCompletions: [completion],
+      manualExpenses: [expense],
     };
 
     const image = createWeeklyActivityReportImage(data);
@@ -74,6 +90,8 @@ describe("weekly activity report image", () => {
     expect(renderedText).toContain("本周银子与任务周报");
     expect(renderedText).toContain("2026-07-20 至 2026-07-22");
     expect(renderedText).toContain("本周收获 = 库存净变化 + 已记录的银子支出");
+    expect(renderedText).toContain("各账号本周情况 · 5 个账号");
+    expect(renderedText).toEqual(expect.arrayContaining(["FC", "LG1", "PT", "LG2", "MYT"]));
     expect(renderedText).toContain("剑气蛇 · 皮肤");
     expect(renderedText).toContain("购买材料");
   });

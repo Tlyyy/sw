@@ -3,7 +3,24 @@ import {
   summarizeInventoryWeeklyChange,
   type InventoryWeekReport,
 } from "./inventory";
-import type { SilverExpenseRecord, TaskCompletionRecord } from "./types";
+import { accountIds } from "./types";
+import type {
+  AccountId,
+  SilverExpenseRecord,
+  TaskCompletionRecord,
+} from "./types";
+
+export interface WeeklyAccountActivitySummary {
+  accountId: AccountId;
+  currentSilverWan: number | null;
+  inventoryNetChangeWan: number | null;
+  taskSilverExpenseWan: number;
+  manualSilverExpenseWan: number;
+  totalSilverExpenseWan: number;
+  harvestedSilverWan: number | null;
+  taskCompletions: TaskCompletionRecord[];
+  manualExpenses: SilverExpenseRecord[];
+}
 
 export interface WeeklyActivitySummary {
   weekStart: string;
@@ -18,6 +35,8 @@ export interface WeeklyActivitySummary {
   manualSilverExpenseWan: number;
   totalSilverExpenseWan: number;
   harvestedSilverWan: number | null;
+  unassignedManualSilverExpenseWan: number;
+  accountSummaries: WeeklyAccountActivitySummary[];
   taskCompletions: TaskCompletionRecord[];
   manualExpenses: SilverExpenseRecord[];
 }
@@ -69,6 +88,34 @@ export function buildWeeklyActivitySummary(
   const currentSilverWan = latestRecordedDay?.snapshot
     ? normalizeWan(Object.values(latestRecordedDay.snapshot.accounts).reduce((sum, balance) => sum + balance.silverWan, 0))
     : null;
+  const accountSummaries = accountIds.map((accountId) => {
+    const accountCompletions = completions.filter((entry) => entry.accountId === accountId);
+    const accountExpenses = expenses.filter((entry) => entry.accountId === accountId);
+    const accountTaskExpenseWan = normalizeWan(accountCompletions.reduce((sum, entry) => sum + entry.silverSpentWan, 0));
+    const accountManualExpenseWan = normalizeWan(accountExpenses.reduce((sum, entry) => sum + entry.amountWan, 0));
+    const accountTotalExpenseWan = normalizeWan(accountTaskExpenseWan + accountManualExpenseWan);
+    const accountInventoryNetChangeWan = usableChange
+      ? normalizeWan(usableChange.deltas[accountId].silverWan)
+      : null;
+    return {
+      accountId,
+      currentSilverWan: latestRecordedDay?.snapshot
+        ? normalizeWan(latestRecordedDay.snapshot.accounts[accountId].silverWan)
+        : null,
+      inventoryNetChangeWan: accountInventoryNetChangeWan,
+      taskSilverExpenseWan: accountTaskExpenseWan,
+      manualSilverExpenseWan: accountManualExpenseWan,
+      totalSilverExpenseWan: accountTotalExpenseWan,
+      harvestedSilverWan: accountInventoryNetChangeWan === null
+        ? null
+        : normalizeWan(accountInventoryNetChangeWan + accountTotalExpenseWan),
+      taskCompletions: accountCompletions,
+      manualExpenses: accountExpenses,
+    } satisfies WeeklyAccountActivitySummary;
+  });
+  const unassignedManualSilverExpenseWan = normalizeWan(expenses
+    .filter((entry) => !entry.accountId)
+    .reduce((sum, entry) => sum + entry.amountWan, 0));
 
   return {
     weekStart: report.weekStart,
@@ -85,6 +132,8 @@ export function buildWeeklyActivitySummary(
     harvestedSilverWan: inventoryNetChangeWan === null
       ? null
       : normalizeWan(inventoryNetChangeWan + totalSilverExpenseWan),
+    unassignedManualSilverExpenseWan,
+    accountSummaries,
     taskCompletions: completions,
     manualExpenses: expenses,
   };

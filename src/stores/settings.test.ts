@@ -129,12 +129,13 @@ describe("settings store persistence", () => {
     }, "2026-07-22", () => new Date("2026-07-22T02:00:00.000Z"));
     const expense = settings.addSilverExpense({
       effectiveDate: "2026-07-22",
+      accountId: "LG1",
       amountWan: 12.5,
       note: " 购买材料 ",
     }, () => new Date("2026-07-22T03:00:00.000Z"));
 
     expect(completion).toMatchObject({ completedOn: "2026-07-22", silverSpentWan: 30, resourceKind: "silver" });
-    expect(expense).toMatchObject({ effectiveDate: "2026-07-22", amountWan: 12.5, note: "购买材料" });
+    expect(expense).toMatchObject({ effectiveDate: "2026-07-22", accountId: "LG1", amountWan: 12.5, note: "购买材料" });
     expect(settings.exportState().taskCompletions).toHaveLength(1);
     expect(settings.exportState().silverExpenses).toHaveLength(1);
 

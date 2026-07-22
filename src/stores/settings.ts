@@ -183,7 +183,7 @@ export const useSettingsStore = defineStore("settings", () => {
     return record;
   }
   function addSilverExpense(
-    input: Pick<SilverExpenseRecord, "effectiveDate" | "amountWan" | "note">,
+    input: Pick<SilverExpenseRecord, "effectiveDate" | "accountId" | "amountWan" | "note">,
     now = () => new Date(),
   ) {
     const amountWan = Number(input.amountWan);
@@ -195,6 +195,7 @@ export const useSettingsStore = defineStore("settings", () => {
       id: `silver-expense:${suffix}`,
       effectiveDate: input.effectiveDate,
       recordedAt,
+      accountId: input.accountId,
       amountWan,
       note: note.slice(0, 80),
     };

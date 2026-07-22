@@ -4,7 +4,10 @@ import type { InventoryWeekReport } from "../domain/inventory";
 import {
   buildWeeklyActivitySummary,
   taskCompletionResourceLabel,
+  type WeeklyAccountActivitySummary,
 } from "../domain/weeklyActivity";
+import { catalog } from "../data/catalog";
+import type { AccountId } from "../domain/types";
 import { useSettingsStore } from "../stores/settings";
 import AppIcon from "./AppIcon.vue";
 import { createWeeklyActivityReportImage } from "./weeklyActivityReportImage";
@@ -15,7 +18,9 @@ const props = defineProps<{
 }>();
 
 const settings = useSettingsStore();
+const accounts = catalog.accounts;
 const expenseFormOpen = ref(false);
+const expenseAccountId = ref<AccountId>(accounts[0]?.id || "FC");
 const expenseDate = ref("");
 const expenseAmount = ref<number | null>(null);
 const expenseNote = ref("");
@@ -64,6 +69,13 @@ function shortDate(value: string) {
   return `${Number(month)}月${Number(day)}日`;
 }
 
+function accountTaskSummary(account: WeeklyAccountActivitySummary) {
+  if (!account.taskCompletions.length) return "本周无完成任务";
+  const names = account.taskCompletions.slice(0, 2).map((task) => `${task.typeLabel} · ${task.actionLabel}`);
+  const remainder = account.taskCompletions.length - names.length;
+  return `${names.join("、")}${remainder > 0 ? `，另 ${remainder} 项` : ""}`;
+}
+
 function showNotice(message: string) {
   actionNotice.value = message;
   if (noticeTimer !== null) window.clearTimeout(noticeTimer);
@@ -89,6 +101,7 @@ function cancelExpenseForm() {
 function saveExpense() {
   const record = settings.addSilverExpense({
     effectiveDate: expenseDate.value,
+    accountId: expenseAccountId.value,
     amountWan: Number(expenseAmount.value),
     note: expenseNote.value,
   });
@@ -97,7 +110,7 @@ function saveExpense() {
     return;
   }
   cancelExpenseForm();
-  showNotice(`已记录 ${record.effectiveDate} 的 ${numberLabel(record.amountWan)} 万银子支出`);
+  showNotice(`已记录 ${record.accountId} 在 ${record.effectiveDate} 的 ${numberLabel(record.amountWan)} 万银子支出`);
 }
 
 function removeExpense(id: string, note: string) {
@@ -233,7 +246,31 @@ function downloadPreview() {
       <em>{{ activity.weekStart }} 至 {{ activity.reportEnd }}</em>
     </p>
 
+    <section class="weekly-account-breakdown" aria-labelledby="weekly-account-title">
+      <header>
+        <div><h4 id="weekly-account-title">各账号本周情况</h4><span>固定展示五个账号，支出和任务分别归集</span></div>
+        <strong>{{ activity.accountSummaries.length }} 个账号</strong>
+      </header>
+      <div class="weekly-account-table" role="table" aria-label="五账号本周情况">
+        <div class="weekly-account-table-head" role="row">
+          <span role="columnheader">账号</span><span role="columnheader">收获</span><span role="columnheader">支出</span><span role="columnheader">净变化</span><span role="columnheader">当前库存</span><span role="columnheader">完成任务</span>
+        </div>
+        <article v-for="account in activity.accountSummaries" :key="account.accountId" class="weekly-account-row" role="row" :data-account-id="account.accountId">
+          <strong :class="`account-pill account-${account.accountId.toLowerCase()}`" role="rowheader">{{ account.accountId }}</strong>
+          <span class="account-harvest" data-label="收获" role="cell"><b>{{ wanLabel(account.harvestedSilverWan) }}</b></span>
+          <span class="account-expense" data-label="支出" role="cell"><b>{{ wanLabel(account.totalSilverExpenseWan) }}</b><small>任务 {{ numberLabel(account.taskSilverExpenseWan) }} · 其他 {{ numberLabel(account.manualSilverExpenseWan) }}</small></span>
+          <span data-label="净变化" role="cell"><b>{{ wanLabel(account.inventoryNetChangeWan, true) }}</b></span>
+          <span data-label="当前库存" role="cell"><b>{{ wanLabel(account.currentSilverWan) }}</b></span>
+          <span class="weekly-account-task" data-label="完成任务" role="cell"><b>{{ account.taskCompletions.length }} 项</b><small>{{ accountTaskSummary(account) }}</small></span>
+        </article>
+      </div>
+      <p v-if="activity.unassignedManualSilverExpenseWan > 0" class="weekly-account-warning">
+        旧记录中有 {{ wanLabel(activity.unassignedManualSilverExpenseWan) }} 支出未分账号：已计入总览，未计入单账号小计。
+      </p>
+    </section>
+
     <form v-if="expenseFormOpen" class="weekly-expense-form" aria-label="补记其他银子支出" @submit.prevent="saveExpense">
+      <label><span>支出账号</span><select v-model="expenseAccountId" aria-label="其他支出账号" required><option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.label }}</option></select></label>
       <label><span>支出日期</span><input v-model="expenseDate" type="date" :min="activity.weekStart" :max="activity.reportEnd" aria-label="其他支出日期" required /></label>
       <label><span>金额 / 万</span><input v-model.number="expenseAmount" type="number" min="0.01" step="0.01" inputmode="decimal" aria-label="其他支出金额（万）" placeholder="0" required /></label>
       <label class="weekly-expense-note"><span>用途</span><input v-model="expenseNote" type="text" maxlength="80" aria-label="其他支出用途" placeholder="例如：购买普通蛋" required /></label>
@@ -265,7 +302,7 @@ function downloadPreview() {
         <ul v-if="activity.manualExpenses.length">
           <li v-for="expense in activity.manualExpenses" :key="expense.id">
             <time :datetime="expense.effectiveDate">{{ shortDate(expense.effectiveDate) }}</time>
-            <span><b>{{ expense.note }}</b><small>手动补记</small></span>
+            <span><b>{{ expense.note }}</b><small>{{ expense.accountId || "未分账号" }} · 手动补记</small></span>
             <em class="silver">{{ numberLabel(expense.amountWan) }} 万</em>
             <button type="button" :aria-label="`删除支出：${expense.note}`" title="删除这笔支出" @click="removeExpense(expense.id, expense.note)"><AppIcon name="trash" /></button>
           </li>
@@ -427,9 +464,71 @@ function downloadPreview() {
 .weekly-cashflow-formula strong { color: var(--radar-cyan-strong); }
 .weekly-cashflow-formula em { margin-left: auto; font-style: normal; font-variant-numeric: tabular-nums; }
 
+.weekly-account-breakdown {
+  border-bottom: 1px solid var(--radar-line);
+  background: #ffffff;
+}
+
+.weekly-account-breakdown > header {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--radar-line);
+  background: #f7f9f8;
+}
+
+.weekly-account-breakdown > header h4 { color: var(--radar-ink); font-size: 14px; }
+.weekly-account-breakdown > header span { display: block; margin-top: 2px; color: var(--radar-muted); font-size: 10px; }
+.weekly-account-breakdown > header > strong { color: var(--radar-cyan-strong); font-size: 11px; white-space: nowrap; }
+
+.weekly-account-table-head,
+.weekly-account-row {
+  display: grid;
+  grid-template-columns: 72px repeat(4, minmax(90px, 1fr)) minmax(150px, 1.35fr);
+  align-items: center;
+  column-gap: 10px;
+  padding-inline: 14px;
+}
+
+.weekly-account-table-head {
+  min-height: 34px;
+  border-bottom: 1px solid var(--radar-line);
+  color: var(--radar-muted);
+  background: var(--radar-surface-2);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.weekly-account-row {
+  min-height: 68px;
+  border-bottom: 1px solid var(--radar-line);
+}
+
+.weekly-account-row:last-child { border-bottom: 0; }
+.weekly-account-row > strong { justify-self: start; }
+.weekly-account-row > span { min-width: 0; display: grid; gap: 2px; }
+.weekly-account-row > span::before { display: none; content: attr(data-label); }
+.weekly-account-row b { overflow: hidden; color: var(--radar-ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-account-row .account-harvest b { color: var(--radar-success); }
+.weekly-account-row .account-expense b { color: #9a5a00; }
+.weekly-account-row small { overflow: hidden; color: var(--radar-muted); font-size: 9px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+
+.weekly-account-warning {
+  margin: 0;
+  padding: 9px 14px;
+  border-top: 1px solid #ecd8b0;
+  color: #8a5700;
+  background: #fff8eb;
+  font-size: 11px !important;
+  font-weight: 700;
+}
+
 .weekly-expense-form {
   display: grid;
-  grid-template-columns: 170px 150px minmax(220px, 1fr) auto;
+  grid-template-columns: 120px 160px 140px minmax(200px, 1fr) auto;
   align-items: end;
   gap: 10px;
   padding: 12px 14px;
@@ -439,7 +538,7 @@ function downloadPreview() {
 
 .weekly-expense-form label { display: grid; gap: 5px; }
 .weekly-expense-form label > span { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
-.weekly-expense-form input {
+.weekly-expense-form :is(input, select) {
   width: 100%;
   height: 40px;
   padding: 0 10px;
@@ -450,7 +549,7 @@ function downloadPreview() {
   font: inherit;
 }
 
-.weekly-expense-form input:focus { border-color: var(--radar-cyan); outline: 2px solid color-mix(in srgb, var(--radar-cyan) 18%, transparent); }
+.weekly-expense-form :is(input, select):focus { border-color: var(--radar-cyan); outline: 2px solid color-mix(in srgb, var(--radar-cyan) 18%, transparent); }
 .weekly-expense-form-actions { display: flex; gap: 7px; }
 .weekly-expense-form-actions .button { min-height: 40px; }
 .weekly-expense-form > p { grid-column: 1 / -1; margin: 0; color: var(--radar-danger); font-size: 12px; font-weight: 750; }
@@ -574,7 +673,9 @@ function downloadPreview() {
   .weekly-cashflow-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .weekly-cashflow-metrics > div:nth-child(2) { border-right: 0; }
   .weekly-cashflow-metrics > div:nth-child(-n + 2) { border-bottom: 1px solid var(--radar-line); }
-  .weekly-expense-form { grid-template-columns: 150px 140px minmax(200px, 1fr); }
+  .weekly-account-table-head,
+  .weekly-account-row { grid-template-columns: 62px repeat(4, minmax(74px, 1fr)) minmax(130px, 1.25fr); column-gap: 7px; padding-inline: 10px; }
+  .weekly-expense-form { grid-template-columns: 120px 150px 140px minmax(180px, 1fr); }
   .weekly-expense-form-actions { grid-column: 1 / -1; justify-content: flex-end; }
 }
 
@@ -590,6 +691,19 @@ function downloadPreview() {
   .weekly-cashflow-formula { align-items: flex-start; flex-wrap: wrap; gap: 3px 8px; padding: 9px 12px; }
   .weekly-cashflow-formula strong { width: 100%; }
   .weekly-cashflow-formula em { width: 100%; margin-left: 0; }
+  .weekly-account-table-head { display: none; }
+  .weekly-account-row {
+    min-height: 118px;
+    grid-template-columns: 58px repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 8px 12px;
+    padding: 12px;
+  }
+  .weekly-account-row > strong { grid-row: 1 / 4; align-self: stretch; display: grid; place-items: center; }
+  .weekly-account-row > span::before { display: block; color: var(--radar-muted); font-size: 9px; font-weight: 800; }
+  .weekly-account-row .weekly-account-task { grid-column: 2 / -1; }
+  .weekly-account-row b { font-size: 12px; }
+  .weekly-account-row small { white-space: normal; }
   .weekly-expense-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
   .weekly-expense-note { grid-column: 1 / -1; }
   .weekly-expense-form-actions { grid-column: 1 / -1; }

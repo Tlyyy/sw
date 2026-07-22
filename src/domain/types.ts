@@ -188,6 +188,8 @@ export interface SilverExpenseRecord {
   id: string;
   effectiveDate: string;
   recordedAt: string;
+  /** Missing only on records created before expenses were assigned to accounts. */
+  accountId?: AccountId;
   amountWan: number;
   note: string;
 }
