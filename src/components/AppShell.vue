@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { buildPrimaryNavigation } from "../app/navigation";
+import { appName } from "../app/brand";
 import AppIcon from "./AppIcon.vue";
 import CommandSearch from "./CommandSearch.vue";
 import { useCatalogStore } from "../stores/catalog";
@@ -35,7 +36,7 @@ const mobileDockLinks = computed(() => {
 });
 const mobileDockMoreActive = computed(() => !mobileDockLinks.value.some((link) => link.section === route.meta.section));
 
-const title = computed(() => String(route.meta.title || "项目台账"));
+const title = computed(() => String(route.meta.title || appName));
 const isDashboard = computed(() => route.meta.section === "home");
 const isImmersivePage = computed(() => route.name === "matrix");
 const date = computed(() => inventory.latestSnapshot?.effectiveDate || catalog.data.generatedAt.slice(0, 10));
@@ -144,7 +145,7 @@ onBeforeUnmount(() => {
         @click="mobileDialogOpen ? closeMobileNavigation() : openMobileNavigation()"
       ><AppIcon :name="mobileDialogOpen ? 'close' : 'menu'" /></button>
       <RouterLink class="orbit-brand" to="/" :inert="mobileDialogOpen || undefined" :tabindex="mobileDialogOpen ? -1 : undefined" @click="closeMobileNavigation(false)">
-        <strong>项目台账</strong>
+        <strong>{{ appName }}</strong>
         <span>进度与资源汇总</span>
       </RouterLink>
 
@@ -162,7 +163,7 @@ onBeforeUnmount(() => {
       >
         <div class="orbit-mobile-nav-head">
           <div class="orbit-mobile-nav-identity">
-            <strong>项目台账</strong>
+            <strong>{{ appName }}</strong>
             <span>功能导航</span>
           </div>
           <button

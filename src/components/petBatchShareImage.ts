@@ -1,4 +1,5 @@
 import type { PetDetailShareData, PetDetailShareMetric } from "./petDetailShareImage";
+import { appName } from "../app/brand";
 
 export interface PetBatchShareImageOptions {
   dataDate: string;
@@ -119,7 +120,7 @@ function drawHeader(
   context.textAlign = "left";
   context.fillStyle = "#006b63";
   setFont(context, 28, 850);
-  context.fillText("项目台账", 52, 36);
+  context.fillText(appName, 52, 36);
 
   context.fillStyle = "#132522";
   setFont(context, 42, 880);

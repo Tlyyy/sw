@@ -1,3 +1,5 @@
+import { appName } from "../app/brand";
+
 export interface InventoryShareRow {
   label: string;
   values: Array<number | null>;
@@ -325,7 +327,7 @@ export function createInventoryReportShareImage(data: InventoryReportShareData) 
 
   context.fillStyle = "#006b63";
   setFont(context, 34, 800);
-  context.fillText("项目台账", 64, 48);
+  context.fillText(appName, 64, 48);
   context.fillStyle = "#60736f";
   setFont(context, 23, 650);
   context.textAlign = "right";

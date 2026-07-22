@@ -2,6 +2,7 @@ import type {
   WeeklyAccountActivitySummary,
   WeeklyActivitySummary,
 } from "../domain/weeklyActivity";
+import { appName, weeklyReportTitle } from "../app/brand";
 
 export interface WeeklyActivityReportImageData extends WeeklyActivitySummary {
   generatedAt: string;
@@ -147,7 +148,7 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
 
   context.fillStyle = "#006b63";
   setFont(context, 34, 850);
-  context.fillText("项目台账", 64, 48);
+  context.fillText(appName, 64, 48);
   context.fillStyle = "#60736f";
   setFont(context, 20, 750);
   context.textAlign = "right";
@@ -160,7 +161,7 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
 
   context.fillStyle = "#142522";
   setFont(context, 38, 850);
-  context.fillText("本周银子与任务周报", 80, 164);
+  context.fillText(weeklyReportTitle, 80, 164);
   context.fillStyle = "#657975";
   setFont(context, 22, 650);
   context.fillText(`${data.weekStart} 至 ${data.reportEnd}`, 80, 218);

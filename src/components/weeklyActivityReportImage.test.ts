@@ -87,7 +87,8 @@ describe("weekly activity report image", () => {
     const image = createWeeklyActivityReportImage(data);
     expect(image.type).toBe("image/png");
     expect(image.size).toBeGreaterThan(0);
-    expect(renderedText).toContain("本周银子与任务周报");
+    expect(renderedText).toContain("万象册");
+    expect(renderedText).toContain("本周小结");
     expect(renderedText).toContain("2026-07-20 至 2026-07-22");
     expect(renderedText).toContain("本周收获 = 库存净变化 + 已记录的银子支出");
     expect(renderedText).toContain("各账号本周情况 · 5 个账号");

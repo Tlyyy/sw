@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { appName } from "../../app/brand";
 import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
@@ -41,7 +42,7 @@ function exportWorkspace() {
   const url = URL.createObjectURL(new Blob([content], { type: "application/json;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `项目台账-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.download = `${appName}-${new Date().toISOString().slice(0, 10)}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
   backupNotice.value = `已导出完整备份（${inventory.snapshots.length} 份库存快照）`;

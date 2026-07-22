@@ -6,6 +6,7 @@ import {
   type GemPlanProjection,
 } from "../../domain/gems";
 import type { AccountId } from "../../domain/types";
+import { appName } from "../../app/brand";
 
 export interface GemPlanShareData {
   projection: GemPlanProjection;
@@ -208,7 +209,7 @@ export function createGemPlanShareImage(data: GemPlanShareData) {
   context.textBaseline = "top";
   context.fillStyle = "#006b63";
   setFont(context, 31, 850);
-  context.fillText("项目台账", 52, 34);
+  context.fillText(appName, 52, 34);
   context.fillStyle = "#142522";
   setFont(context, 39, 850);
   context.fillText("宝石计划", 52, 83);
@@ -236,7 +237,7 @@ export function createGemPlanShareImage(data: GemPlanShareData) {
   context.fillText(`起算 ${data.projection.startDate} · 五个账号按每号每周投入独立排期`, WIDTH / 2, 1284);
   context.fillStyle = "#9aa8a4";
   setFont(context, 14, 650);
-  context.fillText("项目台账", WIDTH / 2, 1315);
+  context.fillText(appName, WIDTH / 2, 1315);
 
   return dataUrlToBlob(canvas.toDataURL("image/png"));
 }

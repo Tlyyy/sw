@@ -567,6 +567,8 @@ test.describe("week-to-date activity report", () => {
     });
 
     await page.goto("/#/plans/tasks");
+    await expect(page).toHaveTitle("万象册");
+    await expect(page.locator(".orbit-brand strong")).toHaveText("万象册");
     const silverTask = page.locator(".task-work-row").filter({ hasText: /万/ }).first();
     await expect(silverTask).toBeVisible();
     const resourceText = (await silverTask.locator(".task-resource-cell").innerText()).replaceAll(",", "");
@@ -602,7 +604,7 @@ test.describe("week-to-date activity report", () => {
     await activity.getByRole("button", { name: "生成本周周报", exact: true }).click();
     const preview = page.getByRole("dialog", { name: "本周周报图片" });
     await expect(preview).toBeVisible();
-    const reportImage = preview.getByRole("img", { name: "生成的本周银子与任务周报图片预览" });
+    const reportImage = preview.getByRole("img", { name: "生成的本周小结图片预览" });
     await expect(reportImage).toHaveJSProperty("naturalWidth", 1080);
     expect(await reportImage.evaluate((image: HTMLImageElement) => image.naturalHeight)).toBeGreaterThan(1_300);
     const downloadPromise = page.waitForEvent("download");

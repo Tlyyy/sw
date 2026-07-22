@@ -1,3 +1,5 @@
+import { appName } from "../app/brand";
+
 export interface PetDetailShareMetric {
   label: string;
   value: string;
@@ -175,7 +177,7 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
   context.textAlign = "left";
   context.fillStyle = "#006b63";
   setFont(context, 30, 850);
-  context.fillText("项目台账", 56, 38);
+  context.fillText(appName, 56, 38);
   context.fillStyle = "#6c7d79";
   setFont(context, 18, 700);
   context.fillText("宠物档案", 56, 80);
@@ -284,7 +286,7 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
   context.textAlign = "left";
   context.fillText(`${data.accountId} · ${data.petName}`, 56, 1318);
   context.textAlign = "right";
-  context.fillText("项目台账", 1024, 1318);
+  context.fillText(appName, 1024, 1318);
 
   return dataUrlToBlob(canvas.toDataURL("image/png"));
 }

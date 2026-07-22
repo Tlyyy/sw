@@ -8,6 +8,7 @@ import {
 } from "../domain/weeklyActivity";
 import { catalog } from "../data/catalog";
 import type { AccountId } from "../domain/types";
+import { weeklyReportTitle } from "../app/brand";
 import { useSettingsStore } from "../stores/settings";
 import AppIcon from "./AppIcon.vue";
 import { createWeeklyActivityReportImage } from "./weeklyActivityReportImage";
@@ -318,7 +319,7 @@ function downloadPreview() {
             <div><h2 id="weekly-preview-title">本周周报图片</h2><p>{{ activity.weekStart }} 至 {{ activity.reportEnd }}，确认后可下载保存。</p></div>
             <button ref="previewClose" type="button" aria-label="关闭周报图片预览" @click="closePreview"><AppIcon name="close" /></button>
           </header>
-          <div class="weekly-report-preview-image"><img :src="previewUrl" alt="生成的本周银子与任务周报图片预览" /></div>
+          <div class="weekly-report-preview-image"><img :src="previewUrl" :alt="`生成的${weeklyReportTitle}图片预览`" /></div>
           <footer>
             <button class="button secondary" type="button" @click="closePreview">关闭</button>
             <button class="button primary" type="button" @click="downloadPreview"><AppIcon name="download" />下载 PNG</button>

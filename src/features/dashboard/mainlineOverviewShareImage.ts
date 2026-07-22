@@ -1,3 +1,5 @@
+import { appName } from "../../app/brand";
+
 export interface MainlineOverviewShareTask {
   stage: string;
   title: string;
@@ -213,7 +215,7 @@ export function createMainlineOverviewShareImage(data: MainlineOverviewShareData
   context.textAlign = "left";
   context.fillStyle = "#006b63";
   setFont(context, 32, 850);
-  context.fillText("项目台账", 56, 38);
+  context.fillText(appName, 56, 38);
   context.fillStyle = "#60736f";
   setFont(context, 21, 650);
   context.textAlign = "right";
