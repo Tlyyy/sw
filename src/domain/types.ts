@@ -168,6 +168,30 @@ export interface InventoryExportPayload {
   snapshots: InventorySnapshot[];
 }
 
+/** Immutable facts captured when a planned task is marked complete. */
+export interface TaskCompletionRecord {
+  taskId: string;
+  completedOn: string;
+  recordedAt: string;
+  accountId: AccountId;
+  typeLabel: string;
+  actionLabel: string;
+  taskKind: string;
+  resourceKind: "silver" | "eggs" | "innerShards";
+  resourceAmount: number;
+  /** Only direct silver consumption is added back when deriving gross harvest. */
+  silverSpentWan: number;
+}
+
+/** Silver spent outside a task, entered manually for weekly reconciliation. */
+export interface SilverExpenseRecord {
+  id: string;
+  effectiveDate: string;
+  recordedAt: string;
+  amountWan: number;
+  note: string;
+}
+
 export interface BeastConfig {
   eggPriceWan: number;
   /** Fixed system recovery price when an ordinary egg is sold. */

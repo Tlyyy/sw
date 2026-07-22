@@ -18,10 +18,12 @@ const publishDefaults = {
 describe("versioned local state", () => {
   it("migrates legacy settings, publish and UI state", () => {
     const settings = parseSettingsState({ version: 2, settings: { weeklyEggs: 9 } }, taskDefaults, marketNames);
-    expect(settings.version).toBe(3);
+    expect(settings.version).toBe(4);
     expect(settings.settings.weeklyEggs).toBe(9);
     expect(settings.settings.startDate).toBe(taskDefaults.startDate);
     expect(settings.gemPlan).toEqual({ targetLevel: "13", weeklyIncomeWan: 88 });
+    expect(settings.taskCompletions).toEqual([]);
+    expect(settings.silverExpenses).toEqual([]);
 
     const publish = parsePublishState({ selectedIds: ["a", "a"], options: { mode: "record" }, draft: "手改正文" }, publishDefaults);
     expect(publish).toMatchObject({ version: 2, selectedIds: ["a"], draft: "手改正文", generatedSource: "手改正文" });
@@ -32,11 +34,27 @@ describe("versioned local state", () => {
   });
 
   it("rejects corrupt and unknown future state", () => {
-    expect(() => parseSettingsState({ version: 4 }, taskDefaults, marketNames)).toThrow();
+    expect(() => parseSettingsState({ version: 5 }, taskDefaults, marketNames)).toThrow();
     expect(() => parsePublishState({ version: 2, selectedIds: [], options: { ...publishDefaults, mode: "invalid" }, draft: "", generatedSource: "" }, publishDefaults)).toThrow();
     expect(() => parsePublishState({ version: 3 }, publishDefaults)).toThrow();
     expect(() => parseUiState({ version: 2, accountScope: "BAD" })).toThrow();
     expect(() => parseUiState({ version: 3 })).toThrow();
+  });
+
+  it("adds empty activity ledgers when migrating validated v3 settings", () => {
+    const current = parseSettingsState({ version: 2 }, taskDefaults, marketNames);
+    const previous = {
+      ...current,
+      version: 3 as const,
+    } as Record<string, unknown>;
+    delete previous.taskCompletions;
+    delete previous.silverExpenses;
+
+    expect(parseSettingsState(previous, taskDefaults, marketNames)).toMatchObject({
+      version: 4,
+      taskCompletions: [],
+      silverExpenses: [],
+    });
   });
 
   it("round-trips a complete backup and rejects one bad partition", () => {

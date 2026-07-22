@@ -16,7 +16,7 @@ import { useSettingsStore } from "./settings";
 import { useUiStore } from "./ui";
 
 const syncMetaKey = "sw.sync.meta.v1";
-const syncMetaVersion = 2;
+const syncMetaVersion = 3;
 const writerIdKey = "sw.sync.writer.v1";
 const uploadDebounceMs = 900;
 const connectionTimeoutMs = 20_000;
@@ -47,7 +47,7 @@ interface WorkspaceParts {
 }
 
 interface SyncMeta {
-  version: 1 | typeof syncMetaVersion;
+  version: 1 | 2 | typeof syncMetaVersion;
   revision: number;
   contentHash: string;
   mutationId: string;
@@ -63,7 +63,7 @@ interface RemoteCandidate {
 function loadSyncMeta(): SyncMeta | null {
   try {
     const value = JSON.parse(localStorage.getItem(syncMetaKey) || "null") as Partial<SyncMeta> | null;
-    if (!value || (value.version !== 1 && value.version !== syncMetaVersion)
+    if (!value || (value.version !== 1 && value.version !== 2 && value.version !== syncMetaVersion)
       || !Number.isInteger(value.revision) || Number(value.revision) < 1
       || typeof value.contentHash !== "string" || typeof value.mutationId !== "string" || !Number.isFinite(value.updatedAt)) return null;
     return value as SyncMeta;
@@ -87,11 +87,11 @@ function matchesConfirmedRecord(record: CloudWorkspace, meta: SyncMeta) {
 }
 
 function confirmedContentMatches(meta: SyncMeta, contentHash: string) {
-  // Version 1 hashes were calculated after schema normalization without
+  // Older hashes were calculated after schema normalization without
   // recording the schema version. An additive default can therefore change
   // the hash of the same authenticated cloud record. Trust its stable record
-  // identity once, then persist a strict version 2 hash for future checks.
-  return meta.version === 1 || contentHash === meta.contentHash;
+  // identity once, then persist a strict current-version hash for future checks.
+  return meta.version < syncMetaVersion || contentHash === meta.contentHash;
 }
 
 function getWriterId() {
@@ -179,6 +179,8 @@ export const useSyncStore = defineStore("sync", () => {
     return parts.inventory.snapshots.length > 0
       || Object.keys(parts.settings.gemPriceOverrides).length > 0
       || Object.keys(parts.settings.overrides).length > 0
+      || parts.settings.taskCompletions.length > 0
+      || parts.settings.silverExpenses.length > 0
       || parts.settings.gemPriceHistory.length > 0
       || JSON.stringify(parts.settings.settings) !== JSON.stringify(catalog.beastConfig.taskDefaultSettings)
       || parts.publish.selectedIds.length > 0

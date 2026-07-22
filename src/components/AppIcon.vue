@@ -5,6 +5,10 @@
   <svg v-else-if="name === 'chevron-right'" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>
   <svg v-else-if="name === 'refresh'" viewBox="0 0 24 24"><path d="M20 7v5h-5"/><path d="M18.2 16a8 8 0 1 1 .7-7.1L20 12"/></svg>
   <svg v-else-if="name === 'share'" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg>
+  <svg v-else-if="name === 'report'" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5Z"/><path d="M15 3v5h5M8 17v-3M12 17v-6M16 17v-4"/></svg>
+  <svg v-else-if="name === 'plus'" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+  <svg v-else-if="name === 'download'" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg>
+  <svg v-else-if="name === 'trash'" viewBox="0 0 24 24"><path d="M4 7h16M9 3h6l1 4H8ZM7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg>
   <svg v-else-if="name === 'home'" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5V21H3Z"/><path d="M9 21v-6h6v6"/></svg>
   <svg v-else-if="name === 'account'" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 21c.8-4.5 3.2-6.8 7-6.8s6.2 2.3 7 6.8"/></svg>
   <svg v-else-if="name === 'assets'" viewBox="0 0 24 24"><path d="M4 5h16v15H4Z"/><path d="M4 10h16M9 5v15"/></svg>
