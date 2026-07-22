@@ -217,7 +217,7 @@ test.describe("desktop application", () => {
     await expect(fcCard).toContainText("44");
     const persisted = await page.evaluate(() => ({
       inventory: JSON.parse(localStorage.getItem("sw.app.inventory.v2") || "null"),
-      settings: JSON.parse(localStorage.getItem("sw.app.settings.v3") || localStorage.getItem("sw.app.settings.v2") || "null"),
+      settings: JSON.parse(localStorage.getItem("sw.app.settings.v4") || localStorage.getItem("sw.app.settings.v3") || localStorage.getItem("sw.app.settings.v2") || "null"),
     }));
     expect(persisted.inventory.version).toBe(2);
     expect(persisted.inventory.snapshots[0].accounts.FC).toEqual({
@@ -247,7 +247,7 @@ test.describe("desktop application", () => {
     const bulkBar = page.getByRole("complementary", { name: "批量任务操作" });
     await expect(bulkBar.getByText("已选 2 项", { exact: true })).toBeVisible();
     await bulkBar.getByRole("button", { name: "批量标记完成", exact: true }).click();
-    await expect(page.getByText("已将 2 项任务标记为完成", { exact: false })).toBeVisible();
+    await expect(page.getByText("已完成 2 项任务并记录完成日期", { exact: false })).toBeVisible();
     await expect(page.locator(".task-work-row:not(.done)")).toHaveCount(initialCount - 2);
 
     await page.getByRole("group", { name: "任务状态筛选" }).getByRole("button", { name: /已完成/ }).click();
