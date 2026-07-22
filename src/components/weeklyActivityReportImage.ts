@@ -172,7 +172,7 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
   context.fillText(`${data.recordedDays} 天库存记录`, 890, 187);
   context.textAlign = "left";
 
-  drawMetric(context, 80, "本周收获", wanLabel(data.harvestedSilverWan), "净变化 + 已记录支出", "teal");
+  drawMetric(context, 80, "本周收获", wanLabel(data.harvestedSilverWan), data.inventoryChangeTo ? `截至 ${data.inventoryChangeTo}` : "等待库存基线", "teal");
   drawMetric(context, 314, "已记录支出", wanLabel(data.totalSilverExpenseWan), `任务 ${numberLabel(data.taskSilverExpenseWan)} · 其他 ${numberLabel(data.manualSilverExpenseWan)}`, "amber");
   drawMetric(context, 548, "库存净变化", wanLabel(data.inventoryNetChangeWan, true), data.inventoryChangeTo ? `截至 ${data.inventoryChangeTo}` : "等待比较基线");
   drawMetric(context, 782, "当前银子库存", wanLabel(data.currentSilverWan), data.latestInventoryDate ? `库存日期 ${data.latestInventoryDate}` : "尚无库存记录");
@@ -183,7 +183,10 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
   context.fillText("计算口径", 102, 480);
   context.fillStyle = "#536a66";
   setFont(context, 18, 650);
-  context.fillText("本周收获 = 库存净变化 + 已记录的银子支出", 210, 480);
+  const reconciliationNote = data.pendingReconciliationSilverExpenseWan > 0
+    ? `；另有 ${wanLabel(data.pendingReconciliationSilverExpenseWan)} 待库存更新`
+    : "";
+  context.fillText(`本周收获 = 库存净变化 + 库存比较区间内的银子支出${reconciliationNote}`, 210, 480);
 
   context.fillStyle = "#142522";
   setFont(context, 24, 850);

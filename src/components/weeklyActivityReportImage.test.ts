@@ -67,6 +67,8 @@ describe("weekly activity report image", () => {
       taskSilverExpenseWan: 30,
       manualSilverExpenseWan: 10,
       totalSilverExpenseWan: 40,
+      reconciledSilverExpenseWan: 40,
+      pendingReconciliationSilverExpenseWan: 0,
       harvestedSilverWan: 60,
       unassignedManualSilverExpenseWan: 0,
       accountSummaries: ["FC", "LG1", "PT", "LG2", "MYT"].map((accountId) => ({
@@ -76,6 +78,7 @@ describe("weekly activity report image", () => {
         taskSilverExpenseWan: accountId === "FC" ? 30 : 0,
         manualSilverExpenseWan: accountId === "FC" ? 10 : 0,
         totalSilverExpenseWan: accountId === "FC" ? 40 : 0,
+        reconciledSilverExpenseWan: accountId === "FC" ? 40 : 0,
         harvestedSilverWan: accountId === "FC" ? 44 : 4,
         taskCompletions: accountId === "FC" ? [completion] : [],
         manualExpenses: accountId === "FC" ? [expense] : [],
@@ -90,7 +93,7 @@ describe("weekly activity report image", () => {
     expect(renderedText).toContain("万象册");
     expect(renderedText).toContain("本周小结");
     expect(renderedText).toContain("2026-07-20 至 2026-07-22");
-    expect(renderedText).toContain("本周收获 = 库存净变化 + 已记录的银子支出");
+    expect(renderedText).toContain("本周收获 = 库存净变化 + 库存比较区间内的银子支出");
     expect(renderedText).toContain("各账号本周情况 · 5 个账号");
     expect(renderedText).toEqual(expect.arrayContaining(["FC", "LG1", "PT", "LG2", "MYT"]));
     expect(renderedText).toContain("剑气蛇 · 皮肤");

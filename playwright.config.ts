@@ -27,9 +27,7 @@ export default defineConfig({
     {
       name: "mobile",
       use: {
-        ...devices["Pixel 5"],
-        viewport: { width: 390, height: 844 },
-        screen: { width: 390, height: 844 },
+        ...devices["iPhone 16 Pro Max"],
       },
     },
   ],

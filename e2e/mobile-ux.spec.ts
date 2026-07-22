@@ -2,6 +2,9 @@ import { expect, test, type Page } from "@playwright/test";
 
 const mobileRoutes = [
   "/#/",
+  "/#/record",
+  "/#/week",
+  "/#/resources",
   "/#/accounts/LG2",
   "/#/assets/pets",
   "/#/assets/equipment",
@@ -23,6 +26,8 @@ const mobileRoutes = [
 ] as const;
 
 const formRoutes = [
+  "/#/record",
+  "/#/week",
   "/#/assets/pets",
   "/#/assets/equipment",
   "/#/assets/skills",
@@ -39,14 +44,23 @@ const formRoutes = [
 const primaryTargetSelector = [
   ".orbit-menu-button",
   ".orbit-header-tools .orbit-command-trigger",
-  ".orbit-nav.open > a",
-  ".orbit-nav.open > button",
+  ".orbit-nav.open a",
+  ".orbit-nav.open button",
   ".orbit-mobile-dock > a",
   ".orbit-mobile-dock > button",
   ".subnav a",
   "main .button",
   "main .workbench-primary",
   "main .radar-action-card.primary",
+  "main .mobile-record-primary",
+  "main .mobile-weekly-report-card",
+  "main .mobile-task-brief > a",
+  "main .record-primary-action",
+  "main .record-option-card",
+  "main .inventory-week-button",
+  "main .inventory-week-current",
+  "main .task-select-cell",
+  "main .task-row-action",
   "main [role='tab']",
   "main button[aria-pressed]",
 ].join(",");
@@ -74,7 +88,7 @@ function currentShanghaiWeek() {
 }
 
 async function waitForApplicationPage(page: Page) {
-  await expect(page.locator(".workbench-page, .page-wrap, .matrix-page").first()).toBeVisible();
+  await expect(page.locator(".mobile-home-page, .workbench-page, .page-wrap, .matrix-page").first()).toBeVisible();
 }
 
 async function pageOverflowReport(page: Page) {
@@ -238,7 +252,7 @@ test.describe("mobile UX release gate", () => {
   test("主要移动导航与操作保持 44px 触控面积", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
-    await page.getByRole("button", { name: "打开导航" }).tap();
+    await page.getByRole("button", { name: "打开全部导航" }).tap();
     const mobileNavigation = page.getByRole("dialog", { name: "主导航" });
     await expect(mobileNavigation).toBeVisible();
     expect(await undersizedPrimaryTargets(page), "移动主导航存在不足 44px 的主要触控目标").toEqual([]);
@@ -254,7 +268,6 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("iPhone 16 Pro Max 底栏避开 Home Indicator 且账号操作保持单行", async ({ page }) => {
-    await page.setViewportSize({ width: 440, height: 956 });
     await page.goto("/#/accounts/FC");
     await waitForApplicationPage(page);
     await page.addStyleTag({
@@ -269,10 +282,11 @@ test.describe("mobile UX release gate", () => {
       const dock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
       const main = document.querySelector<HTMLElement>(".orbit-main");
       const topbar = document.querySelector<HTMLElement>(".orbit-topbar");
-      const menu = document.querySelector<HTMLElement>(".orbit-menu-button");
+      const brand = document.querySelector<HTMLElement>(".orbit-brand");
+      const syncState = document.querySelector<HTMLElement>(".orbit-sync-state");
       const link = [...document.querySelectorAll<HTMLElement>(".account-page .section-head > a")]
         .find((element) => element.textContent?.includes("更新库存"));
-      if (!dock || !main || !topbar || !menu || !link) throw new Error("iPhone 安全区审查缺少目标元素");
+      if (!dock || !main || !topbar || !brand || !syncState || !link) throw new Error("iPhone 安全区审查缺少目标元素");
       const dockRect = dock.getBoundingClientRect();
       const buttonBottom = Math.max(...[...dock.querySelectorAll<HTMLElement>("a, button")]
         .map((element) => element.getBoundingClientRect().bottom));
@@ -280,7 +294,8 @@ test.describe("mobile UX release gate", () => {
       return {
         viewportHeight: window.innerHeight,
         topbarHeight: topbar.getBoundingClientRect().height,
-        menuTop: menu.getBoundingClientRect().top,
+        brandTop: brand.getBoundingClientRect().top,
+        syncTop: syncState.getBoundingClientRect().top,
         dockHeight: dockRect.height,
         dockTop: dockRect.top,
         dockPaddingBottom: Number.parseFloat(getComputedStyle(dock).paddingBottom),
@@ -293,7 +308,8 @@ test.describe("mobile UX release gate", () => {
     });
 
     expect(layout.topbarHeight, "顶部栏应包含 iPhone 状态栏安全区").toBeGreaterThanOrEqual(116);
-    expect(layout.menuTop, "菜单按钮不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
+    expect(layout.brandTop, "品牌文字不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
+    expect(layout.syncTop, "同步状态不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
     expect(layout.dockPaddingBottom, "底栏应为 Home Indicator 留出安全区").toBeGreaterThanOrEqual(34);
     expect(layout.dockHeight, "底栏总高度应包含按钮区与底部安全区").toBeGreaterThanOrEqual(103);
     expect(layout.buttonBottom, "底部按钮不能进入 Home Indicator 区域").toBeLessThanOrEqual(layout.viewportHeight - 34);
@@ -303,38 +319,38 @@ test.describe("mobile UX release gate", () => {
     expect(layout.linkFits, "更新库存不能被挤成两行").toBe(true);
   });
 
-  test("首页首屏优先展示决策且主操作不被底部导航遮挡", async ({ page }) => {
+  test("首页首屏呈现本周节奏且记录入口不被底部导航遮挡", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    await expect(page.locator(".workbench-titlebar p")).toBeHidden();
-    await expect(page.locator(".workbench-date-compact")).toBeVisible();
-    await expect(page.locator(".radar-status-inventory")).toBeHidden();
-    await expect(page.locator(".radar-status-baseline")).toBeHidden();
-    await expect(page.locator(".radar-decision-hero p")).toBeHidden();
-    await expect(page.locator(".radar-action-rail > header span")).toBeHidden();
-    await expect(page.locator(".radar-action-card small").first()).toBeHidden();
-    await expect(page.locator(".radar-timeline-panel > header p")).toBeHidden();
+    await expect(page.getByTestId("mobile-week-home")).toBeVisible();
+    await expect(page.locator(".mobile-week-rhythm > article")).toHaveCount(7);
+    await expect(page.locator(".mobile-record-primary")).toBeVisible();
+    await expect(page.locator(".mobile-task-brief")).toBeVisible();
+    await expect(page.locator(".mobile-weekly-report-card")).toHaveAttribute("href", "#/week");
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" }).locator("a, button")).toHaveText([
+      "首页",
+      "录入",
+      "本周小结",
+      "资料",
+      "更多",
+    ]);
 
     const layout = await page.evaluate(() => {
-      const title = document.querySelector<HTMLElement>(".workbench-titlebar");
-      const status = document.querySelector<HTMLElement>(".radar-status-strip");
-      const accountHeader = document.querySelector<HTMLElement>(".radar-account-rail > header");
-      const primaryAction = document.querySelector<HTMLElement>(".radar-decision-hero .workbench-primary");
-      const resourceOverview = document.querySelector<HTMLElement>(".radar-resource-overview");
-      const focusTrack = document.querySelector<HTMLElement>(".radar-focus-track");
+      const rhythm = document.querySelector<HTMLElement>(".mobile-week-rhythm");
+      const primaryAction = document.querySelector<HTMLElement>(".mobile-record-primary");
       const mobileDock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
-      if (!title || !status || !accountHeader || !primaryAction || !resourceOverview || !focusTrack || !mobileDock) {
+      if (!rhythm || !primaryAction || !mobileDock) {
         throw new Error("首页移动首屏关键区域未完整渲染");
       }
+      const rhythmRect = rhythm.getBoundingClientRect();
       const primaryRect = primaryAction.getBoundingClientRect();
       const dockRect = mobileDock.getBoundingClientRect();
       return {
-        titleHeight: title.getBoundingClientRect().height,
-        statusHeight: status.getBoundingClientRect().height,
-        accountHeaderHeight: accountHeader.getBoundingClientRect().height,
-        resourceOverviewHeight: resourceOverview.getBoundingClientRect().height,
-        focusTrackHeight: focusTrack.getBoundingClientRect().height,
+        rhythmLeft: rhythmRect.left,
+        rhythmRight: rhythmRect.right,
+        rhythmScrollWidth: rhythm.scrollWidth,
+        rhythmClientWidth: rhythm.clientWidth,
         primaryBottom: primaryRect.bottom,
         dockTop: dockRect.top,
         documentWidth: document.documentElement.scrollWidth,
@@ -342,95 +358,113 @@ test.describe("mobile UX release gate", () => {
       };
     });
 
-    expect(layout.titleHeight, "手机标题区应保持紧凑").toBeLessThanOrEqual(48);
-    expect(layout.statusHeight, "库存状态应压缩为单行摘要").toBeLessThanOrEqual(48);
-    expect(layout.accountHeaderHeight, "账号选择标题不应占据两行高度").toBeLessThanOrEqual(50);
-    expect(layout.resourceOverviewHeight, "资源概览不应占据多行卡片高度").toBeLessThanOrEqual(100);
-    expect(layout.focusTrackHeight, "主线推进应保持紧凑").toBeLessThanOrEqual(100);
+    expect(layout.rhythmLeft, "七天节奏左侧不能超出视口").toBeGreaterThanOrEqual(0);
+    expect(layout.rhythmRight, "七天节奏右侧不能超出视口").toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.rhythmScrollWidth, "七天节奏必须一次完整展示").toBeLessThanOrEqual(layout.rhythmClientWidth + 1);
     expect(layout.primaryBottom, "主操作不应被底部导航遮挡").toBeLessThanOrEqual(layout.dockTop - 6);
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
-  test("五账号主线在手机端使用紧凑摘要卡", async ({ page }) => {
+  test("任务已并入首页摘要并能进入录入分区维护", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    const cards = page.locator(".mainline-mobile-card");
-    await expect(cards).toHaveCount(5);
-    await expect(cards.first()).toBeVisible();
-    await expect(page.locator(".mainline-row > .radar-row-account").first()).toBeHidden();
+    const taskRows = page.locator(".mobile-current-tasks > li");
+    expect(await taskRows.count()).toBeGreaterThan(0);
+    expect(await taskRows.count()).toBeLessThanOrEqual(2);
+    const clippedTitles = await taskRows.locator(":scope > span").evaluateAll((elements) => (
+      elements.filter((element) => element.scrollWidth > element.clientWidth + 1).map((element) => element.textContent)
+    ));
+    expect(clippedTitles, "首页任务摘要不应被横向裁切").toEqual([]);
 
-    const layout = await cards.evaluateAll((elements) => {
-      const cards = elements as HTMLElement[];
-      const taskTitles = cards.flatMap((card) => Array.from(card.querySelectorAll<HTMLElement>(".mainline-mobile-identity b, .mainline-mobile-next b")));
-      const detailLinks = cards.map((card) => card.querySelector<HTMLElement>(".mainline-detail-link"));
-      return {
-        cardCount: cards.length,
-        maxCardHeight: Math.max(...cards.map((card) => card.getBoundingClientRect().height)),
-        clippedTaskTitles: taskTitles.filter((title) => title.scrollWidth > title.clientWidth + 1).map((title) => title.textContent),
-        undersizedDetailLinks: detailLinks.filter((link) => !link || link.getBoundingClientRect().height < 44).length,
-        documentWidth: document.documentElement.scrollWidth,
-        viewportWidth: document.documentElement.clientWidth,
-      };
-    });
-
-    expect(layout.cardCount).toBe(5);
-    expect(layout.maxCardHeight, "移动账号摘要卡不应继续保持桌面表格的高密度高度").toBeLessThanOrEqual(210);
-    expect(layout.clippedTaskTitles, "当前与后续任务名称不应被横向裁切").toEqual([]);
-    expect(layout.undersizedDetailLinks, "明细入口应保持 44px 触控高度").toBe(0);
-    expect(layout.documentWidth, "账号摘要卡不应导致页面横向滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
+    await page.getByRole("link", { name: "查看任务", exact: true }).tap();
+    await expect(page).toHaveURL(/#\/plans\/tasks$/);
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link", { name: "录入", exact: true })).toHaveAttribute("aria-current", "location");
   });
 
-  test("五账号主线总览可生成一张图片并调用手机分享", async ({ page }) => {
+  test("任务勾选、完成与批量操作避开固定底栏", async ({ page }) => {
+    await page.goto("/#/plans/tasks");
+    await waitForApplicationPage(page);
+    await page.addStyleTag({
+      content: ":root{--orbit-safe-area-bottom:34px!important}",
+    });
+
+    const taskRow = page.locator(".task-work-row").filter({ has: page.locator("input[type='checkbox']:not(:disabled)") }).first();
+    const selectTarget = taskRow.locator(".task-select-cell");
+    const completionAction = taskRow.locator(".task-row-action");
+    await expect(taskRow).toBeVisible();
+    expect((await selectTarget.boundingBox())?.height, "任务勾选区域应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((await completionAction.boundingBox())?.height, "标记完成应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await taskRow.locator("input[type='checkbox']").check();
+
+    const bulk = page.getByRole("complementary", { name: "批量任务操作" });
+    await expect(bulk).toBeVisible();
+    await bulk.scrollIntoViewIfNeeded();
+    const layout = await page.evaluate(() => {
+      const bulkAction = document.querySelector<HTMLElement>(".task-bulk-action-bar");
+      const dock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
+      if (!bulkAction || !dock) throw new Error("任务批量操作安全区审查缺少目标元素");
+      return {
+        bulkBottom: bulkAction.getBoundingClientRect().bottom,
+        dockTop: dock.getBoundingClientRect().top,
+      };
+    });
+    expect(layout.bulkBottom, "批量操作栏不能被固定底栏覆盖").toBeLessThanOrEqual(layout.dockTop - 6);
+  });
+
+  test("本周小结可生成 PNG、调用 iPhone 分享并回退下载", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-07-22T02:00:00Z"));
     await page.addInitScript(() => {
       const state = window as typeof window & {
-        __allowMainlineOverviewShare?: boolean;
-        __mainlineOverviewShare?: { name: string; type: string; size: number };
+        __allowWeeklyShare?: boolean;
+        __weeklyShare?: { name: string; type: string; size: number };
       };
-      state.__allowMainlineOverviewShare = true;
+      state.__allowWeeklyShare = true;
       Object.defineProperty(navigator, "canShare", {
         configurable: true,
-        value: (data: ShareData) => Boolean(state.__allowMainlineOverviewShare && data.files?.length),
+        value: (data: ShareData) => Boolean(state.__allowWeeklyShare && data.files?.length),
       });
       Object.defineProperty(navigator, "share", {
         configurable: true,
         value: async (data: ShareData) => {
           const file = data.files?.[0];
-          if (file) state.__mainlineOverviewShare = { name: file.name, type: file.type, size: file.size };
+          if (file) state.__weeklyShare = { name: file.name, type: file.type, size: file.size };
         },
       });
     });
 
-    await page.goto("/#/");
+    await page.goto("/#/week");
     await waitForApplicationPage(page);
 
-    const overviewShare = page.getByRole("button", { name: "分享五号主线进度", exact: true });
-    await expect(overviewShare).toBeVisible();
-    await expect(page.getByRole("button", { name: /生成 (FC|LG1|LG2|PT|MYT) 分享图片/ })).toHaveCount(0);
-    const target = await overviewShare.boundingBox();
-    expect(target?.height, "五号进度分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
-    await overviewShare.tap();
+    await page.getByRole("button", { name: "生成本周小结", exact: true }).tap();
+    const preview = page.getByRole("dialog", { name: "本周小结图片" });
+    await expect(preview).toBeVisible();
+    const shareButton = preview.getByRole("button", { name: "分享", exact: true });
+    const closeButton = preview.getByRole("button", { name: "关闭本周小结图片预览" });
+    expect((await shareButton.boundingBox())?.height, "分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((await closeButton.boundingBox())?.height, "小结预览关闭按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await shareButton.tap();
 
     await expect.poll(() => page.evaluate(() => (
-      window as typeof window & { __mainlineOverviewShare?: { name: string; type: string; size: number } }
-    ).__mainlineOverviewShare)).toEqual(expect.objectContaining({
-      name: expect.stringMatching(/^五号主线进度-.*\.png$/),
+      window as typeof window & { __weeklyShare?: { name: string; type: string; size: number } }
+    ).__weeklyShare)).toEqual(expect.objectContaining({
+      name: "本周小结-2026-07-20-2026-07-22.png",
       type: "image/png",
     }));
     const shared = await page.evaluate(() => (
-      window as typeof window & { __mainlineOverviewShare?: { name: string; type: string; size: number } }
-    ).__mainlineOverviewShare);
-    expect(shared?.size, "五账号总进度 PNG 不应为空白文件").toBeGreaterThan(10_000);
-    await expect(page.getByRole("status")).toHaveText("五号进度图片已生成");
+      window as typeof window & { __weeklyShare?: { name: string; type: string; size: number } }
+    ).__weeklyShare);
+    expect(shared?.size, "本周小结 PNG 不应为空白文件").toBeGreaterThan(10_000);
 
     await page.evaluate(() => {
-      (window as typeof window & { __allowMainlineOverviewShare?: boolean }).__allowMainlineOverviewShare = false;
+      (window as typeof window & { __allowWeeklyShare?: boolean }).__allowWeeklyShare = false;
     });
     const downloadPromise = page.waitForEvent("download");
-    await overviewShare.tap();
+    await shareButton.tap();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/^五号主线进度-.*\.png$/);
-    await expect(page.getByRole("status")).toHaveText("五号进度图片已下载");
+    expect(download.suggestedFilename()).toBe("本周小结-2026-07-20-2026-07-22.png");
+    await preview.getByRole("button", { name: "关闭", exact: true }).tap();
+    await expect(preview).toBeHidden();
   });
 
   test("移动表单输入字号不触发浏览器自动缩放", async ({ page }) => {
@@ -440,6 +474,8 @@ test.describe("mobile UX release gate", () => {
       await test.step(url, async () => {
         await page.goto(url);
         await waitForApplicationPage(page);
+        if (url === "/#/record") await page.locator(".record-option-card[aria-controls='quick-expense-form']").tap();
+        if (url === "/#/week") await page.getByRole("button", { name: "补记其他支出", exact: true }).tap();
         const moreFilters = page.getByRole("button", { name: "更多筛选", exact: true });
         if (await moreFilters.isVisible().catch(() => false)) await moreFilters.tap();
         const report = await undersizedInputFonts(page);
@@ -451,9 +487,9 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("库存录入弹窗锁住背景并保持操作栏可见", async ({ page }) => {
-    await page.goto("/#/data/inventory");
+    await page.goto("/#/record");
     await waitForApplicationPage(page);
-    await page.getByRole("button", { name: /录入今天库存|建立库存基线/ }).first().tap();
+    await page.getByRole("button", { name: /开始录入|检查并更新/ }).tap();
 
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(dialog).toBeVisible();
@@ -637,7 +673,7 @@ test.describe("mobile UX release gate", () => {
     const dock = page.getByRole("navigation", { name: "手机快捷导航", exact: true });
     await expect(dock).toBeVisible();
     await expect(dock.locator("a, button")).toHaveCount(5);
-    await expect(dock.getByRole("link", { name: "数据", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(dock.getByRole("link", { name: "资料", exact: true })).toHaveAttribute("aria-current", "location");
 
     const overflow = await pageOverflowReport(page);
     expect(overflow.offenders, "展开手机日报后不应产生页面级横向裁切").toEqual([]);

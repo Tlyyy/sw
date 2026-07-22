@@ -309,8 +309,8 @@ test.describe("desktop regressions", () => {
 test("移动导航是可关闭、可困住焦点并恢复焦点的对话框", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await page.goto("/#/");
-  const menuButton = page.locator("button.orbit-menu-button");
-  await expect(menuButton).toHaveAttribute("aria-label", "打开导航");
+  const menuButton = page.getByRole("button", { name: "打开全部导航" });
+  await expect(menuButton).toHaveAttribute("aria-label", "打开全部导航");
   await expect(menuButton).toHaveAttribute("aria-expanded", "false");
   await menuButton.click();
 
@@ -383,7 +383,7 @@ test("移动导航是可关闭、可困住焦点并恢复焦点的对话框", as
   await expect(scrim).toHaveCount(1);
   await expect(navigation).toHaveCount(0);
   await expect(menuButton).toHaveAttribute("aria-expanded", "false");
-  await expect(menuButton).toHaveAttribute("aria-label", "打开导航");
+  await expect(menuButton).toHaveAttribute("aria-label", "打开全部导航");
   await expect(menuButton).toBeFocused();
   await page.waitForTimeout(240);
   await expect(navigationPanel).toHaveCSS("visibility", "hidden");

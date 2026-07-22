@@ -18,10 +18,11 @@ import {
 type InventoryReportView = "summary" | "matrix";
 type InventoryMatrixMetric = "silverWan" | "silverWithRegularEggsWan" | "dedicatedEggs" | "regularEggs" | "innerShardCount";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   report: InventoryWeekReport;
   currentDate: string;
-}>();
+  showActivity?: boolean;
+}>(), { showActivity: true });
 
 const accountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
 const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
@@ -308,7 +309,7 @@ async function shareInventoryReport() {
 
     <p v-if="shareNotice" class="inventory-share-notice" role="status">{{ shareNotice }}</p>
 
-    <WeeklyActivityPanel :report="report" :current-date="currentDate" />
+    <WeeklyActivityPanel v-if="props.showActivity" :report="report" :current-date="currentDate" />
 
     <template v-if="reportView === 'summary'">
       <div class="weekly-change-panel">

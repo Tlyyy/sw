@@ -8,7 +8,7 @@ const DataMarketSection = defineAsyncComponent(() => import("./DataMarketSection
 const DataSourcesSection = defineAsyncComponent(() => import("./DataSourcesSection.vue"));
 
 const route = useRoute();
-const section = computed(() => String(route.params.section || "inventory"));
+const section = computed(() => String(route.params.section || route.path.split("/").filter(Boolean).at(-1) || "inventory"));
 const sectionComponents = {
   inventory: DataInventorySection,
   market: DataMarketSection,

@@ -30,6 +30,7 @@ const actionNotice = ref("");
 const generating = ref(false);
 const previewUrl = ref("");
 const previewFileName = ref("");
+const previewBlob = ref<Blob | null>(null);
 const previewClose = ref<HTMLButtonElement>();
 let noticeTimer: number | null = null;
 let previouslyFocused: HTMLElement | null = null;
@@ -136,6 +137,7 @@ function releasePreviewUrl() {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
   previewUrl.value = "";
   previewFileName.value = "";
+  previewBlob.value = null;
 }
 
 async function lockPreview() {
@@ -165,7 +167,8 @@ async function generateWeeklyReport() {
       ...activity.value,
       generatedAt: shanghaiGeneratedAt(),
     });
-    previewFileName.value = `本周周报-${activity.value.weekStart}-${activity.value.reportEnd}.png`;
+    previewBlob.value = blob;
+    previewFileName.value = `${weeklyReportTitle}-${activity.value.weekStart}-${activity.value.reportEnd}.png`;
     previewUrl.value = URL.createObjectURL(blob);
     await lockPreview();
   } catch {
@@ -193,7 +196,27 @@ function downloadPreview() {
   link.href = previewUrl.value;
   link.download = previewFileName.value;
   link.click();
-  showNotice("周报图片已下载");
+  showNotice(`${weeklyReportTitle}图片已下载`);
+}
+
+async function sharePreview() {
+  if (!previewBlob.value) return;
+  const file = new File([previewBlob.value], previewFileName.value, { type: "image/png" });
+  const shareData: ShareData = { files: [file], title: weeklyReportTitle };
+  const supportsFileShare = typeof navigator.share === "function"
+    && typeof navigator.canShare === "function"
+    && navigator.canShare(shareData);
+  if (!supportsFileShare) {
+    downloadPreview();
+    return;
+  }
+  try {
+    await navigator.share(shareData);
+    showNotice(`${weeklyReportTitle}已打开系统分享`);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") return;
+    showNotice("系统分享失败，可改用下载 PNG");
+  }
 }
 </script>
 
@@ -202,8 +225,8 @@ function downloadPreview() {
     <header class="weekly-activity-head">
       <div>
         <p>本周截至 {{ shortDate(activity.reportEnd) }}</p>
-        <h3 id="weekly-activity-title">银子收获与任务记录</h3>
-        <span>花掉的银子单独记账，不再从本周收获里消失。</span>
+        <h3 id="weekly-activity-title">{{ weeklyReportTitle }}</h3>
+        <span><b>{{ activity.weekStart }} 至 {{ activity.reportEnd }}</b> · 收获按最近库存日期结算；支出、任务仍统计到所选日期。</span>
       </div>
       <div class="weekly-activity-actions">
         <button v-if="!expenseFormOpen" class="button weekly-expense-button" type="button" @click="openExpenseForm">
@@ -212,7 +235,7 @@ function downloadPreview() {
         </button>
         <button class="button primary weekly-generate-button" type="button" :disabled="generating" :aria-busy="generating" @click="generateWeeklyReport">
           <AppIcon :name="generating ? 'refresh' : 'report'" />
-          <span>{{ generating ? "正在生成" : "生成本周周报" }}</span>
+          <span>{{ generating ? "正在生成" : `生成${weeklyReportTitle}` }}</span>
         </button>
       </div>
     </header>
@@ -221,7 +244,8 @@ function downloadPreview() {
       <div class="harvest">
         <dt>本周收获</dt>
         <dd>{{ wanLabel(activity.harvestedSilverWan) }}</dd>
-        <small>库存净变化 + 已记录支出</small>
+        <small v-if="activity.inventoryChangeTo">截至 {{ activity.inventoryChangeTo }} · 净变化 + {{ numberLabel(activity.reconciledSilverExpenseWan) }} 万支出</small>
+        <small v-else>补齐库存比较基线后计算</small>
       </div>
       <div class="expense">
         <dt>本周支出</dt>
@@ -243,13 +267,14 @@ function downloadPreview() {
 
     <p class="weekly-cashflow-formula">
       <strong>计算口径</strong>
-      <span>本周收获 = 库存净变化 + 已记录的银子支出</span>
-      <em>{{ activity.weekStart }} 至 {{ activity.reportEnd }}</em>
+      <span>本周收获 = 库存净变化 + 库存比较区间内的银子支出</span>
+      <em v-if="activity.pendingReconciliationSilverExpenseWan > 0">另有 {{ numberLabel(activity.pendingReconciliationSilverExpenseWan) }} 万支出待下次库存后计入收获</em>
+      <em v-else>{{ activity.inventoryChangeFrom || activity.weekStart }} 至 {{ activity.inventoryChangeTo || activity.reportEnd }}</em>
     </p>
 
     <section class="weekly-account-breakdown" aria-labelledby="weekly-account-title">
       <header>
-        <div><h4 id="weekly-account-title">各账号本周情况</h4><span>固定展示五个账号，支出和任务分别归集</span></div>
+        <div><h4 id="weekly-account-title">各账号本周情况</h4><span>收获按库存区间，支出和任务按所选日期分别归集</span></div>
         <strong>{{ activity.accountSummaries.length }} 个账号</strong>
       </header>
       <div class="weekly-account-table" role="table" aria-label="五账号本周情况">
@@ -316,13 +341,14 @@ function downloadPreview() {
       <div v-if="previewUrl" class="weekly-report-preview-backdrop" @click.self="closePreview">
         <section class="weekly-report-preview" role="dialog" aria-modal="true" aria-labelledby="weekly-preview-title" @keydown="handlePreviewKeydown">
           <header>
-            <div><h2 id="weekly-preview-title">本周周报图片</h2><p>{{ activity.weekStart }} 至 {{ activity.reportEnd }}，确认后可下载保存。</p></div>
-            <button ref="previewClose" type="button" aria-label="关闭周报图片预览" @click="closePreview"><AppIcon name="close" /></button>
+            <div><h2 id="weekly-preview-title">{{ weeklyReportTitle }}图片</h2><p>{{ activity.weekStart }} 至 {{ activity.reportEnd }}，可直接调用 iPhone 系统分享或下载保存。</p></div>
+            <button ref="previewClose" type="button" :aria-label="`关闭${weeklyReportTitle}图片预览`" @click="closePreview"><AppIcon name="close" /></button>
           </header>
           <div class="weekly-report-preview-image"><img :src="previewUrl" :alt="`生成的${weeklyReportTitle}图片预览`" /></div>
           <footer>
             <button class="button secondary" type="button" @click="closePreview">关闭</button>
-            <button class="button primary" type="button" @click="downloadPreview"><AppIcon name="download" />下载 PNG</button>
+            <button class="button secondary" type="button" @click="downloadPreview"><AppIcon name="download" />下载 PNG</button>
+            <button class="button primary" type="button" @click="sharePreview"><AppIcon name="share" />分享</button>
           </footer>
         </section>
       </div>
@@ -371,6 +397,8 @@ function downloadPreview() {
   font-size: 12px;
   line-height: 1.4;
 }
+
+.weekly-activity-head > div:first-child > span b { color: var(--radar-ink); }
 
 .weekly-activity-actions {
   display: flex;
@@ -653,8 +681,8 @@ function downloadPreview() {
 .weekly-report-preview > header h2 { color: var(--radar-ink); font-size: 20px; }
 .weekly-report-preview > header p { margin-top: 3px; color: var(--radar-muted); font-size: 12px; }
 .weekly-report-preview > header > button {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 1px solid var(--radar-line);

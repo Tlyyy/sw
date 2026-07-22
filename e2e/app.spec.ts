@@ -68,9 +68,9 @@ test.describe("desktop application", () => {
       ["/#/analysis/species", "同名对比"],
       ["/#/analysis/matrix", "固定矩阵"],
       ["/#/publish", "内容发布"],
-      ["/#/data/market", "数据中心"],
-      ["/#/data/resources", "数据中心"],
-      ["/#/data/sources", "数据中心"],
+      ["/#/data/market", "宝石行情"],
+      ["/#/data/resources", "库存资料"],
+      ["/#/data/sources", "数据来源"],
       ["/#/settings", "界面设置"],
     ] as const;
     for (const [url, heading] of routes) {
@@ -284,7 +284,7 @@ test.describe("mobile application", () => {
   test("导航完全离屏且矩阵局部滚动", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile");
     await page.goto("/#/");
-    await expect(page.getByRole("heading", { name: "五条主线推进轨道" })).toBeVisible();
+    await expect(page.getByTestId("mobile-week-home")).toBeVisible();
     const layout = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
       scroll: document.documentElement.scrollWidth,
@@ -294,7 +294,7 @@ test.describe("mobile application", () => {
     expect(layout.navRight).toBeLessThanOrEqual(0);
     await page.screenshot({ path: testInfo.outputPath("dashboard-mobile.png") });
 
-    await page.getByRole("button", { name: "打开导航" }).click();
+    await page.getByRole("button", { name: "打开全部导航" }).click();
     const mobileNavigation = page.getByRole("dialog", { name: "主导航" });
     await expect(mobileNavigation).toBeVisible();
     await mobileNavigation.getByRole("link", { name: "分析" }).click();
@@ -463,39 +463,35 @@ test.describe("schedule completion dates", () => {
     });
 
     await page.goto("/#/");
-    const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
     if (testInfo.project.name === "mobile") {
-      const currentTrackTask = ptMainline.locator(".mainline-mobile-identity");
-      await expect(currentTrackTask.locator("b")).toContainText("剑气蛇 · 进阶2");
-      await expect(currentTrackTask.locator("small")).toHaveText("今天可完成");
-      await expect(ptMainline.locator(".mainline-mobile-state .status-chip")).toHaveText("现在可完成");
-      await expect(ptMainline.locator(".mainline-mobile-finish")).toHaveText("待洗护符后排期");
+      const taskBrief = page.locator(".mobile-task-brief");
+      await expect(taskBrief).toContainText(/\d+ 项现在可完成/);
+      expect(await page.locator(".mobile-current-tasks > li").count()).toBeGreaterThan(0);
+      await page.locator(".mobile-today-card").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
     } else {
+      const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
       const currentTrackTask = ptMainline.locator(".task-track-labels span").first();
       await expect(currentTrackTask.locator("b")).toContainText("剑气蛇 · 进阶2");
       await expect(currentTrackTask.locator(".task-ready-badge")).toHaveText("现在可完成");
       await expect(currentTrackTask.locator("small")).toHaveText("今天可完成");
       await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
+      if (testInfo.project.name === "desktop") {
+        const tableWidth = await page.locator(".mainline-table-scroll").evaluate((element) => {
+          const table = element.querySelector(".mainline-table")!;
+          const lastCell = element.querySelector(".mainline-row > :last-child")!;
+          return {
+            client: element.clientWidth,
+            scroll: element.scrollWidth,
+            tableRight: table.getBoundingClientRect().right,
+            lastCellRight: lastCell.getBoundingClientRect().right,
+          };
+        });
+        expect(tableWidth.scroll).toBe(tableWidth.client);
+        expect(Math.abs(tableWidth.tableRight - tableWidth.lastCellRight)).toBeLessThan(1);
+        await expect(page.getByRole("link", { name: /查看 .* 账号明细/ })).toHaveCount(5);
+      }
+      await ptMainline.locator(".task-track").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
     }
-    if (testInfo.project.name === "desktop") {
-      const tableWidth = await page.locator(".mainline-table-scroll").evaluate((element) => {
-        const table = element.querySelector(".mainline-table")!;
-        const lastCell = element.querySelector(".mainline-row > :last-child")!;
-        return {
-          client: element.clientWidth,
-          scroll: element.scrollWidth,
-          tableRight: table.getBoundingClientRect().right,
-          lastCellRight: lastCell.getBoundingClientRect().right,
-        };
-      });
-      expect(tableWidth.scroll).toBe(tableWidth.client);
-      expect(Math.abs(tableWidth.tableRight - tableWidth.lastCellRight)).toBeLessThan(1);
-      await expect(page.getByRole("link", { name: /查看 .* 账号明细/ })).toHaveCount(5);
-    }
-    const visibleTrack = testInfo.project.name === "mobile"
-      ? ptMainline.locator(".mainline-mobile-card")
-      : ptMainline.locator(".task-track");
-    await visibleTrack.screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
 
     await page.goto("/#/accounts/PT");
     const accountTask = page.locator(".task-mini-list > div").filter({ hasText: "剑气蛇 · 进阶2" }).first();
@@ -577,13 +573,18 @@ test.describe("week-to-date activity report", () => {
     await silverTask.getByRole("button", { name: /标记完成/ }).click();
     await expect(page.getByRole("status")).toContainText("银子支出");
 
-    await page.goto("/#/data/inventory");
-    await expect(page).toHaveURL(/#\/data\/inventory$/);
-    await page.getByRole("button", { name: "周报分析", exact: true }).click();
+    if (testInfo.project.name === "mobile") {
+      await page.goto("/#/week");
+      await expect(page).toHaveURL(/#\/week$/);
+    } else {
+      await page.goto("/#/data/inventory");
+      await expect(page).toHaveURL(/#\/data\/inventory$/);
+      await page.getByRole("button", { name: "周报分析", exact: true }).click();
+    }
     const activity = page.getByTestId("weekly-activity-panel");
     await expect(activity.getByText("本周截至 7月22日", { exact: true })).toBeVisible();
     await expect(activity.getByText("2026-07-20 至 2026-07-22", { exact: true })).toBeVisible();
-    await expect(activity.getByText("本周收获 = 库存净变化 + 已记录的银子支出", { exact: true })).toBeVisible();
+    await expect(activity.getByText("本周收获 = 库存净变化 + 库存比较区间内的银子支出", { exact: true })).toBeVisible();
 
     await activity.getByRole("button", { name: "补记其他支出", exact: true }).click();
     await activity.getByLabel("其他支出账号").selectOption("LG1");
@@ -601,8 +602,8 @@ test.describe("week-to-date activity report", () => {
     await expect(expenseMetric.locator("dd")).toHaveText(`${expectedExpense.toLocaleString("zh-CN")} 万`);
     await expect(harvestMetric.locator("dd")).toHaveText(`${(20 + expectedExpense).toLocaleString("zh-CN")} 万`);
 
-    await activity.getByRole("button", { name: "生成本周周报", exact: true }).click();
-    const preview = page.getByRole("dialog", { name: "本周周报图片" });
+    await activity.getByRole("button", { name: "生成本周小结", exact: true }).click();
+    const preview = page.getByRole("dialog", { name: "本周小结图片" });
     await expect(preview).toBeVisible();
     const reportImage = preview.getByRole("img", { name: "生成的本周小结图片预览" });
     await expect(reportImage).toHaveJSProperty("naturalWidth", 1080);
@@ -610,9 +611,9 @@ test.describe("week-to-date activity report", () => {
     const downloadPromise = page.waitForEvent("download");
     await preview.getByRole("button", { name: "下载 PNG", exact: true }).click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe("本周周报-2026-07-20-2026-07-22.png");
+    expect(download.suggestedFilename()).toBe("本周小结-2026-07-20-2026-07-22.png");
     await download.saveAs(testInfo.outputPath(`weekly-activity-report-${testInfo.project.name}.png`));
-    await preview.getByRole("button", { name: "关闭周报图片预览" }).click();
+    await preview.getByRole("button", { name: "关闭本周小结图片预览" }).click();
     await expect(preview).toHaveCount(0);
 
     const pageWidth = await page.evaluate(() => ({

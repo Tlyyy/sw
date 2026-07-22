@@ -17,6 +17,7 @@ export interface WeeklyAccountActivitySummary {
   taskSilverExpenseWan: number;
   manualSilverExpenseWan: number;
   totalSilverExpenseWan: number;
+  reconciledSilverExpenseWan: number;
   harvestedSilverWan: number | null;
   taskCompletions: TaskCompletionRecord[];
   manualExpenses: SilverExpenseRecord[];
@@ -34,6 +35,8 @@ export interface WeeklyActivitySummary {
   taskSilverExpenseWan: number;
   manualSilverExpenseWan: number;
   totalSilverExpenseWan: number;
+  reconciledSilverExpenseWan: number;
+  pendingReconciliationSilverExpenseWan: number;
   harvestedSilverWan: number | null;
   unassignedManualSilverExpenseWan: number;
   accountSummaries: WeeklyAccountActivitySummary[];
@@ -85,6 +88,17 @@ export function buildWeeklyActivitySummary(
   const inventoryNetChangeWan = usableChange
     ? summarizeInventoryWeeklyChange(usableChange.deltas).directSilverWan
     : null;
+  const reconciledCompletions = usableChange
+    ? completions.filter((entry) => entry.completedOn > usableChange.fromEffectiveDate && entry.completedOn <= usableChange.toEffectiveDate)
+    : [];
+  const reconciledExpenses = usableChange
+    ? expenses.filter((entry) => entry.effectiveDate > usableChange.fromEffectiveDate && entry.effectiveDate <= usableChange.toEffectiveDate)
+    : [];
+  const reconciledSilverExpenseWan = normalizeWan(
+    reconciledCompletions.reduce((sum, entry) => sum + entry.silverSpentWan, 0)
+    + reconciledExpenses.reduce((sum, entry) => sum + entry.amountWan, 0),
+  );
+  const pendingReconciliationSilverExpenseWan = normalizeWan(totalSilverExpenseWan - reconciledSilverExpenseWan);
   const currentSilverWan = latestRecordedDay?.snapshot
     ? normalizeWan(Object.values(latestRecordedDay.snapshot.accounts).reduce((sum, balance) => sum + balance.silverWan, 0))
     : null;
@@ -94,6 +108,14 @@ export function buildWeeklyActivitySummary(
     const accountTaskExpenseWan = normalizeWan(accountCompletions.reduce((sum, entry) => sum + entry.silverSpentWan, 0));
     const accountManualExpenseWan = normalizeWan(accountExpenses.reduce((sum, entry) => sum + entry.amountWan, 0));
     const accountTotalExpenseWan = normalizeWan(accountTaskExpenseWan + accountManualExpenseWan);
+    const accountReconciledExpenseWan = normalizeWan(
+      reconciledCompletions
+        .filter((entry) => entry.accountId === accountId)
+        .reduce((sum, entry) => sum + entry.silverSpentWan, 0)
+      + reconciledExpenses
+        .filter((entry) => entry.accountId === accountId)
+        .reduce((sum, entry) => sum + entry.amountWan, 0),
+    );
     const accountInventoryNetChangeWan = usableChange
       ? normalizeWan(usableChange.deltas[accountId].silverWan)
       : null;
@@ -106,9 +128,10 @@ export function buildWeeklyActivitySummary(
       taskSilverExpenseWan: accountTaskExpenseWan,
       manualSilverExpenseWan: accountManualExpenseWan,
       totalSilverExpenseWan: accountTotalExpenseWan,
+      reconciledSilverExpenseWan: accountReconciledExpenseWan,
       harvestedSilverWan: accountInventoryNetChangeWan === null
         ? null
-        : normalizeWan(accountInventoryNetChangeWan + accountTotalExpenseWan),
+        : normalizeWan(accountInventoryNetChangeWan + accountReconciledExpenseWan),
       taskCompletions: accountCompletions,
       manualExpenses: accountExpenses,
     } satisfies WeeklyAccountActivitySummary;
@@ -129,9 +152,11 @@ export function buildWeeklyActivitySummary(
     taskSilverExpenseWan,
     manualSilverExpenseWan,
     totalSilverExpenseWan,
+    reconciledSilverExpenseWan,
+    pendingReconciliationSilverExpenseWan,
     harvestedSilverWan: inventoryNetChangeWan === null
       ? null
-      : normalizeWan(inventoryNetChangeWan + totalSilverExpenseWan),
+      : normalizeWan(inventoryNetChangeWan + reconciledSilverExpenseWan),
     unassignedManualSilverExpenseWan,
     accountSummaries,
     taskCompletions: completions,

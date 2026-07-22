@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { buildPrimaryNavigation } from "../app/navigation";
+import { buildPrimaryNavigation, mobileNavigation } from "../app/navigation";
 import { appName } from "../app/brand";
 import AppIcon from "./AppIcon.vue";
 import CommandSearch from "./CommandSearch.vue";
@@ -18,6 +18,7 @@ const ui = useUiStore();
 const auth = useAuthStore();
 const cloudSync = useSyncStore();
 const menuButton = ref<HTMLButtonElement>();
+const mobileMoreButton = ref<HTMLButtonElement>();
 const mobileNav = ref<HTMLElement>();
 const mobileCloseButton = ref<HTMLButtonElement>();
 const mobileMedia = window.matchMedia("(max-width: 980px)");
@@ -27,18 +28,20 @@ let previousBodyOverflow = "";
 let restoreMobileFocus = true;
 
 const links = computed(() => buildPrimaryNavigation(ui.recentAccount));
-const mobileDockLinks = computed(() => {
-  const labels = { home: "首页", accounts: "账号", plans: "计划", data: "数据" } as const;
-  return (["home", "accounts", "plans", "data"] as const).map((section) => {
-    const link = links.value.find((item) => item.section === section)!;
-    return { ...link, text: labels[section] };
-  });
-});
-const mobileDockMoreActive = computed(() => !mobileDockLinks.value.some((link) => link.section === route.meta.section));
+const mobileDockLinks = mobileNavigation;
+const mobileFeatureLinks = computed(() => links.value.filter((link) => link.section !== "home"));
+const mobileSection = computed(() => String(route.meta.mobileSection || route.meta.section || "more"));
+const mobileDockMoreActive = computed(() => mobileSection.value === "more");
+
+function mobileAriaCurrent(link: { to: string; section: string }) {
+  if (route.path === link.to) return "page";
+  if (mobileSection.value === link.section) return "location";
+  return undefined;
+}
 
 const title = computed(() => String(route.meta.title || appName));
 const isDashboard = computed(() => route.meta.section === "home");
-const isImmersivePage = computed(() => route.name === "matrix");
+const isImmersivePage = computed(() => route.name === "matrix" || Boolean(route.meta.immersive));
 const date = computed(() => inventory.latestSnapshot?.effectiveDate || catalog.data.generatedAt.slice(0, 10));
 const mobileDialogOpen = computed(() => isMobile.value && ui.mobileNavOpen);
 const mobileNavClosed = computed(() => isMobile.value && !ui.mobileNavOpen);
@@ -59,7 +62,9 @@ function closeMobileNavigation(restoreFocus = true) {
 }
 
 function openMobileNavigation() {
-  previousMobileFocus = document.activeElement instanceof HTMLElement ? document.activeElement : menuButton.value || null;
+  previousMobileFocus = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+    ? document.activeElement
+    : mobileMoreButton.value || menuButton.value || null;
   ui.mobileNavOpen = true;
 }
 
@@ -146,7 +151,7 @@ onBeforeUnmount(() => {
       ><AppIcon :name="mobileDialogOpen ? 'close' : 'menu'" /></button>
       <RouterLink class="orbit-brand" to="/" :inert="mobileDialogOpen || undefined" :tabindex="mobileDialogOpen ? -1 : undefined" @click="closeMobileNavigation(false)">
         <strong>{{ appName }}</strong>
-        <span>进度与资源汇总</span>
+        <span>记录与本周小结</span>
       </RouterLink>
 
       <nav
@@ -177,18 +182,48 @@ onBeforeUnmount(() => {
             <span class="visually-hidden">关闭导航</span>
           </button>
         </div>
-        <p class="orbit-mobile-nav-label">主要功能</p>
-        <RouterLink
-          v-for="link in links"
-          :key="link.to"
-          :to="link.to"
-          :class="{ active: route.meta.section === link.section }"
-          :aria-current="route.meta.section === link.section ? 'page' : undefined"
-          @click="closeMobileNavigation(false)"
-        >
-          <AppIcon :name="link.icon" />
-          <span>{{ link.text }}</span>
-        </RouterLink>
+        <template v-if="isMobile">
+          <p class="orbit-mobile-nav-label">快速入口</p>
+          <div class="orbit-mobile-hub-links">
+            <RouterLink
+              v-for="link in mobileDockLinks"
+              :key="link.to"
+              :to="link.to"
+              :class="{ active: mobileSection === link.section }"
+              :aria-current="mobileAriaCurrent(link)"
+              @click="closeMobileNavigation(false)"
+            >
+              <AppIcon :name="link.icon" />
+              <span>{{ link.text }}</span>
+            </RouterLink>
+          </div>
+          <p class="orbit-mobile-nav-label orbit-mobile-feature-label">全部功能</p>
+          <div class="orbit-mobile-feature-links">
+            <RouterLink
+              v-for="link in mobileFeatureLinks"
+              :key="link.to"
+              :to="link.to"
+              :class="{ active: route.meta.section === link.section }"
+              :aria-current="route.meta.section === link.section ? 'page' : undefined"
+              @click="closeMobileNavigation(false)"
+            >
+              <AppIcon :name="link.icon" />
+              <span>{{ link.text }}</span>
+            </RouterLink>
+          </div>
+        </template>
+        <template v-else>
+          <RouterLink
+            v-for="link in links"
+            :key="link.to"
+            :to="link.to"
+            :class="{ active: route.meta.section === link.section }"
+            :aria-current="route.meta.section === link.section ? 'page' : undefined"
+          >
+            <AppIcon :name="link.icon" />
+            <span>{{ link.text }}</span>
+          </RouterLink>
+        </template>
         <button class="orbit-mobile-logout" type="button" @click="closeMobileNavigation(false); auth.logout()">
           <span>退出登录</span>
           <small>结束当前设备会话</small>
@@ -237,14 +272,15 @@ onBeforeUnmount(() => {
         v-for="link in mobileDockLinks"
         :key="link.to"
         :to="link.to"
-        :class="{ active: route.meta.section === link.section }"
-        :aria-current="route.meta.section === link.section ? 'page' : undefined"
+        :class="{ active: mobileSection === link.section }"
+        :aria-current="mobileAriaCurrent(link)"
         @click="closeMobileNavigation(false)"
       >
         <AppIcon :name="link.icon" />
         <span>{{ link.text }}</span>
       </RouterLink>
       <button
+        ref="mobileMoreButton"
         type="button"
         :class="{ active: mobileDockMoreActive || mobileDialogOpen }"
         aria-controls="orbit-primary-navigation"

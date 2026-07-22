@@ -35,7 +35,7 @@ defineEmits<{
 .inventory-week-switcher {
   min-height: 64px;
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 40px auto;
+  grid-template-columns: 44px minmax(0, 1fr) 44px auto;
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
@@ -44,8 +44,8 @@ defineEmits<{
 }
 
 .inventory-week-button {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 1px solid var(--radar-line-strong);
@@ -94,7 +94,7 @@ defineEmits<{
 }
 
 .inventory-week-current {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--radar-line-strong);
   border-radius: 7px;
@@ -107,14 +107,14 @@ defineEmits<{
 
 @media (max-width: 560px) {
   .inventory-week-switcher {
-    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
     padding-inline: 10px;
   }
 
   .inventory-week-current {
     grid-column: 1 / -1;
     width: 100%;
-    min-height: 42px;
+    min-height: 44px;
   }
 
   .inventory-week-range strong {

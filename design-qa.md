@@ -346,6 +346,45 @@ final result: passed
 
 final result: blocked
 
+## 万象册移动端信息架构与 iPhone 16 Pro Max 首页 — 2026-07-23
+
+### Source truth and comparison evidence
+
+- 用户选定设计：`C:\Users\T\AppData\Local\Temp\codex-clipboard-62ddd34f-4b7c-4c2a-86ff-51f3553421e9.png`，原始尺寸 851 × 1849。
+- 最终浏览器截图：`test-results/design-qa/home-440x956-final.jpg`，440 × 956。
+- 同画布全屏对照：`test-results/design-qa/home-comparison.png`，将参考图按宽度无裁切归一为 440 × 956，并与 440 × 956 实现并排比较。
+- 不另做局部裁切：并排图保留了 440px 原始可读宽度，标题、七天节奏、主 CTA、任务、三项指标、周报卡和底栏均可直接判读。
+- 视觉截图使用 440 × 956 屏幕比例；自动化发布门禁另使用 Playwright `iPhone 16 Pro Max` 的真实 Safari 内容区 440 × 763、screen 440 × 956、DPR 3，并叠加顶部 59px / 底部 34px 安全区。
+- 状态差异：参考稿固定为 7月22日，最终实现按上海时区和真实本地数据渲染为 7月23日；这是动态数据差异，不是布局偏差。最终实现还按用户要求增加了任务摘要。
+
+### Mandatory comparison
+
+- 布局与间距：深海军蓝品牌栏、周标题、七列节奏条、橙色“记录今天”、本周三项指标、本周小结卡和五项底栏保持参考稿顺序。任务被放进主记录卡内部，没有再新增一个互相争抢的一级入口。七天条和指标区较参考稿更紧凑，用于容纳新增任务且保证 440 × 763 首屏主操作不被固定底栏遮挡。
+- 字体与层级：品牌、`本周`、当天记录标题、数字指标和底栏形成清晰五级层次；中文系统字体、粗细、行高、单行截断和表格数字均在 440px 宽度检查，无挤压或意外换行。
+- 颜色与表面：保留参考稿的深蓝、金色品牌、白色卡片、绿色完成态、橙色当天/录入和青绿色分享语义。主橙色调整为 `#bd5500`，白字对比度约 4.71:1；圆角、细边框和轻阴影与参考稿同属轻量卡片体系。
+- 图标与资产：全部可见图标使用既有 `AppIcon` 同一线性图标族；没有 emoji、占位图、手绘 SVG、CSS 插画或伪造产品素材。该首页本身不需要照片资产。
+- 文案与信息架构：首页回答“本周到哪了”，录入页回答“今天要记什么”，本周小结页负责查看/生成/分享，资料页只承载查询入口；底栏固定为 `首页 / 录入 / 本周小结 / 资料 / 更多`。
+- 状态与交互：已验证首页到录入、任务维护、本周小结、资料和更多抽屉；库存弹窗、支出表单自动聚焦、本周小结 PNG 预览、下载和 iPhone 文件分享回退均可用。控制台 warning/error 为空。
+- 响应性与无障碍：七列一次完整展示且页面无横向滚动；顶部/底部安全区、Home Indicator、44px 触控区、抽屉焦点陷阱与恢复、精确 `aria-current`/分区 `location`、输入 16px 防自动缩放均通过门禁。
+
+### Findings and iteration history
+
+1. 初版沿用了旧首页的“所有信息同时出现”结构，无法清楚区分查看、录入和分享；最终改成四个目的明确的一级区域和一个“更多”抽屉。
+2. 首次视觉实现的当天状态与主 CTA 偏青色；按选定稿改为橙色，并在不牺牲文字对比度的前提下完成品牌色校正。
+3. 参考稿没有任务。按用户补充要求，把待完成数量、两个当前任务和任务维护入口并入“记录今天”卡；这是明确的功能扩展，不作为设计偏差。
+4. QA 发现库存只更新到较早日期时，较晚支出可能被错误加回“收获”；最终拆分“本周总支出”和“库存比较区间内支出”，首页与 PNG 同时显示可信口径和库存截止日。
+5. QA 发现跨周恢复、任务批量栏、复选框宽度、周切换按钮、PNG 关闭按钮和同步入口的移动边界问题；均已修复并加入 440 × 763 WebKit 回归。
+6. 最终并排比较没有剩余 P0、P1 或 P2 视觉问题。参考稿更高的七天条和更松的指标卡属于无任务版本的密度；当前压缩是为新增任务和真实 Safari 首屏做的有意取舍，信息层级仍一致。
+
+### Verification
+
+- `npm test`: 27 个文件、114 项单元测试通过。
+- `npm run build`: 数据生成物检查、Vue/TypeScript、Vite 构建及 298 个资源完整性检查通过；仅保留既有 chunk-size warning。
+- `npm run test:e2e:ci`: 48 项通过、100 项按项目条件跳过、0 失败，覆盖 desktop、tablet、iPhone 16 Pro Max WebKit、同步、OCR、PNG 与分享回退。
+- 最终浏览器页：认证后的 `http://127.0.0.1:4173/#/`；440 × 956 截图及同画布对照已人工检查，控制台 warning/error 为空。
+
+final result: passed
+
 ## Five-account mainline overview share — 2026-07-20
 
 ### Source truth and target state
@@ -526,3 +565,9 @@ final result: blocked
 - `git diff --check`: passed with line-ending warnings only.
 
 final result: blocked
+
+## Current Design QA status — 2026-07-23
+
+The complete source-to-implementation comparison, findings, interaction coverage, accessibility review, and final verification for the current 万象册 mobile refactor are recorded above under `万象册移动端信息架构与 iPhone 16 Pro Max 首页 — 2026-07-23`. That pass supersedes the older blocked historical entries: the authenticated 440 × 956 browser comparison is available, the iPhone 16 Pro Max 440 × 763 WebKit gate is green, and the final console warning/error query is empty.
+
+final result: passed

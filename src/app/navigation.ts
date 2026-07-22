@@ -17,8 +17,18 @@ export function buildPrimaryNavigation(recentAccount: AccountId) {
   ];
 }
 
+export const mobileNavigation = [
+  { to: "/", text: "首页", icon: "home", section: "home" },
+  { to: "/record", text: "录入", icon: "plus", section: "record" },
+  { to: "/week", text: "本周小结", icon: "report", section: "week" },
+  { to: "/resources", text: "资料", icon: "assets", section: "resources" },
+] as const;
+
 export const commandPages = [
-  ["行动推进台", "/"],
+  ["首页 · 本周节奏", "/"],
+  ["录入", "/record"],
+  ["本周小结", "/week"],
+  ["资料", "/resources"],
   ["宠物资产", "/assets/pets"],
   ["装备资产", "/assets/equipment"],
   ["技能资料", "/assets/skills"],

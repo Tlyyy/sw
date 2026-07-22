@@ -66,6 +66,8 @@ describe("weekly activity summary", () => {
       taskSilverExpenseWan: 30,
       manualSilverExpenseWan: 10,
       totalSilverExpenseWan: 40,
+      reconciledSilverExpenseWan: 40,
+      pendingReconciliationSilverExpenseWan: 0,
       harvestedSilverWan: 60,
       currentSilverWan: 520,
     });
@@ -78,6 +80,7 @@ describe("weekly activity summary", () => {
       taskSilverExpenseWan: 30,
       manualSilverExpenseWan: 10,
       totalSilverExpenseWan: 40,
+      reconciledSilverExpenseWan: 40,
       harvestedSilverWan: 44,
     });
     expect(summary.accountSummaries.find((entry) => entry.accountId === "LG1")).toMatchObject({
@@ -113,5 +116,37 @@ describe("weekly activity summary", () => {
     expect(summary.unassignedManualSilverExpenseWan).toBe(10);
     expect(summary.accountSummaries.reduce((sum, account) => sum + (account.harvestedSilverWan ?? 0), 0)).toBe(20);
     expect(summary.accountSummaries.every((account) => account.manualSilverExpenseWan === 0)).toBe(true);
+  });
+
+  it("only adds spending inside the inventory comparison window back into harvest", () => {
+    const inventory = buildInventoryWeekReport([
+      snapshot("2026-07-19", 100),
+      snapshot("2026-07-20", 104),
+    ], "2026-07-22");
+    const summary = buildWeeklyActivitySummary(inventory, [completion({ completedOn: "2026-07-21" })], [
+      expense({ id: "baseline-day", effectiveDate: "2026-07-19", amountWan: 7 }),
+      expense({ id: "inventory-day", effectiveDate: "2026-07-20", amountWan: 5 }),
+      expense({ id: "after-inventory", effectiveDate: "2026-07-22", amountWan: 10 }),
+    ], "2026-07-22");
+
+    expect(summary).toMatchObject({
+      reportEnd: "2026-07-22",
+      inventoryChangeFrom: "2026-07-19",
+      inventoryChangeTo: "2026-07-20",
+      inventoryNetChangeWan: 20,
+      taskSilverExpenseWan: 30,
+      manualSilverExpenseWan: 15,
+      totalSilverExpenseWan: 45,
+      reconciledSilverExpenseWan: 5,
+      pendingReconciliationSilverExpenseWan: 40,
+      harvestedSilverWan: 25,
+    });
+    expect(summary.manualExpenses.map((entry) => entry.id)).toEqual(["after-inventory", "inventory-day"]);
+    expect(summary.accountSummaries.find((entry) => entry.accountId === "FC")).toMatchObject({
+      inventoryNetChangeWan: 4,
+      totalSilverExpenseWan: 45,
+      reconciledSilverExpenseWan: 5,
+      harvestedSilverWan: 9,
+    });
   });
 });

@@ -31,8 +31,8 @@ jobs:
         run: npm test
       - name: Build application
         run: npm run build
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
       - name: Run core Playwright tests
         run: npm run test:e2e:ci
       - name: Upload Playwright failure artifacts
