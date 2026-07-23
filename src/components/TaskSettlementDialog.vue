@@ -798,7 +798,8 @@ onBeforeUnmount(() => deactivateDialog());
 
 @media (max-width: 720px) {
   .task-settlement-backdrop {
-    inset: var(--task-modal-top, 0px) 0 auto;
+    inset: var(--task-modal-top, 0px) auto auto var(--task-modal-left, 0px);
+    width: var(--task-modal-width, 100vw);
     height: var(--task-modal-height, 100dvh);
     align-items: end;
     padding: max(8px, env(safe-area-inset-top)) 0 0;

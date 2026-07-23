@@ -8,12 +8,18 @@ export function useVisualViewport(prefix: string) {
 
   function syncVisualViewport() {
     const height = Math.max(1, Math.round(viewport?.height ?? window.innerHeight));
+    const width = Math.max(1, Math.round(viewport?.width ?? window.innerWidth));
     const offsetTop = Math.max(0, Math.round(viewport?.offsetTop ?? 0));
+    const offsetLeft = Math.max(0, Math.round(viewport?.offsetLeft ?? 0));
+    const scale = Math.max(1, viewport?.scale ?? 1);
     baselineHeight = Math.max(baselineHeight, height);
     keyboardOpen.value = height < baselineHeight - 120;
     visualViewportStyle.value = {
       [`--${prefix}-height`]: `${height}px`,
+      [`--${prefix}-width`]: `${width}px`,
       [`--${prefix}-top`]: `${offsetTop}px`,
+      [`--${prefix}-left`]: `${offsetLeft}px`,
+      [`--${prefix}-scale`]: String(scale),
     };
   }
 

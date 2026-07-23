@@ -1,4 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
+
+const inventoryAccountOrder = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
+
+async function expectInventoryAccountStep(dialog: Locator, accountId: typeof inventoryAccountOrder[number]) {
+  await expect(dialog.getByRole("tab", { name: new RegExp(`^${accountId} 账号`) })).toHaveAttribute("aria-selected", "true");
+  await expect(dialog.getByRole("heading", { name: `${accountId} 当前库存`, exact: true })).toBeVisible();
+  await expect(dialog.getByRole("tabpanel").getByRole("spinbutton")).toHaveCount(4);
+}
+
+async function advanceInventoryToLastAccount(dialog: Locator) {
+  for (let index = 0; index < inventoryAccountOrder.length; index += 1) {
+    const accountId = inventoryAccountOrder[index];
+    await expectInventoryAccountStep(dialog, accountId);
+    const nextAccountId = inventoryAccountOrder[index + 1];
+    if (nextAccountId) {
+      await dialog.getByRole("button", { name: `下一账号 · ${nextAccountId}`, exact: true }).click();
+    }
+  }
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem("sw-e2e-auth-v1", "1"));
@@ -128,7 +147,7 @@ test.describe("desktop application", () => {
     const inventoryDialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(page).toHaveURL(/#\/record$/);
     await expect(inventoryDialog).toBeVisible();
-    await expect(inventoryDialog.getByRole("spinbutton")).toHaveCount(20);
+    await expectInventoryAccountStep(inventoryDialog, "FC");
     await page.screenshot({ path: testInfo.outputPath("home-direct-record-desktop.png") });
     await inventoryDialog.getByRole("button", { name: "取消", exact: true }).click();
     await expect(inventoryDialog).toHaveCount(0);
@@ -139,6 +158,7 @@ test.describe("desktop application", () => {
 
     await page.getByRole("button", { name: "开始录入", exact: true }).click();
     await expect(inventoryDialog).toBeVisible();
+    await advanceInventoryToLastAccount(inventoryDialog);
     await inventoryDialog.getByRole("button", { name: "保存五号快照", exact: true }).click();
     await expect(inventoryDialog).toHaveCount(0);
     await page.goto("/#/");
@@ -209,7 +229,7 @@ test.describe("desktop application", () => {
     await page.getByRole("button", { name: /开始录入|检查并更新/ }).click();
     const inventoryDialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(inventoryDialog).toBeVisible();
-    await expect(inventoryDialog.getByRole("spinbutton")).toHaveCount(20);
+    await expectInventoryAccountStep(inventoryDialog, "FC");
     await inventoryDialog.getByRole("button", { name: "关闭库存快照录入" }).click();
     await expect(inventoryDialog).toHaveCount(0);
 
@@ -449,11 +469,12 @@ test.describe("desktop application", () => {
     await page.goto("/#/data/inventory");
     await page.getByRole("button", { name: "录入今天库存", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
-    await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
+    await expectInventoryAccountStep(dialog, "FC");
     await dialog.getByLabel("FC专用蛋库存").fill("11");
     await dialog.getByLabel("FC普通蛋库存").fill("22");
     await dialog.getByLabel("FC银子库存（万）").fill("33.5");
     await dialog.getByLabel("FC内丹碎片库存").fill("44");
+    await advanceInventoryToLastAccount(dialog);
     await dialog.getByRole("button", { name: "保存五号快照" }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByRole("status")).toContainText(/已保存|已更新/);

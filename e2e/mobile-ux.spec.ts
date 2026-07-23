@@ -238,19 +238,36 @@ async function expectCurrentSectionLinkInView(page: Page, url: string, navigatio
   expect(geometry.linkHeight, `${linkName} 触控高度应至少为 44px`).toBeGreaterThanOrEqual(43.5);
 }
 
-async function simulateVisualViewport(page: Page, height: number, offsetTop: number) {
-  return page.evaluate(({ nextHeight, nextOffsetTop }) => {
+interface SimulatedVisualViewport {
+  width?: number;
+  height: number;
+  offsetLeft?: number;
+  offsetTop: number;
+  scale?: number;
+}
+
+async function simulateVisualViewport(page: Page, metrics: SimulatedVisualViewport) {
+  return page.evaluate((nextMetrics) => {
     const viewport = window.visualViewport;
     if (!viewport) return false;
     try {
-      Object.defineProperty(viewport, "height", { configurable: true, value: nextHeight });
-      Object.defineProperty(viewport, "offsetTop", { configurable: true, value: nextOffsetTop });
+      const nextValues = [
+        ["width", nextMetrics.width ?? viewport.width],
+        ["height", nextMetrics.height],
+        ["offsetLeft", nextMetrics.offsetLeft ?? viewport.offsetLeft],
+        ["offsetTop", nextMetrics.offsetTop],
+        ["scale", nextMetrics.scale ?? viewport.scale],
+      ] as const;
+      nextValues.forEach(([property, value]) => {
+        Object.defineProperty(viewport, property, { configurable: true, value });
+      });
       viewport.dispatchEvent(new Event("resize"));
+      viewport.dispatchEvent(new Event("scroll"));
       return true;
     } catch {
       return false;
     }
-  }, { nextHeight: height, nextOffsetTop: offsetTop });
+  }, metrics);
 }
 
 test.describe("mobile UX release gate", () => {
@@ -432,7 +449,9 @@ test.describe("mobile UX release gate", () => {
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(page).toHaveURL(/#\/record$/);
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
+    await expect(dialog.getByRole("tab")).toHaveCount(5);
+    await expect(dialog.getByRole("tab", { name: /^FC 账号/ })).toHaveAttribute("aria-selected", "true");
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(4);
     await page.screenshot({ path: testInfo.outputPath("home-direct-record-iphone-16-pro-max.png") });
     await dialog.getByRole("button", { name: "取消", exact: true }).tap();
     await expect(dialog).toHaveCount(0);
@@ -572,7 +591,7 @@ test.describe("mobile UX release gate", () => {
     expect(eggFieldLayout[1].top, "iPhone 上普通蛋应排在专用蛋下方").toBeGreaterThanOrEqual(eggFieldLayout[0].bottom - 1);
     expect(eggFieldLayout.every((field) => field.left >= -1 && field.right <= 441), "蛋输入不应横向裁切").toBe(true);
 
-    expect(await simulateVisualViewport(page, 560, 20), "应能模拟 iOS 键盘后的 VisualViewport").toBe(true);
+    expect(await simulateVisualViewport(page, { height: 560, offsetTop: 20 }), "应能模拟 iOS 键盘后的 VisualViewport").toBe(true);
     await expect.poll(() => dialog.evaluate((element) => {
       const backdrop = element.closest<HTMLElement>(".task-settlement-backdrop");
       const footer = element.querySelector<HTMLElement>(".task-settlement-footer");
@@ -688,55 +707,124 @@ test.describe("mobile UX release gate", () => {
     expect(auditedFields, "应实际审查一批移动表单控件").toBeGreaterThan(10);
   });
 
-  test("库存录入弹窗锁住背景并保持操作栏可见", async ({ page }, testInfo) => {
+  test("库存录入弹窗逐账号录入并适配缩放后的 VisualViewport", async ({ page }, testInfo) => {
     await page.goto("/#/record");
     await waitForApplicationPage(page);
     await page.getByRole("button", { name: /开始录入|检查并更新/ }).tap();
 
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
+    await expect(dialog.getByRole("tab")).toHaveCount(5);
+    await expect(dialog.getByRole("tab", { name: /^FC 账号/ })).toHaveAttribute("aria-selected", "true");
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(4);
     await expect(dialog.getByRole("button", { name: "关闭库存快照录入" })).toBeFocused();
     await expect(dialog.getByRole("spinbutton").first()).not.toBeFocused();
 
+    await dialog.getByLabel("FC专用蛋库存").fill("101");
+    await dialog.getByLabel("FC普通蛋库存").fill("102");
+    await dialog.getByLabel("FC银子库存（万）").fill("103.5");
+    await dialog.getByLabel("FC内丹碎片库存").fill("104");
     await dialog.getByLabel("FC普通蛋库存").focus();
-    expect(await simulateVisualViewport(page, 540, 18), "应能模拟 iOS 数字键盘后的 VisualViewport").toBe(true);
+    expect(await simulateVisualViewport(page, {
+      width: 366,
+      height: 540,
+      offsetLeft: 37,
+      offsetTop: 18,
+      scale: 1.2,
+    }), "应能模拟 iOS 数字键盘缩放后的完整 VisualViewport").toBe(true);
     await expect.poll(() => dialog.evaluate((element) => {
+      const viewport = window.visualViewport;
       const backdrop = element.closest<HTMLElement>(".snapshot-dialog-backdrop");
       const dateField = element.querySelector<HTMLElement>(".snapshot-date-field");
       const entryScroll = element.querySelector<HTMLElement>(".snapshot-entry-scroll");
+      const accountPanel = element.querySelector<HTMLElement>(".snapshot-account-panel");
+      const accountFields = element.querySelector<HTMLElement>(".snapshot-account-fields");
       const footer = element.querySelector<HTMLElement>("footer");
-      if (!backdrop || !dateField || !entryScroll || !footer) return null;
+      if (!viewport || !backdrop || !dateField || !entryScroll || !accountPanel || !accountFields || !footer) return null;
+      const viewportLeft = viewport.offsetLeft;
+      const viewportTop = viewport.offsetTop;
+      const viewportRight = viewportLeft + viewport.width;
+      const viewportBottom = viewportTop + viewport.height;
       const backdropRect = backdrop.getBoundingClientRect();
+      const dialogRect = element.getBoundingClientRect();
       const footerRect = footer.getBoundingClientRect();
+      const focusedRect = document.activeElement instanceof HTMLElement
+        ? document.activeElement.getBoundingClientRect()
+        : null;
+      const constrainedElements = [
+        element,
+        ...element.querySelectorAll<HTMLElement>(
+          ".snapshot-account-stepper, .snapshot-account-tab, .snapshot-entry-scroll, .snapshot-account-panel, .snapshot-account-fields, .snapshot-account-field, .snapshot-account-field input, footer, footer .button",
+        ),
+      ].filter((item) => item.offsetParent !== null);
+      const horizontalOffenders = constrainedElements.flatMap((item) => {
+        const rect = item.getBoundingClientRect();
+        if (rect.left >= viewportLeft - 1 && rect.right <= viewportRight + 1) return [];
+        return [item.getAttribute("aria-label") || item.className || item.tagName];
+      });
+      const scrollContainers = [element, entryScroll, accountPanel, accountFields, footer];
       return {
+        viewportLeft: Math.round(viewportLeft),
+        viewportTop: Math.round(viewportTop),
+        viewportWidth: Math.round(viewport.width),
+        viewportHeight: Math.round(viewport.height),
+        viewportScale: Number(viewport.scale.toFixed(1)),
+        backdropLeft: Math.round(backdropRect.left),
         backdropTop: Math.round(backdropRect.top),
+        backdropWidth: Math.round(backdropRect.width),
         backdropHeight: Math.round(backdropRect.height),
         dateVisible: getComputedStyle(dateField).display !== "none",
+        dialogWithinViewport: dialogRect.left >= viewportLeft - 1
+          && dialogRect.right <= viewportRight + 1
+          && dialogRect.top >= viewportTop - 1
+          && dialogRect.bottom <= viewportBottom + 1,
         footerWithinViewport: footerRect.bottom <= backdropRect.bottom + 1,
-        scrollable: entryScroll.scrollHeight > entryScroll.clientHeight,
+        focusedFieldWithinViewport: Boolean(focusedRect)
+          && focusedRect!.left >= viewportLeft - 1
+          && focusedRect!.right <= viewportRight + 1
+          && focusedRect!.top >= viewportTop - 1
+          && focusedRect!.bottom <= viewportBottom + 1,
+        visibleFieldCount: element.querySelectorAll(".snapshot-account-field input").length,
+        horizontalOffenders,
+        noHorizontalOverflow: scrollContainers.every((item) => item.scrollWidth <= item.clientWidth + 1),
       };
     })).toEqual({
+      viewportLeft: 37,
+      viewportTop: 18,
+      viewportWidth: 366,
+      viewportHeight: 540,
+      viewportScale: 1.2,
+      backdropLeft: 37,
       backdropTop: 18,
+      backdropWidth: 366,
       backdropHeight: 540,
       dateVisible: false,
+      dialogWithinViewport: true,
       footerWithinViewport: true,
-      scrollable: true,
+      focusedFieldWithinViewport: true,
+      visibleFieldCount: 4,
+      horizontalOffenders: [],
+      noHorizontalOverflow: true,
     });
     await page.screenshot({ path: testInfo.outputPath("inventory-snapshot-iphone-16-pro-max-keyboard.png") });
 
     const layout = await dialog.evaluate((element) => {
+      const viewport = window.visualViewport;
       const dialogRect = element.getBoundingClientRect();
       const footer = element.querySelector("footer");
-      if (!footer) throw new Error("库存录入弹窗缺少操作栏");
+      if (!viewport || !footer) throw new Error("库存录入弹窗缺少 VisualViewport 或操作栏");
       const footerRect = footer.getBoundingClientRect();
       return {
         rootOverflow: getComputedStyle(document.documentElement).overflowY,
         bodyOverflow: getComputedStyle(document.body).overflowY,
-        viewportWidth: document.documentElement.clientWidth,
-        viewportHeight: window.innerHeight,
+        viewportLeft: viewport.offsetLeft,
+        viewportRight: viewport.offsetLeft + viewport.width,
+        viewportTop: viewport.offsetTop,
+        viewportBottom: viewport.offsetTop + viewport.height,
         dialogLeft: dialogRect.left,
         dialogRight: dialogRect.right,
+        dialogTop: dialogRect.top,
+        dialogBottom: dialogRect.bottom,
         footerTop: footerRect.top,
         footerBottom: footerRect.bottom,
       };
@@ -744,11 +832,31 @@ test.describe("mobile UX release gate", () => {
 
     expect(layout.rootOverflow, "弹窗打开后 html 根滚动应锁定").toBe("hidden");
     expect(layout.bodyOverflow, "弹窗打开后 body 滚动应锁定").toBe("hidden");
-    expect(layout.dialogLeft).toBeGreaterThanOrEqual(-1);
-    expect(layout.dialogRight).toBeLessThanOrEqual(layout.viewportWidth + 1);
-    expect(layout.footerTop, "弹窗操作栏应出现在当前视口").toBeGreaterThanOrEqual(0);
-    expect(layout.footerBottom, "弹窗操作栏不应超出当前视口").toBeLessThanOrEqual(layout.viewportHeight + 1);
+    expect(layout.dialogLeft).toBeGreaterThanOrEqual(layout.viewportLeft - 1);
+    expect(layout.dialogRight).toBeLessThanOrEqual(layout.viewportRight + 1);
+    expect(layout.dialogTop).toBeGreaterThanOrEqual(layout.viewportTop - 1);
+    expect(layout.dialogBottom).toBeLessThanOrEqual(layout.viewportBottom + 1);
+    expect(layout.footerTop, "弹窗操作栏应出现在当前可视视口").toBeGreaterThanOrEqual(layout.viewportTop - 1);
+    expect(layout.footerBottom, "弹窗操作栏不应超出当前可视视口").toBeLessThanOrEqual(layout.viewportBottom + 1);
 
+    await dialog.getByRole("button", { name: /下一账号.*LG1/ }).tap();
+    await expect(dialog.getByRole("tab", { name: /^LG1 账号/ })).toHaveAttribute("aria-selected", "true");
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(4);
+    await dialog.getByLabel("LG1普通蛋库存").fill("205");
+
+    await dialog.getByRole("button", { name: /上一个.*FC/ }).tap();
+    await expect(dialog.getByRole("tab", { name: /^FC 账号/ })).toHaveAttribute("aria-selected", "true");
+    await expect(dialog.getByLabel("FC专用蛋库存")).toHaveValue("101");
+    await expect(dialog.getByLabel("FC普通蛋库存")).toHaveValue("102");
+    await expect(dialog.getByLabel("FC银子库存（万）")).toHaveValue("103.5");
+    await expect(dialog.getByLabel("FC内丹碎片库存")).toHaveValue("104");
+
+    await dialog.getByRole("tab", { name: /^LG1 账号/ }).tap();
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(4);
+    await expect(dialog.getByLabel("LG1普通蛋库存")).toHaveValue("205");
+    await dialog.getByRole("tab", { name: /^FC 账号/ }).tap();
+
+    page.once("dialog", (confirmation) => confirmation.accept());
     await dialog.getByRole("button", { name: "取消" }).tap();
     await expect(dialog).toBeHidden();
     expect(await page.locator("html").evaluate((element) => element.style.overflow)).not.toBe("hidden");
