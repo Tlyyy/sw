@@ -62,7 +62,7 @@ describe("task settlement drafts", () => {
     expect(summarizeTaskSettlementDraft(draft)).toBe("银子 20 万");
   });
 
-  it("splits a fixed egg requirement against the latest inventory and does not reuse egg valuation as silver", () => {
+  it("uses the latest inventory first when a fixed egg requirement is fully covered", () => {
     const task = scheduledTask({
       id: "FC:snake1:advance1",
       actionKey: "advance1",
@@ -72,7 +72,7 @@ describe("task settlement drafts", () => {
       remainingWan: 165,
       remainingEggCount: 30,
     });
-    const draft = createTaskSettlementDraft(task, inventory);
+    const draft = createTaskSettlementDraft(task, inventory, 5.5);
 
     expect(draft).toMatchObject({
       mode: "fixed",
@@ -81,36 +81,37 @@ describe("task settlement drafts", () => {
       silverWan: 0,
     });
     expect(draft.dedicatedEggs + draft.regularEggs).toBe(task.eggCount);
-    expect(validateTaskSettlementDraft(task, draft).valid).toBe(true);
-    expect(summarizeTaskSettlementDraft(draft)).toBe("专用蛋 12 个、普通蛋 18 个、额外银子 0 万");
+    expect(validateTaskSettlementDraft(task, draft, 5.5).valid).toBe(true);
+    expect(summarizeTaskSettlementDraft(draft)).toBe("专用蛋 12 个、普通蛋 18 个、自动补购银子 0 万");
   });
 
-  it("leaves an inventory shortage visible instead of inventing an egg type", () => {
+  it("automatically prices a fixed egg shortage without inventing inventory eggs", () => {
     const task = scheduledTask({
       actionKey: "skin",
       actionLabel: "皮肤",
-      priceWan: 165,
-      eggCount: 30,
+      priceWan: 220,
+      eggCount: 40,
     });
-    const split = suggestTaskEggSplit(30, {
-      dedicatedEggs: 10,
-      regularEggs: 5,
-    });
+    const scarceInventory = {
+      ...inventory,
+      dedicatedEggs: 9,
+      regularEggs: 11,
+    };
+    const split = suggestTaskEggSplit(40, scarceInventory);
+    const draft = createTaskSettlementDraft(task, scarceInventory, 5.5);
+
     expect(split).toEqual({
-      dedicatedEggs: 10,
-      regularEggs: 5,
+      dedicatedEggs: 9,
+      regularEggs: 11,
     });
-    expect(validateTaskSettlementDraft(task, {
-      ...createTaskSettlementDraft(task, {
-        ...inventory,
-        dedicatedEggs: 10,
-        regularEggs: 5,
-      }),
-      ...split,
-    })).toMatchObject({
-      valid: false,
-      issues: [expect.objectContaining({ code: "egg-total-mismatch" })],
+    expect(draft).toMatchObject({
+      mode: "fixed",
+      dedicatedEggs: 9,
+      regularEggs: 11,
+      silverWan: 110,
     });
+    expect(validateTaskSettlementDraft(task, draft, 5.5)).toEqual({ valid: true, issues: [] });
+    expect(summarizeTaskSettlementDraft(draft)).toBe("专用蛋 9 个、普通蛋 11 个、自动补购银子 110 万");
   });
 
   it("prefills and validates a fixed inner-shard task", () => {
@@ -163,19 +164,39 @@ describe("task settlement drafts", () => {
     expect(summarizeTaskSettlementDraft(draft)).toBe("本次银子 0 万（已确认）");
   });
 
-  it("rejects a fixed egg draft whose dedicated and regular eggs do not match the requirement", () => {
+  it("rejects fixed egg inventory usage above the requirement", () => {
     const task = scheduledTask({
       actionKey: "skin",
       actionLabel: "皮肤",
       priceWan: 220,
       eggCount: 40,
     });
-    const draft = createTaskSettlementDraft(task, inventory);
-    draft.regularEggs -= 1;
+    const draft = createTaskSettlementDraft(task, inventory, 5.5);
+    draft.regularEggs += 1;
 
-    expect(validateTaskSettlementDraft(task, draft)).toMatchObject({
+    expect(validateTaskSettlementDraft(task, draft, 5.5)).toMatchObject({
       valid: false,
       issues: [expect.objectContaining({ code: "egg-total-mismatch" })],
+    });
+  });
+
+  it("rejects tampering with the automatically calculated fixed egg silver", () => {
+    const task = scheduledTask({
+      actionKey: "skin",
+      actionLabel: "皮肤",
+      priceWan: 220,
+      eggCount: 40,
+    });
+    const draft = createTaskSettlementDraft(task, {
+      ...inventory,
+      dedicatedEggs: 9,
+      regularEggs: 11,
+    }, 5.5);
+    draft.silverWan = 109;
+
+    expect(validateTaskSettlementDraft(task, draft, 5.5)).toMatchObject({
+      valid: false,
+      issues: [expect.objectContaining({ code: "fixed-amount-mismatch" })],
     });
   });
 });

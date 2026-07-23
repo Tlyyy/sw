@@ -56,6 +56,13 @@ export interface TaskEggSplit {
   regularEggs: number;
 }
 
+export interface TaskEggPurchase {
+  usedEggs: number;
+  shortageEggs: number;
+  unitPriceWan: number;
+  silverWan: number;
+}
+
 /** Talisman washing is accumulated across days; book writing is one actual-cost settlement. */
 export function taskSettlementModeFor(
   task: Pick<ScheduledTask, "actionKey">,
@@ -86,9 +93,36 @@ export function suggestTaskEggSplit(
   return { dedicatedEggs, regularEggs };
 }
 
+/**
+ * Fixed egg tasks record the eggs actually used, while the latest inventory is
+ * only an initial suggestion. Any shortage is bought at the configured
+ * regular-egg price and recorded as silver spending; purchased eggs are never
+ * invented as inventory consumption.
+ */
+export function calculateTaskEggPurchase(
+  task: Pick<ScheduledTask, "eggCount" | "priceWan">,
+  split: TaskEggSplit,
+  eggUnitPriceWan?: number,
+): TaskEggPurchase {
+  const required = Number.isFinite(task.eggCount) ? Math.max(0, Math.round(task.eggCount)) : 0;
+  const dedicatedEggs = Number.isFinite(split.dedicatedEggs) ? Math.max(0, split.dedicatedEggs) : 0;
+  const regularEggs = Number.isFinite(split.regularEggs) ? Math.max(0, split.regularEggs) : 0;
+  const usedEggs = Math.min(required, dedicatedEggs + regularEggs);
+  const shortageEggs = Math.max(0, required - usedEggs);
+  const fallbackUnitPrice = required > 0 && Number.isFinite(task.priceWan)
+    ? Math.max(0, task.priceWan) / required
+    : 0;
+  const unitPriceWan = eggUnitPriceWan !== undefined && Number.isFinite(eggUnitPriceWan)
+    ? Math.max(0, eggUnitPriceWan)
+    : fallbackUnitPrice;
+  const silverWan = Number((shortageEggs * unitPriceWan).toFixed(2));
+  return { usedEggs, shortageEggs, unitPriceWan, silverWan };
+}
+
 export function createTaskSettlementDraft(
   task: ScheduledTask,
   inventory?: InventoryBalance | null,
+  eggUnitPriceWan?: number,
 ): TaskSettlementDraft {
   const mode = taskSettlementModeFor(task);
   const base: TaskSettlementDraft = {
@@ -114,8 +148,7 @@ export function createTaskSettlementDraft(
     const split = suggestTaskEggSplit(task.eggCount, inventory);
     base.dedicatedEggs = split.dedicatedEggs;
     base.regularEggs = split.regularEggs;
-    // `priceWan` on an egg task is a planning valuation, not actual silver.
-    // Extra direct silver therefore starts at zero.
+    base.silverWan = calculateTaskEggPurchase(task, split, eggUnitPriceWan).silverWan;
     return base;
   }
 
@@ -138,6 +171,7 @@ function amountsEqual(left: number, right: number) {
 export function validateTaskSettlementDraft(
   task: ScheduledTask,
   draft: TaskSettlementDraft,
+  eggUnitPriceWan?: number,
 ): TaskSettlementValidationResult {
   const issues: TaskSettlementValidationIssue[] = [];
   const add = (
@@ -189,11 +223,16 @@ export function validateTaskSettlementDraft(
   }
 
   if (task.eggCount > 0) {
-    if (draft.dedicatedEggs + draft.regularEggs !== task.eggCount) {
-      add("dedicatedEggs", "egg-total-mismatch", `专用蛋与普通蛋合计必须为 ${task.eggCount} 个`);
+    if (draft.dedicatedEggs + draft.regularEggs > task.eggCount) {
+      add("dedicatedEggs", "egg-total-mismatch", `库存蛋消耗不能超过固定需求 ${task.eggCount} 个`);
     }
     if (draft.innerShardCount !== 0) add("innerShardCount", "unexpected-resource", "蛋任务不应记录内丹碎片消耗");
-    if (draft.silverWan === null) add("silverWan", "required", "请确认额外银子花费");
+    const purchase = calculateTaskEggPurchase(task, draft, eggUnitPriceWan);
+    if (draft.silverWan === null) {
+      add("silverWan", "required", "请确认自动补购银子");
+    } else if (isNonNegativeAmount(draft.silverWan) && !amountsEqual(draft.silverWan, purchase.silverWan)) {
+      add("silverWan", "fixed-amount-mismatch", `缺少的 ${purchase.shortageEggs} 个蛋应自动计 ${purchase.silverWan} 万银子`);
+    }
     return { valid: issues.length === 0, issues };
   }
 
@@ -218,7 +257,7 @@ export function summarizeTaskSettlementDraft(draft: TaskSettlementDraft) {
   const eggCount = draft.dedicatedEggs + draft.regularEggs;
   if (eggCount > 0) {
     const silver = draft.silverWan === null ? "待确认" : `${amountLabel(draft.silverWan)} 万`;
-    return `专用蛋 ${draft.dedicatedEggs} 个、普通蛋 ${draft.regularEggs} 个、额外银子 ${silver}`;
+    return `专用蛋 ${draft.dedicatedEggs} 个、普通蛋 ${draft.regularEggs} 个、自动补购银子 ${silver}`;
   }
   if (draft.innerShardCount > 0) return `内丹碎片 ${draft.innerShardCount} 片`;
 

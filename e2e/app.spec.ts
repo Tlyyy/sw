@@ -1,14 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
-
-async function fillRequiredEggSplit(dialog: Locator) {
-  const dedicatedEggs = dialog.getByLabel("专用蛋 / 个", { exact: true });
-  if (!(await dedicatedEggs.count())) return;
-  const totalText = await dialog.locator(".task-egg-total").innerText();
-  const required = totalText.match(/\/\s*([\d,.]+)\s*个/)?.[1]?.replaceAll(",", "");
-  if (!required) throw new Error(`无法从结算弹窗读取蛋数量：${totalText}`);
-  await dedicatedEggs.fill(required);
-  await dialog.getByLabel("普通蛋 / 个", { exact: true }).fill("0");
-}
+import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem("sw-e2e-auth-v1", "1"));
@@ -252,6 +242,28 @@ test.describe("desktop application", () => {
     await expect(page.getByRole("link", { name: "返回录入", exact: true })).toBeVisible();
     await expect(page.getByText("固定消耗只需确认", { exact: false })).toBeVisible();
 
+    await page.evaluate(() => {
+      const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"];
+      const accounts = Object.fromEntries(accountIds.map((accountId) => [accountId, {
+        dedicatedEggs: accountId === "LG1" ? 9 : 0,
+        regularEggs: accountId === "LG1" ? 11 : 0,
+        silverWan: 0,
+        innerShardCount: 0,
+      }]));
+      const inventory = {
+        version: 2,
+        snapshots: [{
+          effectiveDate: "2026-07-23",
+          recordedAt: "2026-07-23T02:00:00.000Z",
+          accounts,
+        }],
+      };
+      const settings = JSON.parse(localStorage.getItem("sw.app.settings.v4") || "null");
+      settings.settings.eggPriceWan = 5.5;
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify(inventory));
+      localStorage.setItem("sw.app.settings.v4", JSON.stringify(settings));
+    });
+    await page.reload();
     await page.getByRole("button", { name: "筛选 LG1 账号任务", exact: true }).click();
     await page.getByLabel("任务关键词筛选").fill("剑气蛇 皮肤");
     const completionRow = page.locator(".task-work-row").filter({ hasText: "剑气蛇" });
@@ -259,7 +271,18 @@ test.describe("desktop application", () => {
     await completionRow.getByRole("button", { name: /标记完成/ }).click();
     const completionDialog = page.getByRole("dialog", { name: "确认任务消耗" });
     await expect(completionDialog).toBeVisible();
-    await fillRequiredEggSplit(completionDialog);
+    const automaticEggSilver = completionDialog.getByLabel(/^自动补购银子 \/ 万/);
+    await expect(automaticEggSilver).toHaveValue("110");
+    await expect(automaticEggSilver).toHaveAttribute("readonly", "");
+    await expect(completionDialog).toContainText("缺 20 个");
+    await expect(completionDialog).toContainText("5.5 万/个");
+    await expect(completionDialog).toContainText("110 万");
+    await expect(completionDialog).toContainText("系统自动计算");
+    await completionDialog.getByLabel(/^本次实际使用专用蛋 \/ 个/).fill("0");
+    await completionDialog.getByLabel(/^本次实际使用普通蛋 \/ 个/).fill("1");
+    await expect(automaticEggSilver).toHaveValue("214.5");
+    await expect(completionDialog).toContainText("缺 39 个");
+    await expect(completionDialog).toContainText("今天真实用掉的蛋");
     await completionDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
     await expect(completionDialog).toHaveCount(0);
     await expect(page.locator(".task-work-row")).toHaveCount(0);
@@ -406,7 +429,6 @@ test.describe("desktop application", () => {
     for (let index = 0; index < selectedTasks.length; index += 1) {
       const dialog = page.getByRole("dialog", { name: "确认任务消耗" });
       await expect(dialog).toBeVisible();
-      await fillRequiredEggSplit(dialog);
       await dialog.getByRole("button", { name: "完成并记账", exact: true }).click();
     }
     await expect(page.getByRole("status")).toContainText("库存未被修改");

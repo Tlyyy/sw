@@ -121,6 +121,40 @@ describe("independent accounting", () => {
     expect(tuesday.accounts.FC.silverWan).toBe(110);
   });
 
+  it("restores an egg earned and spent on the same day from the task ledger", () => {
+    const report = buildAccountingByAccount({
+      inventorySnapshots: [
+        snapshot("2026-07-20", {
+          FC: { silverWan: 300, dedicatedEggs: 0, regularEggs: 0 },
+        }),
+        snapshot("2026-07-21", {
+          FC: { silverWan: 85.5, dedicatedEggs: 0, regularEggs: 0 },
+        }),
+      ],
+      entries: [entry({
+        taskId: "FC:snake1:skin",
+        legs: [{
+          kind: "expense",
+          resources: resources({ silverWan: 214.5, regularEggs: 1 }),
+        }],
+      })],
+      asOfDate: "2026-07-21",
+    }).FC.intervals[0];
+
+    expect(report.inventoryNetChange).toMatchObject({
+      silverWan: -214.5,
+      regularEggs: 0,
+    });
+    expect(report.ledgerImpact).toMatchObject({
+      silverWan: 214.5,
+      regularEggs: 1,
+    });
+    expect(report.actualIncome).toMatchObject({
+      silverWan: 0,
+      regularEggs: 1,
+    });
+  });
+
   it("labels a gap between adjacent observations as an interval, never a daily result", () => {
     const result = buildAccountingByAccount({
       inventorySnapshots: [

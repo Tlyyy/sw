@@ -465,6 +465,72 @@ test.describe("mobile UX release gate", () => {
     expect(layout.bulkBottom, "批量操作栏不能被固定底栏覆盖").toBeLessThanOrEqual(layout.dockTop - 6);
   });
 
+  test("固定蛋任务在 iPhone 16 Pro Max 自动计算缺口且不修改库存", async ({ page }) => {
+    await page.goto("/#/plans/tasks");
+    await waitForApplicationPage(page);
+    await page.evaluate(() => {
+      const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"];
+      const accounts = Object.fromEntries(accountIds.map((accountId) => [accountId, {
+        dedicatedEggs: accountId === "LG1" ? 9 : 0,
+        regularEggs: accountId === "LG1" ? 11 : 0,
+        silverWan: 0,
+        innerShardCount: 0,
+      }]));
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [{
+          effectiveDate: "2026-07-23",
+          recordedAt: "2026-07-23T02:00:00.000Z",
+          accounts,
+        }],
+      }));
+      const settings = JSON.parse(localStorage.getItem("sw.app.settings.v4") || "null");
+      settings.settings.eggPriceWan = 5.5;
+      localStorage.setItem("sw.app.settings.v4", JSON.stringify(settings));
+    });
+    await page.reload();
+    await waitForApplicationPage(page);
+
+    await page.getByRole("button", { name: "筛选 LG1 账号任务", exact: true }).tap();
+    await page.getByLabel("任务关键词筛选").fill("剑气蛇 皮肤");
+    const row = page.locator(".task-work-row").filter({ hasText: "剑气蛇" });
+    await expect(row).toHaveCount(1);
+    await row.getByRole("button", { name: /标记完成/ }).tap();
+
+    const dialog = page.getByRole("dialog", { name: "确认任务消耗" });
+    const automaticSilver = dialog.getByLabel(/^自动补购银子 \/ 万/);
+    await expect(dialog).toBeVisible();
+    await expect(automaticSilver).toHaveValue("110");
+    await expect(automaticSilver).toHaveAttribute("readonly", "");
+    await dialog.getByLabel(/^本次实际使用专用蛋 \/ 个/).fill("0");
+    await dialog.getByLabel(/^本次实际使用普通蛋 \/ 个/).fill("1");
+    await expect(automaticSilver).toHaveValue("214.5");
+    await expect(dialog).toContainText("实际使用 1 + 自动补购 39");
+    await expect(dialog).toContainText("今天真实用掉的蛋");
+
+    const layout = await dialog.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const footer = element.querySelector<HTMLElement>(".task-settlement-footer");
+      const buttons = Array.from(element.querySelectorAll<HTMLElement>(".task-settlement-footer button"));
+      return {
+        viewportWidth: document.documentElement.clientWidth,
+        viewportHeight: document.documentElement.clientHeight,
+        documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        left: rect.left,
+        right: rect.right,
+        footerBottom: footer?.getBoundingClientRect().bottom ?? 0,
+        buttonHeights: buttons.map((button) => button.getBoundingClientRect().height),
+      };
+    });
+    expect(layout.documentOverflow).toBe(0);
+    expect(layout.left).toBeGreaterThanOrEqual(-1);
+    expect(layout.right).toBeLessThanOrEqual(layout.viewportWidth + 1);
+    expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
+    expect(layout.buttonHeights.every((height) => height >= 50)).toBe(true);
+    await dialog.getByRole("button", { name: "取消", exact: true }).tap();
+    await expect(dialog).toHaveCount(0);
+  });
+
   test("本周小结可生成 PNG、调用 iPhone 分享并回退下载", async ({ page }) => {
     await page.clock.setFixedTime(new Date("2026-07-22T02:00:00Z"));
     await page.addInitScript(() => {

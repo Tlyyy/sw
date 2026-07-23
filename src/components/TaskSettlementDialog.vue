@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { ScheduledTask } from "../domain/plans";
 import {
+  calculateTaskEggPurchase,
   createTaskSettlementDraft,
   summarizeTaskSettlementDraft,
   validateTaskSettlementDraft,
@@ -22,6 +23,7 @@ interface TaskSettlementPayload {
 
 const props = withDefaults(defineProps<{
   task: ScheduledTask;
+  eggUnitPriceWan: number;
   inventory?: InventoryBalance | null;
   progressTotalWan?: number;
   existingEntryCount?: number;
@@ -40,7 +42,11 @@ const emit = defineEmits<{
 
 const dialog = ref<HTMLFormElement>();
 const initialFocus = ref<HTMLInputElement>();
-const draft = ref<TaskSettlementDraft>(createTaskSettlementDraft(props.task, props.inventory));
+const draft = ref<TaskSettlementDraft>(createTaskSettlementDraft(
+  props.task,
+  props.inventory,
+  props.eggUnitPriceWan,
+));
 const occurredAtLocal = ref(shanghaiDateTimeLocal());
 const note = ref("");
 const submitted = ref(false);
@@ -57,10 +63,24 @@ const isFixedEgg = computed(() => draft.value.mode === "fixed" && props.task.egg
 const isFixedShard = computed(() => draft.value.mode === "fixed" && props.task.resourceType === "innerShard");
 const isFixedSilver = computed(() => draft.value.mode === "fixed" && !isFixedEgg.value && !isFixedShard.value);
 const canReuseExisting = computed(() => !isProgress.value && props.existingEntryCount > 0);
-const validation = computed(() => validateTaskSettlementDraft(props.task, draft.value));
+const validation = computed(() => validateTaskSettlementDraft(
+  props.task,
+  draft.value,
+  props.eggUnitPriceWan,
+));
 const visibleIssues = computed(() => submitted.value && !reuseExisting.value ? validation.value.issues : []);
 const uniqueIssueMessages = computed(() => [...new Set(visibleIssues.value.map((issue) => issue.message))]);
 const eggTotal = computed(() => numericValue(draft.value.dedicatedEggs) + numericValue(draft.value.regularEggs));
+const eggPurchase = computed(() => calculateTaskEggPurchase(
+  props.task,
+  {
+    dedicatedEggs: numericValue(draft.value.dedicatedEggs),
+    regularEggs: numericValue(draft.value.regularEggs),
+  },
+  props.eggUnitPriceWan,
+));
+const eggUnitPriceLabel = computed(() => amountLabel(eggPurchase.value.unitPriceWan));
+const eggSilverLabel = computed(() => amountLabel(eggPurchase.value.silverWan));
 const safeSummaryDraft = computed<TaskSettlementDraft>(() => ({
   ...draft.value,
   silverWan: finiteNumberOrNull(draft.value.silverWan),
@@ -84,8 +104,11 @@ const guidance = computed(() => {
   if (reuseExisting.value) return "这次只恢复任务完成状态，沿用已有实际流水；不会新增支出，也不会修改库存。";
   if (isProgress.value) return "洗护符可以分多天记录；本次保存后，库存仍以你手工录入的快照为准。";
   if (isVariable.value) return "填写这次打书真实花掉的银子；系统只记录用途，不会自动修改库存。";
-  if (isFixedEgg.value && eggTotal.value < props.task.eggCount) return "最近库存不足以覆盖固定数量，请按真实来源补全蛋的拆分；系统不会虚构或自动扣库存。";
-  if (isFixedEgg.value) return "已按最近库存建议蛋的拆分，可调整；确认只记录消耗，不会自动扣库存。";
+  if (isFixedEgg.value && eggPurchase.value.shortageEggs > 0) {
+    return `固定需 ${props.task.eggCount} 个；本次实际用 ${eggPurchase.value.usedEggs} 个，缺 ${eggPurchase.value.shortageEggs} 个`
+      + `，按 ${eggUnitPriceLabel.value} 万/个由系统自动计 ${eggSilverLabel.value} 万。即使当前余额为 0，也请填今天真实用掉的蛋；只记流水，不改库存。`;
+  }
+  if (isFixedEgg.value) return "最近库存只用于给出初始建议；请确认本次真实用掉的蛋，哪怕它今天获得后已经花掉。只记流水，不会自动扣库存。";
   return "固定消耗已带入，确认只记录流水，不会自动修改库存。";
 });
 
@@ -98,6 +121,10 @@ function finiteNumberOrNull(value: unknown) {
   if (value === null || value === "") return null;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+function amountLabel(value: number) {
+  return Number(value.toFixed(2)).toLocaleString("zh-CN", { maximumFractionDigits: 2 });
 }
 
 function twoDigits(value: number) {
@@ -139,7 +166,7 @@ function fieldHasIssue(field: TaskSettlementValidationField) {
 }
 
 function resetDraft() {
-  draft.value = createTaskSettlementDraft(props.task, props.inventory);
+  draft.value = createTaskSettlementDraft(props.task, props.inventory, props.eggUnitPriceWan);
   reuseExisting.value = canReuseExisting.value;
   occurredAtLocal.value = shanghaiDateTimeLocal();
   note.value = "";
@@ -217,6 +244,17 @@ watch(() => props.task.id, async () => {
   resetDraft();
   await focusDialog();
 });
+
+watch(
+  [
+    () => draft.value.dedicatedEggs,
+    () => draft.value.regularEggs,
+    () => props.eggUnitPriceWan,
+  ],
+  () => {
+    if (isFixedEgg.value) draft.value.silverWan = eggPurchase.value.silverWan;
+  },
+);
 
 watch(() => draft.value.silverWan, (value) => {
   if (finiteNumberOrNull(value) !== 0) draft.value.zeroConfirmed = false;
@@ -296,7 +334,7 @@ onBeforeUnmount(() => deactivateDialog());
 
             <div v-else-if="isFixedEgg" class="task-egg-fields">
               <label class="task-settlement-field">
-                <span>专用蛋 / 个</span>
+                <span>本次实际使用专用蛋 / 个</span>
                 <input
                   ref="initialFocus"
                   v-model.number="draft.dedicatedEggs"
@@ -307,9 +345,10 @@ onBeforeUnmount(() => deactivateDialog());
                   :aria-invalid="fieldHasIssue('dedicatedEggs')"
                   aria-describedby="task-egg-total"
                 />
+                <small>填本次真实用掉的数量，不受当前库存余额限制。</small>
               </label>
               <label class="task-settlement-field">
-                <span>普通蛋 / 个</span>
+                <span>本次实际使用普通蛋 / 个</span>
                 <input
                   v-model.number="draft.regularEggs"
                   type="number"
@@ -319,21 +358,25 @@ onBeforeUnmount(() => deactivateDialog());
                   :aria-invalid="fieldHasIssue('regularEggs')"
                   aria-describedby="task-egg-total"
                 />
+                <small>今天先获得、后用掉的蛋也要记在这里。</small>
               </label>
-              <p id="task-egg-total" :class="['task-egg-total', { invalid: submitted && eggTotal !== task.eggCount }]">
-                合计 <b>{{ eggTotal }}</b> / {{ task.eggCount }} 个
+              <p id="task-egg-total" :class="['task-egg-total', { invalid: submitted && eggTotal > task.eggCount }]">
+                实际使用 <b>{{ eggTotal }}</b> + 自动补购 <b>{{ eggPurchase.shortageEggs }}</b>
+                = {{ eggTotal + eggPurchase.shortageEggs }} / {{ task.eggCount }} 个
               </p>
               <label class="task-settlement-field task-extra-silver">
-                <span>额外银子 / 万</span>
+                <span>自动补购银子 / 万</span>
                 <input
-                  v-model.number="draft.silverWan"
+                  :value="draft.silverWan ?? 0"
                   type="number"
-                  min="0"
-                  step="0.01"
                   inputmode="decimal"
-                  :aria-invalid="fieldHasIssue('silverWan')"
+                  readonly
+                  aria-readonly="true"
                 />
-                <small>没有额外银子支出时保留 0。</small>
+                <small>
+                  缺 {{ eggPurchase.shortageEggs }} 个 × {{ eggUnitPriceLabel }} 万/个
+                  = {{ eggSilverLabel }} 万，由系统自动计算；只记银子支出，不修改库存。
+                </small>
               </label>
             </div>
 
@@ -388,7 +431,9 @@ onBeforeUnmount(() => deactivateDialog());
                 :aria-invalid="Boolean(timeError)"
                 aria-describedby="task-time-help"
               />
-              <small id="task-time-help">按北京时间保存，并归入对应日期的每日与每周核算。</small>
+              <small id="task-time-help">
+                填真实发生时间：若任务发生在当天库存录入前，请填购买或消耗时的时间，才能正确归入当日实际所得。
+              </small>
             </label>
             <label class="task-settlement-field">
               <span>备注（可选）</span>

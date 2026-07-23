@@ -397,6 +397,7 @@ function resetCompletion() {
       v-if="settlementTask"
       :key="settlementTask.id"
       :task="settlementTask"
+      :egg-unit-price-wan="settings.taskSettings.eggPriceWan"
       :inventory="inventory.latestSnapshot?.accounts[settlementTask.accountId] || null"
       :progress-total-wan="settlementProgressWan"
       :existing-entry-count="accounting.taskEntries(settlementTask.id).length"
