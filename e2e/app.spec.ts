@@ -96,6 +96,62 @@ test.describe("desktop application", () => {
     await expect(ledger).toContainText("40 专用蛋");
   });
 
+  test("逐账号实际所得可以生成独立分享图", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.addInitScript(() => {
+      const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
+      const accounts = (silverWan: number) => Object.fromEntries(accountIds.map((accountId) => [accountId, {
+        dedicatedEggs: accountId === "FC" ? 9 : 5,
+        regularEggs: accountId === "FC" ? 11 : 4,
+        silverWan: accountId === "FC" ? silverWan : 100,
+        innerShardCount: accountId === "FC" ? 32 : 20,
+      }]));
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [
+          { effectiveDate: "2026-07-22", recordedAt: "2026-07-22T10:00:00.000Z", accounts: accounts(100) },
+          { effectiveDate: "2026-07-23", recordedAt: "2026-07-23T10:00:00.000Z", accounts: accounts(90) },
+        ],
+      }));
+      localStorage.setItem("sw.app.accounting.v1", JSON.stringify({
+        version: 1,
+        entries: [{
+          id: "share-test-expense",
+          accountId: "FC",
+          effectiveDate: "2026-07-23",
+          occurredAt: "2026-07-23T03:00:00.000Z",
+          recordedAt: "2026-07-23T03:01:00.000Z",
+          status: "confirmed",
+          source: "test",
+          note: "测试支出",
+          legs: [{
+            kind: "expense",
+            resources: {
+              silverWan: 20,
+              dedicatedEggs: 0,
+              regularEggs: 0,
+              innerShards: 0,
+            },
+          }],
+        }],
+      }));
+    });
+
+    await page.goto("/#/earnings?account=FC");
+    await expect(page.getByText("7月23日 实际所得", { exact: true })).toBeVisible();
+    await expect(page.locator(".earnings-primary-card.latest > div > strong")).toHaveText("+10 万");
+    const shareButton = page.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
+    await expect(shareButton).toBeVisible();
+    await expect(shareButton).toBeEnabled();
+
+    const downloadPromise = page.waitForEvent("download");
+    await shareButton.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe("FC-2026-07-23-每日实际所得.png");
+    await download.saveAs(testInfo.outputPath("FC-2026-07-23-每日实际所得.png"));
+    await expect(page.getByRole("status")).toContainText("实际所得图片已下载");
+  });
+
   test("旧账号范围不会过滤五账号分析", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     await page.addInitScript(() => localStorage.setItem("sw.app.ui.v1", JSON.stringify({

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppIcon from "../../components/AppIcon.vue";
 import {
@@ -14,6 +14,7 @@ import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { useUiStore } from "../../stores/ui";
+import { createEarningsShareImage } from "./earningsShareImage";
 
 type ResourceKey = "silverWan" | "dedicatedEggs" | "regularEggs" | "innerShards";
 type MovementMode = "transfer" | "adjustment";
@@ -49,6 +50,17 @@ const movementTime = ref(shanghaiDateTimeLocal());
 const movementNote = ref("");
 const movementError = ref("");
 const movementNotice = ref("");
+const sharingIncome = ref(false);
+const incomeShareNotice = ref("");
+let incomeShareNoticeTimer: number | null = null;
+
+const accountTones: Record<AccountId, string> = {
+  FC: "#12678f",
+  LG1: "#6446a6",
+  PT: "#a33838",
+  LG2: "#8a5a00",
+  MYT: "#28764a",
+};
 
 const reportByAccount = computed(() => buildAccountingByAccount({
   inventorySnapshots: inventory.snapshots,
@@ -88,6 +100,12 @@ const latestTitle = computed(() => {
     ? `${shortDate(interval.toDate)} 实际所得`
     : `最近 ${interval.intervalDays} 天实际所得`;
 });
+const shareButtonText = computed(() => latestInterval.value?.kind === "daily"
+  ? "分享每日所得"
+  : "分享区间所得");
+const shareButtonLabel = computed(() => latestInterval.value
+  ? `分享 ${selectedAccount.value} ${latestTitle.value}图片`
+  : `${selectedAccount.value} 暂无可分享的实际所得`);
 const weekStatusText = computed(() => {
   const week = summary.value.week;
   if (week.status === "available") {
@@ -120,6 +138,10 @@ watch(selectedAccount, (accountId) => {
 watch(movementMode, () => {
   movementError.value = "";
   movementNotice.value = "";
+});
+
+onBeforeUnmount(() => {
+  if (incomeShareNoticeTimer !== null) window.clearTimeout(incomeShareNoticeTimer);
 });
 
 function selectAccount(accountId: AccountId) {
@@ -156,6 +178,75 @@ function shortDate(date: string) {
 
 function intervalRange(entry: { fromDate: string; toDate: string }) {
   return `${shortDate(entry.fromDate)} → ${shortDate(entry.toDate)}`;
+}
+
+function showIncomeShareNotice(message: string) {
+  incomeShareNotice.value = message;
+  if (incomeShareNoticeTimer !== null) window.clearTimeout(incomeShareNoticeTimer);
+  incomeShareNoticeTimer = window.setTimeout(() => {
+    incomeShareNotice.value = "";
+    incomeShareNoticeTimer = null;
+  }, 2_800);
+}
+
+function downloadShareImage(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
+
+async function shareLatestIncome() {
+  const interval = latestInterval.value;
+  if (!interval || sharingIncome.value) return;
+  sharingIncome.value = true;
+
+  try {
+    const blob = createEarningsShareImage({
+      accountId: selectedAccount.value,
+      accountTone: accountTones[selectedAccount.value],
+      kind: interval.kind,
+      fromDate: interval.fromDate,
+      toDate: interval.toDate,
+      intervalDays: interval.intervalDays,
+      inventoryNetChange: interval.inventoryNetChange,
+      ledgerImpact: interval.ledgerImpact,
+      actualIncome: interval.actualIncome,
+      settledEntryCount: interval.entries.length,
+    });
+    const reportName = interval.kind === "daily" ? "每日实际所得" : "区间实际所得";
+    const rangeName = interval.kind === "daily"
+      ? interval.toDate
+      : `${interval.fromDate}-${interval.toDate}`;
+    const fileName = `${selectedAccount.value}-${rangeName}-${reportName}.png`;
+    const file = new File([blob], fileName, { type: "image/png" });
+    const nativeShareData: ShareData = {
+      files: [file],
+      title: `${selectedAccount.value} ${reportName}`,
+    };
+    const supportsFileShare = typeof navigator.share === "function"
+      && typeof navigator.canShare === "function"
+      && navigator.canShare(nativeShareData);
+
+    if (supportsFileShare) {
+      try {
+        await navigator.share(nativeShareData);
+        showIncomeShareNotice("实际所得图片已打开系统分享");
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    downloadShareImage(blob, fileName);
+    showIncomeShareNotice("实际所得图片已下载");
+  } catch {
+    showIncomeShareNotice("图片生成失败，请重试");
+  } finally {
+    sharingIncome.value = false;
+  }
 }
 
 function entryKind(entry: AccountingEntry) {
@@ -384,8 +475,22 @@ function saveMovement() {
             <p>{{ selectedAccount }} 账号</p>
             <h2 id="earnings-summary-title">库存变化与实际所得</h2>
           </div>
-          <span>不显示跨账号合计</span>
+          <div class="earnings-summary-actions">
+            <small>仅当前账号</small>
+            <button
+              class="earnings-share-button"
+              type="button"
+              :disabled="!latestInterval || sharingIncome"
+              :aria-busy="sharingIncome"
+              :aria-label="shareButtonLabel"
+              @click="shareLatestIncome"
+            >
+              <AppIcon :name="sharingIncome ? 'refresh' : 'share'" />
+              <span>{{ sharingIncome ? "生成中…" : shareButtonText }}</span>
+            </button>
+          </div>
         </header>
+        <p v-if="incomeShareNotice" class="income-share-notice" role="status">{{ incomeShareNotice }}</p>
 
         <div class="earnings-primary-grid">
           <article class="earnings-primary-card latest">
@@ -647,6 +752,49 @@ function saveMovement() {
 .earnings-summary > header > span,
 .interval-history > header > span,
 .ledger-history > header > span { color: var(--radar-muted); font-size: 11px; font-weight: 750; }
+.earnings-summary-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.earnings-summary-actions > small {
+  color: var(--radar-muted);
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.earnings-share-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--radar-cyan) 55%, var(--radar-line));
+  border-radius: 8px;
+  color: var(--radar-cyan-strong);
+  background: color-mix(in srgb, var(--radar-cyan-soft) 68%, #ffffff);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.earnings-share-button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+.earnings-share-button :deep(svg) { width: 16px; height: 16px; }
+.income-share-notice {
+  margin: 10px 13px 0;
+  padding: 9px 11px;
+  border: 1px solid color-mix(in srgb, var(--radar-success) 34%, var(--radar-line));
+  border-radius: 8px;
+  color: var(--radar-success);
+  background: #effaf4;
+  font-size: 11px;
+  font-weight: 800;
+}
 .earnings-primary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--radar-line); }
 .earnings-primary-card { min-width: 0; padding: 16px; }
 .earnings-primary-card + .earnings-primary-card { border-left: 1px solid var(--radar-line); }
@@ -744,6 +892,10 @@ function saveMovement() {
 }
 
 @media (max-width: 520px) {
+  .earnings-summary > header { align-items: flex-start; }
+  .earnings-summary-actions { gap: 6px; }
+  .earnings-summary-actions > small { display: none; }
+  .earnings-share-button { min-height: 44px; padding-inline: 10px; }
   .earnings-primary-grid { grid-template-columns: 1fr; }
   .earnings-primary-card + .earnings-primary-card { border-top: 1px solid var(--radar-line); border-left: 0; }
   .earnings-primary-card { padding: 14px; }

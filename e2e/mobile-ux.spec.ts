@@ -633,6 +633,93 @@ test.describe("mobile UX release gate", () => {
     await expect(dialog).toHaveCount(0);
   });
 
+  test("逐账号每日实际所得在 iPhone 16 Pro Max 调用系统分享", async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
+      const accounts = (silverWan: number) => Object.fromEntries(accountIds.map((accountId) => [accountId, {
+        dedicatedEggs: accountId === "FC" ? 9 : 5,
+        regularEggs: accountId === "FC" ? 11 : 4,
+        silverWan: accountId === "FC" ? silverWan : 100,
+        innerShardCount: accountId === "FC" ? 32 : 20,
+      }]));
+      localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
+        version: 2,
+        snapshots: [
+          { effectiveDate: "2026-07-22", recordedAt: "2026-07-22T10:00:00.000Z", accounts: accounts(100) },
+          { effectiveDate: "2026-07-23", recordedAt: "2026-07-23T10:00:00.000Z", accounts: accounts(90) },
+        ],
+      }));
+      localStorage.setItem("sw.app.accounting.v1", JSON.stringify({
+        version: 1,
+        entries: [{
+          id: "mobile-share-test-expense",
+          accountId: "FC",
+          effectiveDate: "2026-07-23",
+          occurredAt: "2026-07-23T03:00:00.000Z",
+          recordedAt: "2026-07-23T03:01:00.000Z",
+          status: "confirmed",
+          source: "test",
+          note: "测试支出",
+          legs: [{
+            kind: "expense",
+            resources: {
+              silverWan: 20,
+              dedicatedEggs: 0,
+              regularEggs: 0,
+              innerShards: 0,
+            },
+          }],
+        }],
+      }));
+      const state = window as typeof window & {
+        __earningsShare?: { name: string; type: string; size: number; title?: string };
+      };
+      Object.defineProperty(navigator, "canShare", {
+        configurable: true,
+        value: (data: ShareData) => Boolean(data.files?.length),
+      });
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async (data: ShareData) => {
+          const file = data.files?.[0];
+          if (file) state.__earningsShare = {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            title: data.title,
+          };
+        },
+      });
+    });
+
+    await page.goto("/#/earnings?account=FC");
+    await waitForApplicationPage(page);
+    const shareButton = page.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
+    await expect(shareButton).toBeVisible();
+    const shareBox = await shareButton.boundingBox();
+    expect(shareBox?.height, "每日实际所得分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((shareBox?.x || 0) + (shareBox?.width || 0), "分享按钮不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
+    await shareButton.tap();
+
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & {
+        __earningsShare?: { name: string; type: string; size: number; title?: string };
+      }
+    ).__earningsShare)).toEqual(expect.objectContaining({
+      name: "FC-2026-07-23-每日实际所得.png",
+      type: "image/png",
+      title: "FC 每日实际所得",
+    }));
+    const shared = await page.evaluate(() => (
+      window as typeof window & {
+        __earningsShare?: { name: string; type: string; size: number; title?: string };
+      }
+    ).__earningsShare);
+    expect(shared?.size, "每日实际所得 PNG 不应为空白文件").toBeGreaterThan(10_000);
+    await expect(page.getByRole("status")).toContainText("实际所得图片已打开系统分享");
+    await page.screenshot({ path: testInfo.outputPath("earnings-share-iphone-16-pro-max.png") });
+  });
+
   test("本周小结可生成 PNG、调用 iPhone 分享并回退下载", async ({ page }) => {
     await page.clock.setFixedTime(new Date("2026-07-22T02:00:00Z"));
     await page.addInitScript(() => {
