@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import AppIcon from "../../components/AppIcon.vue";
 import InventorySnapshotDialog from "../../components/InventorySnapshotDialog.vue";
 import { buildInventoryWeekReport } from "../../domain/inventory";
@@ -14,6 +15,8 @@ const catalog = useCatalogStore();
 const inventory = useInventoryStore();
 const settings = useSettingsStore();
 const ui = useUiStore();
+const route = useRoute();
+const router = useRouter();
 const inventoryDialogOpen = ref(false);
 const notice = ref("");
 const expenseFormOpen = ref(false);
@@ -45,6 +48,16 @@ const accountTodayRows = computed(() => catalog.data.accounts.map((account) => (
   inventoryRecorded: Boolean(todayInventory.value),
 })));
 const latestMarketRecord = computed(() => settings.gemPriceHistory.at(-1) || null);
+
+onMounted(() => {
+  if (route.query.open !== "inventory") return;
+
+  if (!todayInventory.value) inventoryDialogOpen.value = true;
+
+  const remainingQuery = { ...route.query };
+  delete remainingQuery.open;
+  void router.replace({ query: remainingQuery });
+});
 
 function saveInventorySnapshot(draft: InventorySnapshotInput) {
   const updating = inventory.snapshots.some((item) => item.effectiveDate === draft.effectiveDate);

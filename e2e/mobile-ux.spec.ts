@@ -390,6 +390,29 @@ test.describe("mobile UX release gate", () => {
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
+  test("iPhone 16 Pro Max 首页记录今天一次点击直达库存弹窗", async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
+    await page.goto("/#/");
+    await waitForApplicationPage(page);
+
+    const recordToday = page.locator(".mobile-record-primary");
+    await expect(recordToday).toHaveText("记录今天");
+    await expect(recordToday).toHaveAttribute("href", "#/record?open=inventory");
+    await recordToday.tap();
+
+    const dialog = page.getByRole("dialog", { name: "录入库存快照" });
+    await expect(page).toHaveURL(/#\/record$/);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
+    await page.screenshot({ path: testInfo.outputPath("home-direct-record-iphone-16-pro-max.png") });
+    await dialog.getByRole("button", { name: "取消", exact: true }).tap();
+    await expect(dialog).toHaveCount(0);
+
+    await page.reload();
+    await waitForApplicationPage(page);
+    await expect(dialog).toHaveCount(0);
+  });
+
   test("首页固定展示五个账号并提供详情与实际所得入口", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);

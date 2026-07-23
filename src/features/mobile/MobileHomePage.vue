@@ -54,7 +54,10 @@ const {
           <p>{{ todayDescription }}</p>
         </div>
       </header>
-      <RouterLink class="mobile-record-primary" to="/record">
+      <RouterLink
+        class="mobile-record-primary"
+        :to="todayOverview?.hasInventory ? '/record' : { path: '/record', query: { open: 'inventory' } }"
+      >
         <AppIcon name="plus" />
         <span>{{ todayOverview?.hasInventory ? "继续记录今天" : "记录今天" }}</span>
       </RouterLink>

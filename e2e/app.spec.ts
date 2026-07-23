@@ -101,6 +101,43 @@ test.describe("desktop application", () => {
     }
   });
 
+  test("首页记录今天按库存状态一次到位", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.goto("/#/");
+    await page.evaluate(() => localStorage.removeItem("sw.app.inventory.v2"));
+    await page.reload();
+
+    const recordToday = page.locator(".desktop-record-primary");
+    await expect(recordToday).toHaveText("记录今天");
+    await expect(recordToday).toHaveAttribute("href", "#/record?open=inventory");
+    await recordToday.click();
+
+    const inventoryDialog = page.getByRole("dialog", { name: "录入库存快照" });
+    await expect(page).toHaveURL(/#\/record$/);
+    await expect(inventoryDialog).toBeVisible();
+    await expect(inventoryDialog.getByRole("spinbutton")).toHaveCount(20);
+    await page.screenshot({ path: testInfo.outputPath("home-direct-record-desktop.png") });
+    await inventoryDialog.getByRole("button", { name: "取消", exact: true }).click();
+    await expect(inventoryDialog).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByTestId("record-page")).toBeVisible();
+    await expect(inventoryDialog).toHaveCount(0);
+
+    await page.getByRole("button", { name: "开始录入", exact: true }).click();
+    await expect(inventoryDialog).toBeVisible();
+    await inventoryDialog.getByRole("button", { name: "保存五号快照", exact: true }).click();
+    await expect(inventoryDialog).toHaveCount(0);
+    await page.goto("/#/");
+    const continueToday = page.locator(".desktop-record-primary");
+    await expect(continueToday).toHaveText("继续记录今天");
+    await expect(continueToday).toHaveAttribute("href", "#/record");
+    await continueToday.click();
+    await expect(page).toHaveURL(/#\/record$/);
+    await expect(inventoryDialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "检查并更新", exact: true })).toBeVisible();
+  });
+
   test("核心路由、搜索和业务基线", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     await page.goto("/#/");
