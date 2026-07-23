@@ -11,12 +11,13 @@ import { observeSyncRecovery, reconnectDelayMs, type SyncRecoverySignal } from "
 import { recordMetadata, type CloudWorkspace } from "../sync/types";
 import { validateCloudCredential } from "../sync/validateCredential";
 import { useInventoryStore } from "./inventory";
+import { useAccountingStore } from "./accounting";
 import { usePublishStore } from "./publish";
 import { useSettingsStore } from "./settings";
 import { useUiStore } from "./ui";
 
 const syncMetaKey = "sw.sync.meta.v1";
-const syncMetaVersion = 3;
+const syncMetaVersion = 4;
 const writerIdKey = "sw.sync.writer.v1";
 const uploadDebounceMs = 900;
 const connectionTimeoutMs = 20_000;
@@ -41,13 +42,14 @@ class SyncTransactionTimeoutError extends Error {
 
 interface WorkspaceParts {
   inventory: ReturnType<ReturnType<typeof useInventoryStore>["exportState"]>;
+  accounting: ReturnType<ReturnType<typeof useAccountingStore>["exportState"]>;
   settings: ReturnType<ReturnType<typeof useSettingsStore>["exportState"]>;
   publish: ReturnType<ReturnType<typeof usePublishStore>["exportState"]>;
   ui: ReturnType<ReturnType<typeof useUiStore>["exportState"]>;
 }
 
 interface SyncMeta {
-  version: 1 | 2 | typeof syncMetaVersion;
+  version: 1 | 2 | 3 | typeof syncMetaVersion;
   revision: number;
   contentHash: string;
   mutationId: string;
@@ -63,7 +65,7 @@ interface RemoteCandidate {
 function loadSyncMeta(): SyncMeta | null {
   try {
     const value = JSON.parse(localStorage.getItem(syncMetaKey) || "null") as Partial<SyncMeta> | null;
-    if (!value || (value.version !== 1 && value.version !== 2 && value.version !== syncMetaVersion)
+    if (!value || (value.version !== 1 && value.version !== 2 && value.version !== 3 && value.version !== syncMetaVersion)
       || !Number.isInteger(value.revision) || Number(value.revision) < 1
       || typeof value.contentHash !== "string" || typeof value.mutationId !== "string" || !Number.isFinite(value.updatedAt)) return null;
     return value as SyncMeta;
@@ -103,11 +105,18 @@ function getWriterId() {
 }
 
 function partsFromBackup(backup: WorkspaceBackup): WorkspaceParts {
-  return { inventory: backup.inventory, settings: backup.settings, publish: backup.publish, ui: backup.ui };
+  return {
+    inventory: backup.inventory,
+    accounting: backup.accounting,
+    settings: backup.settings,
+    publish: backup.publish,
+    ui: backup.ui,
+  };
 }
 
 export const useSyncStore = defineStore("sync", () => {
   const inventory = useInventoryStore();
+  const accounting = useAccountingStore();
   const settings = useSettingsStore();
   const publish = usePublishStore();
   const ui = useUiStore();
@@ -169,6 +178,7 @@ export const useSyncStore = defineStore("sync", () => {
   function workspaceParts(): WorkspaceParts {
     return {
       inventory: inventory.exportState(),
+      accounting: accounting.exportState(),
       settings: settings.exportState(),
       publish: publish.exportState(),
       ui: ui.exportState(),
@@ -177,6 +187,7 @@ export const useSyncStore = defineStore("sync", () => {
 
   function hasMeaningfulLocalData(parts: WorkspaceParts) {
     return parts.inventory.snapshots.length > 0
+      || parts.accounting.entries.length > 0
       || Object.keys(parts.settings.gemPriceOverrides).length > 0
       || Object.keys(parts.settings.overrides).length > 0
       || parts.settings.taskCompletions.length > 0
@@ -383,11 +394,13 @@ export const useSyncStore = defineStore("sync", () => {
     const previous = workspaceParts();
     try {
       inventory.replaceState(backup.inventory);
+      accounting.replaceState(backup.accounting);
       settings.replaceState(backup.settings);
       publish.replaceState(backup.publish);
       ui.replaceState(backup.ui);
     } catch (cause) {
       try { inventory.replaceState(previous.inventory); } catch { /* best-effort rollback */ }
+      try { accounting.replaceState(previous.accounting); } catch { /* best-effort rollback */ }
       try { settings.replaceState(previous.settings); } catch { /* best-effort rollback */ }
       try { publish.replaceState(previous.publish); } catch { /* best-effort rollback */ }
       try { ui.replaceState(previous.ui); } catch { /* best-effort rollback */ }

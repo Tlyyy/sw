@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const mobileRoutes = [
   "/#/",
   "/#/record",
+  "/#/earnings",
   "/#/week",
   "/#/resources",
   "/#/accounts/LG2",
@@ -27,6 +28,7 @@ const mobileRoutes = [
 
 const formRoutes = [
   "/#/record",
+  "/#/earnings",
   "/#/week",
   "/#/assets/pets",
   "/#/assets/equipment",
@@ -56,6 +58,11 @@ const primaryTargetSelector = [
   "main .mobile-weekly-report-card",
   "main .mobile-task-brief > a",
   "main .mobile-account-progress-link",
+  "main .mobile-account-earnings-link",
+  "main .earnings-intro .movement-toggle",
+  "main .earnings-account-tabs button",
+  "main .movement-panel button",
+  "main .ledger-list button",
   "main .record-primary-action",
   "main .record-option-card",
   "main .inventory-week-button",
@@ -89,7 +96,7 @@ function currentShanghaiWeek() {
 }
 
 async function waitForApplicationPage(page: Page) {
-  await expect(page.locator(".mobile-home-page, .workbench-page, .page-wrap, .matrix-page").first()).toBeVisible();
+  await expect(page.locator(".mobile-home-page, .workbench-page, .page-wrap, .matrix-page, .earnings-page").first()).toBeVisible();
 }
 
 async function pageOverflowReport(page: Page) {
@@ -266,6 +273,7 @@ test.describe("mobile UX release gate", () => {
     for (const url of [
       "/#/",
       "/#/record",
+      "/#/earnings",
       "/#/week",
       "/#/resources",
       "/#/accounts/FC",
@@ -348,8 +356,8 @@ test.describe("mobile UX release gate", () => {
     await expect(page.getByRole("navigation", { name: "手机快捷导航" }).locator("a, button")).toHaveText([
       "首页",
       "录入",
+      "任务",
       "本周小结",
-      "资料",
       "更多",
     ]);
 
@@ -382,19 +390,27 @@ test.describe("mobile UX release gate", () => {
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
-  test("首页固定展示五个账号并能逐一进入详情", async ({ page }) => {
+  test("首页固定展示五个账号并提供详情与实际所得入口", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
     const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
     const accountCards = page.locator(".mobile-account-progress-list > article");
     const accountLinks = accountCards.locator(".mobile-account-progress-link");
+    const earningsLinks = accountCards.locator(".mobile-account-earnings-link");
     await expect(accountCards).toHaveCount(accountIds.length);
     expect(await accountCards.evaluateAll((elements) => elements.map((element) => (
       (element as HTMLElement).dataset.accountId
     ))), "首页账号顺序应与系统固定顺序一致").toEqual(accountIds);
     expect(await accountLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
       .toEqual(accountIds.map((accountId) => `#/accounts/${accountId}`));
+    expect(await earningsLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
+      .toEqual(accountIds.map((accountId) => `#/earnings?account=${accountId}`));
+
+    await page.getByRole("link", { name: "查看 PT 实际所得", exact: true }).tap();
+    await expect(page).toHaveURL(/#\/earnings\?account=PT$/);
+    await expect(page.getByTestId("earnings-page")).toBeVisible();
+    await expect(page.getByRole("button", { name: "查看 PT 实际所得", exact: true })).toHaveAttribute("aria-pressed", "true");
 
     for (const accountId of accountIds) {
       await test.step(`进入 ${accountId} 账号详情`, async () => {
@@ -410,13 +426,13 @@ test.describe("mobile UX release gate", () => {
     }
   });
 
-  test("首页任务入口能进入录入分区维护", async ({ page }) => {
+  test("首页任务入口能进入任务分区维护", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
     await page.getByRole("link", { name: "查看任务", exact: true }).tap();
     await expect(page).toHaveURL(/#\/plans\/tasks$/);
-    await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link", { name: "录入", exact: true })).toHaveAttribute("aria-current", "location");
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link", { name: "任务", exact: true })).toHaveAttribute("aria-current", "page");
   });
 
   test("任务勾选、完成与批量操作避开固定底栏", async ({ page }) => {
@@ -710,7 +726,7 @@ test.describe("mobile UX release gate", () => {
     const dock = page.getByRole("navigation", { name: "手机快捷导航", exact: true });
     await expect(dock).toBeVisible();
     await expect(dock.locator("a, button")).toHaveCount(5);
-    await expect(dock.getByRole("link", { name: "资料", exact: true })).toHaveAttribute("aria-current", "location");
+    await expect(dock.getByRole("button", { name: "打开全部导航", exact: true })).toHaveClass(/active/);
 
     const overflow = await pageOverflowReport(page);
     expect(overflow.offenders, "展开手机日报后不应产生页面级横向裁切").toEqual([]);

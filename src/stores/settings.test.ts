@@ -144,4 +144,29 @@ describe("settings store persistence", () => {
     settings.removeSilverExpense(expense!.id);
     expect(settings.silverExpenses).toEqual([]);
   });
+
+  it("keeps the confirmed actual task spend instead of the planning estimate", () => {
+    const settings = useSettingsStore();
+    settings.hydrate();
+
+    const completion = settings.completeTask({
+      id: "FC:snake1:book",
+      accountId: "FC",
+      typeLabel: "剑气蛇",
+      actionLabel: "打书",
+      kind: "预估",
+      resourceType: "wan",
+      priceWan: 200,
+      eggCount: 0,
+      shardCount: 0,
+    }, "2026-07-23", () => new Date("2026-07-23T02:00:00.000Z"), {
+      silverSpentWan: 37.5,
+    });
+
+    expect(completion).toMatchObject({
+      completedOn: "2026-07-23",
+      resourceAmount: 200,
+      silverSpentWan: 37.5,
+    });
+  });
 });

@@ -243,7 +243,7 @@ test.describe("desktop regressions", () => {
     await expect(rows.filter({ hasText: "LG2鞋子" })).toContainText("黑宝石 11");
   });
 
-  test("旧本地状态迁移后可导出包含四个分区的完整备份", async ({ page }) => {
+  test("旧本地状态迁移后可导出包含独立核算分区的完整备份", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem("sw.app.settings.v2", JSON.stringify({
         version: 2,
@@ -266,7 +266,7 @@ test.describe("desktop regressions", () => {
 
     await page.goto("/#/settings");
     await expect(page.getByRole("heading", { name: "完整业务备份" })).toBeVisible();
-    await expect(page.getByText(/包含库存、行情与历史、任务完成日期、银子支出、发布草稿和界面偏好/)).toBeVisible();
+    await expect(page.getByText(/包含库存、独立核算流水、行情与历史、任务完成日期、银子支出、发布草稿和界面偏好/)).toBeVisible();
     await expect(page.getByLabel("默认账号")).toHaveValue("FC");
     await expect(page.getByLabel("对比表密度")).toHaveValue("comfortable");
     await expect(page.getByText("1 组宠物已加入发布清单", { exact: true })).toBeVisible();
@@ -286,11 +286,12 @@ test.describe("desktop regressions", () => {
     const backup = JSON.parse(await readFile(downloadPath, "utf8"));
     expect(backup).toMatchObject({
       format: "sw-workspace-backup",
-      version: 1,
+      version: 2,
       inventory: { version: 2 },
       settings: { version: 4, settings: { startDate: "2026-01-02" } },
       publish: { version: 2, selectedIds: ["FC:pet:01"], draft: "旧版发布草稿" },
       ui: { version: 2, recentAccount: "FC", matrixDensity: "comfortable" },
+      accounting: { version: 1, entries: [] },
     });
   });
 });

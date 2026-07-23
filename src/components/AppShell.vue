@@ -31,7 +31,7 @@ const links = primaryNavigation;
 const mobileDockLinks = mobileNavigation;
 const mobileFeatureLinks = featureNavigation;
 const mobileSection = computed(() => String(route.meta.mobileSection || route.meta.section || "more"));
-const mobileDockMoreActive = computed(() => mobileSection.value === "more");
+const mobileDockMoreActive = computed(() => !mobileDockLinks.some((link) => link.section === mobileSection.value));
 const desktopSection = computed(() => String(route.meta.desktopSection || (
   ["home", "record", "week", "resources"].includes(String(route.meta.section))
     ? route.meta.section

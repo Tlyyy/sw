@@ -159,12 +159,17 @@ export const useSettingsStore = defineStore("settings", () => {
     task: Pick<ScheduledTask, "id" | "accountId" | "typeLabel" | "actionLabel" | "kind" | "resourceType" | "priceWan" | "eggCount" | "shardCount">,
     completedOn = planningAsOfDate.value,
     now = () => new Date(),
+    settlement?: { silverSpentWan?: number },
   ) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(completedOn)) return null;
     const existing = taskCompletions.value.find((entry) => entry.taskId === task.id);
     if (taskOverrides[task.id]?.done && existing) return existing;
     const resourceKind = task.resourceType === "innerShard" ? "innerShards" : task.eggCount > 0 ? "eggs" : "silver";
     const resourceAmount = resourceKind === "innerShards" ? task.shardCount : resourceKind === "eggs" ? task.eggCount : task.priceWan;
+    const settledSilver = Number(settlement?.silverSpentWan);
+    const silverSpentWan = settlement?.silverSpentWan !== undefined && Number.isFinite(settledSilver)
+      ? Math.max(0, settledSilver)
+      : resourceKind === "silver" ? task.priceWan : 0;
     const record: TaskCompletionRecord = {
       taskId: task.id,
       completedOn,
@@ -175,7 +180,7 @@ export const useSettingsStore = defineStore("settings", () => {
       taskKind: task.kind,
       resourceKind,
       resourceAmount,
-      silverSpentWan: resourceKind === "silver" ? task.priceWan : 0,
+      silverSpentWan,
     };
     taskOverrides[task.id] = { ...(taskOverrides[task.id] || {}), done: true };
     taskCompletions.value = [...taskCompletions.value.filter((entry) => entry.taskId !== task.id), record]

@@ -87,6 +87,14 @@ const {
             <div class="expense"><dt>本周支出</dt><dd>{{ wanLabel(row.weekly?.totalSilverExpenseWan ?? null) }}</dd></div>
             <div><dt>完成任务</dt><dd>{{ row.weekly?.taskCompletions.length || 0 }} 项</dd></div>
           </dl>
+          <RouterLink
+            class="mobile-account-earnings-link"
+            :to="{ path: '/earnings', query: { account: row.accountId } }"
+            :aria-label="`查看 ${row.accountId} 实际所得`"
+          >
+            <span>查看实际所得</span>
+            <AppIcon name="chevron-right" />
+          </RouterLink>
         </article>
       </div>
     </section>
@@ -252,6 +260,18 @@ const {
 .mobile-account-progress-list dd { overflow: hidden; margin: 1px 0 0; color: var(--radar-ink); font-size: 13px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
 .mobile-account-progress-list .harvest dd { color: var(--radar-success); }
 .mobile-account-progress-list .expense dd { color: #9a5a00; }
+.mobile-account-earnings-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 3px 0 -5px;
+  color: var(--radar-cyan-strong);
+  font-size: 12px;
+  font-weight: 850;
+}
+.mobile-account-earnings-link :deep(svg) { width: 16px; height: 16px; }
 
 .mobile-weekly-report-card {
   min-height: 118px;

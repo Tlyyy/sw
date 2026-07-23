@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import TaskSettlementDialog from "../../components/TaskSettlementDialog.vue";
 import { useCatalogStore } from "../../stores/catalog";
+import { useAccountingStore } from "../../stores/accounting";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { buildTaskPlans, taskDisplayTypeOptions, type ScheduledTask } from "../../domain/plans";
 import { formatWan } from "../../domain/gems";
-import { taskCompletionResourceLabel } from "../../domain/weeklyActivity";
+import type { AccountingResources } from "../../domain/accounting";
+import type { TaskSettlementDraft } from "../../domain/taskSettlement";
 import type { AccountId } from "../../domain/types";
 import { useUiStore } from "../../stores/ui";
 
 type TaskStatusFilter = "pending" | "done" | "ALL";
 
 const catalog = useCatalogStore();
+const accounting = useAccountingStore();
 const inventory = useInventoryStore();
 const settings = useSettingsStore();
 const ui = useUiStore();
@@ -22,8 +26,20 @@ const query = ref("");
 const selectedTaskIds = ref<string[]>([]);
 const actionFeedback = ref("");
 const secondaryFiltersOpen = ref(false);
+const settlementTask = ref<ScheduledTask | null>(null);
+const settlementQueue = ref<ScheduledTask[]>([]);
+
+interface TaskSettlementPayload {
+  draft: TaskSettlementDraft;
+  occurredAt: string;
+  effectiveDate: string;
+  note: string;
+  complete: boolean;
+  reuseExisting: boolean;
+}
 
 inventory.hydrate();
+accounting.hydrate();
 
 const planningState = computed(() => settings.snapshot(
   inventory.planningResources,
@@ -66,6 +82,9 @@ const visiblePendingTasks = computed(() => tasks.value.filter((task) => !task.do
 const selectedTaskCount = computed(() => selectedTaskIds.value.length);
 const allVisiblePendingSelected = computed(() => Boolean(visiblePendingTasks.value.length)
   && visiblePendingTasks.value.every((task) => selectedTaskIds.value.includes(task.id)));
+const settlementProgressWan = computed(() => settlementTask.value
+  ? taskRecordedSilverWan(settlementTask.value.id)
+  : 0);
 
 watch([account, taskType, status, query], () => {
   selectedTaskIds.value = [];
@@ -84,11 +103,20 @@ function requirementLabel(task: ScheduledTask) {
 function scheduleLabel(task: ScheduledTask) {
   const completion = completionByTask.value.get(task.id);
   if (task.done) return completion ? `完成于 ${completion.completedOn}` : "已完成";
+  const entries = accounting.taskEntries(task.id);
+  if (entries.length) {
+    return task.actionKey === "talisman"
+      ? `已记录 ${entries.length} 次进度`
+      : `已保留 ${entries.length} 笔实际记录`;
+  }
   return /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate) ? task.dueDate : "等待条件";
 }
 
 function taskState(task: ScheduledTask) {
   if (task.done) return { label: "已完成", tone: "done" };
+  if (task.actionKey === "talisman" && accounting.taskEntries(task.id).length) {
+    return { label: "进行中", tone: "progress" };
+  }
   if (/^\d{4}-\d{2}-\d{2}$/.test(task.dueDate)) {
     return task.dueDate <= planningState.value.asOfDate
       ? { label: "可完成", tone: "ready" }
@@ -126,32 +154,147 @@ function toggleVisibleSelection(checked: boolean) {
   selectedTaskIds.value = checked ? visiblePendingTasks.value.map((task) => task.id) : [];
 }
 
-function setTaskCompletion(task: ScheduledTask, done: boolean) {
-  const completion = done ? settings.completeTask(task) : null;
-  if (!done) settings.setTaskDone(task.id, false);
+function taskRecordedSilverWan(taskId: string) {
+  return accounting.taskEntries(taskId).reduce((sum, entry) => (
+    sum + entry.legs
+      .filter((leg) => leg.kind === "expense")
+      .reduce((entrySum, leg) => entrySum + leg.resources.silverWan, 0)
+  ), 0);
+}
+
+function taskLedgerSummary(task: ScheduledTask) {
+  const entries = accounting.taskEntries(task.id);
+  if (!entries.length) return "";
+  const totals = entries.reduce<AccountingResources>((sum, entry) => {
+    for (const leg of entry.legs) {
+      if (leg.kind !== "expense") continue;
+      sum.silverWan += leg.resources.silverWan;
+      sum.dedicatedEggs += leg.resources.dedicatedEggs;
+      sum.regularEggs += leg.resources.regularEggs;
+      sum.innerShards = (sum.innerShards || 0) + (leg.resources.innerShards || 0);
+    }
+    return sum;
+  }, {
+    silverWan: 0,
+    dedicatedEggs: 0,
+    regularEggs: 0,
+    innerShards: 0,
+  });
+  const resources = [
+    totals.silverWan > 0
+      ? `银子 ${Number(totals.silverWan.toFixed(2)).toLocaleString("zh-CN")} 万`
+      : "",
+    totals.dedicatedEggs > 0 ? `专用蛋 ${totals.dedicatedEggs}` : "",
+    totals.regularEggs > 0 ? `普通蛋 ${totals.regularEggs}` : "",
+    (totals.innerShards || 0) > 0 ? `碎片 ${totals.innerShards}` : "",
+  ].filter(Boolean);
+  const countLabel = task.actionKey === "talisman"
+    ? `${entries.length} 次进度`
+    : `${entries.length} 笔实际记录`;
+  return [countLabel, ...resources].join(" · ");
+}
+
+function openSettlement(tasks: ScheduledTask[]) {
+  settlementQueue.value = [...tasks];
+  settlementTask.value = settlementQueue.value[0] || null;
+}
+
+function closeSettlement() {
+  settlementTask.value = null;
+  settlementQueue.value = [];
+}
+
+function advanceSettlementQueue() {
+  settlementQueue.value = settlementQueue.value.slice(1);
+  settlementTask.value = settlementQueue.value[0] || null;
+}
+
+function restoreTask(task: ScheduledTask) {
+  const legacyCompletion = completionByTask.value.get(task.id);
+  if (legacyCompletion && !accounting.hasTaskAuthority(task.id)) {
+    accounting.materializeLegacyTaskCompletion(legacyCompletion);
+  }
+  const entries = accounting.taskEntries(task.id);
+  settings.setTaskDone(task.id, false);
   selectedTaskIds.value = selectedTaskIds.value.filter((id) => id !== task.id);
-  actionFeedback.value = done
-    ? `已完成 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel}${completion ? `，并记录 ${taskCompletionResourceLabel(completion)}支出` : ""}。`
-    : `已将 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel} 恢复为未完成，关联支出已撤销。`;
+  actionFeedback.value = `已将 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel} 恢复为${task.actionKey === "talisman" ? "进行中" : "未完成"}`
+    + `${entries.length ? `；${entries.length} 笔实际记录继续保留` : ""}，库存没有变化。`;
+}
+
+function handleTaskAction(task: ScheduledTask) {
+  if (task.done) {
+    restoreTask(task);
+    return;
+  }
+  openSettlement([task]);
+}
+
+function saveTaskSettlement(payload: TaskSettlementPayload) {
+  const task = settlementTask.value;
+  if (!task) return;
+  const resources: AccountingResources = {
+    silverWan: Number(payload.draft.silverWan || 0),
+    dedicatedEggs: payload.draft.dedicatedEggs,
+    regularEggs: payload.draft.regularEggs,
+    innerShards: payload.draft.innerShardCount,
+  };
+  const source = payload.draft.mode === "progress"
+    ? "task-progress"
+    : payload.draft.mode === "variable"
+      ? "task-variable"
+      : "task-fixed";
+  if (!payload.reuseExisting) {
+    accounting.addTaskSettlement({
+      accountId: task.accountId,
+      effectiveDate: payload.effectiveDate,
+      occurredAt: payload.occurredAt,
+      taskId: task.id,
+      source,
+      resources,
+      note: payload.note || `${task.typeLabel} · ${task.actionLabel}`,
+    });
+  }
+
+  let completion = null;
+  if (payload.complete) {
+    completion = settings.completeTask(
+      task,
+      payload.effectiveDate,
+      () => new Date(),
+      {
+        // The legacy weekly summary remains completion-based. Only the
+        // current settlement belongs to this completion date; earlier
+        // talisman instalments stay exclusively in the independent ledger.
+        silverSpentWan: payload.reuseExisting ? 0 : resources.silverWan,
+      },
+    );
+    selectedTaskIds.value = selectedTaskIds.value.filter((id) => id !== task.id);
+  }
+
+  actionFeedback.value = payload.complete
+    ? `已完成 ${task.accountId} · ${task.typeLabel} · ${task.actionLabel}${completion ? payload.reuseExisting ? "，沿用已有实际流水" : "，实际花费已独立记账" : ""}；库存未被修改。`
+    : `已记录 ${task.accountId} · 洗护符本次进度，累计 ${Number(taskRecordedSilverWan(task.id).toFixed(2)).toLocaleString("zh-CN")} 万；任务继续进行中。`;
+  advanceSettlementQueue();
 }
 
 function completeSelectedTasks() {
   const selected = allTasks.value.filter((task) => selectedTaskIds.value.includes(task.id) && !task.done);
-  const completions = selected.flatMap((task) => {
-    const completion = settings.completeTask(task);
-    return completion ? [completion] : [];
-  });
-  const silverSpentWan = completions.reduce((sum, entry) => sum + entry.silverSpentWan, 0);
-  selectedTaskIds.value = [];
-  actionFeedback.value = `已完成 ${selected.length} 项任务并记录完成日期${silverSpentWan ? `，其中银子支出 ${formatWan(silverSpentWan)}` : ""}。`;
+  if (!selected.length) return;
+  openSettlement(selected);
+}
+
+function taskActionLabel(task: ScheduledTask) {
+  if (task.done) return task.actionKey === "talisman" ? "恢复进行中" : "恢复未完成";
+  if (task.actionKey === "talisman") return "记录进度";
+  return "标记完成";
 }
 
 function resetCompletion() {
   if (!completionOverrideCount.value) return;
-  if (confirm("确认清除全部任务完成状态？单项价格和计划参数不会改变。")) {
+  if (confirm("确认清除全部任务完成状态？实际支出流水、库存、单项价格和计划参数都不会改变。")) {
     settings.resetTaskCompletionOverrides();
     selectedTaskIds.value = [];
-    actionFeedback.value = "已恢复全部任务的默认完成状态。";
+    actionFeedback.value = "已恢复全部任务的默认完成状态；真实支出流水继续保留，库存没有变化。";
   }
 }
 </script>
@@ -159,7 +302,7 @@ function resetCompletion() {
 <template>
   <div class="page-wrap plan-page task-maintenance-page">
     <header class="task-page-intro">
-      <div><p>任务</p><h1>按账号维护任务</h1><span>先选账号，再标记完成；相关资源支出会自动进入本周小结。</span></div>
+      <div><p>任务</p><h1>按账号维护任务</h1><span>完成前确认真实消耗；这里只记账，不会自动扣减你手工录入的库存。</span></div>
       <RouterLink class="button" to="/record">返回录入</RouterLink>
     </header>
 
@@ -178,8 +321,8 @@ function resetCompletion() {
     <section class="task-operation-guide" aria-label="操作指引">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10.7v6M12 7.3h.01" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
       <div>
-        <strong>完成任务会同步记账</strong>
-        <p>单项可直接完成，多项可勾选后批量完成；恢复未完成时，关联支出也会一并撤销。</p>
+        <strong>先确认消耗，再完成任务</strong>
+        <p>固定消耗只需确认，打书填写实际银子，洗护符可跨天多次记录；恢复任务状态不会删除实际流水。</p>
       </div>
       <button v-if="completionOverrideCount" class="button danger task-reset-action" type="button" @click="resetCompletion">清除全部完成记录</button>
     </section>
@@ -228,12 +371,16 @@ function resetCompletion() {
         <article v-for="task in group.tasks" :key="task.id" :class="['task-work-row', { done: task.done }]" :aria-label="`${task.accountId} ${task.typeLabel} ${task.actionLabel}`">
           <label class="task-select-cell"><input type="checkbox" :checked="selectedTaskIds.includes(task.id)" :disabled="task.done" :aria-label="`选择 ${task.accountId} ${task.typeLabel} ${task.actionLabel}`" @change="toggleTaskSelection(task.id, ($event.target as HTMLInputElement).checked)" /></label>
           <div class="task-identity-cell"><strong>{{ task.typeLabel }}</strong><span>{{ task.accountId }} · {{ task.typeKey === 'horse' ? '神兽龙马' : '神兽青蛇' }}</span></div>
-          <div class="task-stage-cell"><strong>{{ task.actionLabel }}</strong><span>{{ task.kind }}</span></div>
+          <div class="task-stage-cell">
+            <strong>{{ task.actionLabel }}</strong>
+            <span>{{ task.kind }}</span>
+            <small v-if="taskLedgerSummary(task)" class="task-ledger-summary">{{ taskLedgerSummary(task) }}</small>
+          </div>
           <strong class="task-resource-cell">{{ requirementLabel(task) }}</strong>
           <div class="task-schedule-cell"><strong>{{ scheduleLabel(task) }}</strong><span v-if="scheduleLabel(task) === '等待条件'">条件满足后排期</span></div>
           <div class="task-status-cell">
             <span :class="['task-state-label', taskState(task).tone]">{{ taskState(task).label }}</span>
-            <button :class="['task-row-action', { secondary: task.done }]" type="button" :aria-label="`${task.accountId} ${task.typeLabel} ${task.actionLabel} ${task.done ? '恢复未完成' : '标记完成'}`" @click="setTaskCompletion(task, !task.done)">{{ task.done ? "恢复未完成" : "标记完成" }}</button>
+            <button :class="['task-row-action', { secondary: task.done }]" type="button" :aria-label="`${task.accountId} ${task.typeLabel} ${task.actionLabel} ${taskActionLabel(task)}`" @click="handleTaskAction(task)">{{ taskActionLabel(task) }}</button>
           </div>
         </article>
       </section>
@@ -241,10 +388,22 @@ function resetCompletion() {
     <p v-else class="empty-state">没有符合当前筛选条件的任务，请调整状态或筛选条件。</p>
 
     <aside v-if="selectedTaskCount" class="task-bulk-action-bar" aria-label="批量任务操作">
-      <div><strong>已选 {{ selectedTaskCount }} 项</strong><span>完成后可在“已完成”中查看</span></div>
-      <button class="button primary" type="button" @click="completeSelectedTasks">批量标记完成</button>
+      <div><strong>已选 {{ selectedTaskCount }} 项</strong><span>将按顺序逐项确认真实消耗</span></div>
+      <button class="button primary" type="button" @click="completeSelectedTasks">逐项确认并完成</button>
       <button class="text-button" type="button" @click="selectedTaskIds = []">取消选择</button>
     </aside>
+
+    <TaskSettlementDialog
+      v-if="settlementTask"
+      :key="settlementTask.id"
+      :task="settlementTask"
+      :inventory="inventory.latestSnapshot?.accounts[settlementTask.accountId] || null"
+      :progress-total-wan="settlementProgressWan"
+      :existing-entry-count="accounting.taskEntries(settlementTask.id).length"
+      :existing-summary="taskLedgerSummary(settlementTask)"
+      @cancel="closeSettlement"
+      @confirm="saveTaskSettlement"
+    />
   </div>
 </template>
 
@@ -270,6 +429,20 @@ function resetCompletion() {
 .task-account-overview button > i { width: 100%; height: 4px; overflow: hidden; margin: 3px 0; border-radius: 999px; background: var(--radar-line); }
 .task-account-overview button > i > b { height: 100%; display: block; border-radius: inherit; background: var(--radar-cyan); }
 .task-account-overview button small { color: var(--radar-muted); font-size: 10px; white-space: nowrap; }
+.task-ledger-summary {
+  overflow: hidden;
+  color: var(--radar-cyan-strong);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-state-label.progress {
+  border-color: #d9c28a;
+  color: #845000;
+  background: #fff8e8;
+}
 
 @media (min-width: 861px) and (max-width: 1100px) {
   .task-maintenance-page { --task-grid: 36px minmax(130px, 1fr) minmax(108px, .78fr) 104px 112px minmax(158px, .9fr); }
@@ -284,5 +457,9 @@ function resetCompletion() {
   .task-account-overview > header { min-height: 52px; padding: 8px 10px; }
   .task-account-overview button { min-height: 84px; padding-inline: 4px; }
   .task-account-overview button small { font-size: 10px; }
+  .task-ledger-summary {
+    overflow: visible;
+    white-space: normal;
+  }
 }
 </style>

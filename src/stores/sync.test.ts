@@ -174,7 +174,7 @@ describe("sync store schema compatibility", () => {
     expect(store.passwordRotationRequired).toBe(true);
     expect(databases[0].raw.transact).not.toHaveBeenCalled();
     expect(JSON.parse(localStorage.getItem("sw.sync.meta.v1") || "null")).toMatchObject({
-      version: 3,
+      version: 4,
       revision: 7,
       contentHash: "normalized-hash",
       mutationId: "confirmed-mutation",
@@ -194,7 +194,7 @@ describe("sync store schema compatibility", () => {
     });
     syncCrypto.decryptWorkspace.mockResolvedValue(JSON.stringify(remoteBackup));
     localStorage.setItem("sw.sync.meta.v1", JSON.stringify({
-      version: 3,
+      version: 4,
       revision: 8,
       contentHash: "test-hash",
       mutationId: "newer-mutation",
@@ -281,7 +281,7 @@ describe("sync store schema compatibility", () => {
     });
     syncCrypto.decryptWorkspace.mockResolvedValue(JSON.stringify(remoteBackup));
     localStorage.setItem("sw.sync.meta.v1", JSON.stringify({
-      version: 3,
+      version: 4,
       revision: 9,
       contentHash: "confirmed-hash",
       mutationId: "confirmed-mutation",

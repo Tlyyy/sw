@@ -1,10 +1,92 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
+
+async function fillRequiredEggSplit(dialog: Locator) {
+  const dedicatedEggs = dialog.getByLabel("专用蛋 / 个", { exact: true });
+  if (!(await dedicatedEggs.count())) return;
+  const totalText = await dialog.locator(".task-egg-total").innerText();
+  const required = totalText.match(/\/\s*([\d,.]+)\s*个/)?.[1]?.replaceAll(",", "");
+  if (!required) throw new Error(`无法从结算弹窗读取蛋数量：${totalText}`);
+  await dedicatedEggs.fill(required);
+  await dialog.getByLabel("普通蛋 / 个", { exact: true }).fill("0");
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem("sw-e2e-auth-v1", "1"));
 });
 
 test.describe("desktop application", () => {
+  test("恢复旧版完成任务时会先保留其历史流水", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    const taskId = "LG1:snake1:skin";
+    await page.goto("/#/plans/tasks");
+    await page.evaluate((legacyTaskId) => {
+      const settings = JSON.parse(localStorage.getItem("sw.app.settings.v4") || "null");
+      settings.overrides[legacyTaskId] = {
+        ...(settings.overrides[legacyTaskId] || {}),
+        done: true,
+      };
+      settings.taskCompletions = [{
+        taskId: legacyTaskId,
+        completedOn: "2026-07-22",
+        recordedAt: "2026-07-22T03:04:05.000Z",
+        accountId: "LG1",
+        typeLabel: "剑气蛇",
+        actionLabel: "皮肤",
+        taskKind: "确认",
+        resourceKind: "eggs",
+        resourceAmount: 40,
+        silverSpentWan: 0,
+      }];
+      localStorage.setItem("sw.app.settings.v4", JSON.stringify(settings));
+      localStorage.setItem("sw.app.accounting.v1", JSON.stringify({ version: 1, entries: [] }));
+    }, taskId);
+    await page.reload();
+
+    await page.getByRole("button", { name: "筛选 LG1 账号任务", exact: true }).click();
+    const taskStatusFilter = page.getByRole("group", { name: "任务状态筛选" });
+    await taskStatusFilter.getByRole("button", { name: /已完成/ }).click();
+    const completedRow = page.locator(".task-work-row.done").filter({ hasText: "剑气蛇" });
+    await expect(completedRow).toHaveCount(1);
+    await completedRow.getByRole("button", { name: /恢复未完成/ }).click();
+
+    await expect(page.getByRole("status")).toContainText("1 笔实际记录继续保留");
+    await expect.poll(() => page.evaluate((legacyTaskId) => {
+      const accounting = JSON.parse(localStorage.getItem("sw.app.accounting.v1") || "{\"entries\":[]}");
+      const settings = JSON.parse(localStorage.getItem("sw.app.settings.v4") || "{\"taskCompletions\":[]}");
+      return {
+        ledger: accounting.entries.find((entry: { taskId?: string }) => entry.taskId === legacyTaskId),
+        completionStillPresent: settings.taskCompletions.some(
+          (entry: { taskId?: string }) => entry.taskId === legacyTaskId,
+        ),
+      };
+    }, taskId)).toMatchObject({
+      ledger: {
+        id: `legacy-task:${taskId}`,
+        accountId: "LG1",
+        effectiveDate: "2026-07-22",
+        occurredAt: "2026-07-22T03:04:05.000Z",
+        recordedAt: "2026-07-22T03:04:05.000Z",
+        source: "legacy-task-completion",
+        status: "confirmed",
+        legs: [{
+          kind: "expense",
+          resources: {
+            silverWan: 0,
+            dedicatedEggs: 40,
+            regularEggs: 0,
+            innerShards: 0,
+          },
+        }],
+      },
+      completionStillPresent: false,
+    });
+
+    await page.goto("/#/earnings?account=LG1");
+    const ledger = page.locator(".ledger-list");
+    await expect(ledger).toContainText("剑气蛇 · 皮肤");
+    await expect(ledger).toContainText("40 专用蛋");
+  });
+
   test("旧账号范围不会过滤五账号分析", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     await page.addInitScript(() => localStorage.setItem("sw.app.ui.v1", JSON.stringify({
@@ -37,10 +119,11 @@ test.describe("desktop application", () => {
 
     const primaryNavigation = page.getByRole("navigation", { name: "主导航" });
     const primaryLinks = primaryNavigation.getByRole("link");
-    await expect(primaryLinks).toHaveText(["首页", "录入", "任务", "本周小结", "资料"]);
+    await expect(primaryLinks).toHaveText(["首页", "录入", "任务", "核算", "本周小结", "资料"]);
     await expect(primaryNavigation.getByRole("link", { name: "首页", exact: true })).toHaveAttribute("href", "#/");
     await expect(primaryNavigation.getByRole("link", { name: "录入", exact: true })).toHaveAttribute("href", "#/record");
     await expect(primaryNavigation.getByRole("link", { name: "任务", exact: true })).toHaveAttribute("href", "#/plans/tasks");
+    await expect(primaryNavigation.getByRole("link", { name: "核算", exact: true })).toHaveAttribute("href", "#/earnings");
     await expect(primaryNavigation.getByRole("link", { name: "本周小结", exact: true })).toHaveAttribute("href", "#/week");
     await expect(primaryNavigation.getByRole("link", { name: "资料", exact: true })).toHaveAttribute("href", "#/resources");
 
@@ -66,6 +149,7 @@ test.describe("desktop application", () => {
     await expect(page).toHaveURL(/#\/week$/);
     await expect(page.getByTestId("week-page")).toBeVisible();
     await expect(page.getByRole("heading", { name: /账号本周情况$/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: "查看实际所得", exact: true })).toHaveAttribute("href", "#/earnings");
 
     await primaryNavigation.getByRole("link", { name: "资料", exact: true }).click();
     await expect(page).toHaveURL(/#\/resources$/);
@@ -89,6 +173,7 @@ test.describe("desktop application", () => {
 
     const routes = [
       ["/#/record", "今天要记什么？"],
+      ["/#/earnings", "实际所得"],
       ["/#/week", "本周小结"],
       ["/#/resources", "账号与资料"],
       ["/#/accounts/LG2", "LG2 账号详情"],
@@ -165,17 +250,36 @@ test.describe("desktop application", () => {
     await expect(taskStatusFilter.getByRole("button", { name: /待完成/ })).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".task-work-row.done")).toHaveCount(0);
     await expect(page.getByRole("link", { name: "返回录入", exact: true })).toBeVisible();
-    await expect(page.getByText("单项可直接完成", { exact: false })).toBeVisible();
+    await expect(page.getByText("固定消耗只需确认", { exact: false })).toBeVisible();
 
     await page.getByRole("button", { name: "筛选 LG1 账号任务", exact: true }).click();
     await page.getByLabel("任务关键词筛选").fill("剑气蛇 皮肤");
     const completionRow = page.locator(".task-work-row").filter({ hasText: "剑气蛇" });
     await expect(completionRow).toHaveCount(1);
     await completionRow.getByRole("button", { name: /标记完成/ }).click();
+    const completionDialog = page.getByRole("dialog", { name: "确认任务消耗" });
+    await expect(completionDialog).toBeVisible();
+    await fillRequiredEggSplit(completionDialog);
+    await completionDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
+    await expect(completionDialog).toHaveCount(0);
     await expect(page.locator(".task-work-row")).toHaveCount(0);
     await taskStatusFilter.getByRole("button", { name: /已完成/ }).click();
     await expect(page.locator(".task-work-row.done")).toHaveCount(1);
-    await expect(page.locator(".task-work-row.done").getByRole("button", { name: /恢复未完成/ })).toBeVisible();
+    const restoreButton = page.locator(".task-work-row.done").getByRole("button", { name: /恢复未完成/ });
+    await expect(restoreButton).toBeVisible();
+    const taskLedgerCount = await page.evaluate(() => (
+      JSON.parse(localStorage.getItem("sw.app.accounting.v1") || "{\"entries\":[]}").entries.length
+    ));
+    await restoreButton.click();
+    await taskStatusFilter.getByRole("button", { name: /待完成/ }).click();
+    const restoredRow = page.locator(".task-work-row").filter({ hasText: "剑气蛇" });
+    await restoredRow.getByRole("button", { name: /标记完成/ }).click();
+    const reuseDialog = page.getByRole("dialog", { name: "确认任务消耗" });
+    await expect(reuseDialog.getByText("已有实际流水", { exact: true })).toBeVisible();
+    await reuseDialog.getByRole("button", { name: "沿用记录并完成", exact: true }).click();
+    expect(await page.evaluate(() => (
+      JSON.parse(localStorage.getItem("sw.app.accounting.v1") || "{\"entries\":[]}").entries.length
+    ))).toBe(taskLedgerCount);
 
     await page.goto("/#/plans/parameters");
     await expect(page.getByLabel("每周专用蛋")).toHaveValue("2");
@@ -230,6 +334,7 @@ test.describe("desktop application", () => {
       const row = overview.locator(`article[data-account-id='${accountId}']`);
       await expect(row.locator(".desktop-account-silver b")).toHaveText(expectedSilver[accountId]);
       await expect(row.getByRole("link", { name: `查看 ${accountId} 账号详情`, exact: true })).toHaveAttribute("href", `#/accounts/${accountId}`);
+      await expect(row.getByRole("link", { name: `查看 ${accountId} 实际所得`, exact: true })).toHaveAttribute("href", `#/earnings?account=${accountId}`);
     }
     await expect(overview.locator("article[data-account-id='FC']")).toHaveClass(/active/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -297,8 +402,14 @@ test.describe("desktop application", () => {
 
     const bulkBar = page.getByRole("complementary", { name: "批量任务操作" });
     await expect(bulkBar.getByText("已选 2 项", { exact: true })).toBeVisible();
-    await bulkBar.getByRole("button", { name: "批量标记完成", exact: true }).click();
-    await expect(page.getByText("已完成 2 项任务并记录完成日期", { exact: false })).toBeVisible();
+    await bulkBar.getByRole("button", { name: "逐项确认并完成", exact: true }).click();
+    for (let index = 0; index < selectedTasks.length; index += 1) {
+      const dialog = page.getByRole("dialog", { name: "确认任务消耗" });
+      await expect(dialog).toBeVisible();
+      await fillRequiredEggSplit(dialog);
+      await dialog.getByRole("button", { name: "完成并记账", exact: true }).click();
+    }
+    await expect(page.getByRole("status")).toContainText("库存未被修改");
     await expect(page.locator(".task-work-row:not(.done)")).toHaveCount(initialCount - 2);
 
     await page.getByRole("group", { name: "任务状态筛选" }).getByRole("button", { name: /已完成/ }).click();
@@ -626,8 +737,16 @@ test.describe("week-to-date activity report", () => {
     const taskAccountId = (await silverTask.locator(".task-identity-cell span").innerText()).split(" · ")[0];
     expect(taskExpense).toBeGreaterThan(0);
     expect(["FC", "LG1", "PT", "LG2", "MYT"]).toContain(taskAccountId);
+    const inventoryBeforeSettlement = await page.evaluate(() => localStorage.getItem("sw.app.inventory.v2"));
     await silverTask.getByRole("button", { name: /标记完成/ }).click();
-    await expect(page.getByRole("status")).toContainText("银子支出");
+    const settlementDialog = page.getByRole("dialog", { name: /确认任务消耗|完成打书并记账/ });
+    await expect(settlementDialog).toBeVisible();
+    const actualSilverInput = settlementDialog.getByLabel("实际银子 / 万", { exact: true });
+    if (await actualSilverInput.count()) await actualSilverInput.fill(String(taskExpense));
+    await settlementDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText("实际花费已独立记账");
+    await expect(page.getByRole("status")).toContainText("库存未被修改");
+    expect(await page.evaluate(() => localStorage.getItem("sw.app.inventory.v2"))).toBe(inventoryBeforeSettlement);
 
     if (testInfo.project.name === "desktop") {
       await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name: "本周小结", exact: true }).click();

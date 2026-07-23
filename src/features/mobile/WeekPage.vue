@@ -47,7 +47,10 @@ function returnToCurrentWeek() {
         <p>{{ isCurrentWeek ? "本周" : "历史" }}</p>
         <h1>本周小结</h1>
       </div>
-      <RouterLink class="button" to="/record">补充记录</RouterLink>
+      <nav class="week-page-actions" aria-label="本周小结相关操作">
+        <RouterLink class="button earnings-button" to="/earnings">查看实际所得</RouterLink>
+        <RouterLink class="button" to="/record">补充记录</RouterLink>
+      </nav>
     </header>
 
     <InventoryWeekSwitcher
@@ -78,7 +81,13 @@ function returnToCurrentWeek() {
 .week-page-intro > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
 .week-page-intro p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
 .week-page-intro h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.04em; white-space: nowrap; }
-.week-page-intro .button { min-height: 44px; white-space: nowrap; }
+.week-page-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.week-page-intro .button { min-height: 44px; display: inline-flex; align-items: center; white-space: nowrap; }
+.week-page-intro .earnings-button {
+  border-color: color-mix(in srgb, var(--radar-cyan) 55%, var(--radar-line));
+  color: var(--radar-cyan-strong);
+  background: color-mix(in srgb, var(--radar-cyan-soft) 62%, #ffffff);
+}
 
 .week-page :deep(.inventory-week-switcher) { margin-bottom: 12px; }
 .week-page :deep(.weekly-activity-panel) { margin: 0; border-radius: 14px; box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
@@ -97,6 +106,8 @@ function returnToCurrentWeek() {
   .week-page { padding: 10px 10px 28px; }
   .week-page-intro h1 { font-size: 24px; }
   .week-page-intro .button { min-height: 44px; }
+  .week-page-actions { gap: 6px; }
+  .week-page-actions .button { padding-inline: 10px; font-size: 12px; }
   .week-page :deep(.inventory-week-switcher) { margin-inline: 0; }
   .week-page :deep(.weekly-activity-panel) { border-radius: 12px; }
   .week-inventory-details > summary { align-items: flex-start; flex-direction: column; gap: 6px; }

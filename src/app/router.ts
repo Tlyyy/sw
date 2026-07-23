@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-rou
 export const routes: RouteRecordRaw[] = [
   { path: "/", name: "dashboard", component: () => import("../features/home/HomePage.vue"), meta: { title: "本周", section: "home", mobileSection: "home", desktopSection: "home" } },
   { path: "/record", name: "record", component: () => import("../features/mobile/RecordPage.vue"), meta: { title: "录入", section: "record", mobileSection: "record", desktopSection: "record", immersive: true } },
+  { path: "/earnings", name: "earnings", component: () => import("../features/accounting/EarningsPage.vue"), meta: { title: "实际所得", section: "earnings", mobileSection: "more", desktopSection: "earnings", immersive: true } },
   { path: "/week", name: "week", component: () => import("../features/mobile/WeekPage.vue"), meta: { title: "本周小结", section: "week", mobileSection: "week", desktopSection: "week", immersive: true } },
   { path: "/weekly", redirect: "/week" },
   { path: "/resources", name: "resources", component: () => import("../features/mobile/ResourcesPage.vue"), meta: { title: "资料", section: "resources", mobileSection: "resources", desktopSection: "resources", immersive: true } },
@@ -15,7 +16,7 @@ export const routes: RouteRecordRaw[] = [
   { path: "/plans/upgrades", redirect: "/plans/gems" },
   { path: "/plans/gems", name: "gem-plan", component: () => import("../features/plans/UpgradesPage.vue"), meta: { title: "宝石计划", section: "plans", mobileSection: "more" } },
   { path: "/plans/beasts", name: "beasts", component: () => import("../features/plans/BeastsPage.vue"), meta: { title: "神兽主线任务", section: "plans", mobileSection: "more" } },
-  { path: "/plans/tasks", name: "plan-tasks", component: () => import("../features/plans/TaskMaintenancePage.vue"), meta: { title: "任务", section: "plans", mobileSection: "record", desktopSection: "tasks", immersive: true } },
+  { path: "/plans/tasks", name: "plan-tasks", component: () => import("../features/plans/TaskMaintenancePage.vue"), meta: { title: "任务", section: "plans", mobileSection: "tasks", desktopSection: "tasks", immersive: true } },
   { path: "/plans/timeline", name: "timeline", component: () => import("../features/plans/TimelinePage.vue"), meta: { title: "五号主线概览", section: "plans", mobileSection: "more" } },
   { path: "/plans/parameters", name: "plan-parameters", component: () => import("../features/plans/PlanParametersPage.vue"), meta: { title: "计划参数", section: "plans", mobileSection: "more" } },
   { path: "/analysis/recommendations", name: "recommendations", component: () => import("../features/analysis/RecommendationsPage.vue"), meta: { title: "推荐分析", section: "analysis", mobileSection: "resources" } },

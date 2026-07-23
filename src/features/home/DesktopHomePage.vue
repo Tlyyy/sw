@@ -97,7 +97,12 @@ const {
           </span>
           <span class="desktop-account-harvest" data-label="本周收获" role="cell">
             <b>{{ wanLabel(row.weekly?.harvestedSilverWan ?? null, true) }}</b>
-            <small>按库存区间结算</small>
+            <RouterLink
+              class="desktop-account-earnings"
+              :to="{ path: '/earnings', query: { account: row.accountId } }"
+              :aria-label="`查看 ${row.accountId} 实际所得`"
+              @click="ui.recentAccount = row.accountId"
+            >查看实际所得</RouterLink>
           </span>
           <span class="desktop-account-expense" data-label="本周支出" role="cell">
             <b>{{ wanLabel(row.weekly?.totalSilverExpenseWan ?? null) }}</b>
@@ -236,6 +241,19 @@ const {
 .desktop-account-table article > span { min-width: 0; display: grid; gap: 2px; }
 .desktop-account-table article > span b { overflow: hidden; color: var(--radar-ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .desktop-account-harvest b { color: var(--radar-success) !important; }
+.desktop-account-earnings {
+  width: fit-content;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--radar-cyan-strong);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--radar-cyan) 45%, transparent);
+  text-underline-offset: 2px;
+}
+.desktop-account-earnings:hover { text-decoration-color: currentColor; }
 .desktop-account-expense b { color: #9a5a00 !important; }
 .desktop-account-action { min-width: 0; }
 .desktop-account-detail { min-height: 40px; display: inline-flex; align-items: center; justify-content: flex-end; gap: 2px; color: var(--radar-cyan-strong); font-size: 12px; font-weight: 850; }

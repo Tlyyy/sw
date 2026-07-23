@@ -9,6 +9,7 @@ import { usePublishStore } from "./stores/publish";
 import { useSyncStore } from "./stores/sync";
 import { useUiStore } from "./stores/ui";
 import { useInventoryStore } from "./stores/inventory";
+import { useAccountingStore } from "./stores/accounting";
 
 const settings = useSettingsStore();
 const auth = useAuthStore();
@@ -29,6 +30,7 @@ function refreshPlanningDayWhenVisible() {
 onMounted(() => {
   settings.hydrate();
   useInventoryStore().hydrate();
+  useAccountingStore().hydrate();
   usePublishStore().hydrate();
   useUiStore().hydrate();
   stopAuthWatch = watch(

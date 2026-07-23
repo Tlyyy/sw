@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { appName } from "../../app/brand";
 import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
+import { useAccountingStore } from "../../stores/accounting";
 import { useSettingsStore } from "../../stores/settings";
 import { usePublishStore } from "../../stores/publish";
 import { useUiStore } from "../../stores/ui";
@@ -13,6 +14,7 @@ import DataCenterNav from "../data/DataCenterNav.vue";
 
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
+const accounting = useAccountingStore();
 const settings = useSettingsStore();
 const publish = usePublishStore();
 const ui = useUiStore();
@@ -34,6 +36,7 @@ function confirmAction(message: string, action: () => void) {
 function exportWorkspace() {
   const payload = createWorkspaceBackup({
     inventory: inventory.exportState(),
+    accounting: accounting.exportState(),
     settings: settings.exportState(),
     publish: publish.exportState(),
     ui: ui.exportState(),
@@ -45,14 +48,14 @@ function exportWorkspace() {
   anchor.download = `${appName}-${new Date().toISOString().slice(0, 10)}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
-  backupNotice.value = `已导出完整备份（${inventory.snapshots.length} 份库存快照）`;
+  backupNotice.value = `已导出完整备份（${inventory.snapshots.length} 份库存快照、${accounting.entries.length} 笔核算流水）`;
 }
 
 async function importWorkspace(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
-  if (!confirm("恢复备份会覆盖本机库存、行情、任务、发布草稿和界面偏好，确认继续？")) {
+  if (!confirm("恢复备份会覆盖本机库存、实际所得流水、行情、任务、发布草稿和界面偏好，确认继续？")) {
     input.value = "";
     return;
   }
@@ -63,11 +66,12 @@ async function importWorkspace(event: Event) {
       const backup = parseWorkspaceBackup(raw, catalog.data.beastConfig.taskDefaultSettings, marketNames);
       // Every partition is parsed before any store is changed.
       const previous = {
-        inventory: inventory.exportState(), settings: settings.exportState(),
+        inventory: inventory.exportState(), accounting: accounting.exportState(), settings: settings.exportState(),
         publish: publish.exportState(), ui: ui.exportState(),
       };
       try {
         inventory.replaceState(backup.inventory);
+        accounting.replaceState(backup.accounting);
         settings.replaceState(backup.settings);
         publish.replaceState(backup.publish);
         ui.replaceState(backup.ui);
@@ -75,12 +79,13 @@ async function importWorkspace(event: Event) {
         // Replace operations receive already validated payloads. This rollback
         // protects against an unexpected runtime failure during application.
         try { inventory.replaceState(previous.inventory); } catch { /* best-effort rollback */ }
+        try { accounting.replaceState(previous.accounting); } catch { /* best-effort rollback */ }
         try { settings.replaceState(previous.settings); } catch { /* best-effort rollback */ }
         try { publish.replaceState(previous.publish); } catch { /* best-effort rollback */ }
         try { ui.replaceState(previous.ui); } catch { /* best-effort rollback */ }
         throw cause;
       }
-      backupNotice.value = `已恢复完整备份（${inventory.snapshots.length} 份库存快照）`;
+      backupNotice.value = `已恢复完整备份（${inventory.snapshots.length} 份库存快照、${accounting.entries.length} 笔核算流水）`;
     } else {
       // Continue accepting the older inventory-only export format.
       inventory.replaceState(raw);
@@ -114,7 +119,7 @@ async function rotatePassword() {
     <section class="settings-section workspace-state-section cloud-sync-section" :class="`is-${cloudSync.statusTone}`">
       <div>
         <h2>自动云同步</h2>
-        <p>库存、行情与任务、发布草稿和界面偏好会自动同步；云端只保存由访问密码加密后的内容。</p>
+        <p>库存、实际流水、行情与任务、发布草稿和界面偏好会自动同步；云端只保存由访问密码加密后的内容。</p>
         <p v-if="cloudSync.errorMessage" class="cloud-sync-message" role="alert">{{ cloudSync.errorMessage }}</p>
         <p v-else-if="cloudSync.conflictMessage" class="cloud-sync-message" role="status">{{ cloudSync.conflictMessage }}</p>
         <p v-else-if="cloudSync.status === 'offline'" class="cloud-sync-message" role="status">已自动保存在本机；网络恢复或返回前台后会自动重连。</p>
@@ -157,7 +162,7 @@ async function rotatePassword() {
       <button class="button" @click="confirmAction('确认清空发布页已选宠物？', publish.clear)">清空发布选择</button>
     </section>
     <section class="settings-section workspace-state-section">
-      <div><h2>完整业务备份</h2><p>包含库存、行情与历史、任务完成日期、银子支出、发布草稿和界面偏好；不包含登录状态和静态基础资料。恢复后会自动同步，任一分区无效都不会覆盖现有数据。</p></div>
+      <div><h2>完整业务备份</h2><p>包含库存、独立核算流水、行情与历史、任务完成日期、银子支出、发布草稿和界面偏好；不包含登录状态和静态基础资料。恢复后会自动同步，任一分区无效都不会覆盖现有数据。</p></div>
       <strong aria-live="polite">{{ backupNotice || `${inventory.snapshots.length} 份库存快照已保存在本机` }}</strong>
       <div><button class="button" type="button" @click="exportWorkspace">导出完整 JSON</button><button class="button" type="button" @click="backupInput?.click()">恢复备份</button><input ref="backupInput" hidden type="file" accept="application/json,.json" @change="importWorkspace" /></div>
     </section>

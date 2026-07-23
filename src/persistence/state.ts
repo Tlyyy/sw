@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AccountingEntry, AccountingResources } from "../domain/accounting";
 import { defaultGemPlanSettings } from "../domain/gems";
 import { parseInventoryExport } from "../domain/inventory";
 import type { PublishOptions } from "../domain/publish";
@@ -14,9 +15,43 @@ import type { TaskOverride } from "../domain/plans";
 
 const nonNegativeNumber = z.number().finite().nonnegative();
 const nonNegativeInteger = nonNegativeNumber.int();
-const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+function isRealDateKey(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day;
+}
+const dateKey = z.string().refine(isRealDateKey, "日期必须是真实的 YYYY-MM-DD");
 const timestamp = z.string().refine((value) => Number.isFinite(Date.parse(value)));
 const accountId = z.enum(["FC", "LG1", "PT", "LG2", "MYT"]);
+const accountingResourcesSchema: z.ZodType<AccountingResources> = z.object({
+  silverWan: nonNegativeNumber,
+  dedicatedEggs: nonNegativeNumber,
+  regularEggs: nonNegativeNumber,
+  innerShards: nonNegativeNumber.nullable(),
+}).strict();
+const accountingEntrySchema: z.ZodType<AccountingEntry> = z.object({
+  id: z.string().min(1),
+  accountId,
+  effectiveDate: dateKey,
+  occurredAt: timestamp,
+  recordedAt: timestamp,
+  legs: z.array(z.object({
+    kind: z.enum(["expense", "transfer-out", "transfer-in", "adjustment-increase", "adjustment-decrease"]),
+    resources: accountingResourcesSchema,
+    note: z.string().trim().max(120).optional(),
+  }).strict()).min(1),
+  taskId: z.string().min(1).optional(),
+  groupId: z.string().min(1).optional(),
+  source: z.string().min(1).optional(),
+  status: z.enum(["confirmed", "draft", "void"]).optional(),
+  note: z.string().trim().max(120).optional(),
+}).strict();
 const taskSettingsSchema = z.object({
   startDate: dateKey,
   thisWeekEggs: nonNegativeNumber,
@@ -198,6 +233,64 @@ export interface UiState {
   matrixDisplay: { stats: boolean; aptitudes: boolean; skills: boolean };
 }
 
+export interface AccountingState {
+  version: 1;
+  entries: AccountingEntry[];
+}
+
+const accountingStateSchema = z.object({
+  version: z.literal(1),
+  entries: z.array(accountingEntrySchema),
+}).strict();
+
+export function emptyAccountingState(): AccountingState {
+  return { version: 1, entries: [] };
+}
+
+export function parseAccountingState(value: unknown): AccountingState {
+  if (value === undefined || value === null) return emptyAccountingState();
+  const raw = typeof value === "string" ? JSON.parse(value) : value;
+  const parsed = accountingStateSchema.parse(raw) as AccountingState;
+  const transferGroups = new Map<string, AccountingEntry[]>();
+  parsed.entries.forEach((entry) => {
+    const transferLegs = entry.legs.filter((leg) => (
+      leg.kind === "transfer-out" || leg.kind === "transfer-in"
+    ));
+    if (!transferLegs.length) return;
+    if (!entry.groupId || transferLegs.length !== 1 || entry.legs.length !== 1) {
+      throw new Error("账号转移必须由一组可核对的转出与转入记录组成");
+    }
+    transferGroups.set(entry.groupId, [...(transferGroups.get(entry.groupId) || []), entry]);
+  });
+  transferGroups.forEach((entries) => {
+    const outgoing = entries.find((entry) => entry.legs[0].kind === "transfer-out");
+    const incoming = entries.find((entry) => entry.legs[0].kind === "transfer-in");
+    const resourcesMatch = outgoing && incoming
+      ? JSON.stringify(outgoing.legs[0].resources) === JSON.stringify(incoming.legs[0].resources)
+      : false;
+    if (
+      entries.length !== 2
+      || !outgoing
+      || !incoming
+      || outgoing.accountId === incoming.accountId
+      || outgoing.effectiveDate !== incoming.effectiveDate
+      || outgoing.occurredAt !== incoming.occurredAt
+      || (outgoing.status || "confirmed") !== (incoming.status || "confirmed")
+      || !resourcesMatch
+    ) {
+      throw new Error("账号转移的两端不完整或资源数量不一致");
+    }
+  });
+  return {
+    version: 1,
+    entries: [...parsed.entries].sort((left, right) => (
+      left.effectiveDate.localeCompare(right.effectiveDate)
+      || left.occurredAt.localeCompare(right.occurredAt)
+      || left.id.localeCompare(right.id)
+    )),
+  };
+}
+
 const uiStateSchema = z.object({
   version: z.literal(2),
   accountScope: z.enum(["ALL", "FC", "LG1", "PT", "LG2", "MYT"]),
@@ -238,15 +331,16 @@ export function parseUiState(value: unknown): UiState {
 
 export interface WorkspaceBackup {
   format: "sw-workspace-backup";
-  version: 1;
+  version: 2;
   exportedAt: string;
   inventory: InventoryExportPayload;
   settings: SettingsState;
   publish: PublishState;
   ui: UiState;
+  accounting: AccountingState;
 }
 
-const workspaceEnvelopeSchema = z.object({
+const workspaceEnvelopeV1Schema = z.object({
   format: z.literal("sw-workspace-backup"),
   version: z.literal(1),
   exportedAt: z.string().refine((value) => Number.isFinite(Date.parse(value))),
@@ -256,8 +350,34 @@ const workspaceEnvelopeSchema = z.object({
   ui: z.unknown(),
 }).strict();
 
-export function createWorkspaceBackup(parts: Omit<WorkspaceBackup, "format" | "version" | "exportedAt">, now = () => new Date()): WorkspaceBackup {
-  return { format: "sw-workspace-backup", version: 1, exportedAt: now().toISOString(), ...parts };
+const workspaceEnvelopeV2Schema = z.object({
+  format: z.literal("sw-workspace-backup"),
+  version: z.literal(2),
+  exportedAt: z.string().refine((value) => Number.isFinite(Date.parse(value))),
+  inventory: z.unknown(),
+  settings: z.unknown(),
+  publish: z.unknown(),
+  ui: z.unknown(),
+  accounting: z.unknown(),
+}).strict();
+
+const workspaceEnvelopeSchema = z.discriminatedUnion("version", [
+  workspaceEnvelopeV1Schema,
+  workspaceEnvelopeV2Schema,
+]);
+
+type WorkspaceBackupInput = Omit<WorkspaceBackup, "format" | "version" | "exportedAt" | "accounting"> & {
+  accounting?: AccountingState;
+};
+
+export function createWorkspaceBackup(parts: WorkspaceBackupInput, now = () => new Date()): WorkspaceBackup {
+  return {
+    format: "sw-workspace-backup",
+    version: 2,
+    exportedAt: now().toISOString(),
+    ...parts,
+    accounting: parseAccountingState(parts.accounting),
+  };
 }
 
 export function parseWorkspaceBackup(value: string | unknown, defaults: BeastTaskSettings, marketNames: string[]): WorkspaceBackup {
@@ -265,7 +385,7 @@ export function parseWorkspaceBackup(value: string | unknown, defaults: BeastTas
   const envelope = workspaceEnvelopeSchema.parse(raw);
   return {
     format: "sw-workspace-backup",
-    version: 1,
+    version: 2,
     exportedAt: envelope.exportedAt,
     inventory: parseInventoryExport(envelope.inventory),
     settings: parseSettingsState(envelope.settings, defaults, marketNames),
@@ -274,5 +394,6 @@ export function parseWorkspaceBackup(value: string | unknown, defaults: BeastTas
       includeStats: true, includeSkills: true, includeNotes: true, allShots: true,
     }),
     ui: parseUiState(envelope.ui),
+    accounting: parseAccountingState(envelope.version === 2 ? envelope.accounting : undefined),
   };
 }

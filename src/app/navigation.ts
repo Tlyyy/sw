@@ -2,11 +2,13 @@ export const primaryNavigation = [
   { to: "/", text: "首页", icon: "home", section: "home" },
   { to: "/record", text: "录入", icon: "plus", section: "record" },
   { to: "/plans/tasks", text: "任务", icon: "plan", section: "tasks" },
+  { to: "/earnings", text: "核算", icon: "analysis", section: "earnings" },
   { to: "/week", text: "本周小结", icon: "report", section: "week" },
   { to: "/resources", text: "资料", icon: "assets", section: "resources" },
 ] as const;
 
 export const featureNavigation = [
+  { to: "/earnings", text: "实际所得", icon: "analysis", section: "earnings" },
   { to: "/assets/pets", text: "资产资料", icon: "assets", section: "assets" },
   { to: "/plans/beasts", text: "计划工具", icon: "plan", section: "plans" },
   { to: "/analysis/recommendations", text: "分析工具", icon: "analysis", section: "analysis" },
@@ -18,13 +20,14 @@ export const featureNavigation = [
 export const mobileNavigation = [
   { to: "/", text: "首页", icon: "home", section: "home" },
   { to: "/record", text: "录入", icon: "plus", section: "record" },
+  { to: "/plans/tasks", text: "任务", icon: "plan", section: "tasks" },
   { to: "/week", text: "本周小结", icon: "report", section: "week" },
-  { to: "/resources", text: "资料", icon: "assets", section: "resources" },
 ] as const;
 
 export const commandPages = [
   ["首页 · 本周节奏", "/"],
   ["录入", "/record"],
+  ["实际所得核算", "/earnings"],
   ["本周小结", "/week"],
   ["资料", "/resources"],
   ["宠物资产", "/assets/pets"],
