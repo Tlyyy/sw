@@ -16,19 +16,19 @@ export interface MobileWeekDayOverview {
   expenseCount: number;
 }
 
-export interface MobileAccountOverview {
+export interface AccountOverview {
   accountId: AccountId;
   weekly: WeeklyAccountActivitySummary | null;
   projection: MainlineAccountProjection | null;
   pendingTaskCount: number;
 }
 
-/** Join every mobile account surface by account ID and keep one canonical order. */
-export function buildMobileAccountOverview(
+/** Join every account-facing surface by account ID and keep one canonical order. */
+export function buildAccountOverview(
   summaries: WeeklyAccountActivitySummary[],
   projections: MainlineAccountProjection[],
   taskPlans: AccountTaskPlan[],
-): MobileAccountOverview[] {
+): AccountOverview[] {
   const summaryByAccount = new Map(summaries.map((summary) => [summary.accountId, summary]));
   const projectionByAccount = new Map(projections.map((projection) => [projection.accountId, projection]));
   const planByAccount = new Map(taskPlans.map((plan) => [plan.accountId, plan]));
@@ -40,6 +40,7 @@ export function buildMobileAccountOverview(
     pendingTaskCount: planByAccount.get(accountId)?.tasks.filter((task) => !task.done).length || 0,
   }));
 }
+
 /**
  * Build the seven-day rhythm shown on the mobile home screen.
  * A day counts as recorded when it contains any user-created weekly activity,

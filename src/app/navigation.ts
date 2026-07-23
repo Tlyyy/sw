@@ -1,21 +1,19 @@
-import type { AccountId } from "../domain/types";
-
 export const primaryNavigation = [
-  { to: "/", text: "行动推进台", icon: "home", section: "home" },
-  { to: "/assets/pets", text: "资产", icon: "assets", section: "assets" },
-  { to: "/plans/beasts", text: "计划", icon: "plan", section: "plans" },
-  { to: "/analysis/recommendations", text: "分析", icon: "analysis", section: "analysis" },
-  { to: "/publish", text: "发布", icon: "publish", section: "publish" },
-  { to: "/data/inventory", text: "数据", icon: "settings", section: "data" },
+  { to: "/", text: "首页", icon: "home", section: "home" },
+  { to: "/record", text: "录入", icon: "plus", section: "record" },
+  { to: "/plans/tasks", text: "任务", icon: "plan", section: "tasks" },
+  { to: "/week", text: "本周小结", icon: "report", section: "week" },
+  { to: "/resources", text: "资料", icon: "assets", section: "resources" },
 ] as const;
 
-export function buildPrimaryNavigation(recentAccount: AccountId) {
-  return [
-    primaryNavigation[0],
-    { to: `/accounts/${recentAccount}`, text: "账号", icon: "account", section: "accounts" },
-    ...primaryNavigation.slice(1),
-  ];
-}
+export const featureNavigation = [
+  { to: "/assets/pets", text: "资产资料", icon: "assets", section: "assets" },
+  { to: "/plans/beasts", text: "计划工具", icon: "plan", section: "plans" },
+  { to: "/analysis/recommendations", text: "分析工具", icon: "analysis", section: "analysis" },
+  { to: "/publish", text: "内容发布", icon: "publish", section: "publish" },
+  { to: "/data/inventory", text: "数据中心", icon: "settings", section: "data" },
+  { to: "/settings", text: "同步与设置", icon: "settings", section: "settings" },
+] as const;
 
 export const mobileNavigation = [
   { to: "/", text: "首页", icon: "home", section: "home" },

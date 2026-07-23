@@ -6,14 +6,16 @@ import { useSettingsStore } from "../../stores/settings";
 import { buildTaskPlans, taskDisplayTypeOptions, type ScheduledTask } from "../../domain/plans";
 import { formatWan } from "../../domain/gems";
 import { taskCompletionResourceLabel } from "../../domain/weeklyActivity";
-import PlansNav from "./PlansNav.vue";
+import type { AccountId } from "../../domain/types";
+import { useUiStore } from "../../stores/ui";
 
 type TaskStatusFilter = "pending" | "done" | "ALL";
 
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
 const settings = useSettingsStore();
-const account = ref("ALL");
+const ui = useUiStore();
+const account = ref<string>(ui.recentAccount);
 const taskType = ref("ALL");
 const status = ref<TaskStatusFilter>("pending");
 const query = ref("");
@@ -45,8 +47,8 @@ const groupedTasks = computed(() => catalog.data.accounts.map((item) => ({
   accountId: item.id,
   tasks: tasks.value.filter((task) => task.accountId === item.id),
 })).filter((group) => group.tasks.length));
-const pendingTaskCount = computed(() => allTasks.value.filter((task) => !task.done).length);
-const doneTaskCount = computed(() => allTasks.value.length - pendingTaskCount.value);
+const pendingTaskCount = computed(() => scopedTasks.value.filter((task) => !task.done).length);
+const doneTaskCount = computed(() => scopedTasks.value.length - pendingTaskCount.value);
 const accountProgress = computed(() => catalog.data.accounts.map((item) => {
   const accountTasks = allTasks.value.filter((task) => task.accountId === item.id);
   const done = accountTasks.filter((task) => task.done).length;
@@ -67,6 +69,10 @@ const allVisiblePendingSelected = computed(() => Boolean(visiblePendingTasks.val
 
 watch([account, taskType, status, query], () => {
   selectedTaskIds.value = [];
+});
+
+watch(account, (value) => {
+  if (value !== "ALL") ui.recentAccount = value as AccountId;
 });
 
 function requirementLabel(task: ScheduledTask) {
@@ -99,6 +105,7 @@ function setStatus(value: TaskStatusFilter) {
 function selectAccount(accountId: string) {
   account.value = account.value === accountId ? "ALL" : accountId;
   status.value = "pending";
+  if (account.value !== "ALL") ui.recentAccount = account.value as AccountId;
 }
 
 function clearFilters() {
@@ -151,27 +158,30 @@ function resetCompletion() {
 
 <template>
   <div class="page-wrap plan-page task-maintenance-page">
-    <PlansNav />
-
-    <section class="task-operation-guide" aria-label="操作指引">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10.7v6M12 7.3h.01" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
-      <div>
-        <strong>操作指引</strong>
-        <p>单项可直接标记完成；多项先勾选，再批量完成。系统会同时记录完成日期和对应资源支出，恢复未完成时一并撤销。</p>
-      </div>
-      <button v-if="completionOverrideCount" class="button danger task-reset-action" type="button" @click="resetCompletion">清除全部完成记录</button>
-    </section>
+    <header class="task-page-intro">
+      <div><p>任务</p><h1>按账号维护任务</h1><span>先选账号，再标记完成；相关资源支出会自动进入本周小结。</span></div>
+      <RouterLink class="button" to="/record">返回录入</RouterLink>
+    </header>
 
     <section class="task-account-overview" aria-labelledby="task-account-overview-title">
       <header><div><p>逐账号查看</p><h2 id="task-account-overview-title">各账号任务进度</h2></div><span>点账号可直接筛选</span></header>
       <div>
-        <button v-for="item in accountProgress" :key="item.accountId" type="button" :class="{ active: account === item.accountId }" :aria-pressed="account === item.accountId" @click="selectAccount(item.accountId)">
+        <button v-for="item in accountProgress" :key="item.accountId" type="button" :class="{ active: account === item.accountId }" :data-account-id="item.accountId" :aria-label="`筛选 ${item.accountId} 账号任务`" :aria-pressed="account === item.accountId" @click="selectAccount(item.accountId)">
           <strong>{{ item.accountId }}</strong>
           <span>{{ item.done }} / {{ item.total }}</span>
           <i aria-hidden="true"><b :style="{ width: `${item.rate}%` }"></b></i>
           <small>{{ item.pending }} 项待完成</small>
         </button>
       </div>
+    </section>
+
+    <section class="task-operation-guide" aria-label="操作指引">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 10.7v6M12 7.3h.01" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
+      <div>
+        <strong>完成任务会同步记账</strong>
+        <p>单项可直接完成，多项可勾选后批量完成；恢复未完成时，关联支出也会一并撤销。</p>
+      </div>
+      <button v-if="completionOverrideCount" class="button danger task-reset-action" type="button" @click="resetCompletion">清除全部完成记录</button>
     </section>
 
     <p v-if="actionFeedback" class="task-action-feedback" role="status">{{ actionFeedback }}</p>
@@ -199,29 +209,29 @@ function resetCompletion() {
       <button class="button task-clear-filter" type="button" @click="clearFilters">清除筛选</button>
     </form>
 
-    <div v-if="tasks.length" class="task-worklist" role="table" aria-label="神兽任务列表">
-      <div class="task-worklist-head" role="row">
+    <div v-if="tasks.length" class="task-worklist" role="region" aria-label="神兽任务列表">
+      <div class="task-worklist-head">
         <label class="task-select-cell"><input type="checkbox" :checked="allVisiblePendingSelected" :disabled="!visiblePendingTasks.length" aria-label="选择当前全部待完成任务" @change="toggleVisibleSelection(($event.target as HTMLInputElement).checked)" /></label>
-        <span role="columnheader">账号 / 神兽</span>
-        <span role="columnheader">任务阶段</span>
-        <span role="columnheader">所需资源</span>
-        <span role="columnheader">预计完成</span>
-        <span role="columnheader">状态 / 操作</span>
+        <span>账号 / 神兽</span>
+        <span>任务阶段</span>
+        <span>所需资源</span>
+        <span>预计完成</span>
+        <span>状态 / 操作</span>
       </div>
 
-      <section v-for="group in groupedTasks" :key="group.accountId" class="task-account-group" role="rowgroup" :aria-label="`${group.accountId} 账号任务`">
-        <header class="task-account-header">
+      <section v-for="group in groupedTasks" :key="group.accountId" class="task-account-group" :aria-labelledby="`task-account-${group.accountId}`">
+        <header :id="`task-account-${group.accountId}`" class="task-account-header">
           <span class="task-account-mark">{{ group.accountId }}</span>
           <strong>{{ group.accountId }}</strong>
           <span>共 {{ group.tasks.length }} 项</span>
         </header>
-        <article v-for="task in group.tasks" :key="task.id" :class="['task-work-row', { done: task.done }]" role="row">
+        <article v-for="task in group.tasks" :key="task.id" :class="['task-work-row', { done: task.done }]" :aria-label="`${task.accountId} ${task.typeLabel} ${task.actionLabel}`">
           <label class="task-select-cell"><input type="checkbox" :checked="selectedTaskIds.includes(task.id)" :disabled="task.done" :aria-label="`选择 ${task.accountId} ${task.typeLabel} ${task.actionLabel}`" @change="toggleTaskSelection(task.id, ($event.target as HTMLInputElement).checked)" /></label>
-          <div class="task-identity-cell" role="cell"><strong>{{ task.typeLabel }}</strong><span>{{ task.accountId }} · {{ task.typeKey === 'horse' ? '神兽龙马' : '神兽青蛇' }}</span></div>
-          <div class="task-stage-cell" role="cell"><strong>{{ task.actionLabel }}</strong><span>{{ task.kind }}</span></div>
-          <strong class="task-resource-cell" role="cell">{{ requirementLabel(task) }}</strong>
-          <div class="task-schedule-cell" role="cell"><strong>{{ scheduleLabel(task) }}</strong><span v-if="scheduleLabel(task) === '等待条件'">条件满足后排期</span></div>
-          <div class="task-status-cell" role="cell">
+          <div class="task-identity-cell"><strong>{{ task.typeLabel }}</strong><span>{{ task.accountId }} · {{ task.typeKey === 'horse' ? '神兽龙马' : '神兽青蛇' }}</span></div>
+          <div class="task-stage-cell"><strong>{{ task.actionLabel }}</strong><span>{{ task.kind }}</span></div>
+          <strong class="task-resource-cell">{{ requirementLabel(task) }}</strong>
+          <div class="task-schedule-cell"><strong>{{ scheduleLabel(task) }}</strong><span v-if="scheduleLabel(task) === '等待条件'">条件满足后排期</span></div>
+          <div class="task-status-cell">
             <span :class="['task-state-label', taskState(task).tone]">{{ taskState(task).label }}</span>
             <button :class="['task-row-action', { secondary: task.done }]" type="button" :aria-label="`${task.accountId} ${task.typeLabel} ${task.actionLabel} ${task.done ? '恢复未完成' : '标记完成'}`" @click="setTaskCompletion(task, !task.done)">{{ task.done ? "恢复未完成" : "标记完成" }}</button>
           </div>
@@ -239,6 +249,13 @@ function resetCompletion() {
 </template>
 
 <style scoped>
+.task-maintenance-page { width: min(100%, 1320px); padding-top: 14px; padding-bottom: 56px; }
+.task-page-intro { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 4px 13px; border-bottom: 1px solid var(--radar-line); }
+.task-page-intro > div { min-width: 0; }
+.task-page-intro p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.task-page-intro h1 { margin-top: 1px; font-size: 27px; line-height: 1.2; letter-spacing: -.04em; }
+.task-page-intro span { display: block; margin-top: 3px; color: var(--radar-muted); font-size: 12px; line-height: 1.45; }
+.task-page-intro .button { min-height: 44px; white-space: nowrap; }
 .task-account-overview { overflow: hidden; margin: 16px 0; border: 1px solid var(--radar-line); border-radius: 12px; background: #ffffff; }
 .task-account-overview > header { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 14px; border-bottom: 1px solid var(--radar-line); background: var(--radar-surface-2); }
 .task-account-overview > header p { color: var(--radar-cyan-strong); font-size: 10px; font-weight: 850; letter-spacing: .08em; }
@@ -254,7 +271,15 @@ function resetCompletion() {
 .task-account-overview button > i > b { height: 100%; display: block; border-radius: inherit; background: var(--radar-cyan); }
 .task-account-overview button small { color: var(--radar-muted); font-size: 10px; white-space: nowrap; }
 
+@media (min-width: 861px) and (max-width: 1100px) {
+  .task-maintenance-page { --task-grid: 36px minmax(130px, 1fr) minmax(108px, .78fr) 104px 112px minmax(158px, .9fr); }
+}
+
 @media (max-width: 720px) {
+  .task-maintenance-page { padding: 10px 10px 32px; }
+  .task-page-intro { min-height: 0; align-items: flex-start; }
+  .task-page-intro h1 { font-size: 24px; }
+  .task-page-intro span { max-width: 240px; }
   .task-account-overview { margin: 12px 0; }
   .task-account-overview > header { min-height: 52px; padding: 8px 10px; }
   .task-account-overview button { min-height: 84px; padding-inline: 4px; }

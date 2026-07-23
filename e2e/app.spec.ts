@@ -14,7 +14,7 @@ test.describe("desktop application", () => {
       matrixDisplay: { stats: true, aptitudes: true, skills: true },
     })));
 
-    const accountIds = ["FC", "LG1", "LG2", "PT", "MYT"];
+    const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"];
     await page.goto("/#/analysis/recommendations");
     const recommendationCodes = page.locator(".recommendation-board .account-code");
     await expect(recommendationCodes.first()).toBeVisible();
@@ -32,28 +32,65 @@ test.describe("desktop application", () => {
   test("核心路由、搜索和业务基线", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     await page.goto("/#/");
-    await expect(page.getByRole("heading", { name: "五条主线推进轨道" })).toBeVisible();
-    await expect(page.locator(".mainline-row")).toHaveCount(5);
-    await expect(page.getByRole("button", { name: /录入五号库存快照/ })).toBeVisible();
-    await page.getByRole("button", { name: "录入五号库存快照", exact: true }).click();
+    await expect(page.getByTestId("desktop-week-home")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "本周", exact: true })).toBeVisible();
+
+    const primaryNavigation = page.getByRole("navigation", { name: "主导航" });
+    const primaryLinks = primaryNavigation.getByRole("link");
+    await expect(primaryLinks).toHaveText(["首页", "录入", "任务", "本周小结", "资料"]);
+    await expect(primaryNavigation.getByRole("link", { name: "首页", exact: true })).toHaveAttribute("href", "#/");
+    await expect(primaryNavigation.getByRole("link", { name: "录入", exact: true })).toHaveAttribute("href", "#/record");
+    await expect(primaryNavigation.getByRole("link", { name: "任务", exact: true })).toHaveAttribute("href", "#/plans/tasks");
+    await expect(primaryNavigation.getByRole("link", { name: "本周小结", exact: true })).toHaveAttribute("href", "#/week");
+    await expect(primaryNavigation.getByRole("link", { name: "资料", exact: true })).toHaveAttribute("href", "#/resources");
+
+    const accountOverview = page.getByTestId("account-overview");
+    const accountRows = accountOverview.locator("article[data-account-id]");
+    await expect(accountRows).toHaveCount(5);
+    expect(await accountRows.evaluateAll((rows) => rows.map((row) => row.getAttribute("data-account-id")))).toEqual(["FC", "LG1", "PT", "LG2", "MYT"]);
+    await expect(accountOverview.getByText("不显示跨账号合计", { exact: true })).toBeVisible();
+    await expect(page.locator(".weekly-cashflow-metrics")).toHaveCount(0);
+
+    await primaryNavigation.getByRole("link", { name: "录入", exact: true }).click();
+    await expect(page).toHaveURL(/#\/record$/);
+    await expect(page.getByTestId("record-page")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "今天要记什么？", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /开始录入|检查并更新/ }).click();
     const inventoryDialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(inventoryDialog).toBeVisible();
     await expect(inventoryDialog.getByRole("spinbutton")).toHaveCount(20);
     await inventoryDialog.getByRole("button", { name: "关闭库存快照录入" }).click();
     await expect(inventoryDialog).toHaveCount(0);
+
+    await primaryNavigation.getByRole("link", { name: "本周小结", exact: true }).click();
+    await expect(page).toHaveURL(/#\/week$/);
+    await expect(page.getByTestId("week-page")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /账号本周情况$/ })).toBeVisible();
+
+    await primaryNavigation.getByRole("link", { name: "资料", exact: true }).click();
+    await expect(page).toHaveURL(/#\/resources$/);
+    await expect(page.getByTestId("resources-page")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "账号与资料", exact: true })).toBeVisible();
+
+    await primaryNavigation.getByRole("link", { name: "首页", exact: true }).click();
+    await expect(page).toHaveURL(/#\/$/);
+    await expect(page.getByTestId("desktop-week-home")).toBeVisible();
     const typography = await page.evaluate(() => ({
       nav: Number.parseFloat(getComputedStyle(document.querySelector(".orbit-nav a")!).fontSize),
-      title: Number.parseFloat(getComputedStyle(document.querySelector(".workbench-titlebar h1")!).fontSize),
-      body: Number.parseFloat(getComputedStyle(document.querySelector(".workbench-page")!).fontSize),
+      title: Number.parseFloat(getComputedStyle(document.querySelector(".desktop-home-title h1")!).fontSize),
+      body: Number.parseFloat(getComputedStyle(document.querySelector(".desktop-home-page")!).fontSize),
       button: Number.parseFloat(getComputedStyle(document.querySelector("button")!).fontSize),
     }));
     expect(typography.nav).toBeGreaterThanOrEqual(14);
     expect(typography.title).toBeGreaterThanOrEqual(22);
     expect(typography.body).toBeGreaterThanOrEqual(14);
     expect(typography.button).toBeGreaterThanOrEqual(13);
-    await page.screenshot({ path: testInfo.outputPath("dashboard-desktop.png") });
+    await page.screenshot({ path: testInfo.outputPath("home-desktop.png") });
 
     const routes = [
+      ["/#/record", "今天要记什么？"],
+      ["/#/week", "本周小结"],
+      ["/#/resources", "账号与资料"],
       ["/#/accounts/LG2", "LG2 账号详情"],
       ["/#/assets/pets", "宠物资产"],
       ["/#/assets/equipment", "装备资产"],
@@ -61,7 +98,7 @@ test.describe("desktop application", () => {
       ["/#/assets/evidence", "截图证据"],
       ["/#/plans/upgrades", "宝石计划"],
       ["/#/plans/beasts", "神兽主线任务"],
-      ["/#/plans/tasks", "任务维护"],
+      ["/#/plans/tasks", "按账号维护任务"],
       ["/#/plans/timeline", "五号主线概览"],
       ["/#/plans/parameters", "计划参数"],
       ["/#/analysis/recommendations", "推荐分析"],
@@ -119,14 +156,18 @@ test.describe("desktop application", () => {
 
     await page.goto("/#/data/tasks");
     await expect(page).toHaveURL(/#\/plans\/tasks$/);
-    await expect(page.getByRole("heading", { name: "任务维护", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "按账号维护任务", exact: true })).toBeVisible();
+    const recentAccountButton = page.getByRole("button", { name: "筛选 LG2 账号任务", exact: true });
+    await expect(recentAccountButton).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("section[aria-labelledby='task-account-LG2']")).toBeVisible();
+    await expect(page.locator(".task-account-group")).toHaveCount(1);
     const taskStatusFilter = page.getByRole("group", { name: "任务状态筛选" });
     await expect(taskStatusFilter.getByRole("button", { name: /待完成/ })).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".task-work-row.done")).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "计划参数", exact: true })).toBeVisible();
-    await expect(page.getByText("单项可直接标记完成", { exact: false })).toBeVisible();
+    await expect(page.getByRole("link", { name: "返回录入", exact: true })).toBeVisible();
+    await expect(page.getByText("单项可直接完成", { exact: false })).toBeVisible();
 
-    await page.getByLabel("任务账号筛选").selectOption("LG1");
+    await page.getByRole("button", { name: "筛选 LG1 账号任务", exact: true }).click();
     await page.getByLabel("任务关键词筛选").fill("剑气蛇 皮肤");
     const completionRow = page.locator(".task-work-row").filter({ hasText: "剑气蛇" });
     await expect(completionRow).toHaveCount(1);
@@ -143,7 +184,7 @@ test.describe("desktop application", () => {
     await expect(page.getByRole("heading", { name: "单项成本覆盖", exact: true })).toBeVisible();
   });
 
-  test("首页同时突出蛋缺口和资金缺口", async ({ page }, testInfo) => {
+  test("首页按固定账号顺序展示各自数据且不显示跨账号合计", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     const runtimeErrors: string[] = [];
     page.on("pageerror", (error) => runtimeErrors.push(error.message));
@@ -160,8 +201,8 @@ test.describe("desktop application", () => {
           accounts: {
             FC: { dedicatedEggs: 7, regularEggs: 7, silverWan: 122, innerShardCount: 30 },
             LG1: { dedicatedEggs: 5, regularEggs: 5, silverWan: 100, innerShardCount: 20 },
-            LG2: { dedicatedEggs: 4, regularEggs: 4, silverWan: 100, innerShardCount: 20 },
-            PT: { dedicatedEggs: 1, regularEggs: 0, silverWan: 100, innerShardCount: 20 },
+            PT: { dedicatedEggs: 1, regularEggs: 0, silverWan: 101, innerShardCount: 20 },
+            LG2: { dedicatedEggs: 4, regularEggs: 4, silverWan: 102, innerShardCount: 20 },
             MYT: { dedicatedEggs: 4, regularEggs: 4, silverWan: 60, innerShardCount: 20 },
           },
         }],
@@ -176,25 +217,25 @@ test.describe("desktop application", () => {
     });
 
     await page.goto("/#/");
-    const fcAccount = page.locator(".radar-account-item").filter({ hasText: "FC" });
-    await expect(fcAccount.locator(".radar-account-gap strong")).toHaveText("26个蛋");
-    await expect(fcAccount.locator(".radar-account-gap em")).toHaveText("差 21万");
-    const fundingCard = page.locator(".radar-funding-gap");
-    await expect(fundingCard).toContainText("资金缺口");
-    await expect(fundingCard.locator("strong")).toHaveText("21万");
-    await expect(fundingCard).toContainText("买齐当前缺口还需");
+    const overview = page.getByTestId("account-overview");
+    const rows = overview.locator("article[data-account-id]");
+    const expectedSilver = { FC: "122万", LG1: "100万", PT: "101万", LG2: "102万", MYT: "60万" } as const;
+    const canonicalAccountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
+    await expect(rows).toHaveCount(canonicalAccountIds.length);
+    expect(await rows.evaluateAll((items) => items.map((item) => item.getAttribute("data-account-id")))).toEqual(canonicalAccountIds);
+    await expect(overview.getByText("不显示跨账号合计", { exact: true })).toBeVisible();
+    await expect(page.locator(".weekly-cashflow-metrics")).toHaveCount(0);
 
-    for (const accountId of ["FC", "LG1", "LG2", "PT", "MYT"]) {
-      await page.locator(".radar-account-item").filter({ hasText: accountId }).click();
-      await expect(page.locator(".radar-focus-header h2 b")).toHaveText(accountId);
-      await expect(fundingCard.locator("strong")).toHaveText(/^(?:\d+(?:\.\d+)?万|待计算|待确认)$/);
+    for (const accountId of canonicalAccountIds) {
+      const row = overview.locator(`article[data-account-id='${accountId}']`);
+      await expect(row.locator(".desktop-account-silver b")).toHaveText(expectedSilver[accountId]);
+      await expect(row.getByRole("link", { name: `查看 ${accountId} 账号详情`, exact: true })).toHaveAttribute("href", `#/accounts/${accountId}`);
     }
-    await fcAccount.click();
-    await expect(fundingCard.locator("strong")).toHaveText("21万");
+    await expect(overview.locator("article[data-account-id='FC']")).toHaveClass(/active/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
     expect(runtimeErrors).toEqual([]);
-    await page.screenshot({ path: testInfo.outputPath("dashboard-funding-gap.png") });
+    await overview.screenshot({ path: testInfo.outputPath("home-account-overview.png") });
   });
 
   test("统一库存快照同时保存蛋、银子和内丹碎片", async ({ page }, testInfo) => {
@@ -239,10 +280,20 @@ test.describe("desktop application", () => {
     test.skip(testInfo.project.name !== "desktop");
     await page.goto("/#/plans/tasks");
 
+    const accountOverview = page.getByRole("region", { name: "各账号任务进度" });
+    const accountButtons = accountOverview.getByRole("button");
+    await expect(accountButtons).toHaveCount(5);
+    expect(await accountButtons.evaluateAll((buttons) => buttons.map((button) => button.getAttribute("data-account-id")))).toEqual(["FC", "LG1", "PT", "LG2", "MYT"]);
+    await expect(page.getByRole("button", { name: "筛选 LG2 账号任务", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("section[aria-labelledby='task-account-LG2']")).toBeVisible();
+
     const pendingRows = page.locator(".task-work-row:not(.done)");
     const initialCount = await pendingRows.count();
-    await pendingRows.nth(0).getByRole("checkbox").check();
-    await pendingRows.nth(1).getByRole("checkbox").check();
+    const selectedTasks = [
+      page.getByRole("checkbox", { name: "选择 LG2 法蛇 皮肤", exact: true }),
+      page.getByRole("checkbox", { name: "选择 LG2 隐攻蛇 进阶1", exact: true }),
+    ];
+    for (const taskCheckbox of selectedTasks) await taskCheckbox.check();
 
     const bulkBar = page.getByRole("complementary", { name: "批量任务操作" });
     await expect(bulkBar.getByText("已选 2 项", { exact: true })).toBeVisible();
@@ -252,6 +303,9 @@ test.describe("desktop application", () => {
 
     await page.getByRole("group", { name: "任务状态筛选" }).getByRole("button", { name: /已完成/ }).click();
     await expect(page.locator(".task-work-row.done")).toHaveCount(2);
+    for (const taskName of ["LG2 法蛇 皮肤", "LG2 隐攻蛇 进阶1"]) {
+      await expect(page.getByRole("button", { name: `${taskName} 恢复未完成`, exact: true })).toBeVisible();
+    }
   });
 
   test("手动发布正文会被复制、保留并可主动重新生成", async ({ page, context, baseURL }, testInfo) => {
@@ -297,7 +351,7 @@ test.describe("mobile application", () => {
     await page.getByRole("button", { name: "打开全部导航" }).click();
     const mobileNavigation = page.getByRole("dialog", { name: "主导航" });
     await expect(mobileNavigation).toBeVisible();
-    await mobileNavigation.getByRole("link", { name: "分析" }).click();
+    await mobileNavigation.getByRole("link", { name: "分析工具" }).click();
     await page.getByRole("link", { name: "固定矩阵", exact: true }).click();
     await expect(page.locator(".matrix-scroll")).toBeVisible();
     await expect(page.locator(".orbit-nav-scrim")).toHaveCount(0);
@@ -424,9 +478,9 @@ test.describe("pet detail sharing", () => {
 test.describe("tablet application", () => {
   test("关键页面无页面级横向溢出", async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith("tablet-"));
-    for (const url of ["/#/", "/#/assets/pets", "/#/plans/beasts", "/#/plans/tasks", "/#/plans/parameters", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/analysis/matrix"]) {
+    for (const url of ["/#/", "/#/record", "/#/week", "/#/resources", "/#/accounts/PT", "/#/assets/pets", "/#/plans/beasts", "/#/plans/tasks", "/#/plans/parameters", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/analysis/matrix"]) {
       await page.goto(url);
-      await expect(page.locator(".workbench-page, .page-wrap")).toBeVisible();
+      await expect(page.locator(".desktop-home-page, .mobile-home-page, .page-wrap")).toBeVisible();
       const width = await page.evaluate(() => ({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
       expect(width.scroll, `${url} 不应产生页面级横向滚动`).toBe(width.client);
     }
@@ -463,7 +517,10 @@ test.describe("schedule completion dates", () => {
     });
 
     await page.goto("/#/");
-    if (testInfo.project.name === "mobile") {
+    const mobileHome = page.getByTestId("mobile-week-home");
+    const desktopHome = page.getByTestId("desktop-week-home");
+    await expect(mobileHome.or(desktopHome)).toBeVisible();
+    if (await mobileHome.isVisible()) {
       const taskBrief = page.locator(".mobile-task-brief");
       await expect(taskBrief).toContainText("按账号查看当前任务并标记完成");
       const accountProgressRows = page.locator(".mobile-account-progress-list > article");
@@ -471,28 +528,23 @@ test.describe("schedule completion dates", () => {
       await expect(accountProgressRows.locator(".account-pill")).toHaveText(["FC", "LG1", "PT", "LG2", "MYT"]);
       await page.locator(".mobile-today-card").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
     } else {
-      const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
-      const currentTrackTask = ptMainline.locator(".task-track-labels span").first();
-      await expect(currentTrackTask.locator("b")).toContainText("剑气蛇 · 进阶2");
-      await expect(currentTrackTask.locator(".task-ready-badge")).toHaveText("现在可完成");
-      await expect(currentTrackTask.locator("small")).toHaveText("今天可完成");
-      await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
-      if (testInfo.project.name === "desktop") {
-        const tableWidth = await page.locator(".mainline-table-scroll").evaluate((element) => {
-          const table = element.querySelector(".mainline-table")!;
-          const lastCell = element.querySelector(".mainline-row > :last-child")!;
-          return {
-            client: element.clientWidth,
-            scroll: element.scrollWidth,
-            tableRight: table.getBoundingClientRect().right,
-            lastCellRight: lastCell.getBoundingClientRect().right,
-          };
-        });
-        expect(tableWidth.scroll).toBe(tableWidth.client);
-        expect(Math.abs(tableWidth.tableRight - tableWidth.lastCellRight)).toBeLessThan(1);
-        await expect(page.getByRole("link", { name: /查看 .* 账号明细/ })).toHaveCount(5);
-      }
-      await ptMainline.locator(".task-track").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
+      const accountRows = page.getByTestId("account-overview").locator("article[data-account-id]");
+      await expect(accountRows).toHaveCount(5);
+      expect(await accountRows.evaluateAll((rows) => rows.map((row) => row.getAttribute("data-account-id")))).toEqual(["FC", "LG1", "PT", "LG2", "MYT"]);
+      const ptHomeRow = page.getByTestId("account-overview").locator("article[data-account-id='PT']");
+      await expect(ptHomeRow.locator(".desktop-account-task b")).toHaveText("剑气蛇 · 进阶2");
+      await expect(ptHomeRow.locator(".desktop-account-identity small")).toHaveText("可以完成");
+      await ptHomeRow.screenshot({ path: testInfo.outputPath(`schedule-home-${testInfo.project.name}.png`) });
+
+      await page.goto("/#/plans/timeline");
+      const timelineRows = page.locator(".timeline-ledger > a");
+      await expect(timelineRows).toHaveCount(5);
+      await expect(timelineRows.locator("[data-label='账号']")).toHaveText(["FC", "LG1", "PT", "LG2", "MYT"]);
+      const ptTimeline = timelineRows.filter({ has: page.getByLabel("账号：PT", { exact: true }) });
+      await expect(ptTimeline.getByLabel("状态：可以完成", { exact: true })).toBeVisible();
+      await expect(ptTimeline.getByLabel("当前任务：剑气蛇 · 进阶2", { exact: true })).toBeVisible();
+      await expect(ptTimeline.getByLabel("下一步：优先使用 30 个专用蛋，可直接完成", { exact: true })).toBeVisible();
+      await ptTimeline.screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
     }
 
     await page.goto("/#/accounts/PT");
@@ -577,18 +629,16 @@ test.describe("week-to-date activity report", () => {
     await silverTask.getByRole("button", { name: /标记完成/ }).click();
     await expect(page.getByRole("status")).toContainText("银子支出");
 
-    if (testInfo.project.name === "mobile") {
-      await page.goto("/#/week");
-      await expect(page).toHaveURL(/#\/week$/);
+    if (testInfo.project.name === "desktop") {
+      await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name: "本周小结", exact: true }).click();
     } else {
-      await page.goto("/#/data/inventory");
-      await expect(page).toHaveURL(/#\/data\/inventory$/);
-      await page.getByRole("button", { name: "周报分析", exact: true }).click();
+      await page.goto("/#/week");
     }
+    await expect(page).toHaveURL(/#\/week$/);
     const activity = page.getByTestId("weekly-activity-panel");
     await expect(activity.getByText("本周截至 7月22日", { exact: true })).toBeVisible();
     await expect(activity.getByText("2026-07-20 至 2026-07-22", { exact: true })).toBeVisible();
-    await expect(activity.getByRole("heading", { name: "五个账号本周情况", exact: true })).toBeVisible();
+    await expect(activity.getByRole("heading", { name: /账号本周情况$/ })).toBeVisible();
     await expect(activity.getByText(/库存截至 2026-07-22/)).toBeVisible();
 
     await activity.getByRole("button", { name: "补记其他支出", exact: true }).click();

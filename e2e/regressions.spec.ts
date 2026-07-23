@@ -115,7 +115,7 @@ test.describe("desktop regressions", () => {
         snapshots: [{
           effectiveDate: "2026-07-12",
           recordedAt: "2026-07-12T02:00:00.000Z",
-          accounts: Object.fromEntries(["FC", "LG1", "LG2", "PT", "MYT"].map((id) => [id, {
+          accounts: Object.fromEntries(["FC", "LG1", "PT", "LG2", "MYT"].map((id) => [id, {
             dedicatedEggs: 10_000,
             regularEggs: 10_000,
             silverWan: 10_000,
@@ -146,19 +146,14 @@ test.describe("desktop regressions", () => {
     expect(pendingBookIndex).toBeGreaterThan(orderedTasks.indexOf("PT · 待打书蛇|洗护符"));
     expect(orderedTasks.indexOf("PT · 待打书蛇|进阶1")).toBeGreaterThan(pendingBookIndex);
 
-    await page.goto("/#/");
-    const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
-    const ptTrack = ptMainline.locator(".task-track-labels span");
-    const readyNowBanner = page.getByRole("region", { name: "当前可完成任务" });
-    await expect(readyNowBanner).toContainText("PT · 剑气蛇 · 进阶2");
-    await expect(readyNowBanner.getByRole("link", { name: "去任务维护标记完成" })).toBeVisible();
-    await expect(ptMainline).toHaveClass(/ready-now-row/);
-    await expect(ptMainline.locator(".task-ready-badge")).toHaveText("现在可完成");
-    await expect(ptMainline.locator(".ready-now-task small")).toHaveText("今天可完成");
-    await expect(ptMainline.locator(".status-cell .status-chip")).toHaveText("现在可完成");
-    await expect(ptTrack.first().locator("b")).toContainText("剑气蛇 · 进阶2");
-    await expect(ptTrack.first().locator("small")).toHaveText("今天可完成");
-    await expect(ptMainline.locator(".task-track-finish")).toHaveText("整条主线：待洗护符后排期");
+    await page.goto("/#/plans/timeline");
+    const timelineRows = page.locator(".timeline-ledger > a");
+    await expect(timelineRows).toHaveCount(5);
+    await expect(timelineRows.locator("[data-label='账号']")).toHaveText(["FC", "LG1", "PT", "LG2", "MYT"]);
+    const ptTimeline = timelineRows.filter({ has: page.getByLabel("账号：PT", { exact: true }) });
+    await expect(ptTimeline.getByLabel("状态：可以完成", { exact: true })).toBeVisible();
+    await expect(ptTimeline.getByLabel("当前任务：剑气蛇 · 进阶2", { exact: true })).toBeVisible();
+    await expect(ptTimeline.getByLabel("下一步：优先使用 30 个专用蛋，可直接完成", { exact: true })).toBeVisible();
 
     await page.goto("/#/accounts/PT");
     const accountTask = page.locator(".task-mini-list > div").filter({ hasText: "剑气蛇 · 进阶2" }).first();
@@ -166,7 +161,9 @@ test.describe("desktop regressions", () => {
     await expect(page.locator(".account-mainline-finish")).toHaveText("整条主线：待洗护符后排期");
 
     await page.goto("/#/plans/tasks");
-    await page.getByLabel("任务账号筛选").selectOption("PT");
+    await expect(page.getByRole("button", { name: "筛选 PT 账号任务", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("section[aria-labelledby='task-account-PT']")).toBeVisible();
+    await expect(page.locator(".task-account-group")).toHaveCount(1);
     const pendingSnakeTasks = page.locator(".task-work-row").filter({ hasText: "待打书蛇" });
     const talismanTask = pendingSnakeTasks.filter({ has: page.locator(".task-stage-cell", { hasText: "洗护符" }) });
     const downstreamBook = pendingSnakeTasks.filter({ has: page.locator(".task-stage-cell", { hasText: "打书" }) });
@@ -206,14 +203,6 @@ test.describe("desktop regressions", () => {
         ].map((id) => [id, { done: true }])),
       }));
     });
-
-    await page.goto("/#/");
-    const ptRow = page.locator(".mainline-row").filter({ hasText: "PT" });
-    await expect(ptRow).toContainText("普通蛋默认保留（应急 8 个）");
-    await expect(ptRow).toContainText("优先攒银子");
-    await expect(ptRow).toContainText("仅万不得已按 5.2 万/个出售 8 个普通蛋");
-    await expect(ptRow).toContainText("按 5.5 万/个买回将多花 2.4 万");
-    await expect(page.getByText("卖普通蛋可补齐", { exact: true })).toHaveCount(0);
 
     await page.goto("/#/accounts/PT");
     await expect(page.getByRole("heading", { name: "PT 账号详情", exact: true })).toBeVisible();

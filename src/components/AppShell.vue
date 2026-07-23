@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { buildPrimaryNavigation, mobileNavigation } from "../app/navigation";
+import { featureNavigation, mobileNavigation, primaryNavigation } from "../app/navigation";
 import { appName } from "../app/brand";
 import AppIcon from "./AppIcon.vue";
 import CommandSearch from "./CommandSearch.vue";
@@ -27,15 +27,26 @@ let previousMobileFocus: HTMLElement | null = null;
 let previousBodyOverflow = "";
 let restoreMobileFocus = true;
 
-const links = computed(() => buildPrimaryNavigation(ui.recentAccount));
+const links = primaryNavigation;
 const mobileDockLinks = mobileNavigation;
-const mobileFeatureLinks = computed(() => links.value.filter((link) => !["home", "accounts"].includes(link.section)));
+const mobileFeatureLinks = featureNavigation;
 const mobileSection = computed(() => String(route.meta.mobileSection || route.meta.section || "more"));
 const mobileDockMoreActive = computed(() => mobileSection.value === "more");
+const desktopSection = computed(() => String(route.meta.desktopSection || (
+  ["home", "record", "week", "resources"].includes(String(route.meta.section))
+    ? route.meta.section
+    : "resources"
+)));
 
 function mobileAriaCurrent(link: { to: string; section: string }) {
   if (route.path === link.to) return "page";
   if (mobileSection.value === link.section) return "location";
+  return undefined;
+}
+
+function desktopAriaCurrent(link: { to: string; section: string }) {
+  if (route.path === link.to) return "page";
+  if (desktopSection.value === link.section) return "location";
   return undefined;
 }
 
@@ -228,8 +239,8 @@ onBeforeUnmount(() => {
             v-for="link in links"
             :key="link.to"
             :to="link.to"
-            :class="{ active: route.meta.section === link.section }"
-            :aria-current="route.meta.section === link.section ? 'page' : undefined"
+            :class="{ active: desktopSection === link.section }"
+            :aria-current="desktopAriaCurrent(link)"
           >
             <AppIcon :name="link.icon" />
             <span>{{ link.text }}</span>

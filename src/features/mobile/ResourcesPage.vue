@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import AppIcon from "../../components/AppIcon.vue";
 import { useCatalogStore } from "../../stores/catalog";
+import { useUiStore } from "../../stores/ui";
 
 const catalog = useCatalogStore();
+const ui = useUiStore();
 
 const assetLinks = [
   { to: "/assets/pets", title: "宠物资产", copy: "宠物、资质、技能和定位", icon: "account" },
@@ -23,20 +25,25 @@ const planningLinks = [
   { to: "/plans/gems", title: "宝石计划", copy: "目标段位与周投入" },
   { to: "/plans/parameters", title: "计划参数", copy: "任务价格与计划口径" },
 ] as const;
+
+const managementLinks = [
+  { to: "/publish", title: "内容发布", copy: "整理素材与发布文案", icon: "publish" },
+  { to: "/settings", title: "同步与设置", copy: "云同步、密码与界面偏好", icon: "settings" },
+] as const;
 </script>
 
 <template>
   <div class="page-wrap mobile-purpose-page resources-page" data-testid="resources-page">
     <header class="resources-intro">
       <div><p>资料</p><h1>账号与资料</h1></div>
-      <span>这里只查看，不做录入</span>
+      <span>资料只查看；低频管理放在页面底部</span>
     </header>
 
     <section class="resource-group accounts-resource-group" aria-labelledby="resource-accounts-title">
       <header><div><p>账号</p><h2 id="resource-accounts-title">五个账号</h2></div><span>查看单号资产、任务与资源</span></header>
       <div class="resource-account-grid">
-        <RouterLink v-for="account in catalog.data.accounts" :key="account.id" :to="`/accounts/${account.id}`">
-          <strong>{{ account.id }}</strong><span>{{ account.label }}</span><AppIcon name="chevron-right" />
+        <RouterLink v-for="account in catalog.data.accounts" :key="account.id" :to="`/accounts/${account.id}`" :class="{ current: ui.recentAccount === account.id }" @click="ui.recentAccount = account.id">
+          <strong>{{ account.id }}</strong><span>{{ account.label === account.id ? "账号详情" : account.label }}</span><AppIcon name="chevron-right" />
         </RouterLink>
       </div>
     </section>
@@ -74,6 +81,13 @@ const planningLinks = [
         <RouterLink to="/data/sources"><AppIcon name="report" /><span><strong>数据来源</strong><small>静态资料和版本依据</small></span><AppIcon name="chevron-right" /></RouterLink>
       </div>
     </section>
+
+    <section class="resource-group resource-management-links" aria-labelledby="resource-management-title">
+      <header><div><p>更多</p><h2 id="resource-management-title">发布与设置</h2></div><span>低频工具集中放在这里</span></header>
+      <div>
+        <RouterLink v-for="item in managementLinks" :key="item.to" :to="item.to"><span class="resource-link-icon"><AppIcon :name="item.icon" /></span><span><strong>{{ item.title }}</strong><small>{{ item.copy }}</small></span><AppIcon name="chevron-right" /></RouterLink>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -94,6 +108,7 @@ const planningLinks = [
 .resource-account-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .resource-account-grid > a { min-width: 0; min-height: 72px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; gap: 1px 8px; padding: 11px 14px; border-right: 1px solid var(--radar-line); }
 .resource-account-grid > a:last-child { border-right: 0; }
+.resource-account-grid > a.current { background: color-mix(in srgb, var(--radar-cyan-soft) 65%, #ffffff); box-shadow: inset 0 -3px var(--radar-cyan); }
 .resource-account-grid strong { font-size: 17px; }
 .resource-account-grid span { overflow: hidden; color: var(--radar-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .resource-account-grid :deep(svg) { grid-column: 2; grid-row: 1 / 3; align-self: center; width: 17px; height: 17px; color: var(--radar-muted); }
@@ -121,6 +136,12 @@ const planningLinks = [
 .resource-source-links a > :deep(svg) { width: 18px; height: 18px; color: var(--radar-cyan-strong); }
 .resource-source-links a > :deep(svg:last-child) { width: 15px; height: 15px; color: var(--radar-muted); }
 
+.resource-management-links > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.resource-management-links a { min-width: 0; min-height: 82px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 13px 15px; border-right: 1px solid var(--radar-line); }
+.resource-management-links a:last-child { border-right: 0; }
+.resource-management-links a > span:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
+.resource-management-links a > :deep(svg:last-child) { width: 16px; height: 16px; color: var(--radar-muted); }
+
 @media (max-width: 720px) {
   .resources-page { padding: 10px 10px 28px; }
   .resources-intro h1 { font-size: 24px; }
@@ -136,5 +157,8 @@ const planningLinks = [
   .resource-source-links > div { grid-template-columns: 1fr; }
   .resource-source-links a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--radar-line); }
   .resource-source-links a:last-child { border-bottom: 0; }
+  .resource-management-links > div { grid-template-columns: 1fr; }
+  .resource-management-links a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--radar-line); }
+  .resource-management-links a:last-child { border-bottom: 0; }
 }
 </style>

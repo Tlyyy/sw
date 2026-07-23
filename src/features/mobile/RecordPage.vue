@@ -8,14 +8,16 @@ import type { AccountId, InventorySnapshotInput } from "../../domain/types";
 import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
+import { useUiStore } from "../../stores/ui";
 
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
 const settings = useSettingsStore();
+const ui = useUiStore();
 const inventoryDialogOpen = ref(false);
 const notice = ref("");
 const expenseFormOpen = ref(false);
-const expenseAccountId = ref<AccountId>(catalog.data.accounts[0]?.id || "FC");
+const expenseAccountId = ref<AccountId>(ui.recentAccount);
 const expenseAmount = ref<number | null>(null);
 const expenseNote = ref("");
 const expenseError = ref("");
@@ -49,6 +51,11 @@ function saveInventorySnapshot(draft: InventorySnapshotInput) {
   inventory.saveSnapshot(draft);
   inventoryDialogOpen.value = false;
   notice.value = `${updating ? "已更新" : "已保存"} ${draft.effectiveDate} 的五号库存`;
+}
+
+function selectAccount(accountId: AccountId) {
+  ui.recentAccount = accountId;
+  expenseAccountId.value = accountId;
 }
 
 async function toggleExpenseForm() {
@@ -99,6 +106,32 @@ function shortDateTime(value: string) {
     </header>
 
     <p v-if="notice" class="mobile-action-notice" role="status" aria-live="polite">{{ notice }}</p>
+
+    <section class="record-account-status" aria-labelledby="record-account-status-title">
+      <header><div><p>先选账号</p><h2 id="record-account-status-title">五个账号今天的记录</h2></div><span>库存仍为五号同批录入</span></header>
+      <div class="record-account-status-list">
+        <article
+          v-for="row in accountTodayRows"
+          :key="row.accountId"
+          role="button"
+          tabindex="0"
+          :class="{ active: ui.recentAccount === row.accountId }"
+          :data-account-id="row.accountId"
+          :aria-pressed="ui.recentAccount === row.accountId"
+          :aria-label="`选择 ${row.accountId} 账号录入，库存${row.inventoryRecorded ? '已记录' : '待补'}，任务 ${row.taskCount} 项，其他支出 ${row.expenseCount} 笔`"
+          @click="selectAccount(row.accountId)"
+          @keydown.enter.prevent="selectAccount(row.accountId)"
+          @keydown.space.prevent="selectAccount(row.accountId)"
+        >
+          <strong :class="`account-pill account-${row.accountId.toLowerCase()}`">{{ row.accountId }}</strong>
+          <dl>
+            <div :class="{ complete: row.inventoryRecorded }"><dt>库存</dt><dd>{{ row.inventoryRecorded ? "已记录" : "待补" }}</dd></div>
+            <div :class="{ complete: row.taskCount }"><dt>任务</dt><dd>{{ row.taskCount }} 项</dd></div>
+            <div :class="{ complete: row.expenseCount }"><dt>其他支出</dt><dd>{{ row.expenseCount }} 笔</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
 
     <section class="record-primary-card" aria-labelledby="record-inventory-title">
       <span class="record-card-icon"><AppIcon name="assets" /></span>
@@ -153,20 +186,6 @@ function shortDateTime(value: string) {
       <div class="quick-expense-actions"><button class="button" type="button" @click="toggleExpenseForm">取消</button><button class="button primary" type="submit">保存支出</button></div>
     </form>
 
-    <section class="record-account-status" aria-labelledby="record-account-status-title">
-      <header><div><p>今天按账号</p><h2 id="record-account-status-title">五个账号记录情况</h2></div><span>库存为同批录入</span></header>
-      <div class="record-account-status-list">
-        <article v-for="row in accountTodayRows" :key="row.accountId" :data-account-id="row.accountId">
-          <strong :class="`account-pill account-${row.accountId.toLowerCase()}`">{{ row.accountId }}</strong>
-          <dl>
-            <div :class="{ complete: row.inventoryRecorded }"><dt>库存</dt><dd>{{ row.inventoryRecorded ? "已记录" : "待补" }}</dd></div>
-            <div :class="{ complete: row.taskCount }"><dt>任务</dt><dd>{{ row.taskCount }} 项</dd></div>
-            <div :class="{ complete: row.expenseCount }"><dt>其他支出</dt><dd>{{ row.expenseCount }} 笔</dd></div>
-          </dl>
-        </article>
-      </div>
-    </section>
-
     <InventorySnapshotDialog
       v-if="inventoryDialogOpen"
       :open="inventoryDialogOpen"
@@ -194,7 +213,7 @@ function shortDateTime(value: string) {
 .quick-expense-form,
 .record-account-status { border: 1px solid var(--radar-line); border-radius: 15px; background: #ffffff; box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
 
-.record-primary-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 18px; }
+.record-primary-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-top: 12px; padding: 18px; }
 .record-card-icon { flex: 0 0 48px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: var(--brand-orange); background: var(--brand-orange-soft); }
 .record-card-icon :deep(svg) { width: 23px; height: 23px; }
 .record-primary-card p, .record-option-card p, .quick-expense-form header p, .record-account-status > header p { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
@@ -229,9 +248,13 @@ button.record-option-card { width: 100%; font: inherit; }
 .record-account-status > header > div { display: grid; gap: 1px; }
 .record-account-status > header > span { color: var(--radar-muted); font-size: 10px; font-weight: 750; white-space: nowrap; }
 .record-account-status-list { display: grid; }
-.record-account-status-list article { min-height: 64px; display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--radar-line); }
-.record-account-status-list article:last-child { border-bottom: 0; }
-.record-account-status-list article > strong { min-height: 36px; display: grid; place-items: center; }
+.record-account-status-list > article { min-height: 64px; display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--radar-line); background: #ffffff; }
+.record-account-status-list > article:last-child { border-bottom: 0; }
+.record-account-status-list > article:hover,
+.record-account-status-list > article.active { background: color-mix(in srgb, var(--radar-cyan-soft) 58%, #ffffff); }
+.record-account-status-list > article.active { box-shadow: inset 3px 0 var(--radar-cyan); }
+.record-account-status-list > article:focus-visible { outline: 3px solid color-mix(in srgb, var(--radar-cyan) 40%, transparent); outline-offset: -3px; }
+.record-account-status-list > article > strong { min-height: 36px; display: grid; place-items: center; }
 .record-account-status-list dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
 .record-account-status-list dl > div { min-width: 0; padding: 0 10px; border-left: 1px solid var(--radar-line); }
 .record-account-status-list dl > div:first-child { padding-left: 0; border-left: 0; }

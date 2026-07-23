@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildInventoryWeekReport } from "./inventory";
 import type { MainlineAccountProjection } from "./mainline";
-import { buildMobileAccountOverview, buildMobileWeekOverview } from "./mobileOverview";
+import { buildAccountOverview, buildMobileWeekOverview } from "./mobileOverview";
 import type { AccountTaskPlan } from "./plans";
 import type { AccountId, InventorySnapshot, SilverExpenseRecord, TaskCompletionRecord } from "./types";
 import type { WeeklyAccountActivitySummary } from "./weeklyActivity";
@@ -74,9 +74,9 @@ function accountPlan(accountId: AccountId, pending: number): AccountTaskPlan {
   } as AccountTaskPlan;
 }
 
-describe("buildMobileAccountOverview", () => {
+describe("buildAccountOverview", () => {
   it("joins shuffled account data by ID and returns the canonical account order", () => {
-    const rows = buildMobileAccountOverview(
+    const rows = buildAccountOverview(
       [accountSummary("MYT", 5), accountSummary("PT", 3), accountSummary("FC", 1), accountSummary("LG2", 4), accountSummary("LG1", 2)],
       [accountProjection("LG2"), accountProjection("FC"), accountProjection("MYT"), accountProjection("LG1"), accountProjection("PT")],
       [accountPlan("PT", 3), accountPlan("MYT", 5), accountPlan("LG1", 2), accountPlan("FC", 1), accountPlan("LG2", 4)],
@@ -89,7 +89,7 @@ describe("buildMobileAccountOverview", () => {
   });
 
   it("keeps a missing account visible without borrowing another account's values", () => {
-    const rows = buildMobileAccountOverview(
+    const rows = buildAccountOverview(
       [accountSummary("FC", 1)],
       [accountProjection("FC")],
       [accountPlan("FC", 1)],

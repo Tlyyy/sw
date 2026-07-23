@@ -232,6 +232,46 @@
 
 final result: passed
 
+## Account-first desktop/web refactor — 2026-07-23
+
+### Source truth and implementation evidence
+
+- 用户选定的产品方向：`C:\Users\T\AppData\Local\Temp\codex-clipboard-62ddd34f-4b7c-4c2a-86ff-51f3553421e9.png`，以及随后提供的 iPhone 16 Pro Max 实机截图；核心要求是首页、录入、任务、本周小结与资料目的明确，并且所有进展与周报信息按账号查看，不显示跨账号财务合计。
+- 旧桌面结构证据：`C:\Users\T\AppData\Local\Temp\sw-desktop-before.png`，1440px 下仍是模块/主线控制台导向，无法快速判断哪里看信息、哪里录入、哪里分享。
+- 新桌面首页：`C:\Users\T\AppData\Local\Temp\sw-desktop-after-1440.png`；响应式证据：`sw-home-1280.png`、`sw-home-1024.png`、`sw-home-981.png`、`sw-home-980.png` 和 `sw-home-440.png`，均位于同一临时目录。
+- 新目的页：`sw-record-1440.png`、`sw-tasks-1440-updated.png`、`sw-week-1440.png`、`sw-resources-1440-updated.png`；移动证据为对应的 `sw-mobile-*-440.png`。
+- 同画布对照：`C:\Users\T\.codex\visualizations\2026\07\22\019f8a67-fe4e-7972-b773-69a5a26d7e39\web-refactor-qa\desktop-before-after.png`、`mobile-source-responsive.png` 和 `desktop-purpose-routes.png`。
+- 视口与状态：桌面 1440 × 900、1280、1024、981；移动 980 与 440 × 956。自动化另使用 Playwright `iPhone 16 Pro Max` 描述器，CSS 视口 440 × 763、DPR 3。页面为已解锁状态，最近账号 PT，库存快照覆盖 2026-07-19 与 2026-07-22。
+
+### Findings and iteration history
+
+1. 旧版桌面将主线、分析、录入和分享同时当成首页重点，一级导航按系统模块命名；改为 `首页 / 录入 / 任务 / 本周小结 / 资料`，首页只回答“这周五个账号分别到哪了”。
+2. 首页原先强调跨账号合计；改为固定 `FC / LG1 / PT / LG2 / MYT` 顺序的账号工作台，每行独立显示当前任务、库存、收获、支出、已完成与待完成任务，并明确标注“不显示跨账号合计”。
+3. 录入页先选择账号，再处理库存、任务或支出；整个账号行现在可点击、可键盘操作，并与最近账号和支出账号联动。
+4. 任务页改为账号进度在前、具体维护在后，默认继承最近账号；统计也改为当前账号范围。首轮 QA 发现 981–1024px 操作列裁切和不完整伪表格语义，已通过中间断点网格和原生分区/文章语义修复。
+5. 本周小结保留五个账号逐行信息与 PNG 生成/分享，不展示跨账号收支总数；资料页先给账号与常用资料，发布和设置移到分隔清楚的低频区域。
+6. 首轮自动化暴露一个移动首页异步渲染判断竞态；改为等待桌面/移动首页任一真实可见后再分支。另两个首次失败为 8 worker 下的页面加载中止，定向重跑均通过；完整套件随后一次通过。
+
+### Mandatory comparison and fidelity surfaces
+
+- 信息架构：五个一级入口分别承担查看、录入、执行、总结/分享、查询；深层资产、计划、分析、发布、数据和设置仍可通过资料或全局搜索到达，没有删除既有能力。
+- 字体与层级：桌面标题、账号标识、关键数值、任务、辅助文案形成稳定层级；移动继续沿用选定参考的深蓝品牌栏、白色卡片、橙色录入、青绿分享语义。
+- 间距与布局：1440px 使用横向账号工作台与右侧行动区，981px 仍完整显示；980px 以下切换为移动首页。各目的页在 1440、440 均无页面级横向滚动。
+- 颜色与资产：复用项目既有颜色 token 和 `AppIcon` 线性图标族；没有 emoji、占位图、手绘 SVG、CSS 插画或伪造产品素材。
+- 文案与数据：所有账号、任务、库存、收支和周报值来自现有业务数据；不通过缩短账号或任务内容来掩盖布局问题。
+- 无障碍与交互：主导航当前项、账号筛选 pressed 状态、整行录入按钮、任务筛选/完成/恢复、对话框和固定移动底栏均已覆盖；981px 任务操作不再裁切。
+- 浏览器健康：对首页、录入、任务、本周小结、资料在 1440 与 440 共十个路由状态收集 console warning/error 与 pageerror，结果为空；根宽度分别为 1440/1440 与 440/440。
+
+### Verification
+
+- `npm test`: 27 个文件、116 项单元测试通过。
+- `npm run build`: 数据生成物检查、Vue/TypeScript、Vite 生产构建和 298 个资源完整性检查通过；仅保留既有 chunk-size warning。
+- 桌面重构定向 E2E：19 项通过、3 项按项目条件跳过、0 失败。
+- `npm run test:e2e:ci`: 49 项通过、103 项按项目条件跳过、0 失败；覆盖 desktop、两档 tablet、iPhone 16 Pro Max、同步、OCR、PNG 与分享回退。
+- 视觉复查：桌面前后对照、移动参考/实现对照和四个目的页同画布均已重新生成并人工检查；没有剩余 P0、P1 或 P2 问题。
+
+final result: passed
+
 ## Account-first full mobile refactor — 2026-07-23
 
 ### Source truth and evidence
@@ -607,5 +647,11 @@ final result: blocked
 ## Current Design QA status — 2026-07-23
 
 The latest source-to-implementation comparison, findings, interaction coverage, accessibility review, and final verification are recorded above under `Account-first full mobile refactor — 2026-07-23`. That pass supersedes the older blocked historical entries: authenticated 440 × 956 comparisons cover home, task, and weekly-summary flows; the iPhone 16 Pro Max 440 × 763 WebKit gate is green; and final console warning/error collection is empty.
+
+final result: passed
+
+## Current Design QA status — account-first web — 2026-07-23
+
+The latest desktop/web comparison and release verification are recorded above under `Account-first desktop/web refactor — 2026-07-23`. It extends the mobile account-first structure to desktop, preserves the iPhone 16 Pro Max flow, and supersedes older module-first desktop findings. Desktop, tablet, and mobile checks are green; final console warning/error collection is empty.
 
 final result: passed

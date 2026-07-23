@@ -1,11 +1,11 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-router";
 
 export const routes: RouteRecordRaw[] = [
-  { path: "/", name: "dashboard", component: () => import("../features/home/HomePage.vue"), meta: { title: "本周", section: "home", mobileSection: "home" } },
-  { path: "/record", name: "record", component: () => import("../features/mobile/RecordPage.vue"), meta: { title: "录入", section: "record", mobileSection: "record", immersive: true } },
-  { path: "/week", name: "week", component: () => import("../features/mobile/WeekPage.vue"), meta: { title: "本周小结", section: "week", mobileSection: "week", immersive: true } },
+  { path: "/", name: "dashboard", component: () => import("../features/home/HomePage.vue"), meta: { title: "本周", section: "home", mobileSection: "home", desktopSection: "home" } },
+  { path: "/record", name: "record", component: () => import("../features/mobile/RecordPage.vue"), meta: { title: "录入", section: "record", mobileSection: "record", desktopSection: "record", immersive: true } },
+  { path: "/week", name: "week", component: () => import("../features/mobile/WeekPage.vue"), meta: { title: "本周小结", section: "week", mobileSection: "week", desktopSection: "week", immersive: true } },
   { path: "/weekly", redirect: "/week" },
-  { path: "/resources", name: "resources", component: () => import("../features/mobile/ResourcesPage.vue"), meta: { title: "资料", section: "resources", mobileSection: "resources", immersive: true } },
+  { path: "/resources", name: "resources", component: () => import("../features/mobile/ResourcesPage.vue"), meta: { title: "资料", section: "resources", mobileSection: "resources", desktopSection: "resources", immersive: true } },
   { path: "/library", redirect: "/resources" },
   { path: "/accounts/:accountId(FC|LG1|PT|LG2|MYT)", name: "account", component: () => import("../features/accounts/AccountPage.vue"), meta: { title: "账号详情", section: "accounts", mobileSection: "resources" } },
   { path: "/assets/pets", name: "pets", component: () => import("../features/assets/PetsPage.vue"), meta: { title: "宠物资产", section: "assets", mobileSection: "resources" } },
@@ -15,7 +15,7 @@ export const routes: RouteRecordRaw[] = [
   { path: "/plans/upgrades", redirect: "/plans/gems" },
   { path: "/plans/gems", name: "gem-plan", component: () => import("../features/plans/UpgradesPage.vue"), meta: { title: "宝石计划", section: "plans", mobileSection: "more" } },
   { path: "/plans/beasts", name: "beasts", component: () => import("../features/plans/BeastsPage.vue"), meta: { title: "神兽主线任务", section: "plans", mobileSection: "more" } },
-  { path: "/plans/tasks", name: "plan-tasks", component: () => import("../features/plans/TaskMaintenancePage.vue"), meta: { title: "任务维护", section: "plans", mobileSection: "record" } },
+  { path: "/plans/tasks", name: "plan-tasks", component: () => import("../features/plans/TaskMaintenancePage.vue"), meta: { title: "任务", section: "plans", mobileSection: "record", desktopSection: "tasks", immersive: true } },
   { path: "/plans/timeline", name: "timeline", component: () => import("../features/plans/TimelinePage.vue"), meta: { title: "五号主线概览", section: "plans", mobileSection: "more" } },
   { path: "/plans/parameters", name: "plan-parameters", component: () => import("../features/plans/PlanParametersPage.vue"), meta: { title: "计划参数", section: "plans", mobileSection: "more" } },
   { path: "/analysis/recommendations", name: "recommendations", component: () => import("../features/analysis/RecommendationsPage.vue"), meta: { title: "推荐分析", section: "analysis", mobileSection: "resources" } },
@@ -26,7 +26,7 @@ export const routes: RouteRecordRaw[] = [
   { path: "/data/resources", redirect: "/data/inventory" },
   { path: "/data/tasks", redirect: "/plans/tasks" },
   { path: "/data/inventory", name: "data-inventory", component: () => import("../features/data/DataCenterPage.vue"), meta: { title: "库存资料", section: "data", mobileSection: "resources" } },
-  { path: "/data/market", name: "data-market", component: () => import("../features/data/DataCenterPage.vue"), meta: { title: "宝石行情", section: "data", mobileSection: "record" } },
+  { path: "/data/market", name: "data-market", component: () => import("../features/data/DataCenterPage.vue"), meta: { title: "宝石行情", section: "data", mobileSection: "record", desktopSection: "record" } },
   { path: "/data/sources", name: "data-sources", component: () => import("../features/data/DataCenterPage.vue"), meta: { title: "数据来源", section: "data", mobileSection: "resources" } },
   { path: "/settings", name: "settings", component: () => import("../features/settings/SettingsPage.vue"), meta: { title: "界面设置", section: "data", mobileSection: "more" } },
   { path: "/:pathMatch(.*)*", redirect: "/" },
