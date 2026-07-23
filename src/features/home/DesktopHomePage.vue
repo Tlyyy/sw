@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppIcon from "../../components/AppIcon.vue";
 import { useUiStore } from "../../stores/ui";
+import { useRecordEntry } from "./useRecordEntry";
 import {
   accountTaskLabel,
   dayAriaLabel,
@@ -24,6 +25,11 @@ const {
   weekDays,
   weeklyActivity,
 } = useHomeOverview();
+const {
+  handleRecordEntryClick,
+  recordOpening,
+  warmRecordEntry,
+} = useRecordEntry();
 </script>
 
 <template>
@@ -132,10 +138,16 @@ const {
         </header>
         <RouterLink
           class="desktop-record-primary"
+          :class="{ opening: recordOpening }"
           :to="todayOverview?.hasInventory ? '/record' : { path: '/record', query: { open: 'inventory' } }"
+          :aria-busy="recordOpening"
+          :aria-disabled="recordOpening ? 'true' : undefined"
+          @pointerenter="warmRecordEntry"
+          @focus="warmRecordEntry"
+          @click.capture="handleRecordEntryClick"
         >
           <AppIcon name="plus" />
-          <span>{{ todayOverview?.hasInventory ? "继续记录今天" : "记录今天" }}</span>
+          <span>{{ recordOpening ? "正在打开…" : todayOverview?.hasInventory ? "继续记录今天" : "记录今天" }}</span>
         </RouterLink>
         <div class="desktop-today-links">
           <RouterLink to="/plans/tasks"><span><AppIcon name="plan" /></span><b>任务</b><small>按账号标记完成</small><AppIcon name="chevron-right" /></RouterLink>
@@ -275,6 +287,7 @@ const {
 .desktop-week-report-card small { display: block; margin-top: 2px; color: var(--radar-muted); font-size: 12px; line-height: 1.45; }
 .desktop-record-primary { min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; border: 1px solid #a84600; border-radius: 10px; color: #ffffff; background: var(--brand-orange); box-shadow: 0 8px 18px rgba(199, 93, 5, .18); font-size: 15px; font-weight: 850; }
 .desktop-record-primary :deep(svg) { width: 20px; height: 20px; }
+.desktop-record-primary.opening { cursor: progress; pointer-events: none; filter: saturate(.86); opacity: .9; }
 .desktop-today-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
 .desktop-today-links > a { min-width: 0; min-height: 86px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: center; gap: 1px 7px; padding: 10px; border: 1px solid var(--radar-line); border-radius: 10px; background: var(--radar-surface-2); }
 .desktop-today-links > a > span { grid-row: 1 / 3; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); }

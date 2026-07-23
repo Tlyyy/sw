@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from "../../components/AppIcon.vue";
+import { useRecordEntry } from "../home/useRecordEntry";
 import {
   accountTaskLabel,
   dayAriaLabel,
@@ -22,6 +23,11 @@ const {
   weekDays,
   weeklyActivity,
 } = useHomeOverview();
+const {
+  handleRecordEntryClick,
+  recordOpening,
+  warmRecordEntry,
+} = useRecordEntry();
 </script>
 
 <template>
@@ -56,10 +62,16 @@ const {
       </header>
       <RouterLink
         class="mobile-record-primary"
+        :class="{ opening: recordOpening }"
         :to="todayOverview?.hasInventory ? '/record' : { path: '/record', query: { open: 'inventory' } }"
+        :aria-busy="recordOpening"
+        :aria-disabled="recordOpening ? 'true' : undefined"
+        @pointerenter="warmRecordEntry"
+        @focus="warmRecordEntry"
+        @click.capture="handleRecordEntryClick"
       >
         <AppIcon name="plus" />
-        <span>{{ todayOverview?.hasInventory ? "继续记录今天" : "记录今天" }}</span>
+        <span>{{ recordOpening ? "正在打开…" : todayOverview?.hasInventory ? "继续记录今天" : "记录今天" }}</span>
       </RouterLink>
       <div class="mobile-task-brief">
         <span class="mobile-task-icon"><AppIcon name="plan" /></span>
@@ -223,6 +235,7 @@ const {
   font-weight: 850;
 }
 .mobile-record-primary :deep(svg) { width: 23px; height: 23px; }
+.mobile-record-primary.opening { pointer-events: none; filter: saturate(.86); opacity: .9; }
 
 .mobile-task-brief {
   min-height: 48px;

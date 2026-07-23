@@ -238,6 +238,21 @@ async function expectCurrentSectionLinkInView(page: Page, url: string, navigatio
   expect(geometry.linkHeight, `${linkName} 触控高度应至少为 44px`).toBeGreaterThanOrEqual(43.5);
 }
 
+async function simulateVisualViewport(page: Page, height: number, offsetTop: number) {
+  return page.evaluate(({ nextHeight, nextOffsetTop }) => {
+    const viewport = window.visualViewport;
+    if (!viewport) return false;
+    try {
+      Object.defineProperty(viewport, "height", { configurable: true, value: nextHeight });
+      Object.defineProperty(viewport, "offsetTop", { configurable: true, value: nextOffsetTop });
+      viewport.dispatchEvent(new Event("resize"));
+      return true;
+    } catch {
+      return false;
+    }
+  }, { nextHeight: height, nextOffsetTop: offsetTop });
+}
+
 test.describe("mobile UX release gate", () => {
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile");
@@ -391,6 +406,16 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("iPhone 16 Pro Max 首页记录今天一次点击直达库存弹窗", async ({ page }, testInfo) => {
+    let releaseRecordPage = () => undefined;
+    const recordPageGate = new Promise<void>((resolve) => {
+      releaseRecordPage = resolve;
+    });
+    let recordPageRequested = false;
+    await page.route(/\/(?:src\/features\/mobile\/RecordPage\.vue|assets\/RecordPage-[^/?]+\.js)(?:\?.*)?$/, async (route) => {
+      recordPageRequested = true;
+      await recordPageGate;
+      await route.continue();
+    });
     await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
     await page.goto("/#/");
     await waitForApplicationPage(page);
@@ -398,7 +423,11 @@ test.describe("mobile UX release gate", () => {
     const recordToday = page.locator(".mobile-record-primary");
     await expect(recordToday).toHaveText("记录今天");
     await expect(recordToday).toHaveAttribute("href", "#/record?open=inventory");
-    await recordToday.tap();
+    await expect.poll(() => recordPageRequested, { message: "手机首页应在点击前预热录入页" }).toBe(true);
+    await recordToday.evaluate((element) => (element as HTMLElement).click());
+    await expect(recordToday).toHaveAttribute("aria-busy", "true");
+    await expect(recordToday).toHaveText("正在打开…");
+    releaseRecordPage();
 
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(page).toHaveURL(/#\/record$/);
@@ -488,7 +517,7 @@ test.describe("mobile UX release gate", () => {
     expect(layout.bulkBottom, "批量操作栏不能被固定底栏覆盖").toBeLessThanOrEqual(layout.dockTop - 6);
   });
 
-  test("固定蛋任务在 iPhone 16 Pro Max 自动计算缺口且不修改库存", async ({ page }) => {
+  test("固定蛋任务在 iPhone 16 Pro Max 自动计算缺口且不修改库存", async ({ page }, testInfo) => {
     await page.goto("/#/plans/tasks");
     await waitForApplicationPage(page);
     await page.evaluate(() => {
@@ -523,6 +552,8 @@ test.describe("mobile UX release gate", () => {
     const dialog = page.getByRole("dialog", { name: "确认任务消耗" });
     const automaticSilver = dialog.getByLabel(/^自动补购银子 \/ 万/);
     await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "取消并关闭任务结算" })).toBeFocused();
+    await expect(dialog.getByLabel(/^本次实际使用专用蛋 \/ 个/)).not.toBeFocused();
     await expect(automaticSilver).toHaveValue("110");
     await expect(automaticSilver).toHaveAttribute("readonly", "");
     await dialog.getByLabel(/^本次实际使用专用蛋 \/ 个/).fill("0");
@@ -530,6 +561,35 @@ test.describe("mobile UX release gate", () => {
     await expect(automaticSilver).toHaveValue("214.5");
     await expect(dialog).toContainText("实际使用 1 + 自动补购 39");
     await expect(dialog).toContainText("今天真实用掉的蛋");
+
+    const eggFieldLayout = await dialog.locator(".task-egg-fields > .task-settlement-field").evaluateAll((elements) => (
+      elements.slice(0, 2).map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+      })
+    ));
+    expect(eggFieldLayout).toHaveLength(2);
+    expect(eggFieldLayout[1].top, "iPhone 上普通蛋应排在专用蛋下方").toBeGreaterThanOrEqual(eggFieldLayout[0].bottom - 1);
+    expect(eggFieldLayout.every((field) => field.left >= -1 && field.right <= 441), "蛋输入不应横向裁切").toBe(true);
+
+    expect(await simulateVisualViewport(page, 560, 20), "应能模拟 iOS 键盘后的 VisualViewport").toBe(true);
+    await expect.poll(() => dialog.evaluate((element) => {
+      const backdrop = element.closest<HTMLElement>(".task-settlement-backdrop");
+      const footer = element.querySelector<HTMLElement>(".task-settlement-footer");
+      if (!backdrop || !footer) return null;
+      const backdropRect = backdrop.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      return {
+        backdropTop: Math.round(backdropRect.top),
+        backdropHeight: Math.round(backdropRect.height),
+        footerWithinViewport: footerRect.bottom <= backdropRect.bottom + 1,
+      };
+    })).toEqual({
+      backdropTop: 20,
+      backdropHeight: 560,
+      footerWithinViewport: true,
+    });
+    await page.screenshot({ path: testInfo.outputPath("task-settlement-iphone-16-pro-max-keyboard.png") });
 
     const layout = await dialog.evaluate((element) => {
       const rect = element.getBoundingClientRect();
@@ -628,7 +688,7 @@ test.describe("mobile UX release gate", () => {
     expect(auditedFields, "应实际审查一批移动表单控件").toBeGreaterThan(10);
   });
 
-  test("库存录入弹窗锁住背景并保持操作栏可见", async ({ page }) => {
+  test("库存录入弹窗锁住背景并保持操作栏可见", async ({ page }, testInfo) => {
     await page.goto("/#/record");
     await waitForApplicationPage(page);
     await page.getByRole("button", { name: /开始录入|检查并更新/ }).tap();
@@ -636,6 +696,34 @@ test.describe("mobile UX release gate", () => {
     const dialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
+    await expect(dialog.getByRole("button", { name: "关闭库存快照录入" })).toBeFocused();
+    await expect(dialog.getByRole("spinbutton").first()).not.toBeFocused();
+
+    await dialog.getByLabel("FC普通蛋库存").focus();
+    expect(await simulateVisualViewport(page, 540, 18), "应能模拟 iOS 数字键盘后的 VisualViewport").toBe(true);
+    await expect.poll(() => dialog.evaluate((element) => {
+      const backdrop = element.closest<HTMLElement>(".snapshot-dialog-backdrop");
+      const dateField = element.querySelector<HTMLElement>(".snapshot-date-field");
+      const entryScroll = element.querySelector<HTMLElement>(".snapshot-entry-scroll");
+      const footer = element.querySelector<HTMLElement>("footer");
+      if (!backdrop || !dateField || !entryScroll || !footer) return null;
+      const backdropRect = backdrop.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      return {
+        backdropTop: Math.round(backdropRect.top),
+        backdropHeight: Math.round(backdropRect.height),
+        dateVisible: getComputedStyle(dateField).display !== "none",
+        footerWithinViewport: footerRect.bottom <= backdropRect.bottom + 1,
+        scrollable: entryScroll.scrollHeight > entryScroll.clientHeight,
+      };
+    })).toEqual({
+      backdropTop: 18,
+      backdropHeight: 540,
+      dateVisible: false,
+      footerWithinViewport: true,
+      scrollable: true,
+    });
+    await page.screenshot({ path: testInfo.outputPath("inventory-snapshot-iphone-16-pro-max-keyboard.png") });
 
     const layout = await dialog.evaluate((element) => {
       const dialogRect = element.getBoundingClientRect();

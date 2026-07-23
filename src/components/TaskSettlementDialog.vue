@@ -10,6 +10,7 @@ import {
   type TaskSettlementValidationField,
 } from "../domain/taskSettlement";
 import type { InventoryBalance } from "../domain/types";
+import { useVisualViewport } from "../composables/useVisualViewport";
 import AppIcon from "./AppIcon.vue";
 
 interface TaskSettlementPayload {
@@ -41,6 +42,7 @@ const emit = defineEmits<{
 }>();
 
 const dialog = ref<HTMLFormElement>();
+const closeButton = ref<HTMLButtonElement>();
 const initialFocus = ref<HTMLInputElement>();
 const draft = ref<TaskSettlementDraft>(createTaskSettlementDraft(
   props.task,
@@ -52,6 +54,10 @@ const note = ref("");
 const submitted = ref(false);
 const timeError = ref("");
 const reuseExisting = ref(props.task.actionKey !== "talisman" && props.existingEntryCount > 0);
+const {
+  keyboardOpen,
+  visualViewportStyle,
+} = useVisualViewport("task-modal");
 let previouslyFocused: HTMLElement | null = null;
 let previousBodyOverflow = "";
 let previousRootOverflow = "";
@@ -218,7 +224,9 @@ function handleKeydown(event: KeyboardEvent) {
 
 async function focusDialog() {
   await nextTick();
-  initialFocus.value?.focus();
+  const usesTouchKeyboard = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  if (usesTouchKeyboard) closeButton.value?.focus({ preventScroll: true });
+  else initialFocus.value?.focus();
 }
 
 async function activateDialog() {
@@ -269,10 +277,16 @@ onBeforeUnmount(() => deactivateDialog());
 
 <template>
   <Teleport to="body">
-    <div class="task-settlement-backdrop" @click.self="requestCancel">
+    <div
+      class="task-settlement-backdrop"
+      :class="{ 'keyboard-open': keyboardOpen }"
+      :style="visualViewportStyle"
+      @click.self="requestCancel"
+    >
       <form
         ref="dialog"
         class="task-settlement-dialog"
+        tabindex="-1"
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-settlement-title"
@@ -287,7 +301,7 @@ onBeforeUnmount(() => deactivateDialog());
             <h2 id="task-settlement-title">{{ dialogTitle }}</h2>
             <span>{{ task.actionLabel }} · {{ task.kind }}</span>
           </div>
-          <button class="task-settlement-close" type="button" aria-label="取消并关闭任务结算" @click="requestCancel">
+          <button ref="closeButton" class="task-settlement-close" type="button" aria-label="取消并关闭任务结算" @click="requestCancel">
             <AppIcon name="close" />
           </button>
         </header>
@@ -489,6 +503,7 @@ onBeforeUnmount(() => deactivateDialog());
   background: #f6f8f8;
   box-shadow: 0 28px 80px rgba(0, 0, 0, .34);
 }
+.task-settlement-dialog:focus { outline: 0; }
 
 .task-settlement-header {
   min-height: 88px;
@@ -783,13 +798,17 @@ onBeforeUnmount(() => deactivateDialog());
 
 @media (max-width: 720px) {
   .task-settlement-backdrop {
+    inset: var(--task-modal-top, 0px) 0 auto;
+    height: var(--task-modal-height, 100dvh);
     align-items: end;
     padding: max(8px, env(safe-area-inset-top)) 0 0;
     background: rgba(7, 22, 29, .6);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .task-settlement-dialog {
     width: 100%;
-    max-height: calc(100dvh - max(8px, env(safe-area-inset-top)));
+    max-height: calc(var(--task-modal-height, 100dvh) - max(8px, env(safe-area-inset-top)));
     border-right: 0;
     border-bottom: 0;
     border-left: 0;
@@ -830,6 +849,8 @@ onBeforeUnmount(() => deactivateDialog());
     max-width: none;
     text-align: left;
   }
+  .task-egg-fields { grid-template-columns: 1fr; }
+  .task-egg-fields > label:nth-child(2) { border-top: 1px solid var(--radar-line); border-left: 0; }
   .task-settlement-meta { grid-template-columns: 1fr; }
   .task-settlement-meta > header { grid-column: 1; }
   .task-settlement-meta > label + label { border-top: 1px solid var(--radar-line); border-left: 0; }
@@ -844,8 +865,6 @@ onBeforeUnmount(() => deactivateDialog());
 
 @media (max-width: 440px) {
   .task-settlement-body { padding-inline: 10px; }
-  .task-egg-fields { grid-template-columns: 1fr; }
-  .task-egg-fields > label:nth-child(2) { border-top: 1px solid var(--radar-line); border-left: 0; }
   .task-progress-total { flex-wrap: wrap; }
   .task-settlement-footer { gap: 7px; }
   .settlement-button { font-size: 13px; }

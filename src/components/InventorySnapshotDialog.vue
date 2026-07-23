@@ -4,6 +4,7 @@ import { canRecordInventoryDate } from "../domain/inventory";
 import { accountIds } from "../domain/types";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "../domain/types";
 import { shanghaiDateKey } from "../domain/plans";
+import { useVisualViewport } from "../composables/useVisualViewport";
 import AppIcon from "./AppIcon.vue";
 
 interface InventorySnapshotDraft {
@@ -24,15 +25,22 @@ const emit = defineEmits<{
 }>();
 
 const dialog = ref<HTMLFormElement>();
+const closeButton = ref<HTMLButtonElement>();
 const dateInput = ref<HTMLInputElement>();
 const snapshotDate = ref("");
 const submitted = ref(false);
 const dirty = ref(false);
+const entryFieldFocused = ref(false);
 const seedDescription = ref("");
 const rows = reactive<Record<AccountId, InventoryBalance>>(emptyRows());
+const {
+  keyboardOpen,
+  visualViewportStyle,
+} = useVisualViewport("inventory-modal");
 let previouslyFocused: HTMLElement | null = null;
 let previousBodyOverflow = "";
 let previousRootOverflow = "";
+let fieldFocusTimer = 0;
 
 const matchingSnapshot = computed(() => props.snapshots.find((item) => item.effectiveDate === snapshotDate.value) || null);
 const maxDate = computed(() => props.maxDate || shanghaiDateKey());
@@ -149,7 +157,9 @@ async function activateDialog() {
   document.documentElement.style.overflow = "hidden";
   document.querySelector("#app")?.setAttribute("inert", "");
   await nextTick();
-  dateInput.value?.focus();
+  const usesTouchKeyboard = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  if (usesTouchKeyboard) closeButton.value?.focus({ preventScroll: true });
+  else dateInput.value?.focus();
 }
 
 function deactivateDialog(restoreFocus = true) {
@@ -157,6 +167,16 @@ function deactivateDialog(restoreFocus = true) {
   document.documentElement.style.overflow = previousRootOverflow;
   document.querySelector("#app")?.removeAttribute("inert");
   if (restoreFocus) void nextTick(() => previouslyFocused?.focus());
+}
+
+function keepEntryFieldVisible(event: FocusEvent) {
+  entryFieldFocused.value = true;
+  const target = event.target instanceof HTMLElement ? event.target : null;
+  if (!target) return;
+  window.clearTimeout(fieldFocusTimer);
+  fieldFocusTimer = window.setTimeout(() => {
+    if (dialog.value?.contains(target)) target.scrollIntoView({ block: "center", inline: "nearest" });
+  }, 280);
 }
 
 watch(() => props.open, async (open) => {
@@ -168,19 +188,27 @@ watch(() => props.open, async (open) => {
   }
 }, { immediate: true });
 
-onBeforeUnmount(() => deactivateDialog(false));
+onBeforeUnmount(() => {
+  window.clearTimeout(fieldFocusTimer);
+  deactivateDialog(false);
+});
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="snapshot-dialog-backdrop">
-      <form ref="dialog" class="snapshot-dialog" role="dialog" aria-modal="true" aria-labelledby="inventory-dialog-title" @submit.prevent="submit" @keydown="handleKeydown">
+    <div
+      v-if="open"
+      class="snapshot-dialog-backdrop"
+      :class="{ 'keyboard-open': keyboardOpen, 'entry-field-focused': entryFieldFocused }"
+      :style="visualViewportStyle"
+    >
+      <form ref="dialog" class="snapshot-dialog" role="dialog" aria-modal="true" aria-labelledby="inventory-dialog-title" tabindex="-1" @submit.prevent="submit" @keydown="handleKeydown">
         <header>
           <div>
             <h2 id="inventory-dialog-title">录入库存快照</h2>
             <p>一次记录 FC、LG1、PT、LG2、MYT；录入时间由系统自动保存。</p>
           </div>
-          <button class="snapshot-dialog-close" type="button" aria-label="关闭库存快照录入" @click="requestClose"><AppIcon name="close" /></button>
+          <button ref="closeButton" class="snapshot-dialog-close" type="button" aria-label="关闭库存快照录入" @click="requestClose"><AppIcon name="close" /></button>
         </header>
 
         <div class="snapshot-date-field">
@@ -203,10 +231,10 @@ onBeforeUnmount(() => deactivateDialog(false));
             </div>
             <div v-for="accountId in accountOrder" :key="accountId" class="snapshot-entry-row" role="row" :data-label="`${accountId} 账号库存`">
               <strong role="cell" data-label="账号" :class="`account-pill account-${accountId.toLowerCase()}`">{{ accountId }}</strong>
-              <span role="cell" data-label="专用蛋"><input v-model.number="rows[accountId].dedicatedEggs" type="number" min="0" step="1" inputmode="numeric" data-label="专用蛋" :aria-label="`${accountId}专用蛋库存`" @input="dirty = true" /></span>
-              <span role="cell" data-label="普通蛋"><input v-model.number="rows[accountId].regularEggs" type="number" min="0" step="1" inputmode="numeric" data-label="普通蛋" :aria-label="`${accountId}普通蛋库存`" @input="dirty = true" /></span>
-              <span role="cell" data-label="银子 / 万"><input v-model.number="rows[accountId].silverWan" type="number" min="0" step="0.01" inputmode="decimal" data-label="银子 / 万" :aria-label="`${accountId}银子库存（万）`" @input="dirty = true" /></span>
-              <span role="cell" data-label="内丹碎片"><input v-model.number="rows[accountId].innerShardCount" type="number" min="0" step="1" inputmode="numeric" data-label="内丹碎片" required :aria-label="`${accountId}内丹碎片库存`" @input="dirty = true" /></span>
+              <span role="cell" data-label="专用蛋"><input v-model.number="rows[accountId].dedicatedEggs" type="number" min="0" step="1" inputmode="numeric" data-label="专用蛋" :aria-label="`${accountId}专用蛋库存`" @focus="keepEntryFieldVisible" @blur="entryFieldFocused = false" @input="dirty = true" /></span>
+              <span role="cell" data-label="普通蛋"><input v-model.number="rows[accountId].regularEggs" type="number" min="0" step="1" inputmode="numeric" data-label="普通蛋" :aria-label="`${accountId}普通蛋库存`" @focus="keepEntryFieldVisible" @blur="entryFieldFocused = false" @input="dirty = true" /></span>
+              <span role="cell" data-label="银子 / 万"><input v-model.number="rows[accountId].silverWan" type="number" min="0" step="0.01" inputmode="decimal" data-label="银子 / 万" :aria-label="`${accountId}银子库存（万）`" @focus="keepEntryFieldVisible" @blur="entryFieldFocused = false" @input="dirty = true" /></span>
+              <span role="cell" data-label="内丹碎片"><input v-model.number="rows[accountId].innerShardCount" type="number" min="0" step="1" inputmode="numeric" data-label="内丹碎片" required :aria-label="`${accountId}内丹碎片库存`" @focus="keepEntryFieldVisible" @blur="entryFieldFocused = false" @input="dirty = true" /></span>
             </div>
           </div>
         </div>
@@ -221,6 +249,27 @@ onBeforeUnmount(() => deactivateDialog(false));
 </template>
 
 <style scoped>
+.snapshot-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.snapshot-dialog:focus { outline: 0; }
+
+.snapshot-entry-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snapshot-dialog > footer {
+  position: static;
+  flex: 0 0 auto;
+}
+
 .snapshot-date-field {
   color: var(--radar-ink);
   background: var(--radar-surface-2);
@@ -238,5 +287,40 @@ onBeforeUnmount(() => deactivateDialog(false));
   color: var(--radar-ink);
   background: #ffffff;
   color-scheme: light;
+}
+
+@media (max-width: 720px) {
+  .snapshot-dialog-backdrop {
+    inset: var(--inventory-modal-top, 0px) 0 auto;
+    height: var(--inventory-modal-height, 100dvh);
+    padding: max(8px, env(safe-area-inset-top)) 0 0;
+    background: rgba(17, 24, 39, .58);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .snapshot-dialog {
+    max-height: calc(var(--inventory-modal-height, 100dvh) - max(8px, env(safe-area-inset-top)));
+  }
+
+  .snapshot-dialog-backdrop.keyboard-open.entry-field-focused {
+    padding-top: 0;
+  }
+
+  .snapshot-dialog-backdrop.keyboard-open.entry-field-focused .snapshot-dialog {
+    max-height: var(--inventory-modal-height, 100dvh);
+    border-radius: 0;
+  }
+
+  .snapshot-dialog-backdrop.keyboard-open.entry-field-focused .snapshot-dialog > header {
+    min-height: 56px;
+    padding-block: 7px;
+  }
+
+  .snapshot-dialog-backdrop.keyboard-open.entry-field-focused .snapshot-dialog > header p,
+  .snapshot-dialog-backdrop.keyboard-open.entry-field-focused .snapshot-date-field,
+  .snapshot-dialog-backdrop.keyboard-open.entry-field-focused .snapshot-seed-note {
+    display: none;
+  }
 }
 </style>

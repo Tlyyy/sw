@@ -103,14 +103,27 @@ test.describe("desktop application", () => {
 
   test("首页记录今天按库存状态一次到位", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
+    let releaseRecordPage = () => undefined;
+    const recordPageGate = new Promise<void>((resolve) => {
+      releaseRecordPage = resolve;
+    });
+    let recordPageRequested = false;
+    await page.route(/\/(?:src\/features\/mobile\/RecordPage\.vue|assets\/RecordPage-[^/?]+\.js)(?:\?.*)?$/, async (route) => {
+      recordPageRequested = true;
+      await recordPageGate;
+      await route.continue();
+    });
+    await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
     await page.goto("/#/");
-    await page.evaluate(() => localStorage.removeItem("sw.app.inventory.v2"));
-    await page.reload();
 
     const recordToday = page.locator(".desktop-record-primary");
     await expect(recordToday).toHaveText("记录今天");
     await expect(recordToday).toHaveAttribute("href", "#/record?open=inventory");
-    await recordToday.click();
+    await expect.poll(() => recordPageRequested, { message: "首页应在点击前预热录入页" }).toBe(true);
+    await recordToday.evaluate((element) => (element as HTMLElement).click());
+    await expect(recordToday).toHaveAttribute("aria-busy", "true");
+    await expect(recordToday).toHaveText("正在打开…");
+    releaseRecordPage();
 
     const inventoryDialog = page.getByRole("dialog", { name: "录入库存快照" });
     await expect(page).toHaveURL(/#\/record$/);
@@ -136,6 +149,34 @@ test.describe("desktop application", () => {
     await expect(page).toHaveURL(/#\/record$/);
     await expect(inventoryDialog).toHaveCount(0);
     await expect(page.getByRole("button", { name: "检查并更新", exact: true })).toBeVisible();
+  });
+
+  test("录入页首次加载失败后可以重新点击", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    let releaseFailedRequest = () => undefined;
+    const failedRequestGate = new Promise<void>((resolve) => {
+      releaseFailedRequest = resolve;
+    });
+    let recordPageRequested = false;
+    const recordPagePattern = /\/(?:src\/features\/mobile\/RecordPage\.vue|assets\/RecordPage-[^/?]+\.js)(?:\?.*)?$/;
+    await page.route(recordPagePattern, async (route) => {
+      recordPageRequested = true;
+      await failedRequestGate;
+      await route.abort("failed");
+    });
+    await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
+    await page.goto("/#/");
+
+    const recordToday = page.locator(".desktop-record-primary");
+    await expect.poll(() => recordPageRequested, { message: "首页应在点击前预热录入页" }).toBe(true);
+    await recordToday.evaluate((element) => (element as HTMLElement).click());
+    await expect(recordToday).toHaveAttribute("aria-busy", "true");
+    releaseFailedRequest();
+
+    await expect(recordToday).toHaveAttribute("aria-busy", "false");
+    await expect(recordToday).toHaveText("记录今天");
+    await expect(recordToday).toHaveCSS("pointer-events", "auto");
+    await expect(page).toHaveURL(/#\/$/);
   });
 
   test("核心路由、搜索和业务基线", async ({ page }, testInfo) => {
