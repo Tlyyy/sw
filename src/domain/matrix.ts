@@ -1,6 +1,7 @@
+import { accountIds } from "./types";
 import type { AccountId, PetView } from "./types";
 
-export const matrixAccountIds = ["FC", "LG1", "LG2", "PT", "MYT"] as const satisfies readonly AccountId[];
+export const matrixAccountIds = accountIds satisfies readonly AccountId[];
 
 export interface MatrixColumn { key: string; label: string; group: string; match: (row: PetView) => boolean }
 export const matrixColumns: MatrixColumn[] = [

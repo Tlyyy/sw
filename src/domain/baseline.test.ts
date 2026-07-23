@@ -42,7 +42,7 @@ describe("migration baseline", () => {
   it("preserves the fixed comparison matrix", () => {
     expect(matrixColumns).toHaveLength(15);
     expect(matrixGroups).toHaveLength(4);
-    expect(matrixAccountIds).toEqual(["FC", "LG1", "LG2", "PT", "MYT"]);
+    expect(matrixAccountIds).toEqual(["FC", "LG1", "PT", "LG2", "MYT"]);
     expect(matrixColumns.filter((column) => column.group === "PK：神兽蛇 / 小马").map((column) => column.label)).toEqual([
       "剑气蛇",
       "法蛇",

@@ -47,7 +47,17 @@ const groupedTasks = computed(() => catalog.data.accounts.map((item) => ({
 })).filter((group) => group.tasks.length));
 const pendingTaskCount = computed(() => allTasks.value.filter((task) => !task.done).length);
 const doneTaskCount = computed(() => allTasks.value.length - pendingTaskCount.value);
-const completionRate = computed(() => allTasks.value.length ? Math.round(doneTaskCount.value / allTasks.value.length * 100) : 0);
+const accountProgress = computed(() => catalog.data.accounts.map((item) => {
+  const accountTasks = allTasks.value.filter((task) => task.accountId === item.id);
+  const done = accountTasks.filter((task) => task.done).length;
+  return {
+    accountId: item.id,
+    total: accountTasks.length,
+    done,
+    pending: accountTasks.length - done,
+    rate: accountTasks.length ? Math.round(done / accountTasks.length * 100) : 0,
+  };
+}));
 const completionOverrideCount = computed(() => Object.values(settings.taskOverrides).filter((item) => item.done !== undefined).length);
 const completionByTask = computed(() => new Map(settings.taskCompletions.map((entry) => [entry.taskId, entry])));
 const visiblePendingTasks = computed(() => tasks.value.filter((task) => !task.done));
@@ -84,6 +94,11 @@ function taskState(task: ScheduledTask) {
 
 function setStatus(value: TaskStatusFilter) {
   status.value = value;
+}
+
+function selectAccount(accountId: string) {
+  account.value = account.value === accountId ? "ALL" : accountId;
+  status.value = "pending";
 }
 
 function clearFilters() {
@@ -147,18 +162,16 @@ function resetCompletion() {
       <button v-if="completionOverrideCount" class="button danger task-reset-action" type="button" @click="resetCompletion">清除全部完成记录</button>
     </section>
 
-    <section class="task-progress-overview" aria-label="任务进度">
-      <div class="task-progress-primary">
-        <span>任务进度</span>
-        <strong>{{ doneTaskCount }} / {{ allTasks.length }}</strong>
-        <div class="task-progress-track" role="progressbar" aria-label="任务完成进度" :aria-valuenow="completionRate" aria-valuemin="0" aria-valuemax="100"><i :style="{ width: `${completionRate}%` }"></i></div>
-        <em>{{ completionRate }}%</em>
+    <section class="task-account-overview" aria-labelledby="task-account-overview-title">
+      <header><div><p>逐账号查看</p><h2 id="task-account-overview-title">各账号任务进度</h2></div><span>点账号可直接筛选</span></header>
+      <div>
+        <button v-for="item in accountProgress" :key="item.accountId" type="button" :class="{ active: account === item.accountId }" :aria-pressed="account === item.accountId" @click="selectAccount(item.accountId)">
+          <strong>{{ item.accountId }}</strong>
+          <span>{{ item.done }} / {{ item.total }}</span>
+          <i aria-hidden="true"><b :style="{ width: `${item.rate}%` }"></b></i>
+          <small>{{ item.pending }} 项待完成</small>
+        </button>
       </div>
-      <dl class="task-progress-stats">
-        <div><dt><i class="pending"></i>待完成</dt><dd>{{ pendingTaskCount }}</dd></div>
-        <div><dt><i class="done"></i>已完成</dt><dd>{{ doneTaskCount }}</dd></div>
-        <div><dt><i class="edited"></i>本地修改</dt><dd>{{ completionOverrideCount }}</dd></div>
-      </dl>
     </section>
 
     <p v-if="actionFeedback" class="task-action-feedback" role="status">{{ actionFeedback }}</p>
@@ -224,3 +237,27 @@ function resetCompletion() {
     </aside>
   </div>
 </template>
+
+<style scoped>
+.task-account-overview { overflow: hidden; margin: 16px 0; border: 1px solid var(--radar-line); border-radius: 12px; background: #ffffff; }
+.task-account-overview > header { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 14px; border-bottom: 1px solid var(--radar-line); background: var(--radar-surface-2); }
+.task-account-overview > header p { color: var(--radar-cyan-strong); font-size: 10px; font-weight: 850; letter-spacing: .08em; }
+.task-account-overview > header h2 { margin-top: 1px; font-size: 17px; }
+.task-account-overview > header > span { color: var(--radar-muted); font-size: 11px; font-weight: 750; }
+.task-account-overview > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.task-account-overview button { min-width: 0; min-height: 94px; display: grid; place-items: center; align-content: center; gap: 2px; padding: 9px 7px; border: 0; border-right: 1px solid var(--radar-line); color: var(--radar-ink); background: #ffffff; font: inherit; }
+.task-account-overview button:last-child { border-right: 0; }
+.task-account-overview button.active { color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); }
+.task-account-overview button strong { font-size: 14px; }
+.task-account-overview button > span { font-size: 12px; font-weight: 850; }
+.task-account-overview button > i { width: 100%; height: 4px; overflow: hidden; margin: 3px 0; border-radius: 999px; background: var(--radar-line); }
+.task-account-overview button > i > b { height: 100%; display: block; border-radius: inherit; background: var(--radar-cyan); }
+.task-account-overview button small { color: var(--radar-muted); font-size: 10px; white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .task-account-overview { margin: 12px 0; }
+  .task-account-overview > header { min-height: 52px; padding: 8px 10px; }
+  .task-account-overview button { min-height: 84px; padding-inline: 4px; }
+  .task-account-overview button small { font-size: 10px; }
+}
+</style>

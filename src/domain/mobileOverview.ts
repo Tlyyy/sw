@@ -1,5 +1,9 @@
 import type { InventoryWeekReport } from "./inventory";
-import type { SilverExpenseRecord, TaskCompletionRecord } from "./types";
+import type { MainlineAccountProjection } from "./mainline";
+import type { AccountTaskPlan } from "./plans";
+import { accountIds } from "./types";
+import type { AccountId, SilverExpenseRecord, TaskCompletionRecord } from "./types";
+import type { WeeklyAccountActivitySummary } from "./weeklyActivity";
 
 export type MobileWeekDayState = "recorded" | "today-pending" | "missed" | "future";
 
@@ -10,6 +14,31 @@ export interface MobileWeekDayOverview {
   hasInventory: boolean;
   taskCompletionCount: number;
   expenseCount: number;
+}
+
+export interface MobileAccountOverview {
+  accountId: AccountId;
+  weekly: WeeklyAccountActivitySummary | null;
+  projection: MainlineAccountProjection | null;
+  pendingTaskCount: number;
+}
+
+/** Join every mobile account surface by account ID and keep one canonical order. */
+export function buildMobileAccountOverview(
+  summaries: WeeklyAccountActivitySummary[],
+  projections: MainlineAccountProjection[],
+  taskPlans: AccountTaskPlan[],
+): MobileAccountOverview[] {
+  const summaryByAccount = new Map(summaries.map((summary) => [summary.accountId, summary]));
+  const projectionByAccount = new Map(projections.map((projection) => [projection.accountId, projection]));
+  const planByAccount = new Map(taskPlans.map((plan) => [plan.accountId, plan]));
+
+  return accountIds.map((accountId) => ({
+    accountId,
+    weekly: summaryByAccount.get(accountId) || null,
+    projection: projectionByAccount.get(accountId) || null,
+    pendingTaskCount: planByAccount.get(accountId)?.tasks.filter((task) => !task.done).length || 0,
+  }));
 }
 /**
  * Build the seven-day rhythm shown on the mobile home screen.

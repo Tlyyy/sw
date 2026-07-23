@@ -232,6 +232,44 @@
 
 final result: passed
 
+## Account-first full mobile refactor — 2026-07-23
+
+### Source truth and evidence
+
+- User references: `1-照片-1.jpg`, `2-照片-2.jpg`, and `3-照片-3.jpg` under `C:\Users\T\.codex\codex-remote-attachments\019f8a67-fe4e-7972-b773-69a5a26d7e39\0C49F0D0-1577-418E-940C-10CD8245E378`.
+- Final iPhone 16 Pro Max captures: `home-16pm-viewport.png`, `record-16pm-viewport.png`, `week-16pm-viewport.png`, `resources-16pm-viewport.png`, and `tasks-16pm-viewport.png` under `C:\Users\T\.codex\visualizations\2026\07\23\019f8a67-fe4e-7972-b773-69a5a26d7e39`.
+- Mandatory combined comparisons: `comparison-home-account-first.png`, `comparison-tasks-account-first.png`, and `comparison-week-account-first.png` in the same directory.
+- Visual viewport: 440 × 956 CSS px, WebKit, 3× device scale, with 59px top and 34px bottom safe areas. The automated Safari viewport gate also uses the Playwright iPhone 16 Pro Max descriptor at 440 × 763.
+- Tested state: authenticated local workspace, 2026-07-23, five-account inventory baseline and current snapshot, canonical order `FC / LG1 / PT / LG2 / MYT`.
+
+### Findings and implemented corrections
+
+1. P1 — the home screen's combined weekly totals did not answer which account needed attention. The total card was replaced by five compact account rows showing current task/status, pending tasks, harvest, expense, and completed-task count, each with one 44px detail target.
+2. P1 — the weekly summary put combined harvest, expense, inventory and formula cards before the account data. Those aggregate cards and the formula band were removed from both the page and generated PNG; the five accounts now form the primary content.
+3. P2 — the mobile chrome and route intros consumed too much vertical space. The header content is now 48px plus the unavoidable iOS safe area, the brand and sync control were tightened, mobile route intros were compressed, and plan navigation became one horizontal row.
+4. P2 — recording mixed actions and totals. The record hub now clearly separates inventory, task completion, silver expense, and market entry, then shows today's status for all five accounts.
+5. P2 — task progress was global. The task page now starts with five account progress controls that also filter the worklist; the previous aggregate stat strip was removed from related mainline pages.
+6. P2 — information and input were mixed. The resources page explicitly acts as lookup-only, begins with five account entries, and separates assets, analysis/planning, and source data.
+7. P2 — account order varied by domain. Runtime order is now consistently `FC / LG1 / PT / LG2 / MYT` across home, record, weekly summary, task, inventory, and share-image paths.
+8. P2 — the first account-first pass used 8–9px secondary labels and repeated three synonymous weekly headings. Secondary labels were raised to 10px; the weekly page now uses `本周小结` and one `五个账号本周情况` panel, saving about 90px of page height.
+
+### Final comparison result
+
+- The home comparison preserves the reference's short weekly rhythm and orange recording CTA, but correctly replaces the combined progress card with account-level decisions.
+- The task comparison reduces the old multi-row plan navigation and removes the four combined stat cells; all five accounts are visible together as progress/filter controls.
+- The weekly comparison removes the total-first metrics and calculation formula, bringing FC, LG1, PT, LG2, and MYT directly below the report actions.
+- All five reviewed routes report 440px document/client width, so there is no page-level horizontal overflow. Header height is 107px including the 59px safe area; the fixed dock is 106px including the 34px Home Indicator area.
+- Console warning/error collection across the five final captures is empty. No remaining P0, P1, or P2 visual finding was observed in the combined comparisons.
+
+### Verification
+
+- `npm test`: 27 files and 116 tests passed.
+- `npm run build`: data integrity, Vue/TypeScript, production build, and 298 static assets passed; the existing chunk-size warning remains.
+- `npm run test:e2e:ci`: 49 passed, 103 skipped by project conditions, 0 failed.
+- iPhone-specific coverage includes safe areas, 44px touch targets, five-account order and navigation, page overflow, task completion, weekly PNG generation, native file sharing fallback, forms, dialogs, and fixed-dock clearance.
+
+final result: passed
+
 ## Inventory weekly-change alignment — 2026-07-19
 
 ### Source truth and browser evidence
@@ -568,6 +606,6 @@ final result: blocked
 
 ## Current Design QA status — 2026-07-23
 
-The complete source-to-implementation comparison, findings, interaction coverage, accessibility review, and final verification for the current 万象册 mobile refactor are recorded above under `万象册移动端信息架构与 iPhone 16 Pro Max 首页 — 2026-07-23`. That pass supersedes the older blocked historical entries: the authenticated 440 × 956 browser comparison is available, the iPhone 16 Pro Max 440 × 763 WebKit gate is green, and the final console warning/error query is empty.
+The latest source-to-implementation comparison, findings, interaction coverage, accessibility review, and final verification are recorded above under `Account-first full mobile refactor — 2026-07-23`. That pass supersedes the older blocked historical entries: authenticated 440 × 956 comparisons cover home, task, and weekly-summary flows; the iPhone 16 Pro Max 440 × 763 WebKit gate is green; and final console warning/error collection is empty.
 
 final result: passed

@@ -41,12 +41,12 @@ describe("inventory report share image", () => {
       recordedDays: 2,
       snapshot: {
         date: "2026-07-20",
-        rows: ["FC", "LG1", "LG2", "PT", "MYT"].map((label) => ({ label, values: [9, 8, 161, 205, 32] })),
+        rows: ["FC", "LG1", "PT", "LG2", "MYT"].map((label) => ({ label, values: [9, 8, 161, 205, 32] })),
         total: { label: "合计", values: [45, 40, 805, 1_025, 160] },
       },
       change: {
         caption: "2026-07-19 → 2026-07-20 · 1 天",
-        rows: ["FC", "LG1", "LG2", "PT", "MYT"].map((label) => ({ label, values: [2, 1, 31, 36.5, 2] })),
+        rows: ["FC", "LG1", "PT", "LG2", "MYT"].map((label) => ({ label, values: [2, 1, 31, 36.5, 2] })),
         total: { label: "合计", values: [10, 5, 155, 182.5, 10] },
       },
       valuationNote: "银+蛋 = 银子 + 普通蛋 × 5.5 万/个",

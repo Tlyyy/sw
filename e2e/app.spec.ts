@@ -448,7 +448,7 @@ test.describe("schedule completion dates", () => {
         snapshots: [{
           effectiveDate: "2026-07-12",
           recordedAt: "2026-07-12T02:00:00.000Z",
-          accounts: Object.fromEntries(["FC", "LG1", "LG2", "PT", "MYT"].map((id) => [id, {
+          accounts: Object.fromEntries(["FC", "LG1", "PT", "LG2", "MYT"].map((id) => [id, {
             dedicatedEggs: 10_000,
             regularEggs: 10_000,
             silverWan: 10_000,
@@ -465,8 +465,10 @@ test.describe("schedule completion dates", () => {
     await page.goto("/#/");
     if (testInfo.project.name === "mobile") {
       const taskBrief = page.locator(".mobile-task-brief");
-      await expect(taskBrief).toContainText(/\d+ 项现在可完成/);
-      expect(await page.locator(".mobile-current-tasks > li").count()).toBeGreaterThan(0);
+      await expect(taskBrief).toContainText("按账号查看当前任务并标记完成");
+      const accountProgressRows = page.locator(".mobile-account-progress-list > article");
+      await expect(accountProgressRows).toHaveCount(5);
+      await expect(accountProgressRows.locator(".account-pill")).toHaveText(["FC", "LG1", "PT", "LG2", "MYT"]);
       await page.locator(".mobile-today-card").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
     } else {
       const ptMainline = page.locator(".mainline-row").filter({ hasText: "PT" });
@@ -546,7 +548,7 @@ test.describe("week-to-date activity report", () => {
     });
     await page.clock.setFixedTime(new Date("2026-07-22T02:00:00.000Z"));
     await page.addInitScript(() => {
-      const accountIds = ["FC", "LG1", "LG2", "PT", "MYT"];
+      const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"];
       const balances = (silverWan: number) => Object.fromEntries(accountIds.map((id) => [id, {
         dedicatedEggs: 10,
         regularEggs: 10,
@@ -569,7 +571,9 @@ test.describe("week-to-date activity report", () => {
     await expect(silverTask).toBeVisible();
     const resourceText = (await silverTask.locator(".task-resource-cell").innerText()).replaceAll(",", "");
     const taskExpense = Number(resourceText.match(/[\d.]+/)?.[0]);
+    const taskAccountId = (await silverTask.locator(".task-identity-cell span").innerText()).split(" · ")[0];
     expect(taskExpense).toBeGreaterThan(0);
+    expect(["FC", "LG1", "PT", "LG2", "MYT"]).toContain(taskAccountId);
     await silverTask.getByRole("button", { name: /标记完成/ }).click();
     await expect(page.getByRole("status")).toContainText("银子支出");
 
@@ -584,7 +588,8 @@ test.describe("week-to-date activity report", () => {
     const activity = page.getByTestId("weekly-activity-panel");
     await expect(activity.getByText("本周截至 7月22日", { exact: true })).toBeVisible();
     await expect(activity.getByText("2026-07-20 至 2026-07-22", { exact: true })).toBeVisible();
-    await expect(activity.getByText("本周收获 = 库存净变化 + 库存比较区间内的银子支出", { exact: true })).toBeVisible();
+    await expect(activity.getByRole("heading", { name: "五个账号本周情况", exact: true })).toBeVisible();
+    await expect(activity.getByText(/库存截至 2026-07-22/)).toBeVisible();
 
     await activity.getByRole("button", { name: "补记其他支出", exact: true }).click();
     await activity.getByLabel("其他支出账号").selectOption("LG1");
@@ -594,13 +599,18 @@ test.describe("week-to-date activity report", () => {
     await expect(activity.getByText("购买材料", { exact: true })).toBeVisible();
     const accountRows = activity.locator(".weekly-account-row");
     await expect(accountRows).toHaveCount(5);
-    await expect(activity.locator(".weekly-account-row[data-account-id='LG1'] .account-expense small")).toContainText("其他 10");
+    const canonicalAccountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
+    await expect(accountRows.locator(".account-pill")).toHaveText(canonicalAccountIds);
+    await expect(activity.locator(".weekly-cashflow-metrics")).toHaveCount(0);
 
-    const expectedExpense = taskExpense + 10;
-    const expenseMetric = activity.locator(".weekly-cashflow-metrics > div").filter({ hasText: "本周支出" });
-    const harvestMetric = activity.locator(".weekly-cashflow-metrics > div").filter({ hasText: "本周收获" });
-    await expect(expenseMetric.locator("dd")).toHaveText(`${expectedExpense.toLocaleString("zh-CN")} 万`);
-    await expect(harvestMetric.locator("dd")).toHaveText(`${(20 + expectedExpense).toLocaleString("zh-CN")} 万`);
+    const expectedExpenses = Object.fromEntries(canonicalAccountIds.map((accountId) => [accountId, 0])) as Record<(typeof canonicalAccountIds)[number], number>;
+    expectedExpenses[taskAccountId as (typeof canonicalAccountIds)[number]] += taskExpense;
+    expectedExpenses.LG1 += 10;
+    for (const accountId of canonicalAccountIds) {
+      const accountRow = activity.locator(`.weekly-account-row[data-account-id='${accountId}']`);
+      await expect(accountRow.locator(".account-expense b")).toHaveText(`${expectedExpenses[accountId].toLocaleString("zh-CN")} 万`);
+      await expect(accountRow.locator(".account-harvest b")).toHaveText(`${(4 + expectedExpenses[accountId]).toLocaleString("zh-CN")} 万`);
+    }
 
     await activity.getByRole("button", { name: "生成本周小结", exact: true }).click();
     const preview = page.getByRole("dialog", { name: "本周小结图片" });

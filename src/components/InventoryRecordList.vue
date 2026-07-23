@@ -6,6 +6,7 @@ import {
   type InventoryWeekDaySlot,
   type InventoryWeekReport,
 } from "../domain/inventory";
+import { accountIds } from "../domain/types";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "../domain/types";
 import AppIcon from "./AppIcon.vue";
 
@@ -19,7 +20,7 @@ const emit = defineEmits<{
   remove: [date: string];
 }>();
 
-const accountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
+const accountOrder: AccountId[] = [...accountIds];
 const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
 const expandedDate = ref<string | null>(null);
 

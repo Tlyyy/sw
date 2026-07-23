@@ -55,6 +55,7 @@ const primaryTargetSelector = [
   "main .mobile-record-primary",
   "main .mobile-weekly-report-card",
   "main .mobile-task-brief > a",
+  "main .mobile-account-progress-link",
   "main .record-primary-action",
   "main .record-option-card",
   "main .inventory-week-button",
@@ -255,10 +256,23 @@ test.describe("mobile UX release gate", () => {
     await page.getByRole("button", { name: "打开全部导航" }).tap();
     const mobileNavigation = page.getByRole("dialog", { name: "主导航" });
     await expect(mobileNavigation).toBeVisible();
+    const accountQuickLinks = mobileNavigation.locator(".orbit-mobile-account-links > a");
+    await expect(accountQuickLinks).toHaveText(["FC", "LG1", "PT", "LG2", "MYT"]);
+    expect(await accountQuickLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
+      .toEqual(["#/accounts/FC", "#/accounts/LG1", "#/accounts/PT", "#/accounts/LG2", "#/accounts/MYT"]);
     expect(await undersizedPrimaryTargets(page), "移动主导航存在不足 44px 的主要触控目标").toEqual([]);
     await mobileNavigation.getByRole("button", { name: "关闭导航" }).tap();
 
-    for (const url of ["/#/", "/#/plans/tasks", "/#/analysis/matrix", "/#/settings"] as const) {
+    for (const url of [
+      "/#/",
+      "/#/record",
+      "/#/week",
+      "/#/resources",
+      "/#/accounts/FC",
+      "/#/plans/tasks",
+      "/#/analysis/matrix",
+      "/#/settings",
+    ] as const) {
       await test.step(url, async () => {
         await page.goto(url);
         await waitForApplicationPage(page);
@@ -294,6 +308,7 @@ test.describe("mobile UX release gate", () => {
       return {
         viewportHeight: window.innerHeight,
         topbarHeight: topbar.getBoundingClientRect().height,
+        topbarContentHeight: topbar.getBoundingClientRect().height - 59,
         brandTop: brand.getBoundingClientRect().top,
         syncTop: syncState.getBoundingClientRect().top,
         dockHeight: dockRect.height,
@@ -307,7 +322,8 @@ test.describe("mobile UX release gate", () => {
       };
     });
 
-    expect(layout.topbarHeight, "顶部栏应包含 iPhone 状态栏安全区").toBeGreaterThanOrEqual(116);
+    expect(layout.topbarContentHeight, "安全区外的顶部栏应保持 48px 紧凑高度").toBeCloseTo(48, 0);
+    expect(layout.topbarHeight, "顶部栏总高度应包含 59px iPhone 状态栏安全区").toBeCloseTo(107, 0);
     expect(layout.brandTop, "品牌文字不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
     expect(layout.syncTop, "同步状态不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
     expect(layout.dockPaddingBottom, "底栏应为 Home Indicator 留出安全区").toBeGreaterThanOrEqual(34);
@@ -319,7 +335,7 @@ test.describe("mobile UX release gate", () => {
     expect(layout.linkFits, "更新库存不能被挤成两行").toBe(true);
   });
 
-  test("首页首屏呈现本周节奏且记录入口不被底部导航遮挡", async ({ page }) => {
+  test("首页首屏保持紧凑并呈现逐账号本周入口", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
@@ -327,6 +343,7 @@ test.describe("mobile UX release gate", () => {
     await expect(page.locator(".mobile-week-rhythm > article")).toHaveCount(7);
     await expect(page.locator(".mobile-record-primary")).toBeVisible();
     await expect(page.locator(".mobile-task-brief")).toBeVisible();
+    await expect(page.locator(".mobile-account-progress-list > article")).toHaveCount(5);
     await expect(page.locator(".mobile-weekly-report-card")).toHaveAttribute("href", "#/week");
     await expect(page.getByRole("navigation", { name: "手机快捷导航" }).locator("a, button")).toHaveText([
       "首页",
@@ -365,17 +382,37 @@ test.describe("mobile UX release gate", () => {
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
-  test("任务已并入首页摘要并能进入录入分区维护", async ({ page }) => {
+  test("首页固定展示五个账号并能逐一进入详情", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    const taskRows = page.locator(".mobile-current-tasks > li");
-    expect(await taskRows.count()).toBeGreaterThan(0);
-    expect(await taskRows.count()).toBeLessThanOrEqual(2);
-    const clippedTitles = await taskRows.locator(":scope > span").evaluateAll((elements) => (
-      elements.filter((element) => element.scrollWidth > element.clientWidth + 1).map((element) => element.textContent)
-    ));
-    expect(clippedTitles, "首页任务摘要不应被横向裁切").toEqual([]);
+    const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
+    const accountCards = page.locator(".mobile-account-progress-list > article");
+    const accountLinks = accountCards.locator(".mobile-account-progress-link");
+    await expect(accountCards).toHaveCount(accountIds.length);
+    expect(await accountCards.evaluateAll((elements) => elements.map((element) => (
+      (element as HTMLElement).dataset.accountId
+    ))), "首页账号顺序应与系统固定顺序一致").toEqual(accountIds);
+    expect(await accountLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
+      .toEqual(accountIds.map((accountId) => `#/accounts/${accountId}`));
+
+    for (const accountId of accountIds) {
+      await test.step(`进入 ${accountId} 账号详情`, async () => {
+        await page.goto("/#/");
+        await waitForApplicationPage(page);
+        const accountLink = page.getByRole("link", { name: `查看 ${accountId} 账号详情`, exact: true });
+        await accountLink.scrollIntoViewIfNeeded();
+        expect((await accountLink.boundingBox())?.height, `${accountId} 账号入口应保持 44px 触控高度`).toBeGreaterThanOrEqual(44);
+        await accountLink.tap();
+        await expect(page).toHaveURL(new RegExp(`#\\/accounts\\/${accountId}$`));
+        await expect(page.getByRole("heading", { name: `${accountId} 账号详情`, exact: true })).toBeVisible();
+      });
+    }
+  });
+
+  test("首页任务入口能进入录入分区维护", async ({ page }) => {
+    await page.goto("/#/");
+    await waitForApplicationPage(page);
 
     await page.getByRole("link", { name: "查看任务", exact: true }).tap();
     await expect(page).toHaveURL(/#\/plans\/tasks$/);

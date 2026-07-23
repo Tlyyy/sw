@@ -44,9 +44,8 @@ function returnToCurrentWeek() {
   <div class="page-wrap week-page" data-testid="week-page">
     <header class="week-page-intro">
       <div>
-        <p>{{ isCurrentWeek ? "本周汇总" : "历史周汇总" }}</p>
+        <p>{{ isCurrentWeek ? "本周" : "历史" }}</p>
         <h1>本周小结</h1>
-        <span>收获、支出、任务和五号库存统一在这里查看、生成与分享。</span>
       </div>
       <RouterLink class="button" to="/record">补充记录</RouterLink>
     </header>
@@ -65,21 +64,20 @@ function returnToCurrentWeek() {
 
     <details class="week-inventory-details">
       <summary>
-        <span><strong>库存变化明细</strong><small>五账号净变化、按日矩阵与库存专用图片</small></span>
+        <span><strong>按账号查看库存变化</strong><small>逐号净变化、按日矩阵与库存专用图片</small></span>
         <b>{{ report.recordedDays }} / 7 天库存记录</b>
       </summary>
-      <InventoryWeeklyAnalysis :report="report" :current-date="currentDate" :show-activity="false" />
+      <InventoryWeeklyAnalysis :report="report" :current-date="currentDate" :show-activity="false" initial-view="matrix" />
     </details>
   </div>
 </template>
 
 <style scoped>
-.week-page { width: min(100%, 1320px); padding-top: 22px; padding-bottom: 48px; }
-.week-page-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 14px; padding-bottom: 16px; border-bottom: 1px solid var(--radar-line); }
-.week-page-intro > div { display: grid; gap: 3px; }
-.week-page-intro p { color: var(--radar-cyan-strong); font-size: 12px; font-weight: 850; letter-spacing: .1em; }
-.week-page-intro h1 { font-size: 32px; line-height: 1.2; letter-spacing: -.04em; }
-.week-page-intro span { color: var(--radar-muted); font-size: 14px; }
+.week-page { width: min(100%, 1320px); padding-top: 14px; padding-bottom: 48px; }
+.week-page-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; padding: 0 4px 10px; border-bottom: 1px solid var(--radar-line); }
+.week-page-intro > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.week-page-intro p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.week-page-intro h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.04em; white-space: nowrap; }
 .week-page-intro .button { min-height: 44px; white-space: nowrap; }
 
 .week-page :deep(.inventory-week-switcher) { margin-bottom: 12px; }
@@ -96,10 +94,9 @@ function returnToCurrentWeek() {
 .week-inventory-details :deep(.inventory-weekly-analysis) { border: 0; border-radius: 0; }
 
 @media (max-width: 720px) {
-  .week-page { padding: 18px 10px 28px; }
-  .week-page-intro { align-items: stretch; flex-direction: column; gap: 12px; padding-inline: 4px; }
-  .week-page-intro h1 { font-size: 30px; }
-  .week-page-intro .button { width: 100%; }
+  .week-page { padding: 10px 10px 28px; }
+  .week-page-intro h1 { font-size: 24px; }
+  .week-page-intro .button { min-height: 44px; }
   .week-page :deep(.inventory-week-switcher) { margin-inline: 0; }
   .week-page :deep(.weekly-activity-panel) { border-radius: 12px; }
   .week-inventory-details > summary { align-items: flex-start; flex-direction: column; gap: 6px; }

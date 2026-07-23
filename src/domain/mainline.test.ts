@@ -271,7 +271,7 @@ describe("five-account mainline projection", () => {
 
   it("uses dedicated eggs first and recommends buying only the shortage", () => {
     const projections = buildMainlineProjection([plan("FC", [scheduled()])], [current], eggTradePrices);
-    expect(projections.map((item) => item.accountId)).toEqual(["FC", "LG1", "LG2", "PT", "MYT"]);
+    expect(projections.map((item) => item.accountId)).toEqual(["FC", "LG1", "PT", "LG2", "MYT"]);
     expect(projections[0]).toMatchObject({
       status: "buyable",
       finishDate: "2026-07-12",

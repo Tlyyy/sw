@@ -26,14 +26,14 @@ function installCanvasStub() {
     toDataURL: () => "data:image/png;base64,iVBORw0KGgo=",
   };
   vi.stubGlobal("document", { createElement: () => canvas });
-  return renderedText;
+  return { renderedText, canvas };
 }
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("weekly activity report image", () => {
   it("renders the week-to-date cashflow and task sections", () => {
-    const renderedText = installCanvasStub();
+    const { renderedText, canvas } = installCanvasStub();
     const completion: TaskCompletionRecord = {
       taskId: "FC:snake1:skin",
       completedOn: "2026-07-21",
@@ -79,6 +79,7 @@ describe("weekly activity report image", () => {
         manualSilverExpenseWan: accountId === "FC" ? 10 : 0,
         totalSilverExpenseWan: accountId === "FC" ? 40 : 0,
         reconciledSilverExpenseWan: accountId === "FC" ? 40 : 0,
+        pendingReconciliationSilverExpenseWan: 0,
         harvestedSilverWan: accountId === "FC" ? 44 : 4,
         taskCompletions: accountId === "FC" ? [completion] : [],
         manualExpenses: accountId === "FC" ? [expense] : [],
@@ -91,12 +92,14 @@ describe("weekly activity report image", () => {
     expect(image.type).toBe("image/png");
     expect(image.size).toBeGreaterThan(0);
     expect(renderedText).toContain("万象册");
-    expect(renderedText).toContain("本周小结");
+    expect(renderedText).toContain("本周小结 · 逐账号");
     expect(renderedText).toContain("2026-07-20 至 2026-07-22");
-    expect(renderedText).toContain("本周收获 = 库存净变化 + 库存比较区间内的银子支出");
-    expect(renderedText).toContain("各账号本周情况 · 5 个账号");
+    expect(renderedText).not.toContain("计算口径");
+    expect(renderedText).not.toContain("本周收获 = 库存净变化 + 库存比较区间内的银子支出");
+    expect(renderedText).toContain("各账号本周情况");
     expect(renderedText).toEqual(expect.arrayContaining(["FC", "LG1", "PT", "LG2", "MYT"]));
     expect(renderedText).toContain("剑气蛇 · 皮肤");
     expect(renderedText).toContain("购买材料");
+    expect(canvas.height).toBeGreaterThan(1_250);
   });
 });

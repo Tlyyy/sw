@@ -7,6 +7,7 @@ import {
   type InventoryWeekDaySlot,
   type InventoryWeekReport,
 } from "../domain/inventory";
+import { accountIds } from "../domain/types";
 import type { AccountId, InventoryAccountDelta, InventoryBalance, InventorySnapshot } from "../domain/types";
 import AppIcon from "./AppIcon.vue";
 import WeeklyActivityPanel from "./WeeklyActivityPanel.vue";
@@ -22,9 +23,10 @@ const props = withDefaults(defineProps<{
   report: InventoryWeekReport;
   currentDate: string;
   showActivity?: boolean;
-}>(), { showActivity: true });
+  initialView?: InventoryReportView;
+}>(), { showActivity: true, initialView: "summary" });
 
-const accountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
+const accountOrder: AccountId[] = [...accountIds];
 const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
 const matrixMetricOptions: Array<{ key: InventoryMatrixMetric; label: string; unit: string }> = [
   { key: "silverWan", label: "银子", unit: "万" },
@@ -34,7 +36,7 @@ const matrixMetricOptions: Array<{ key: InventoryMatrixMetric; label: string; un
   { key: "innerShardCount", label: "内丹碎片", unit: "个" },
 ];
 
-const reportView = ref<InventoryReportView>("summary");
+const reportView = ref<InventoryReportView>(props.initialView);
 const matrixMetric = ref<InventoryMatrixMetric>("silverWan");
 const sharingReport = ref(false);
 const shareNotice = ref("");

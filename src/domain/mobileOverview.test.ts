@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { buildInventoryWeekReport } from "./inventory";
-import { buildMobileWeekOverview } from "./mobileOverview";
-import type { InventorySnapshot, SilverExpenseRecord, TaskCompletionRecord } from "./types";
+import type { MainlineAccountProjection } from "./mainline";
+import { buildMobileAccountOverview, buildMobileWeekOverview } from "./mobileOverview";
+import type { AccountTaskPlan } from "./plans";
+import type { AccountId, InventorySnapshot, SilverExpenseRecord, TaskCompletionRecord } from "./types";
+import type { WeeklyAccountActivitySummary } from "./weeklyActivity";
 
 function snapshot(effectiveDate: string): InventorySnapshot {
   const balance = { dedicatedEggs: 1, regularEggs: 2, silverWan: 3, innerShardCount: 4 };
@@ -41,5 +44,59 @@ describe("buildMobileWeekOverview", () => {
     expect(days[0].state).toBe("missed");
     expect(days[1].state).toBe("missed");
     expect(days[2].state).toBe("today-pending");
+  });
+});
+
+function accountSummary(accountId: AccountId, marker: number): WeeklyAccountActivitySummary {
+  return {
+    accountId,
+    currentSilverWan: marker,
+    inventoryNetChangeWan: marker,
+    taskSilverExpenseWan: 0,
+    manualSilverExpenseWan: marker,
+    totalSilverExpenseWan: marker,
+    reconciledSilverExpenseWan: marker,
+    pendingReconciliationSilverExpenseWan: 0,
+    harvestedSilverWan: marker,
+    taskCompletions: Array.from({ length: marker }, (_, index) => ({ taskId: `${accountId}:${index}` })) as TaskCompletionRecord[],
+    manualExpenses: [],
+  };
+}
+
+function accountProjection(accountId: AccountId): MainlineAccountProjection {
+  return { accountId, currentTask: { id: `${accountId}:current`, accountId } } as MainlineAccountProjection;
+}
+
+function accountPlan(accountId: AccountId, pending: number): AccountTaskPlan {
+  return {
+    accountId,
+    tasks: Array.from({ length: pending }, (_, index) => ({ id: `${accountId}:${index}`, done: false })),
+  } as AccountTaskPlan;
+}
+
+describe("buildMobileAccountOverview", () => {
+  it("joins shuffled account data by ID and returns the canonical account order", () => {
+    const rows = buildMobileAccountOverview(
+      [accountSummary("MYT", 5), accountSummary("PT", 3), accountSummary("FC", 1), accountSummary("LG2", 4), accountSummary("LG1", 2)],
+      [accountProjection("LG2"), accountProjection("FC"), accountProjection("MYT"), accountProjection("LG1"), accountProjection("PT")],
+      [accountPlan("PT", 3), accountPlan("MYT", 5), accountPlan("LG1", 2), accountPlan("FC", 1), accountPlan("LG2", 4)],
+    );
+
+    expect(rows.map((row) => row.accountId)).toEqual(["FC", "LG1", "PT", "LG2", "MYT"]);
+    expect(rows.map((row) => row.weekly?.harvestedSilverWan)).toEqual([1, 2, 3, 4, 5]);
+    expect(rows.map((row) => row.projection?.accountId)).toEqual(["FC", "LG1", "PT", "LG2", "MYT"]);
+    expect(rows.map((row) => row.pendingTaskCount)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("keeps a missing account visible without borrowing another account's values", () => {
+    const rows = buildMobileAccountOverview(
+      [accountSummary("FC", 1)],
+      [accountProjection("FC")],
+      [accountPlan("FC", 1)],
+    );
+    const lg1 = rows.find((row) => row.accountId === "LG1");
+
+    expect(rows).toHaveLength(5);
+    expect(lg1).toEqual({ accountId: "LG1", weekly: null, projection: null, pendingTaskCount: 0 });
   });
 });

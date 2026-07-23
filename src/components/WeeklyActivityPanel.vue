@@ -225,8 +225,8 @@ async function sharePreview() {
     <header class="weekly-activity-head">
       <div>
         <p>本周截至 {{ shortDate(activity.reportEnd) }}</p>
-        <h3 id="weekly-activity-title">{{ weeklyReportTitle }}</h3>
-        <span><b>{{ activity.weekStart }} 至 {{ activity.reportEnd }}</b> · 收获按最近库存日期结算；支出、任务仍统计到所选日期。</span>
+        <h3 id="weekly-activity-title">五个账号本周情况</h3>
+        <span><b>{{ activity.weekStart }} 至 {{ activity.reportEnd }}</b> · {{ activity.latestInventoryDate ? `库存截至 ${activity.latestInventoryDate}` : "库存待建立基线" }}</span>
       </div>
       <div class="weekly-activity-actions">
         <button v-if="!expenseFormOpen" class="button weekly-expense-button" type="button" @click="openExpenseForm">
@@ -240,58 +240,21 @@ async function sharePreview() {
       </div>
     </header>
 
-    <dl class="weekly-cashflow-metrics">
-      <div class="harvest">
-        <dt>本周收获</dt>
-        <dd>{{ wanLabel(activity.harvestedSilverWan) }}</dd>
-        <small v-if="activity.inventoryChangeTo">截至 {{ activity.inventoryChangeTo }} · 净变化 + {{ numberLabel(activity.reconciledSilverExpenseWan) }} 万支出</small>
-        <small v-else>补齐库存比较基线后计算</small>
-      </div>
-      <div class="expense">
-        <dt>本周支出</dt>
-        <dd>{{ wanLabel(activity.totalSilverExpenseWan) }}</dd>
-        <small>任务 {{ numberLabel(activity.taskSilverExpenseWan) }} · 其他 {{ numberLabel(activity.manualSilverExpenseWan) }}</small>
-      </div>
-      <div>
-        <dt>库存净变化</dt>
-        <dd>{{ wanLabel(activity.inventoryNetChangeWan, true) }}</dd>
-        <small v-if="activity.inventoryChangeTo">{{ activity.inventoryChangeFrom }} → {{ activity.inventoryChangeTo }}</small>
-        <small v-else>需要周前基线或本周两份库存</small>
-      </div>
-      <div>
-        <dt>当前银子库存</dt>
-        <dd>{{ wanLabel(activity.currentSilverWan) }}</dd>
-        <small>{{ activity.latestInventoryDate ? `库存日期 ${activity.latestInventoryDate}` : "本周尚无库存记录" }}</small>
-      </div>
-    </dl>
-
-    <p class="weekly-cashflow-formula">
-      <strong>计算口径</strong>
-      <span>本周收获 = 库存净变化 + 库存比较区间内的银子支出</span>
-      <em v-if="activity.pendingReconciliationSilverExpenseWan > 0">另有 {{ numberLabel(activity.pendingReconciliationSilverExpenseWan) }} 万支出待下次库存后计入收获</em>
-      <em v-else>{{ activity.inventoryChangeFrom || activity.weekStart }} 至 {{ activity.inventoryChangeTo || activity.reportEnd }}</em>
-    </p>
-
-    <section class="weekly-account-breakdown" aria-labelledby="weekly-account-title">
-      <header>
-        <div><h4 id="weekly-account-title">各账号本周情况</h4><span>收获按库存区间，支出和任务按所选日期分别归集</span></div>
-        <strong>{{ activity.accountSummaries.length }} 个账号</strong>
-      </header>
+    <section class="weekly-account-breakdown" aria-label="五账号本周情况">
       <div class="weekly-account-table" role="table" aria-label="五账号本周情况">
         <div class="weekly-account-table-head" role="row">
-          <span role="columnheader">账号</span><span role="columnheader">收获</span><span role="columnheader">支出</span><span role="columnheader">净变化</span><span role="columnheader">当前库存</span><span role="columnheader">完成任务</span>
+          <span role="columnheader">账号</span><span role="columnheader">收获</span><span role="columnheader">支出</span><span role="columnheader">完成任务</span><span role="columnheader">当前库存</span>
         </div>
-        <article v-for="account in activity.accountSummaries" :key="account.accountId" class="weekly-account-row" role="row" :data-account-id="account.accountId">
+        <article v-for="account in activity.accountSummaries" :key="account.accountId" class="weekly-account-row" role="row" :data-account-id="account.accountId" :aria-label="`${account.accountId} 本周小结`">
           <strong :class="`account-pill account-${account.accountId.toLowerCase()}`" role="rowheader">{{ account.accountId }}</strong>
-          <span class="account-harvest" data-label="收获" role="cell"><b>{{ wanLabel(account.harvestedSilverWan) }}</b></span>
-          <span class="account-expense" data-label="支出" role="cell"><b>{{ wanLabel(account.totalSilverExpenseWan) }}</b><small>任务 {{ numberLabel(account.taskSilverExpenseWan) }} · 其他 {{ numberLabel(account.manualSilverExpenseWan) }}</small></span>
-          <span data-label="净变化" role="cell"><b>{{ wanLabel(account.inventoryNetChangeWan, true) }}</b></span>
-          <span data-label="当前库存" role="cell"><b>{{ wanLabel(account.currentSilverWan) }}</b></span>
+          <span class="account-harvest" data-label="本周收获" role="cell"><b>{{ wanLabel(account.harvestedSilverWan) }}</b><small>库存净变化 {{ wanLabel(account.inventoryNetChangeWan, true) }}</small></span>
+          <span class="account-expense" data-label="本周支出" role="cell"><b>{{ wanLabel(account.totalSilverExpenseWan) }}</b><small v-if="account.pendingReconciliationSilverExpenseWan > 0">其中 {{ wanLabel(account.pendingReconciliationSilverExpenseWan) }} 待下次库存结算</small><small v-else>任务 {{ numberLabel(account.taskSilverExpenseWan) }} · 其他 {{ numberLabel(account.manualSilverExpenseWan) }}</small></span>
           <span class="weekly-account-task" data-label="完成任务" role="cell"><b>{{ account.taskCompletions.length }} 项</b><small>{{ accountTaskSummary(account) }}</small></span>
+          <span data-label="当前库存" role="cell"><b>{{ wanLabel(account.currentSilverWan) }}</b><small>{{ activity.latestInventoryDate ? `库存日期 ${activity.latestInventoryDate}` : "尚无库存记录" }}</small></span>
         </article>
       </div>
       <p v-if="activity.unassignedManualSilverExpenseWan > 0" class="weekly-account-warning">
-        旧记录中有 {{ wanLabel(activity.unassignedManualSilverExpenseWan) }} 支出未分账号：已计入总览，未计入单账号小计。
+        旧记录中有 {{ wanLabel(activity.unassignedManualSilverExpenseWan) }} 支出未分账号：保留在明细中，不计入任何账号。
       </p>
     </section>
 
@@ -427,96 +390,15 @@ async function sharePreview() {
   animation: weekly-report-spin .75s linear infinite;
 }
 
-.weekly-cashflow-metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-bottom: 1px solid var(--radar-line);
-}
-
-.weekly-cashflow-metrics > div {
-  min-width: 0;
-  min-height: 112px;
-  padding: 16px;
-  border-right: 1px solid var(--radar-line);
-  background: #ffffff;
-}
-
-.weekly-cashflow-metrics > div:last-child { border-right: 0; }
-.weekly-cashflow-metrics > div.harvest { background: color-mix(in srgb, var(--radar-cyan) 8%, #ffffff); }
-.weekly-cashflow-metrics > div.expense { background: #fffaf1; }
-
-.weekly-cashflow-metrics dt {
-  color: var(--radar-muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.weekly-cashflow-metrics dd {
-  overflow: hidden;
-  margin: 7px 0 5px;
-  color: var(--radar-ink);
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: -.03em;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.weekly-cashflow-metrics .harvest dd { color: var(--radar-success); }
-.weekly-cashflow-metrics .expense dd { color: #9a5a00; }
-
-.weekly-cashflow-metrics small {
-  display: block;
-  overflow: hidden;
-  color: var(--radar-muted);
-  font-size: 11px;
-  font-weight: 650;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.weekly-cashflow-formula {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--radar-line);
-  color: var(--radar-muted);
-  background: var(--radar-surface-2);
-  font-size: 12px !important;
-}
-
-.weekly-cashflow-formula strong { color: var(--radar-cyan-strong); }
-.weekly-cashflow-formula em { margin-left: auto; font-style: normal; font-variant-numeric: tabular-nums; }
-
 .weekly-account-breakdown {
   border-bottom: 1px solid var(--radar-line);
   background: #ffffff;
 }
 
-.weekly-account-breakdown > header {
-  min-height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--radar-line);
-  background: #f7f9f8;
-}
-
-.weekly-account-breakdown > header h4 { color: var(--radar-ink); font-size: 14px; }
-.weekly-account-breakdown > header span { display: block; margin-top: 2px; color: var(--radar-muted); font-size: 10px; }
-.weekly-account-breakdown > header > strong { color: var(--radar-cyan-strong); font-size: 11px; white-space: nowrap; }
-
 .weekly-account-table-head,
 .weekly-account-row {
   display: grid;
-  grid-template-columns: 72px repeat(4, minmax(90px, 1fr)) minmax(150px, 1.35fr);
+  grid-template-columns: 72px repeat(4, minmax(120px, 1fr));
   align-items: center;
   column-gap: 10px;
   padding-inline: 14px;
@@ -543,7 +425,7 @@ async function sharePreview() {
 .weekly-account-row b { overflow: hidden; color: var(--radar-ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .weekly-account-row .account-harvest b { color: var(--radar-success); }
 .weekly-account-row .account-expense b { color: #9a5a00; }
-.weekly-account-row small { overflow: hidden; color: var(--radar-muted); font-size: 9px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-account-row small { overflow: hidden; color: var(--radar-muted); font-size: 10px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 
 .weekly-account-warning {
   margin: 0;
@@ -699,11 +581,8 @@ async function sharePreview() {
 @keyframes weekly-report-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 920px) {
-  .weekly-cashflow-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .weekly-cashflow-metrics > div:nth-child(2) { border-right: 0; }
-  .weekly-cashflow-metrics > div:nth-child(-n + 2) { border-bottom: 1px solid var(--radar-line); }
   .weekly-account-table-head,
-  .weekly-account-row { grid-template-columns: 62px repeat(4, minmax(74px, 1fr)) minmax(130px, 1.25fr); column-gap: 7px; padding-inline: 10px; }
+  .weekly-account-row { grid-template-columns: 62px repeat(4, minmax(92px, 1fr)); column-gap: 7px; padding-inline: 10px; }
   .weekly-expense-form { grid-template-columns: 120px 150px 140px minmax(180px, 1fr); }
   .weekly-expense-form-actions { grid-column: 1 / -1; justify-content: flex-end; }
 }
@@ -714,23 +593,16 @@ async function sharePreview() {
   .weekly-activity-head h3 { font-size: 18px; }
   .weekly-activity-actions { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
   .weekly-activity-actions .button { min-height: 44px; padding-inline: 8px; }
-  .weekly-cashflow-metrics > div { min-height: 104px; padding: 13px 12px; }
-  .weekly-cashflow-metrics dd { font-size: 21px; }
-  .weekly-cashflow-metrics small { white-space: normal; }
-  .weekly-cashflow-formula { align-items: flex-start; flex-wrap: wrap; gap: 3px 8px; padding: 9px 12px; }
-  .weekly-cashflow-formula strong { width: 100%; }
-  .weekly-cashflow-formula em { width: 100%; margin-left: 0; }
   .weekly-account-table-head { display: none; }
   .weekly-account-row {
-    min-height: 118px;
+    min-height: 134px;
     grid-template-columns: 58px repeat(2, minmax(0, 1fr));
     align-items: start;
     gap: 8px 12px;
     padding: 12px;
   }
-  .weekly-account-row > strong { grid-row: 1 / 4; align-self: stretch; display: grid; place-items: center; }
-  .weekly-account-row > span::before { display: block; color: var(--radar-muted); font-size: 9px; font-weight: 800; }
-  .weekly-account-row .weekly-account-task { grid-column: 2 / -1; }
+  .weekly-account-row > strong { grid-row: 1 / 3; align-self: stretch; display: grid; place-items: center; }
+  .weekly-account-row > span::before { display: block; color: var(--radar-muted); font-size: 10px; font-weight: 800; }
   .weekly-account-row b { font-size: 12px; }
   .weekly-account-row small { white-space: normal; }
   .weekly-expense-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }

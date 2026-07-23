@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { accountIds } from "../domain/types";
 import type { AccountId, InventoryAccountDelta, InventorySnapshot } from "../domain/types";
 
 const props = defineProps<{
@@ -7,7 +8,7 @@ const props = defineProps<{
   deltas: Record<AccountId, InventoryAccountDelta> | null;
 }>();
 
-const accountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
+const accountOrder: AccountId[] = [...accountIds];
 const rows = computed(() => accountOrder.map((accountId) => ({
   accountId,
   balance: props.snapshot.accounts[accountId],

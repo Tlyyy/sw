@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import { canRecordInventoryDate } from "../domain/inventory";
+import { accountIds } from "../domain/types";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "../domain/types";
 import { shanghaiDateKey } from "../domain/plans";
 import AppIcon from "./AppIcon.vue";
@@ -10,7 +11,7 @@ interface InventorySnapshotDraft {
   accounts: Record<AccountId, InventoryBalance>;
 }
 
-const accountOrder: AccountId[] = ["FC", "LG1", "LG2", "PT", "MYT"];
+const accountOrder: AccountId[] = [...accountIds];
 const props = defineProps<{
   open: boolean;
   initialDate: string;
@@ -177,7 +178,7 @@ onBeforeUnmount(() => deactivateDialog(false));
         <header>
           <div>
             <h2 id="inventory-dialog-title">录入库存快照</h2>
-            <p>一次记录 FC、LG1、LG2、PT、MYT；录入时间由系统自动保存。</p>
+            <p>一次记录 FC、LG1、PT、LG2、MYT；录入时间由系统自动保存。</p>
           </div>
           <button class="snapshot-dialog-close" type="button" aria-label="关闭库存快照录入" @click="requestClose"><AppIcon name="close" /></button>
         </header>

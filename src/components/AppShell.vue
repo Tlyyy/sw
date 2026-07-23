@@ -29,7 +29,7 @@ let restoreMobileFocus = true;
 
 const links = computed(() => buildPrimaryNavigation(ui.recentAccount));
 const mobileDockLinks = mobileNavigation;
-const mobileFeatureLinks = computed(() => links.value.filter((link) => link.section !== "home"));
+const mobileFeatureLinks = computed(() => links.value.filter((link) => !["home", "accounts"].includes(link.section)));
 const mobileSection = computed(() => String(route.meta.mobileSection || route.meta.section || "more"));
 const mobileDockMoreActive = computed(() => mobileSection.value === "more");
 
@@ -196,6 +196,17 @@ onBeforeUnmount(() => {
               <AppIcon :name="link.icon" />
               <span>{{ link.text }}</span>
             </RouterLink>
+          </div>
+          <p class="orbit-mobile-nav-label">五个账号</p>
+          <div class="orbit-mobile-account-links" aria-label="账号快捷入口">
+            <RouterLink
+              v-for="account in catalog.data.accounts"
+              :key="account.id"
+              :to="`/accounts/${account.id}`"
+              :class="{ active: route.name === 'account' && route.params.accountId === account.id }"
+              :aria-current="route.name === 'account' && route.params.accountId === account.id ? 'page' : undefined"
+              @click="closeMobileNavigation(false)"
+            >{{ account.id }}</RouterLink>
           </div>
           <p class="orbit-mobile-nav-label orbit-mobile-feature-label">全部功能</p>
           <div class="orbit-mobile-feature-links">

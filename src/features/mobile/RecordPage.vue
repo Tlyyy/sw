@@ -31,9 +31,17 @@ const planningState = computed(() => settings.snapshot(
   inventory.latestSnapshot?.effectiveDate || null,
 ));
 const tasks = computed(() => buildTaskPlans(catalog.data, catalog.pets, planningState.value).flatMap((plan) => plan.tasks));
-const pendingTaskCount = computed(() => tasks.value.filter((task) => !task.done).length);
-const completedTodayCount = computed(() => settings.taskCompletions.filter((entry) => entry.completedOn === today.value).length);
+const pendingTaskAccountCount = computed(() => new Set(tasks.value.filter((task) => !task.done).map((task) => task.accountId)).size);
+const completedToday = computed(() => settings.taskCompletions.filter((entry) => entry.completedOn === today.value));
+const completedTodayAccountCount = computed(() => new Set(completedToday.value.map((entry) => entry.accountId)).size);
 const expensesToday = computed(() => settings.silverExpenses.filter((entry) => entry.effectiveDate === today.value));
+const expenseTodayAccountCount = computed(() => new Set(expensesToday.value.flatMap((entry) => entry.accountId ? [entry.accountId] : [])).size);
+const accountTodayRows = computed(() => catalog.data.accounts.map((account) => ({
+  accountId: account.id,
+  taskCount: completedToday.value.filter((entry) => entry.accountId === account.id).length,
+  expenseCount: expensesToday.value.filter((entry) => entry.accountId === account.id).length,
+  inventoryRecorded: Boolean(todayInventory.value),
+})));
 const latestMarketRecord = computed(() => settings.gemPriceHistory.at(-1) || null);
 
 function saveInventorySnapshot(draft: InventorySnapshotInput) {
@@ -86,9 +94,8 @@ function shortDateTime(value: string) {
 <template>
   <div class="page-wrap mobile-purpose-page record-page" data-testid="record-page">
     <header class="mobile-purpose-intro">
-      <p>录入</p>
-      <h1>今天要记什么？</h1>
-      <span>库存、任务和支出分别记清楚，本周小结会自动汇总。</span>
+      <div><p>录入</p><h1>今天要记什么？</h1></div>
+      <span>{{ today }}</span>
     </header>
 
     <p v-if="notice" class="mobile-action-notice" role="status" aria-live="polite">{{ notice }}</p>
@@ -110,8 +117,8 @@ function shortDateTime(value: string) {
         <span class="record-card-icon task"><AppIcon name="plan" /></span>
         <div>
           <p>任务完成</p>
-          <h2>{{ pendingTaskCount }} 项待完成</h2>
-          <span>{{ completedTodayCount ? `今天已完成 ${completedTodayCount} 项` : "标记完成时自动记录日期和资源支出" }}</span>
+          <h2>按账号标记任务</h2>
+          <span>{{ completedTodayAccountCount ? `今天已有 ${completedTodayAccountCount} 个账号完成任务` : `${pendingTaskAccountCount} 个账号有待完成任务` }}</span>
         </div>
         <strong>去标记 <AppIcon name="chevron-right" /></strong>
       </RouterLink>
@@ -120,8 +127,8 @@ function shortDateTime(value: string) {
         <span class="record-card-icon expense"><AppIcon name="account" /></span>
         <div>
           <p>银子支出</p>
-          <h2>{{ expensesToday.length ? `今天 ${expensesToday.length} 笔` : "补记一笔支出" }}</h2>
-          <span>任务外花掉的银子在这里单独记账</span>
+          <h2>选择账号记支出</h2>
+          <span>{{ expenseTodayAccountCount ? `今天已有 ${expenseTodayAccountCount} 个账号记录支出` : "任务外花掉的银子按账号单独记账" }}</span>
         </div>
         <strong>{{ expenseFormOpen ? "收起" : "填写" }} <AppIcon name="chevron-right" /></strong>
       </button>
@@ -146,13 +153,18 @@ function shortDateTime(value: string) {
       <div class="quick-expense-actions"><button class="button" type="button" @click="toggleExpenseForm">取消</button><button class="button primary" type="submit">保存支出</button></div>
     </form>
 
-    <section class="record-today-summary" aria-labelledby="record-today-summary-title">
-      <div><p>今天的记录</p><h2 id="record-today-summary-title">一眼确认有没有漏项</h2></div>
-      <dl>
-        <div :class="{ complete: todayInventory }"><dt>库存</dt><dd>{{ todayInventory ? "已记录" : "待补" }}</dd></div>
-        <div :class="{ complete: completedTodayCount }"><dt>任务</dt><dd>{{ completedTodayCount }} 项</dd></div>
-        <div :class="{ complete: expensesToday.length }"><dt>其他支出</dt><dd>{{ expensesToday.length }} 笔</dd></div>
-      </dl>
+    <section class="record-account-status" aria-labelledby="record-account-status-title">
+      <header><div><p>今天按账号</p><h2 id="record-account-status-title">五个账号记录情况</h2></div><span>库存为同批录入</span></header>
+      <div class="record-account-status-list">
+        <article v-for="row in accountTodayRows" :key="row.accountId" :data-account-id="row.accountId">
+          <strong :class="`account-pill account-${row.accountId.toLowerCase()}`">{{ row.accountId }}</strong>
+          <dl>
+            <div :class="{ complete: row.inventoryRecorded }"><dt>库存</dt><dd>{{ row.inventoryRecorded ? "已记录" : "待补" }}</dd></div>
+            <div :class="{ complete: row.taskCount }"><dt>任务</dt><dd>{{ row.taskCount }} 项</dd></div>
+            <div :class="{ complete: row.expenseCount }"><dt>其他支出</dt><dd>{{ row.expenseCount }} 笔</dd></div>
+          </dl>
+        </article>
+      </div>
     </section>
 
     <InventorySnapshotDialog
@@ -168,22 +180,24 @@ function shortDateTime(value: string) {
 </template>
 
 <style scoped>
-.mobile-purpose-page { width: min(100%, 980px); padding-top: 22px; }
-.mobile-purpose-intro { display: grid; gap: 4px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--radar-line); }
+.mobile-purpose-page { width: min(100%, 980px); padding-top: 14px; }
+.mobile-purpose-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; padding: 0 4px 10px; border-bottom: 1px solid var(--radar-line); }
+.mobile-purpose-intro > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
 .mobile-purpose-intro > p { color: var(--brand-orange); font-size: 12px; font-weight: 850; letter-spacing: .12em; }
-.mobile-purpose-intro h1 { font-size: 32px; line-height: 1.2; letter-spacing: -.04em; }
-.mobile-purpose-intro > span { color: var(--radar-muted); font-size: 14px; }
+.mobile-purpose-intro > div > p { color: var(--brand-orange); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.mobile-purpose-intro h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.04em; white-space: nowrap; }
+.mobile-purpose-intro > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
 .mobile-action-notice { margin: 0 0 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--radar-cyan) 35%, var(--radar-line)); border-radius: 9px; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); font-size: 13px; font-weight: 750; }
 
 .record-primary-card,
 .record-option-card,
 .quick-expense-form,
-.record-today-summary { border: 1px solid var(--radar-line); border-radius: 15px; background: #ffffff; box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
+.record-account-status { border: 1px solid var(--radar-line); border-radius: 15px; background: #ffffff; box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
 
 .record-primary-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 18px; }
 .record-card-icon { flex: 0 0 48px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: var(--brand-orange); background: var(--brand-orange-soft); }
 .record-card-icon :deep(svg) { width: 23px; height: 23px; }
-.record-primary-card p, .record-option-card p, .quick-expense-form header p, .record-today-summary > div p { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
+.record-primary-card p, .record-option-card p, .quick-expense-form header p, .record-account-status > header p { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
 .record-primary-card h2, .record-option-card h2 { margin-top: 1px; font-size: 19px; line-height: 1.3; }
 .record-primary-card div > span, .record-option-card div > span { display: block; margin-top: 3px; color: var(--radar-muted); font-size: 12px; line-height: 1.45; }
 .record-primary-action { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 15px; border: 1px solid #a84600; border-radius: 10px; color: #ffffff; background: var(--brand-orange); font-size: 14px; font-weight: 850; }
@@ -201,7 +215,7 @@ button.record-option-card { width: 100%; font: inherit; }
 
 .quick-expense-form { display: grid; grid-template-columns: 140px 170px minmax(220px, 1fr) auto; align-items: end; gap: 12px; margin-top: 12px; padding: 16px; }
 .quick-expense-form header { grid-column: 1 / -1; display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 11px; border-bottom: 1px solid var(--radar-line); }
-.quick-expense-form header h2, .record-today-summary h2 { font-size: 18px; }
+.quick-expense-form header h2, .record-account-status h2 { font-size: 18px; }
 .quick-expense-form header > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; }
 .quick-expense-form label { display: grid; gap: 5px; }
 .quick-expense-form label > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; }
@@ -210,16 +224,24 @@ button.record-option-card { width: 100%; font: inherit; }
 .quick-expense-actions { display: flex; gap: 7px; }
 .quick-expense-actions .button { min-height: 44px; }
 
-.record-today-summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; margin-top: 12px; padding: 15px 17px; }
-.record-today-summary dl { display: grid; grid-template-columns: repeat(3, minmax(88px, 1fr)); margin: 0; }
-.record-today-summary dl > div { padding: 0 14px; border-left: 1px solid var(--radar-line); }
-.record-today-summary dt { color: var(--radar-muted); font-size: 11px; }
-.record-today-summary dd { margin: 2px 0 0; color: #9a5a00; font-size: 15px; font-weight: 850; }
-.record-today-summary .complete dd { color: var(--radar-success); }
+.record-account-status { overflow: hidden; margin-top: 12px; }
+.record-account-status > header { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--radar-line); background: var(--radar-surface-2); }
+.record-account-status > header > div { display: grid; gap: 1px; }
+.record-account-status > header > span { color: var(--radar-muted); font-size: 10px; font-weight: 750; white-space: nowrap; }
+.record-account-status-list { display: grid; }
+.record-account-status-list article { min-height: 64px; display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--radar-line); }
+.record-account-status-list article:last-child { border-bottom: 0; }
+.record-account-status-list article > strong { min-height: 36px; display: grid; place-items: center; }
+.record-account-status-list dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+.record-account-status-list dl > div { min-width: 0; padding: 0 10px; border-left: 1px solid var(--radar-line); }
+.record-account-status-list dl > div:first-child { padding-left: 0; border-left: 0; }
+.record-account-status-list dt { color: var(--radar-muted); font-size: 10px; font-weight: 750; }
+.record-account-status-list dd { margin: 1px 0 0; color: #9a5a00; font-size: 13px; font-weight: 850; white-space: nowrap; }
+.record-account-status-list .complete dd { color: var(--radar-success); }
 
 @media (max-width: 720px) {
-  .mobile-purpose-page { padding: 18px 14px 24px; }
-  .mobile-purpose-intro h1 { font-size: 30px; }
+  .mobile-purpose-page { padding: 10px 14px 24px; }
+  .mobile-purpose-intro h1 { font-size: 24px; }
   .record-primary-card { grid-template-columns: auto minmax(0, 1fr); padding: 15px; }
   .record-primary-action { grid-column: 1 / -1; width: 100%; min-height: 50px; }
   .record-option-grid { grid-template-columns: 1fr; }
@@ -229,9 +251,6 @@ button.record-option-card { width: 100%; font: inherit; }
   .quick-expense-note { grid-column: 1 / -1; }
   .quick-expense-actions { grid-column: 1 / -1; }
   .quick-expense-actions .button { flex: 1; }
-  .record-today-summary { grid-template-columns: 1fr; }
-  .record-today-summary dl { width: 100%; }
-  .record-today-summary dl > div:first-child { border-left: 0; padding-left: 0; }
 }
 
 @media (max-width: 430px) {
@@ -239,6 +258,6 @@ button.record-option-card { width: 100%; font: inherit; }
   .record-option-card > strong { grid-column: 2; grid-row: 2; justify-content: flex-start; min-height: 34px; }
   .quick-expense-form { grid-template-columns: 1fr; }
   .quick-expense-note, .quick-expense-actions { grid-column: 1; }
-  .record-today-summary dl > div { padding-inline: 8px; }
+  .record-account-status-list dl > div { padding-inline: 7px; }
 }
 </style>

@@ -1,5 +1,6 @@
 import { calculateInventoryDeltas, latestInventoryPair } from "./inventory";
 import type { AccountTaskPlan, ScheduledTask } from "./plans";
+import { accountIds } from "./types";
 import type {
   AccountId,
   InventoryAccountDelta,
@@ -7,7 +8,7 @@ import type {
   InventorySnapshot,
 } from "./types";
 
-export const mainlineAccountIds = ["FC", "LG1", "LG2", "PT", "MYT"] as const satisfies readonly AccountId[];
+export const mainlineAccountIds = accountIds satisfies readonly AccountId[];
 
 export type MainlineStatus = "ready" | "buyable" | "caution" | "blocked" | "stale";
 export type MainlineRequirementKind = "eggs" | "silver" | "shards" | "estimate" | "complete";

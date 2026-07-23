@@ -28,9 +28,8 @@ const planningLinks = [
 <template>
   <div class="page-wrap mobile-purpose-page resources-page" data-testid="resources-page">
     <header class="resources-intro">
-      <p>资料</p>
-      <h1>这里只看信息</h1>
-      <span>账号、资产、分析和计划资料集中在一起；要新增数据，请去“录入”。</span>
+      <div><p>资料</p><h1>账号与资料</h1></div>
+      <span>这里只查看，不做录入</span>
     </header>
 
     <section class="resource-group accounts-resource-group" aria-labelledby="resource-accounts-title">
@@ -79,11 +78,12 @@ const planningLinks = [
 </template>
 
 <style scoped>
-.resources-page { width: min(100%, 1180px); padding-top: 22px; padding-bottom: 48px; }
-.resources-intro { display: grid; gap: 4px; margin-bottom: 14px; padding-bottom: 16px; border-bottom: 1px solid var(--radar-line); }
-.resources-intro > p { color: var(--radar-cyan-strong); font-size: 12px; font-weight: 850; letter-spacing: .12em; }
-.resources-intro h1 { font-size: 32px; line-height: 1.2; letter-spacing: -.04em; }
-.resources-intro > span { color: var(--radar-muted); font-size: 14px; }
+.resources-page { width: min(100%, 1180px); padding-top: 14px; padding-bottom: 48px; }
+.resources-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; padding: 0 4px 10px; border-bottom: 1px solid var(--radar-line); }
+.resources-intro > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.resources-intro p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.resources-intro h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.04em; white-space: nowrap; }
+.resources-intro > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
 
 .resource-group { overflow: hidden; margin-top: 12px; border: 1px solid var(--radar-line); border-radius: 14px; background: #ffffff; box-shadow: 0 7px 20px rgba(17, 24, 39, .05); }
 .resource-group > header { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 16px; border-bottom: 1px solid var(--radar-line); }
@@ -122,9 +122,8 @@ const planningLinks = [
 .resource-source-links a > :deep(svg:last-child) { width: 15px; height: 15px; color: var(--radar-muted); }
 
 @media (max-width: 720px) {
-  .resources-page { padding: 18px 10px 28px; }
-  .resources-intro { padding-inline: 4px; }
-  .resources-intro h1 { font-size: 30px; }
+  .resources-page { padding: 10px 10px 28px; }
+  .resources-intro h1 { font-size: 24px; }
   .resource-group > header { align-items: flex-start; flex-direction: column; gap: 2px; min-height: 0; }
   .resource-account-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .resource-account-grid > a { min-height: 68px; display: grid; place-items: center; padding: 8px 3px; text-align: center; }

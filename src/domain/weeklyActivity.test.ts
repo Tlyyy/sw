@@ -74,6 +74,7 @@ describe("weekly activity summary", () => {
     expect(summary.taskCompletions.map((entry) => entry.taskId)).toEqual(["FC:snake1:skin"]);
     expect(summary.manualExpenses.map((entry) => entry.id)).toEqual(["expense-1"]);
     expect(summary.accountSummaries).toHaveLength(5);
+    expect(summary.accountSummaries.map((entry) => entry.accountId)).toEqual(accountIds);
     expect(summary.accountSummaries.find((entry) => entry.accountId === "FC")).toMatchObject({
       currentSilverWan: 104,
       inventoryNetChangeWan: 4,
@@ -81,6 +82,7 @@ describe("weekly activity summary", () => {
       manualSilverExpenseWan: 10,
       totalSilverExpenseWan: 40,
       reconciledSilverExpenseWan: 40,
+      pendingReconciliationSilverExpenseWan: 0,
       harvestedSilverWan: 44,
     });
     expect(summary.accountSummaries.find((entry) => entry.accountId === "LG1")).toMatchObject({
@@ -146,6 +148,7 @@ describe("weekly activity summary", () => {
       inventoryNetChangeWan: 4,
       totalSilverExpenseWan: 45,
       reconciledSilverExpenseWan: 5,
+      pendingReconciliationSilverExpenseWan: 40,
       harvestedSilverWan: 9,
     });
   });

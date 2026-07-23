@@ -227,7 +227,7 @@ function drawMatrixTable(context: CanvasRenderingContext2D, data: InventoryMatri
   const x = 80;
   const dateWidth = 170;
   const valueWidth = 125;
-  const headers = ["日期", "FC", "LG1", "LG2", "PT", "MYT", "五号合计"];
+  const headers = ["日期", "FC", "LG1", "PT", "LG2", "MYT", "五号合计"];
   const headerHeight = 54;
   const rowHeight = 72;
   const allRows = [

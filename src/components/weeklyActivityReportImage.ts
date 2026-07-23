@@ -62,32 +62,6 @@ function shortDate(value: string) {
   return `${Number(month)}/${Number(day)}`;
 }
 
-function drawMetric(
-  context: CanvasRenderingContext2D,
-  x: number,
-  label: string,
-  value: string,
-  note: string,
-  tone: "teal" | "amber" | "neutral" = "neutral",
-) {
-  const colors = tone === "teal"
-    ? { border: "#9bcfc7", surface: "#e7f5f2", value: "#067068" }
-    : tone === "amber"
-      ? { border: "#ead3a5", surface: "#fff7e8", value: "#9a5a00" }
-      : { border: "#d8e1df", surface: "#f7f9f8", value: "#20312e" };
-  fillRoundedRect(context, x, 286, 218, 146, 16, colors.surface);
-  strokeRoundedRect(context, x, 286, 218, 146, 16, colors.border, 2);
-  context.fillStyle = "#647874";
-  setFont(context, 18, 750);
-  context.fillText(label, x + 18, 306);
-  context.fillStyle = colors.value;
-  setFont(context, value === "—" ? 36 : 31, 850);
-  context.fillText(fitText(context, value, 182), x + 18, 344);
-  context.fillStyle = "#7a8b87";
-  setFont(context, 15, 650);
-  context.fillText(fitText(context, note, 182), x + 18, 399);
-}
-
 function accountTaskNames(account: WeeklyAccountActivitySummary) {
   if (!account.taskCompletions.length) return "本周无完成任务";
   const names = account.taskCompletions.slice(0, 2)
@@ -120,8 +94,8 @@ function dataUrlToBlob(dataUrl: string) {
 
 export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageData) {
   const displayedExpenses = data.manualExpenses.slice(0, 4);
-  const accountRowsY = 622;
-  const accountRowStep = 112;
+  const accountRowsY = 338;
+  const accountRowStep = 136;
   const accountSectionBottom = accountRowsY + data.accountSummaries.length * accountRowStep;
   const hasUnassignedExpenses = data.unassignedManualSilverExpenseWan > 0;
   const unassignedBannerY = accountSectionBottom + 6;
@@ -161,7 +135,7 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
 
   context.fillStyle = "#142522";
   setFont(context, 38, 850);
-  context.fillText(weeklyReportTitle, 80, 164);
+  context.fillText(`${weeklyReportTitle} · 逐账号`, 80, 164);
   context.fillStyle = "#657975";
   setFont(context, 22, 650);
   context.fillText(`${data.weekStart} 至 ${data.reportEnd}`, 80, 218);
@@ -169,76 +143,52 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
   context.fillStyle = "#08765a";
   setFont(context, 19, 800);
   context.textAlign = "center";
-  context.fillText(`${data.recordedDays} 天库存记录`, 890, 187);
+  context.fillText(`${data.accountSummaries.length} 个账号`, 890, 187);
   context.textAlign = "left";
-
-  drawMetric(context, 80, "本周收获", wanLabel(data.harvestedSilverWan), data.inventoryChangeTo ? `截至 ${data.inventoryChangeTo}` : "等待库存基线", "teal");
-  drawMetric(context, 314, "已记录支出", wanLabel(data.totalSilverExpenseWan), `任务 ${numberLabel(data.taskSilverExpenseWan)} · 其他 ${numberLabel(data.manualSilverExpenseWan)}`, "amber");
-  drawMetric(context, 548, "库存净变化", wanLabel(data.inventoryNetChangeWan, true), data.inventoryChangeTo ? `截至 ${data.inventoryChangeTo}` : "等待比较基线");
-  drawMetric(context, 782, "当前银子库存", wanLabel(data.currentSilverWan), data.latestInventoryDate ? `库存日期 ${data.latestInventoryDate}` : "尚无库存记录");
-
-  fillRoundedRect(context, 80, 458, 920, 68, 14, "#f2f7f6");
-  context.fillStyle = "#08765a";
-  setFont(context, 18, 800);
-  context.fillText("计算口径", 102, 480);
-  context.fillStyle = "#536a66";
-  setFont(context, 18, 650);
-  const reconciliationNote = data.pendingReconciliationSilverExpenseWan > 0
-    ? `；另有 ${wanLabel(data.pendingReconciliationSilverExpenseWan)} 待库存更新`
-    : "";
-  context.fillText(`本周收获 = 库存净变化 + 库存比较区间内的银子支出${reconciliationNote}`, 210, 480);
 
   context.fillStyle = "#142522";
   setFont(context, 24, 850);
-  context.fillText(`各账号本周情况 · ${data.accountSummaries.length} 个账号`, 80, 566);
+  context.fillText("各账号本周情况", 80, 282);
   context.fillStyle = "#71817e";
   setFont(context, 16, 650);
   context.textAlign = "right";
-  context.fillText(`完成任务共 ${data.taskCompletions.length} 项，支出已按账号归集`, 1000, 574);
+  context.fillText(data.latestInventoryDate ? `库存截至 ${data.latestInventoryDate}` : "库存待建立比较基线", 1000, 290);
   context.textAlign = "left";
 
   data.accountSummaries.forEach((account, index) => {
     const y = accountRowsY + index * accountRowStep;
-    fillRoundedRect(context, 80, y, 920, 102, 14, index % 2 ? "#fbfcfc" : "#f5f8f7");
-    strokeRoundedRect(context, 80, y, 920, 102, 14, "#e1e8e6", 1);
-    fillRoundedRect(context, 96, y + 18, 72, 42, 11, "#e3f2ef");
+    fillRoundedRect(context, 80, y, 920, 126, 14, index % 2 ? "#fbfcfc" : "#f5f8f7");
+    strokeRoundedRect(context, 80, y, 920, 126, 14, "#e1e8e6", 1);
+    fillRoundedRect(context, 96, y + 22, 72, 42, 11, "#e3f2ef");
     context.fillStyle = "#08765a";
     setFont(context, 18, 850);
     context.textAlign = "center";
-    context.fillText(account.accountId, 132, y + 27);
+    context.fillText(account.accountId, 132, y + 31);
     context.fillStyle = "#71817e";
     setFont(context, 13, 750);
-    context.fillText(`${account.taskCompletions.length} 项任务`, 132, y + 70);
+    context.fillText(`${account.taskCompletions.length} 项任务`, 132, y + 76);
     context.textAlign = "left";
 
     const accountMetrics = [
-      { x: 190, label: "收获", value: wanLabel(account.harvestedSilverWan), color: "#067068" },
-      { x: 314, label: "支出", value: wanLabel(account.totalSilverExpenseWan), color: account.totalSilverExpenseWan > 0 ? "#9a5a00" : "#20312e" },
-      { x: 438, label: "净变化", value: wanLabel(account.inventoryNetChangeWan, true), color: (account.inventoryNetChangeWan ?? 0) < 0 ? "#a33d35" : "#20312e" },
-      { x: 562, label: "当前库存", value: wanLabel(account.currentSilverWan), color: "#20312e" },
+      { x: 190, label: "本周收获", value: wanLabel(account.harvestedSilverWan), note: `净变化 ${wanLabel(account.inventoryNetChangeWan, true)}`, color: "#067068" },
+      { x: 390, label: "本周支出", value: wanLabel(account.totalSilverExpenseWan), note: account.pendingReconciliationSilverExpenseWan > 0 ? `${wanLabel(account.pendingReconciliationSilverExpenseWan)} 待结算` : `任务 ${numberLabel(account.taskSilverExpenseWan)} · 其他 ${numberLabel(account.manualSilverExpenseWan)}`, color: account.totalSilverExpenseWan > 0 ? "#9a5a00" : "#20312e" },
+      { x: 590, label: "完成任务", value: `${account.taskCompletions.length} 项`, note: accountTaskNames(account), color: "#20312e" },
+      { x: 790, label: "当前库存", value: wanLabel(account.currentSilverWan), note: data.latestInventoryDate ? `截至 ${data.latestInventoryDate}` : "尚无库存记录", color: "#20312e" },
     ];
     accountMetrics.forEach((metric) => {
       context.fillStyle = "#71817e";
       setFont(context, 13, 750);
-      context.fillText(metric.label, metric.x, y + 17);
+      context.fillText(metric.label, metric.x, y + 15);
       context.fillStyle = metric.color;
       setFont(context, 20, 850);
-      context.fillText(fitText(context, metric.value, 112), metric.x, y + 43);
+      context.fillText(fitText(context, metric.value, 174), metric.x, y + 40);
+      context.fillStyle = "#71817e";
+      setFont(context, 12, 650);
+      context.fillText(fitText(context, metric.note, 174), metric.x, y + 76);
     });
-
-    context.fillStyle = "#d9e2e0";
-    context.fillRect(688, y + 16, 1, 70);
-    context.fillStyle = "#20312e";
-    setFont(context, 15, 800);
-    context.fillText(fitText(context, accountTaskNames(account), 282), 708, y + 14);
     context.fillStyle = "#71817e";
-    setFont(context, 13, 650);
-    context.fillText(fitText(context, accountTaskResources(account), 282), 708, y + 43);
-    context.fillText(
-      fitText(context, `支出：任务 ${numberLabel(account.taskSilverExpenseWan)} · 其他 ${numberLabel(account.manualSilverExpenseWan)} 万`, 282),
-      708,
-      y + 69,
-    );
+    setFont(context, 12, 650);
+    context.fillText(fitText(context, accountTaskResources(account), 780), 190, y + 102);
   });
 
   if (hasUnassignedExpenses) {
@@ -249,13 +199,13 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
     context.fillStyle = "#75664e";
     setFont(context, 14, 650);
     context.textAlign = "right";
-    context.fillText("已计入总览，未计入上方单账号小计", 978, unassignedBannerY + 18);
+    context.fillText("保留在明细中，不计入任何账号", 978, unassignedBannerY + 18);
     context.textAlign = "left";
   }
 
   context.fillStyle = "#142522";
   setFont(context, 24, 850);
-  context.fillText(`其他银子支出 · ${data.manualExpenses.length} 笔`, 80, expenseSectionY);
+  context.fillText(`按账号补记的其他银子支出 · ${data.manualExpenses.length} 笔`, 80, expenseSectionY);
   if (!displayedExpenses.length) {
     fillRoundedRect(context, 80, expenseSectionY + 44, 920, 72, 12, "#f7f9f8");
     context.fillStyle = "#81908d";

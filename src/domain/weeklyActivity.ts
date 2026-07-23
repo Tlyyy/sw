@@ -18,6 +18,7 @@ export interface WeeklyAccountActivitySummary {
   manualSilverExpenseWan: number;
   totalSilverExpenseWan: number;
   reconciledSilverExpenseWan: number;
+  pendingReconciliationSilverExpenseWan: number;
   harvestedSilverWan: number | null;
   taskCompletions: TaskCompletionRecord[];
   manualExpenses: SilverExpenseRecord[];
@@ -129,6 +130,7 @@ export function buildWeeklyActivitySummary(
       manualSilverExpenseWan: accountManualExpenseWan,
       totalSilverExpenseWan: accountTotalExpenseWan,
       reconciledSilverExpenseWan: accountReconciledExpenseWan,
+      pendingReconciliationSilverExpenseWan: normalizeWan(accountTotalExpenseWan - accountReconciledExpenseWan),
       harvestedSilverWan: accountInventoryNetChangeWan === null
         ? null
         : normalizeWan(accountInventoryNetChangeWan + accountReconciledExpenseWan),
