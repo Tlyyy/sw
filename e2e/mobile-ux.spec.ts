@@ -991,6 +991,16 @@ test.describe("mobile UX release gate", () => {
     const report = page.getByTestId("inventory-week-report");
     await expect(report).toBeVisible();
     await expect(weeklyTask.getByText("2 / 7 天有记录", { exact: true })).toBeVisible();
+    const dailyView = report.getByRole("button", { name: "按日对比", exact: true });
+    await expect(dailyView).toHaveAttribute("aria-pressed", "true");
+    await expect(report.locator(".inventory-daily-matrix")).toBeVisible();
+    const defaultMatrixShare = report.getByRole("button", { name: "生成并分享银子库存周报", exact: true });
+    await expect(defaultMatrixShare).toContainText("生成并分享库存周报");
+    const matrixBox = await report.locator(".inventory-daily-matrix").boundingBox();
+    const activityBox = await report.getByTestId("weekly-activity-panel").boundingBox();
+    expect(matrixBox?.y, "七天库存表格应排在五账号本周情况之前").toBeLessThan(activityBox?.y || Number.POSITIVE_INFINITY);
+
+    await report.getByRole("button", { name: "汇总视图", exact: true }).tap();
     await expect(report.locator(".weekly-change-panel > header").getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
     await expect(report.getByText("银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × 5.5 万/个", { exact: true })).toBeVisible();
 
@@ -1037,7 +1047,7 @@ test.describe("mobile UX release gate", () => {
       (window as typeof window & { __allowInventoryImageShare?: boolean }).__allowInventoryImageShare = false;
     });
     const matrixDownloadPromise = page.waitForEvent("download");
-    await report.getByRole("button", { name: "分享银+蛋按日对比", exact: true }).tap();
+    await report.getByRole("button", { name: "生成并分享银+蛋库存周报", exact: true }).tap();
     const matrixDownload = await matrixDownloadPromise;
     expect(matrixDownload.suggestedFilename()).toMatch(/^银\+蛋按日对比-.*\.png$/);
     await expect(report.locator(".inventory-share-notice")).toHaveText("库存图片已下载");

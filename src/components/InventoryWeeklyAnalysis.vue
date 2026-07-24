@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{
   currentDate: string;
   showActivity?: boolean;
   initialView?: InventoryReportView;
-}>(), { showActivity: true, initialView: "summary" });
+}>(), { showActivity: true, initialView: "matrix" });
 
 const accountOrder: AccountId[] = [...accountIds];
 const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
@@ -49,7 +49,7 @@ const selectedMatrixMetric = computed(() => matrixMetricOptions.find((item) => i
 const latestRecordedDay = computed(() => [...props.report.days].reverse().find((day) => day.snapshot) || null);
 const shareButtonLabel = computed(() => reportView.value === "summary"
   ? "分享当前库存汇总"
-  : `分享${selectedMatrixMetric.value.label}按日对比`);
+  : `生成并分享${selectedMatrixMetric.value.label}库存周报`);
 
 onBeforeUnmount(() => {
   if (shareNoticeTimer !== null) window.clearTimeout(shareNoticeTimer);
@@ -304,14 +304,14 @@ async function shareInventoryReport() {
           @click="shareInventoryReport"
         >
           <AppIcon :name="sharingReport ? 'refresh' : 'share'" />
-          <span>分享</span>
+          <span>
+            {{ sharingReport ? "生成中…" : (reportView === "matrix" ? "生成并分享库存周报" : "分享库存汇总") }}
+          </span>
         </button>
       </div>
     </div>
 
     <p v-if="shareNotice" class="inventory-share-notice" role="status">{{ shareNotice }}</p>
-
-    <WeeklyActivityPanel v-if="props.showActivity" :report="report" :current-date="currentDate" />
 
     <template v-if="reportView === 'summary'">
       <div class="weekly-change-panel">
@@ -425,6 +425,8 @@ async function shareInventoryReport() {
         </table>
       </div>
     </section>
+
+    <WeeklyActivityPanel v-if="props.showActivity" :report="report" :current-date="currentDate" />
   </section>
 </template>
 
@@ -804,13 +806,15 @@ async function shareInventoryReport() {
 
 @media (max-width: 720px) {
   .inventory-analysis-controls {
-    gap: 7px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
     padding: 8px 10px;
   }
 
   .inventory-analysis-actions {
-    flex: 0 0 auto;
-    gap: 0;
+    width: 100%;
+    gap: 8px;
   }
 
   .inventory-analysis-actions p {
@@ -830,14 +834,10 @@ async function shareInventoryReport() {
   }
 
   .inventory-report-share-button {
-    width: 44px;
-    min-width: 44px;
+    width: 100%;
+    min-width: 0;
     min-height: 44px;
-    padding: 0;
-  }
-
-  .inventory-report-share-button span {
-    display: none;
+    padding-inline: 12px;
   }
 
   .inventory-share-notice {
