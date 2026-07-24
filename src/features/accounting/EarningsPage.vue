@@ -58,6 +58,7 @@ const movementNotice = ref("");
 const sharingIncome = ref(false);
 const sharingDailyIncome = ref(false);
 const sharingDailyIncomeWithEggs = ref(false);
+const dailyTableMetric = ref<DailyEarningsShareMetric>("silverWan");
 const incomeShareNotice = ref("");
 let incomeShareNoticeTimer: number | null = null;
 
@@ -87,6 +88,13 @@ const dailyIncomeWithEggsShareData = computed(() => buildDailyEarningsShareData(
   settings.planningAsOfDate,
   "silverWithRegularEggsWan",
 ));
+const dailyTableData = computed(() => dailyTableMetric.value === "silverWithRegularEggsWan"
+  ? dailyIncomeWithEggsShareData.value
+  : dailyIncomeShareData.value);
+const dailyTableSummaryRows = computed(() => [
+  dailyTableData.value.weeklyTotal,
+  dailyTableData.value.dailyAverage,
+]);
 const hasDailyIncomeToShare = computed(() => dailyIncomeShareData.value.recordedDays > 0);
 const sharingAnyIncome = computed(() => (
   sharingIncome.value
@@ -184,6 +192,24 @@ function numberLabel(value: number, suffix = "") {
   return `${normalized > 0 ? "+" : ""}${normalized.toLocaleString("zh-CN", {
     maximumFractionDigits: 2,
   })}${suffix}`;
+}
+
+function dailyTableValueLabel(value: number | null) {
+  return value === null ? "—" : numberLabel(value);
+}
+
+function dailyTableValueTone(value: number | null) {
+  if (value === null) return "unknown";
+  if (value > 0) return "positive";
+  if (value < 0) return "negative";
+  return "neutral";
+}
+
+function compactDailyBasis(value: string) {
+  return value
+    .replace("连续库存 · ", "")
+    .replace("尚未到日期", "未到日期")
+    .replace(/^\d+ 天区间，非单日$/, "跨天区间");
 }
 
 function wanLabel(value: number | null | undefined, signed = true) {
@@ -590,6 +616,110 @@ function saveMovement() {
         </header>
         <p v-if="incomeShareNotice" class="income-share-notice" role="status">{{ incomeShareNotice }}</p>
 
+        <section class="daily-earnings-table" aria-labelledby="daily-earnings-table-title">
+          <header>
+            <div>
+              <p>页面直接查看 · 单位：万</p>
+              <h3 id="daily-earnings-table-title">五账号每日实际所得</h3>
+            </div>
+            <div class="daily-metric-toggle" role="group" aria-label="切换五账号每日所得口径">
+              <button
+                type="button"
+                :class="{ active: dailyTableMetric === 'silverWan' }"
+                :aria-pressed="dailyTableMetric === 'silverWan'"
+                @click="dailyTableMetric = 'silverWan'"
+              >
+                银子
+              </button>
+              <button
+                type="button"
+                :class="{ active: dailyTableMetric === 'silverWithRegularEggsWan' }"
+                :aria-pressed="dailyTableMetric === 'silverWithRegularEggsWan'"
+                @click="dailyTableMetric = 'silverWithRegularEggsWan'"
+              >
+                银+蛋折银
+              </button>
+            </div>
+          </header>
+          <div class="daily-table-meta">
+            <span>{{ shortDate(dailyTableData.weekStart) }}—{{ shortDate(dailyTableData.weekEnd) }}</span>
+            <b>{{ dailyTableData.recordedDays }} / 7 天已结算</b>
+          </div>
+          <div class="daily-table-scroll" tabindex="0" aria-label="五账号每日实际所得表格，可横向滚动">
+            <table data-testid="five-account-daily-table">
+              <caption class="visually-hidden">
+                五账号本周每日实际所得（{{ dailyTableData.metricLabel }}）
+              </caption>
+              <colgroup>
+                <col class="daily-date-column">
+                <col v-for="accountId in accountIds" :key="accountId" class="daily-value-column">
+                <col class="daily-total-column">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">日期</th>
+                  <th v-for="accountId in accountIds" :key="accountId" scope="col">{{ accountId }}</th>
+                  <th scope="col">合计</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in dailyTableData.rows"
+                  :key="row.date"
+                  :data-date="row.date"
+                  :class="{ unsettled: row.total === null }"
+                >
+                  <th scope="row" :title="row.basis">
+                    <strong>{{ row.label }}</strong>
+                    <small>{{ compactDailyBasis(row.basis) }}</small>
+                  </th>
+                  <td
+                    v-for="accountId in accountIds"
+                    :key="accountId"
+                    :data-account-id="accountId"
+                    :class="dailyTableValueTone(row.values[accountId])"
+                  >
+                    {{ dailyTableValueLabel(row.values[accountId]) }}
+                  </td>
+                  <td class="daily-total" :class="dailyTableValueTone(row.total)">
+                    {{ dailyTableValueLabel(row.total) }}
+                  </td>
+                </tr>
+                <tr
+                  v-for="row in dailyTableSummaryRows"
+                  :key="row.label"
+                  class="daily-summary-row"
+                  :class="{ average: row.label === '结算日均' }"
+                >
+                  <th scope="row">
+                    <strong>{{ row.label }}</strong>
+                    <small>{{ row.basis }}</small>
+                  </th>
+                  <td
+                    v-for="accountId in accountIds"
+                    :key="accountId"
+                    :data-account-id="accountId"
+                    :class="dailyTableValueTone(row.values[accountId])"
+                  >
+                    {{ dailyTableValueLabel(row.values[accountId]) }}
+                  </td>
+                  <td class="daily-total" :class="dailyTableValueTone(row.total)">
+                    {{ dailyTableValueLabel(row.total) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="daily-table-note">
+            <template v-if="dailyTableData.conversionNote">
+              折算口径：{{ dailyTableData.conversionNote }}；专用蛋不参与折算。
+            </template>
+            <template v-else>
+              只有连续两天都录入库存才显示当天所得；缺天和跨天区间显示“—”。
+            </template>
+          </p>
+        </section>
+
         <div class="earnings-primary-grid">
           <article class="earnings-primary-card latest">
             <div>
@@ -914,6 +1044,159 @@ function saveMovement() {
   font-size: 11px;
   font-weight: 800;
 }
+.daily-earnings-table {
+  margin: 12px 13px 13px;
+  overflow: hidden;
+  border: 1px solid var(--radar-line);
+  border-radius: 11px;
+  background: #ffffff;
+}
+.daily-earnings-table > header {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--radar-line);
+  background: color-mix(in srgb, var(--radar-cyan-soft) 42%, #ffffff);
+}
+.daily-earnings-table > header p {
+  color: var(--radar-cyan-strong);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .07em;
+}
+.daily-earnings-table > header h3 {
+  margin-top: 1px;
+  font-size: 15px;
+}
+.daily-metric-toggle {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 2px;
+  border: 1px solid var(--radar-line);
+  border-radius: 9px;
+  background: #ffffff;
+}
+.daily-metric-toggle button {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--radar-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.daily-metric-toggle button.active {
+  color: #ffffff;
+  background: var(--radar-cyan-strong);
+}
+.daily-table-meta {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 11px;
+  border-bottom: 1px solid var(--radar-line);
+  color: var(--radar-muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+.daily-table-meta b {
+  color: var(--radar-success);
+  white-space: nowrap;
+}
+.daily-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.daily-table-scroll table {
+  width: 100%;
+  min-width: 380px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+.daily-date-column { width: 22%; }
+.daily-value-column { width: 13%; }
+.daily-total-column { width: 13%; }
+.daily-table-scroll :is(th, td) {
+  height: 42px;
+  padding: 5px 3px;
+  border-right: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--radar-line);
+  text-align: center;
+}
+.daily-table-scroll :is(th, td):last-child { border-right: 0; }
+.daily-table-scroll tbody tr:last-child :is(th, td) { border-bottom: 0; }
+.daily-table-scroll thead th {
+  height: 34px;
+  color: var(--radar-muted);
+  background: var(--radar-surface-2);
+  font-size: 9px;
+  font-weight: 850;
+}
+.daily-table-scroll thead th:last-child { color: var(--radar-cyan-strong); }
+.daily-table-scroll tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  color: var(--radar-ink);
+  background: #ffffff;
+  text-align: left;
+}
+.daily-table-scroll tbody th strong,
+.daily-table-scroll tbody th small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.daily-table-scroll tbody th strong { font-size: 10px; }
+.daily-table-scroll tbody th small {
+  margin-top: 1px;
+  color: var(--radar-muted);
+  font-size: 8px;
+  font-weight: 650;
+}
+.daily-table-scroll td {
+  color: var(--radar-ink);
+  font-size: 10px;
+  font-weight: 800;
+}
+.daily-table-scroll td.positive { color: var(--radar-success); }
+.daily-table-scroll td.negative { color: var(--radar-danger); }
+.daily-table-scroll td.unknown { color: var(--radar-muted); }
+.daily-table-scroll td.daily-total {
+  color: var(--radar-cyan-strong);
+  background: color-mix(in srgb, var(--radar-cyan-soft) 30%, #ffffff);
+  font-weight: 900;
+}
+.daily-table-scroll tr.unsettled td { background: #fbfcfc; }
+.daily-table-scroll tr.daily-summary-row :is(th, td) {
+  background: color-mix(in srgb, var(--radar-cyan-soft) 58%, #ffffff);
+  font-weight: 900;
+}
+.daily-table-scroll tr.daily-summary-row.average :is(th, td) {
+  background: color-mix(in srgb, var(--radar-cyan-soft) 34%, #ffffff);
+}
+.daily-table-note {
+  padding: 8px 11px;
+  border-top: 1px solid var(--radar-line);
+  color: var(--radar-muted);
+  background: #fbfcfc;
+  font-size: 9px;
+  line-height: 1.45;
+}
 .earnings-primary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--radar-line); }
 .earnings-primary-card { min-width: 0; padding: 16px; }
 .earnings-primary-card + .earnings-primary-card { border-left: 1px solid var(--radar-line); }
@@ -1017,6 +1300,12 @@ function saveMovement() {
   .earnings-share-buttons { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .earnings-share-button { min-width: 0; width: 100%; min-height: 44px; gap: 5px; padding-inline: 5px; font-size: 11px; letter-spacing: -.02em; }
   .earnings-share-button :deep(svg) { width: 15px; height: 15px; }
+  .daily-earnings-table { margin: 10px 9px 11px; }
+  .daily-earnings-table > header { min-height: 58px; padding: 7px 8px; }
+  .daily-earnings-table > header h3 { font-size: 14px; }
+  .daily-metric-toggle button { min-height: 44px; padding-inline: 8px; }
+  .daily-table-meta { padding-inline: 8px; }
+  .daily-table-note { padding-inline: 8px; }
   .earnings-primary-grid { grid-template-columns: 1fr; }
   .earnings-primary-card + .earnings-primary-card { border-top: 1px solid var(--radar-line); border-left: 0; }
   .earnings-primary-card { padding: 14px; }
@@ -1039,5 +1328,7 @@ function saveMovement() {
   .movement-panel form { grid-template-columns: 1fr; }
   .movement-panel form > * { grid-column: 1 / -1; }
   .earnings-share-button :deep(svg) { display: none; }
+  .daily-earnings-table > header { align-items: stretch; flex-direction: column; }
+  .daily-metric-toggle { width: 100%; }
 }
 </style>

@@ -100,9 +100,9 @@ test.describe("desktop application", () => {
     test.skip(testInfo.project.name !== "desktop");
     await page.addInitScript(() => {
       const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
-      const accounts = (silverWan: number) => Object.fromEntries(accountIds.map((accountId) => [accountId, {
+      const accounts = (silverWan: number, regularEggs = 11) => Object.fromEntries(accountIds.map((accountId) => [accountId, {
         dedicatedEggs: accountId === "FC" ? 9 : 5,
-        regularEggs: accountId === "FC" ? 11 : 4,
+        regularEggs: accountId === "FC" ? regularEggs : 4,
         silverWan: accountId === "FC" ? silverWan : 100,
         innerShardCount: accountId === "FC" ? 32 : 20,
       }]));
@@ -110,7 +110,7 @@ test.describe("desktop application", () => {
         version: 2,
         snapshots: [
           { effectiveDate: "2026-07-22", recordedAt: "2026-07-22T10:00:00.000Z", accounts: accounts(100) },
-          { effectiveDate: "2026-07-23", recordedAt: "2026-07-23T10:00:00.000Z", accounts: accounts(90) },
+          { effectiveDate: "2026-07-23", recordedAt: "2026-07-23T10:00:00.000Z", accounts: accounts(90, 13) },
         ],
       }));
       localStorage.setItem("sw.app.accounting.v1", JSON.stringify({
@@ -140,6 +140,16 @@ test.describe("desktop application", () => {
     await page.goto("/#/earnings?account=FC");
     await expect(page.getByText("7月23日 实际所得", { exact: true })).toBeVisible();
     await expect(page.locator(".earnings-primary-card.latest > div > strong")).toHaveText("+10 万");
+    const dailyTable = page.getByRole("region", { name: "五账号每日实际所得" });
+    await expect(dailyTable).toBeVisible();
+    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银子）" })).toBeVisible();
+    await expect(dailyTable.locator("tbody > tr")).toHaveCount(9);
+    const july23Row = dailyTable.locator("tr[data-date='2026-07-23']");
+    await expect(july23Row.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
+    await dailyTable.getByRole("button", { name: "银+蛋折银", exact: true }).click();
+    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
+    await expect(july23Row.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+    await expect(dailyTable).toContainText("专用蛋不参与折算");
     const combinedShareButton = page.getByRole("button", {
       name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得图片",
       exact: true,
