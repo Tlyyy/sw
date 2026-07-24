@@ -154,6 +154,20 @@ test.describe("desktop application", () => {
     await combinedDownload.saveAs(testInfo.outputPath("五号每日实际所得-2026-07-20-2026-07-26.png"));
     await expect(page.getByRole("status")).toContainText("五号每日所得图片已下载");
 
+    const combinedWithEggsShareButton = page.getByRole("button", {
+      name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得银加蛋折银图片",
+      exact: true,
+    });
+    await expect(combinedWithEggsShareButton).toBeVisible();
+    await expect(combinedWithEggsShareButton).toBeEnabled();
+
+    const combinedWithEggsDownloadPromise = page.waitForEvent("download");
+    await combinedWithEggsShareButton.click();
+    const combinedWithEggsDownload = await combinedWithEggsDownloadPromise;
+    expect(combinedWithEggsDownload.suggestedFilename()).toBe("五号每日实际所得-银加蛋折银-2026-07-20-2026-07-26.png");
+    await combinedWithEggsDownload.saveAs(testInfo.outputPath("五号每日实际所得-银加蛋折银-2026-07-20-2026-07-26.png"));
+    await expect(page.getByRole("status")).toContainText("五号银+蛋折银图片已下载");
+
     const shareButton = page.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
     await expect(shareButton).toBeVisible();
     await expect(shareButton).toBeEnabled();

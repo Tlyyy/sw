@@ -1,8 +1,13 @@
 import { appName } from "../../app/brand";
 import type { AccountAccountingSummary } from "../../domain/accounting";
+import {
+  inventoryRegularEggValueWan,
+  inventorySilverWithRegularEggsWan,
+} from "../../domain/inventory";
 import { accountIds, type AccountId } from "../../domain/types";
 
 type AccountValueMap = Record<AccountId, number | null>;
+export type DailyEarningsShareMetric = "silverWan" | "silverWithRegularEggsWan";
 
 export interface DailyEarningsShareRow {
   label: string;
@@ -20,6 +25,9 @@ export interface DailyEarningsShareSummaryRow {
 }
 
 export interface DailyEarningsShareImageData {
+  metric: DailyEarningsShareMetric;
+  metricLabel: string;
+  conversionNote: string | null;
   weekStart: string;
   weekEnd: string;
   recordedDays: number;
@@ -160,6 +168,7 @@ function dataUrlToBlob(dataUrl: string) {
 export function buildDailyEarningsShareData(
   reports: Record<AccountId, AccountAccountingSummary>,
   asOfDate: string,
+  metric: DailyEarningsShareMetric = "silverWan",
 ): DailyEarningsShareImageData {
   const reference = reports[accountIds[0]];
   const weekStart = reference.week.weekStart;
@@ -175,7 +184,9 @@ export function buildDailyEarningsShareData(
     accountIds.forEach((accountId) => {
       const interval = intervals[accountId];
       values[accountId] = interval?.kind === "daily"
-        ? interval.actualIncome.silverWan
+        ? metric === "silverWithRegularEggsWan"
+          ? inventorySilverWithRegularEggsWan(interval.actualIncome)
+          : interval.actualIncome.silverWan
         : null;
     });
 
@@ -215,6 +226,11 @@ export function buildDailyEarningsShareData(
   ])) as AccountValueMap;
 
   return {
+    metric,
+    metricLabel: metric === "silverWithRegularEggsWan" ? "银+蛋折银" : "银子",
+    conversionNote: metric === "silverWithRegularEggsWan"
+      ? `实际所得银子 + 实际所得普通蛋 × ${inventoryRegularEggValueWan} 万/个`
+      : null,
     weekStart,
     weekEnd,
     recordedDays,
@@ -354,7 +370,7 @@ export function createDailyEarningsShareImage(data: DailyEarningsShareImageData)
 
   context.fillStyle = "#142522";
   setFont(context, 36, 850);
-  context.fillText("五号每日实际所得 · 银子", 80, 166);
+  context.fillText(`五号每日实际所得 · ${data.metricLabel}`, 80, 166);
   context.fillStyle = "#657975";
   setFont(context, 22, 650);
   context.fillText(`${data.weekStart} 至 ${data.weekEnd}`, 80, 216);
@@ -367,7 +383,13 @@ export function createDailyEarningsShareImage(data: DailyEarningsShareImageData)
 
   context.fillStyle = "#657975";
   setFont(context, 19, 650);
-  context.fillText("单位：万　实际所得 = 库存净变化 + 已确认流水修正", 80, 274);
+  context.fillText(
+    data.conversionNote
+      ? `单位：万　银+蛋折银 = ${data.conversionNote}`
+      : "单位：万　实际所得 = 库存净变化 + 已确认流水修正",
+    80,
+    274,
+  );
 
   drawMatrixTable(context, data, 320);
 
@@ -380,7 +402,13 @@ export function createDailyEarningsShareImage(data: DailyEarningsShareImageData)
   context.fillStyle = "#657975";
   setFont(context, 17, 650);
   context.fillText("只有连续两天都录入库存，才显示当天所得；缺天或跨天区间不会伪装成单日。", 106, 1122);
-  context.fillText("账号间转移与非收益调整已按流水排除；五号合计为同一天五个账号之和。", 106, 1155);
+  context.fillText(
+    data.metric === "silverWithRegularEggsWan"
+      ? `普通蛋按 ${inventoryRegularEggValueWan} 万/个折算，专用蛋不折算；五号合计为同一天五个账号之和。`
+      : "账号间转移与非收益调整已按流水排除；五号合计为同一天五个账号之和。",
+    106,
+    1155,
+  );
 
   context.fillStyle = "#899793";
   setFont(context, 17, 650);

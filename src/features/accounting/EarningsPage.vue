@@ -17,6 +17,7 @@ import { useUiStore } from "../../stores/ui";
 import {
   buildDailyEarningsShareData,
   createDailyEarningsShareImage,
+  type DailyEarningsShareMetric,
 } from "./dailyEarningsShareImage";
 import { createEarningsShareImage } from "./earningsShareImage";
 
@@ -56,6 +57,7 @@ const movementError = ref("");
 const movementNotice = ref("");
 const sharingIncome = ref(false);
 const sharingDailyIncome = ref(false);
+const sharingDailyIncomeWithEggs = ref(false);
 const incomeShareNotice = ref("");
 let incomeShareNoticeTimer: number | null = null;
 
@@ -80,8 +82,17 @@ const dailyIncomeShareData = computed(() => buildDailyEarningsShareData(
   reportByAccount.value,
   settings.planningAsOfDate,
 ));
+const dailyIncomeWithEggsShareData = computed(() => buildDailyEarningsShareData(
+  reportByAccount.value,
+  settings.planningAsOfDate,
+  "silverWithRegularEggsWan",
+));
 const hasDailyIncomeToShare = computed(() => dailyIncomeShareData.value.recordedDays > 0);
-const sharingAnyIncome = computed(() => sharingIncome.value || sharingDailyIncome.value);
+const sharingAnyIncome = computed(() => (
+  sharingIncome.value
+  || sharingDailyIncome.value
+  || sharingDailyIncomeWithEggs.value
+));
 const latestInterval = computed(() => summary.value.intervals.at(-1) || null);
 const latestSnapshot = computed(() => inventory.snapshots
   .filter((snapshot) => snapshot.effectiveDate <= settings.planningAsOfDate)
@@ -120,6 +131,9 @@ const shareButtonLabel = computed(() => latestInterval.value
 const dailyShareButtonLabel = computed(() => hasDailyIncomeToShare.value
   ? `分享五个账号 ${dailyIncomeShareData.value.weekStart} 至 ${dailyIncomeShareData.value.weekEnd} 每日实际所得图片`
   : "本周暂无可分享的五账号每日实际所得");
+const dailyWithEggsShareButtonLabel = computed(() => hasDailyIncomeToShare.value
+  ? `分享五个账号 ${dailyIncomeWithEggsShareData.value.weekStart} 至 ${dailyIncomeWithEggsShareData.value.weekEnd} 每日实际所得银加蛋折银图片`
+  : "本周暂无可分享的五账号每日实际所得银加蛋折银");
 const weekStatusText = computed(() => {
   const week = summary.value.week;
   if (week.status === "available") {
@@ -212,18 +226,24 @@ function downloadShareImage(blob: Blob, fileName: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
-async function shareDailyIncome() {
+async function shareDailyIncome(metric: DailyEarningsShareMetric = "silverWan") {
   if (!hasDailyIncomeToShare.value || sharingAnyIncome.value) return;
-  sharingDailyIncome.value = true;
+  const withEggs = metric === "silverWithRegularEggsWan";
+  const sharingState = withEggs ? sharingDailyIncomeWithEggs : sharingDailyIncome;
+  sharingState.value = true;
 
   try {
-    const data = dailyIncomeShareData.value;
+    const data = withEggs
+      ? dailyIncomeWithEggsShareData.value
+      : dailyIncomeShareData.value;
     const blob = createDailyEarningsShareImage(data);
-    const fileName = `五号每日实际所得-${data.weekStart}-${data.weekEnd}.png`;
+    const fileName = withEggs
+      ? `五号每日实际所得-银加蛋折银-${data.weekStart}-${data.weekEnd}.png`
+      : `五号每日实际所得-${data.weekStart}-${data.weekEnd}.png`;
     const file = new File([blob], fileName, { type: "image/png" });
     const nativeShareData: ShareData = {
       files: [file],
-      title: "五号每日实际所得",
+      title: withEggs ? "五号每日实际所得 · 银+蛋折银" : "五号每日实际所得",
     };
     const supportsFileShare = typeof navigator.share === "function"
       && typeof navigator.canShare === "function"
@@ -232,7 +252,9 @@ async function shareDailyIncome() {
     if (supportsFileShare) {
       try {
         await navigator.share(nativeShareData);
-        showIncomeShareNotice("五号每日所得图片已打开系统分享");
+        showIncomeShareNotice(withEggs
+          ? "五号银+蛋折银图片已打开系统分享"
+          : "五号每日所得图片已打开系统分享");
         return;
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
@@ -240,11 +262,13 @@ async function shareDailyIncome() {
     }
 
     downloadShareImage(blob, fileName);
-    showIncomeShareNotice("五号每日所得图片已下载");
+    showIncomeShareNotice(withEggs
+      ? "五号银+蛋折银图片已下载"
+      : "五号每日所得图片已下载");
   } catch {
     showIncomeShareNotice("图片生成失败，请重试");
   } finally {
-    sharingDailyIncome.value = false;
+    sharingState.value = false;
   }
 }
 
@@ -526,7 +550,7 @@ function saveMovement() {
             <h2 id="earnings-summary-title">库存变化与实际所得</h2>
           </div>
           <div class="earnings-summary-actions">
-            <small>五账号合并 + 当前账号</small>
+            <small>五账号两种口径 + 当前账号</small>
             <div class="earnings-share-buttons">
               <button
                 class="earnings-share-button combined"
@@ -534,10 +558,21 @@ function saveMovement() {
                 :disabled="!hasDailyIncomeToShare || sharingAnyIncome"
                 :aria-busy="sharingDailyIncome"
                 :aria-label="dailyShareButtonLabel"
-                @click="shareDailyIncome"
+                @click="shareDailyIncome('silverWan')"
               >
                 <AppIcon :name="sharingDailyIncome ? 'refresh' : 'share'" />
                 <span>{{ sharingDailyIncome ? "生成中…" : "五号每日所得" }}</span>
+              </button>
+              <button
+                class="earnings-share-button combined eggs"
+                type="button"
+                :disabled="!hasDailyIncomeToShare || sharingAnyIncome"
+                :aria-busy="sharingDailyIncomeWithEggs"
+                :aria-label="dailyWithEggsShareButtonLabel"
+                @click="shareDailyIncome('silverWithRegularEggsWan')"
+              >
+                <AppIcon :name="sharingDailyIncomeWithEggs ? 'refresh' : 'share'" />
+                <span>{{ sharingDailyIncomeWithEggs ? "生成中…" : "五号银+蛋折银" }}</span>
               </button>
               <button
                 class="earnings-share-button account"
@@ -818,8 +853,9 @@ function saveMovement() {
 .earnings-summary-actions {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  gap: 9px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
 .earnings-summary-actions > small {
   color: var(--radar-muted);
@@ -852,6 +888,11 @@ function saveMovement() {
   border-color: var(--radar-cyan-strong);
   color: #ffffff;
   background: var(--radar-cyan-strong);
+}
+.earnings-share-button.combined.eggs {
+  border-color: color-mix(in srgb, var(--radar-cyan-strong) 62%, #ffffff);
+  color: var(--radar-cyan-strong);
+  background: color-mix(in srgb, var(--radar-cyan-soft) 76%, #ffffff);
 }
 .earnings-share-button:disabled {
   cursor: not-allowed;
@@ -970,6 +1011,7 @@ function saveMovement() {
   .earnings-summary-actions > small { display: none; }
   .earnings-share-buttons { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .earnings-share-button { width: 100%; min-height: 44px; padding-inline: 8px; }
+  .earnings-share-button.account { grid-column: 1 / -1; }
   .earnings-primary-grid { grid-template-columns: 1fr; }
   .earnings-primary-card + .earnings-primary-card { border-top: 1px solid var(--radar-line); border-left: 0; }
   .earnings-primary-card { padding: 14px; }

@@ -9,6 +9,13 @@ import {
 function snapshot(
   effectiveDate: string,
   silverByAccount: Record<AccountId, number>,
+  regularEggsByAccount: Record<AccountId, number> = {
+    FC: 0,
+    LG1: 0,
+    PT: 0,
+    LG2: 0,
+    MYT: 0,
+  },
 ): InventorySnapshot {
   return {
     effectiveDate,
@@ -18,7 +25,7 @@ function snapshot(
       {
         silverWan: silverByAccount[accountId],
         dedicatedEggs: 0,
-        regularEggs: 0,
+        regularEggs: regularEggsByAccount[accountId],
         innerShardCount: 0,
       },
     ])) as InventorySnapshot["accounts"],
@@ -85,12 +92,50 @@ describe("five-account daily earnings share image", () => {
     expect(data.rows[5].basis).toBe("尚未到日期");
   });
 
+  it("keeps pure silver and adds a separate silver-plus-ordinary-eggs valuation", () => {
+    const baselineSilver = { FC: 100, LG1: 100, PT: 100, LG2: 100, MYT: 100 };
+    const mondaySilver = { FC: 131, LG1: 119, PT: 120, LG2: 118, MYT: 117 };
+    const baselineEggs = { FC: 10, LG1: 10, PT: 10, LG2: 10, MYT: 10 };
+    const mondayEggs = { FC: 12, LG1: 11, PT: 13, LG2: 10, MYT: 9 };
+    const reports = buildAccountingByAccount({
+      inventorySnapshots: [
+        snapshot("2026-07-19", baselineSilver, baselineEggs),
+        snapshot("2026-07-20", mondaySilver, mondayEggs),
+      ],
+      asOfDate: "2026-07-24",
+    });
+
+    const pureSilver = buildDailyEarningsShareData(reports, "2026-07-24");
+    const silverWithEggs = buildDailyEarningsShareData(
+      reports,
+      "2026-07-24",
+      "silverWithRegularEggsWan",
+    );
+
+    expect(pureSilver.rows[0]).toMatchObject({
+      values: { FC: 31, LG1: 19, PT: 20, LG2: 18, MYT: 17 },
+      total: 105,
+    });
+    expect(silverWithEggs).toMatchObject({
+      metric: "silverWithRegularEggsWan",
+      metricLabel: "银+蛋折银",
+      conversionNote: "实际所得银子 + 实际所得普通蛋 × 5.5 万/个",
+    });
+    expect(silverWithEggs.rows[0]).toMatchObject({
+      values: { FC: 42, LG1: 24.5, PT: 36.5, LG2: 18, MYT: 11.5 },
+      total: 132.5,
+    });
+  });
+
   it("renders the five account headers and summary into a PNG", () => {
     const renderedText: string[] = [];
     installCanvasStub(renderedText);
     const emptyValues = { FC: null, LG1: null, PT: null, LG2: null, MYT: null };
     const firstDayValues = { FC: 31, LG1: 19, PT: 20, LG2: 18, MYT: 17 };
     const image = createDailyEarningsShareImage({
+      metric: "silverWan",
+      metricLabel: "银子",
+      conversionNote: null,
       weekStart: "2026-07-20",
       weekEnd: "2026-07-26",
       recordedDays: 1,
@@ -128,6 +173,48 @@ describe("five-account daily earnings share image", () => {
       "+105",
       "本周已结算",
       "结算日均",
+    ]));
+  });
+
+  it("renders the silver-plus-eggs conversion note without replacing pure-silver support", () => {
+    const renderedText: string[] = [];
+    installCanvasStub(renderedText);
+    const values = { FC: 42, LG1: 24.5, PT: 36.5, LG2: 18, MYT: 11.5 };
+    const emptyValues = { FC: null, LG1: null, PT: null, LG2: null, MYT: null };
+
+    createDailyEarningsShareImage({
+      metric: "silverWithRegularEggsWan",
+      metricLabel: "银+蛋折银",
+      conversionNote: "实际所得银子 + 实际所得普通蛋 × 5.5 万/个",
+      weekStart: "2026-07-20",
+      weekEnd: "2026-07-26",
+      recordedDays: 1,
+      rows: Array.from({ length: 7 }, (_, index) => ({
+        label: `周${index + 1} 7/${20 + index}`,
+        date: `2026-07-${20 + index}`,
+        basis: index === 0 ? "连续库存 · 核销 0 笔" : "未结算",
+        values: index === 0 ? values : emptyValues,
+        total: index === 0 ? 132.5 : null,
+      })),
+      weeklyTotal: {
+        label: "本周已结算",
+        basis: "1 天每日记录",
+        values,
+        total: 132.5,
+      },
+      dailyAverage: {
+        label: "结算日均",
+        basis: "按已结算天数",
+        values,
+        total: 132.5,
+      },
+    });
+
+    expect(renderedText).toEqual(expect.arrayContaining([
+      "五号每日实际所得 · 银+蛋折银",
+      "单位：万　银+蛋折银 = 实际所得银子 + 实际所得普通蛋 × 5.5 万/个",
+      "普通蛋按 5.5 万/个折算，专用蛋不折算；五号合计为同一天五个账号之和。",
+      "+132.5",
     ]));
   });
 });

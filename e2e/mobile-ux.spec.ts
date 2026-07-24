@@ -715,6 +715,27 @@ test.describe("mobile UX release gate", () => {
     }));
     await expect(page.getByRole("status")).toContainText("五号每日所得图片已打开系统分享");
 
+    const combinedWithEggsShareButton = page.getByRole("button", {
+      name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得银加蛋折银图片",
+      exact: true,
+    });
+    await expect(combinedWithEggsShareButton).toBeVisible();
+    const combinedWithEggsShareBox = await combinedWithEggsShareButton.boundingBox();
+    expect(combinedWithEggsShareBox?.height, "五账号银+蛋折银分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((combinedWithEggsShareBox?.x || 0) + (combinedWithEggsShareBox?.width || 0), "五账号银+蛋折银分享按钮不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
+    await combinedWithEggsShareButton.tap();
+
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & {
+        __earningsShare?: { name: string; type: string; size: number; title?: string };
+      }
+    ).__earningsShare)).toEqual(expect.objectContaining({
+      name: "五号每日实际所得-银加蛋折银-2026-07-20-2026-07-26.png",
+      type: "image/png",
+      title: "五号每日实际所得 · 银+蛋折银",
+    }));
+    await expect(page.getByRole("status")).toContainText("五号银+蛋折银图片已打开系统分享");
+
     const shareButton = page.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
     await expect(shareButton).toBeVisible();
     const shareBox = await shareButton.boundingBox();
