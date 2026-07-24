@@ -123,8 +123,8 @@ const latestTitle = computed(() => {
     : `最近 ${interval.intervalDays} 天实际所得`;
 });
 const shareButtonText = computed(() => latestInterval.value?.kind === "daily"
-  ? "分享每日所得"
-  : "分享区间所得");
+  ? `${selectedAccount.value}·当日`
+  : `${selectedAccount.value}·区间`);
 const shareButtonLabel = computed(() => latestInterval.value
   ? `分享 ${selectedAccount.value} ${latestTitle.value}图片`
   : `${selectedAccount.value} 暂无可分享的实际所得`);
@@ -561,7 +561,7 @@ function saveMovement() {
                 @click="shareDailyIncome('silverWan')"
               >
                 <AppIcon :name="sharingDailyIncome ? 'refresh' : 'share'" />
-                <span>{{ sharingDailyIncome ? "生成中…" : "五号每日所得" }}</span>
+                <span>{{ sharingDailyIncome ? "生成中…" : "五号·银子" }}</span>
               </button>
               <button
                 class="earnings-share-button combined eggs"
@@ -572,7 +572,7 @@ function saveMovement() {
                 @click="shareDailyIncome('silverWithRegularEggsWan')"
               >
                 <AppIcon :name="sharingDailyIncomeWithEggs ? 'refresh' : 'share'" />
-                <span>{{ sharingDailyIncomeWithEggs ? "生成中…" : "五号银+蛋折银" }}</span>
+                <span>{{ sharingDailyIncomeWithEggs ? "生成中…" : "五号·银+蛋" }}</span>
               </button>
               <button
                 class="earnings-share-button account"
@@ -894,6 +894,11 @@ function saveMovement() {
   color: var(--radar-cyan-strong);
   background: color-mix(in srgb, var(--radar-cyan-soft) 76%, #ffffff);
 }
+.earnings-share-button.account {
+  border-color: var(--radar-line);
+  color: var(--radar-text);
+  background: #ffffff;
+}
 .earnings-share-button:disabled {
   cursor: not-allowed;
   opacity: .5;
@@ -1006,12 +1011,12 @@ function saveMovement() {
 }
 
 @media (max-width: 520px) {
-  .earnings-summary > header { align-items: stretch; flex-direction: column; }
-  .earnings-summary-actions { width: 100%; gap: 6px; }
+  .earnings-summary > header { align-items: stretch; flex-direction: column; gap: 10px; padding-block: 11px; }
+  .earnings-summary-actions { width: 100%; gap: 0; }
   .earnings-summary-actions > small { display: none; }
-  .earnings-share-buttons { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .earnings-share-button { width: 100%; min-height: 44px; padding-inline: 8px; }
-  .earnings-share-button.account { grid-column: 1 / -1; }
+  .earnings-share-buttons { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .earnings-share-button { min-width: 0; width: 100%; min-height: 44px; gap: 5px; padding-inline: 5px; font-size: 11px; letter-spacing: -.02em; }
+  .earnings-share-button :deep(svg) { width: 15px; height: 15px; }
   .earnings-primary-grid { grid-template-columns: 1fr; }
   .earnings-primary-card + .earnings-primary-card { border-top: 1px solid var(--radar-line); border-left: 0; }
   .earnings-primary-card { padding: 14px; }
@@ -1033,5 +1038,6 @@ function saveMovement() {
   .earnings-account-tabs button { min-height: 50px; }
   .movement-panel form { grid-template-columns: 1fr; }
   .movement-panel form > * { grid-column: 1 / -1; }
+  .earnings-share-button :deep(svg) { display: none; }
 }
 </style>

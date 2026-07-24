@@ -702,6 +702,11 @@ test.describe("mobile UX release gate", () => {
     const combinedShareBox = await combinedShareButton.boundingBox();
     expect(combinedShareBox?.height, "五账号每日所得分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
     expect((combinedShareBox?.x || 0) + (combinedShareBox?.width || 0), "五账号分享按钮不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
+    await expect(page.locator(".earnings-share-button")).toHaveText([
+      "五号·银子",
+      "五号·银+蛋",
+      "FC·当日",
+    ]);
     await combinedShareButton.tap();
 
     await expect.poll(() => page.evaluate(() => (
@@ -741,6 +746,9 @@ test.describe("mobile UX release gate", () => {
     const shareBox = await shareButton.boundingBox();
     expect(shareBox?.height, "每日实际所得分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
     expect((shareBox?.x || 0) + (shareBox?.width || 0), "分享按钮不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
+    expect(Math.abs((combinedShareBox?.y || 0) - (combinedWithEggsShareBox?.y || 0)), "两个五账号入口应在同一行").toBeLessThanOrEqual(1);
+    expect(Math.abs((combinedShareBox?.y || 0) - (shareBox?.y || 0)), "当前账号入口应与五账号入口在同一行").toBeLessThanOrEqual(1);
+    expect(Math.abs((combinedShareBox?.width || 0) - (shareBox?.width || 0)), "三个分享入口应保持等宽").toBeLessThanOrEqual(1);
     await shareButton.tap();
 
     await expect.poll(() => page.evaluate(() => (
