@@ -633,7 +633,7 @@ test.describe("mobile UX release gate", () => {
     await expect(dialog).toHaveCount(0);
   });
 
-  test("逐账号每日实际所得在 iPhone 16 Pro Max 调用系统分享", async ({ page }, testInfo) => {
+  test("五账号与逐账号每日实际所得在 iPhone 16 Pro Max 调用系统分享", async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
       const accounts = (silverWan: number) => Object.fromEntries(accountIds.map((accountId) => [accountId, {
@@ -694,6 +694,27 @@ test.describe("mobile UX release gate", () => {
 
     await page.goto("/#/earnings?account=FC");
     await waitForApplicationPage(page);
+    const combinedShareButton = page.getByRole("button", {
+      name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得图片",
+      exact: true,
+    });
+    await expect(combinedShareButton).toBeVisible();
+    const combinedShareBox = await combinedShareButton.boundingBox();
+    expect(combinedShareBox?.height, "五账号每日所得分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((combinedShareBox?.x || 0) + (combinedShareBox?.width || 0), "五账号分享按钮不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
+    await combinedShareButton.tap();
+
+    await expect.poll(() => page.evaluate(() => (
+      window as typeof window & {
+        __earningsShare?: { name: string; type: string; size: number; title?: string };
+      }
+    ).__earningsShare)).toEqual(expect.objectContaining({
+      name: "五号每日实际所得-2026-07-20-2026-07-26.png",
+      type: "image/png",
+      title: "五号每日实际所得",
+    }));
+    await expect(page.getByRole("status")).toContainText("五号每日所得图片已打开系统分享");
+
     const shareButton = page.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
     await expect(shareButton).toBeVisible();
     const shareBox = await shareButton.boundingBox();

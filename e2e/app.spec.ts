@@ -96,7 +96,7 @@ test.describe("desktop application", () => {
     await expect(ledger).toContainText("40 专用蛋");
   });
 
-  test("逐账号实际所得可以生成独立分享图", async ({ page }, testInfo) => {
+  test("五账号每日所得与逐账号所得都可以生成分享图", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     await page.addInitScript(() => {
       const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
@@ -140,6 +140,20 @@ test.describe("desktop application", () => {
     await page.goto("/#/earnings?account=FC");
     await expect(page.getByText("7月23日 实际所得", { exact: true })).toBeVisible();
     await expect(page.locator(".earnings-primary-card.latest > div > strong")).toHaveText("+10 万");
+    const combinedShareButton = page.getByRole("button", {
+      name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得图片",
+      exact: true,
+    });
+    await expect(combinedShareButton).toBeVisible();
+    await expect(combinedShareButton).toBeEnabled();
+
+    const combinedDownloadPromise = page.waitForEvent("download");
+    await combinedShareButton.click();
+    const combinedDownload = await combinedDownloadPromise;
+    expect(combinedDownload.suggestedFilename()).toBe("五号每日实际所得-2026-07-20-2026-07-26.png");
+    await combinedDownload.saveAs(testInfo.outputPath("五号每日实际所得-2026-07-20-2026-07-26.png"));
+    await expect(page.getByRole("status")).toContainText("五号每日所得图片已下载");
+
     const shareButton = page.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
     await expect(shareButton).toBeVisible();
     await expect(shareButton).toBeEnabled();
