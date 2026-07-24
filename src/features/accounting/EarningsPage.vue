@@ -23,6 +23,7 @@ import { createEarningsShareImage } from "./earningsShareImage";
 
 type ResourceKey = "silverWan" | "dedicatedEggs" | "regularEggs" | "innerShards";
 type MovementMode = "transfer" | "adjustment";
+type DetailView = "ledger" | "intervals";
 
 const route = useRoute();
 const router = useRouter();
@@ -59,6 +60,7 @@ const sharingIncome = ref(false);
 const sharingDailyIncome = ref(false);
 const sharingDailyIncomeWithEggs = ref(false);
 const dailyTableMetric = ref<DailyEarningsShareMetric>("silverWan");
+const detailView = ref<DetailView>("ledger");
 const incomeShareNotice = ref("");
 let incomeShareNoticeTimer: number | null = null;
 
@@ -95,6 +97,9 @@ const dailyTableSummaryRows = computed(() => [
   dailyTableData.value.weeklyTotal,
   dailyTableData.value.dailyAverage,
 ]);
+const sharingDailyTable = computed(() => dailyTableMetric.value === "silverWithRegularEggsWan"
+  ? sharingDailyIncomeWithEggs.value
+  : sharingDailyIncome.value);
 const hasDailyIncomeToShare = computed(() => dailyIncomeShareData.value.recordedDays > 0);
 const sharingAnyIncome = computed(() => (
   sharingIncome.value
@@ -121,8 +126,10 @@ const ledgerEntries = computed(() => normalizedEntries.value
   .slice(0, 30));
 const storedEntryIds = computed(() => new Set(accounting.entries.map((entry) => entry.id)));
 const pendingEntryIds = computed(() => new Set(summary.value.pending.entries.map((entry) => entry.id)));
-const latestIntervals = computed(() => [...summary.value.intervals].reverse().slice(0, 8));
-const weekAvailable = computed(() => summary.value.week.status === "available");
+const recentCrossDayIntervals = computed(() => [...summary.value.intervals]
+  .filter((interval) => interval.kind !== "daily")
+  .reverse()
+  .slice(0, 8));
 const latestTitle = computed(() => {
   const interval = latestInterval.value;
   if (!interval) return "最近实际所得";
@@ -142,15 +149,9 @@ const dailyShareButtonLabel = computed(() => hasDailyIncomeToShare.value
 const dailyWithEggsShareButtonLabel = computed(() => hasDailyIncomeToShare.value
   ? `分享五个账号 ${dailyIncomeWithEggsShareData.value.weekStart} 至 ${dailyIncomeWithEggsShareData.value.weekEnd} 每日实际所得银加蛋折银图片`
   : "本周暂无可分享的五账号每日实际所得银加蛋折银");
-const weekStatusText = computed(() => {
-  const week = summary.value.week;
-  if (week.status === "available") {
-    return `${shortDate(week.weekStart)}—${shortDate(week.latestSnapshotDate || week.reportEnd)}`;
-  }
-  if (week.unavailableReason === "missing-baseline") return "需要周日库存作为本周起点";
-  if (week.unavailableReason === "baseline-gap") return "周日库存缺失，不能把跨周区间当成本周";
-  return "本周还没有可用于结算的库存";
-});
+const dailyTableShareButtonLabel = computed(() => dailyTableMetric.value === "silverWithRegularEggsWan"
+  ? dailyWithEggsShareButtonLabel.value
+  : dailyShareButtonLabel.value);
 const movementResourceLabel = computed(() => ({
   silverWan: "银子",
   dedicatedEggs: "专用蛋",
@@ -220,9 +221,10 @@ function wanLabel(value: number | null | undefined, signed = true) {
   })} 万`;
 }
 
-function resourceValue(resources: AccountingResources | null | undefined, key: ResourceKey) {
-  if (!resources) return null;
-  return resources[key];
+function inventoryCountLabel(value: number | null | undefined, suffix: string) {
+  if (value === undefined) return "—";
+  if (value === null) return "未知";
+  return `${value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })} ${suffix}`;
 }
 
 function shortDate(date: string) {
@@ -296,6 +298,10 @@ async function shareDailyIncome(metric: DailyEarningsShareMetric = "silverWan") 
   } finally {
     sharingState.value = false;
   }
+}
+
+function shareVisibleDailyIncome() {
+  void shareDailyIncome(dailyTableMetric.value);
 }
 
 async function shareLatestIncome() {
@@ -569,75 +575,42 @@ function saveMovement() {
     <p v-if="movementNotice" class="movement-message success" role="status">{{ movementNotice }}</p>
 
     <main class="earnings-workspace">
-      <section class="earnings-summary" aria-labelledby="earnings-summary-title">
-        <header>
-          <div>
-            <p>{{ selectedAccount }} 账号</p>
-            <h2 id="earnings-summary-title">库存变化与实际所得</h2>
-          </div>
-          <div class="earnings-summary-actions">
-            <small>五账号两种口径 + 当前账号</small>
-            <div class="earnings-share-buttons">
-              <button
-                class="earnings-share-button combined"
-                type="button"
-                :disabled="!hasDailyIncomeToShare || sharingAnyIncome"
-                :aria-busy="sharingDailyIncome"
-                :aria-label="dailyShareButtonLabel"
-                @click="shareDailyIncome('silverWan')"
-              >
-                <AppIcon :name="sharingDailyIncome ? 'refresh' : 'share'" />
-                <span>{{ sharingDailyIncome ? "生成中…" : "五号·银子" }}</span>
-              </button>
-              <button
-                class="earnings-share-button combined eggs"
-                type="button"
-                :disabled="!hasDailyIncomeToShare || sharingAnyIncome"
-                :aria-busy="sharingDailyIncomeWithEggs"
-                :aria-label="dailyWithEggsShareButtonLabel"
-                @click="shareDailyIncome('silverWithRegularEggsWan')"
-              >
-                <AppIcon :name="sharingDailyIncomeWithEggs ? 'refresh' : 'share'" />
-                <span>{{ sharingDailyIncomeWithEggs ? "生成中…" : "五号·银+蛋" }}</span>
-              </button>
-              <button
-                class="earnings-share-button account"
-                type="button"
-                :disabled="!latestInterval || sharingAnyIncome"
-                :aria-busy="sharingIncome"
-                :aria-label="shareButtonLabel"
-                @click="shareLatestIncome"
-              >
-                <AppIcon :name="sharingIncome ? 'refresh' : 'share'" />
-                <span>{{ sharingIncome ? "生成中…" : shareButtonText }}</span>
-              </button>
-            </div>
-          </div>
-        </header>
-        <p v-if="incomeShareNotice" class="income-share-notice" role="status">{{ incomeShareNotice }}</p>
-
+      <section class="earnings-summary" aria-label="实际所得概览">
         <section class="daily-earnings-table" aria-labelledby="daily-earnings-table-title">
           <header>
             <div>
-              <p>页面直接查看 · 单位：万</p>
-              <h3 id="daily-earnings-table-title">五账号每日实际所得</h3>
+              <p>本周五号 · 单位：万</p>
+              <h2 id="daily-earnings-table-title">五账号每日实际所得</h2>
             </div>
-            <div class="daily-metric-toggle" role="group" aria-label="切换五账号每日所得口径">
+            <div class="daily-table-actions">
+              <div class="daily-metric-toggle" role="group" aria-label="切换五账号每日所得口径">
+                <button
+                  type="button"
+                  :class="{ active: dailyTableMetric === 'silverWan' }"
+                  :aria-pressed="dailyTableMetric === 'silverWan'"
+                  @click="dailyTableMetric = 'silverWan'"
+                >
+                  银子
+                </button>
+                <button
+                  type="button"
+                  :class="{ active: dailyTableMetric === 'silverWithRegularEggsWan' }"
+                  :aria-pressed="dailyTableMetric === 'silverWithRegularEggsWan'"
+                  @click="dailyTableMetric = 'silverWithRegularEggsWan'"
+                >
+                  银+蛋折银
+                </button>
+              </div>
               <button
+                class="earnings-share-button combined daily-table-share"
                 type="button"
-                :class="{ active: dailyTableMetric === 'silverWan' }"
-                :aria-pressed="dailyTableMetric === 'silverWan'"
-                @click="dailyTableMetric = 'silverWan'"
+                :disabled="!hasDailyIncomeToShare || sharingAnyIncome"
+                :aria-busy="sharingDailyTable"
+                :aria-label="dailyTableShareButtonLabel"
+                @click="shareVisibleDailyIncome"
               >
-                银子
-              </button>
-              <button
-                type="button"
-                :class="{ active: dailyTableMetric === 'silverWithRegularEggsWan' }"
-                :aria-pressed="dailyTableMetric === 'silverWithRegularEggsWan'"
-                @click="dailyTableMetric = 'silverWithRegularEggsWan'"
-              >
-                银+蛋折银
+                <AppIcon :name="sharingDailyTable ? 'refresh' : 'share'" />
+                <span>{{ sharingDailyTable ? "生成中…" : "分享表格" }}</span>
               </button>
             </div>
           </header>
@@ -710,87 +683,121 @@ function saveMovement() {
               </tbody>
             </table>
           </div>
-          <p class="daily-table-note">
-            <template v-if="dailyTableData.conversionNote">
-              折算口径：{{ dailyTableData.conversionNote }}；专用蛋不参与折算。
-            </template>
-            <template v-else>
-              只有连续两天都录入库存才显示当天所得；缺天和跨天区间显示“—”。
-            </template>
+          <p v-if="dailyTableData.conversionNote" class="daily-table-note">
+            折算口径：{{ dailyTableData.conversionNote }}；专用蛋不参与折算。
           </p>
         </section>
 
-        <div class="earnings-primary-grid">
-          <article class="earnings-primary-card latest">
+        <p v-if="incomeShareNotice" class="income-share-notice" role="status">{{ incomeShareNotice }}</p>
+
+        <section class="selected-account-overview" aria-labelledby="selected-account-overview-title">
+          <header>
             <div>
-              <p>{{ latestTitle }}</p>
-              <strong>{{ wanLabel(latestInterval?.actualIncome.silverWan) }}</strong>
-              <span v-if="latestInterval">{{ intervalRange(latestInterval) }} · {{ latestInterval.kind === "daily" ? "连续库存" : `${latestInterval.intervalDays} 天区间` }}</span>
-              <span v-else>至少需要两份不同日期的库存</span>
+              <p>{{ selectedAccount }} 账号</p>
+              <h2 id="selected-account-overview-title">当前库存</h2>
             </div>
-            <dl>
-              <div><dt>库存净变化</dt><dd>{{ wanLabel(latestInterval?.inventoryNetChange.silverWan) }}</dd></div>
-              <div><dt>流水修正</dt><dd>{{ wanLabel(latestInterval?.ledgerImpact.silverWan) }}</dd></div>
-            </dl>
-          </article>
-
-          <article class="earnings-primary-card week" :class="{ unavailable: !weekAvailable }">
+            <button
+              class="earnings-share-button account account-overview-share"
+              type="button"
+              :disabled="!latestInterval || sharingAnyIncome"
+              :aria-busy="sharingIncome"
+              :aria-label="shareButtonLabel"
+              @click="shareLatestIncome"
+            >
+              <AppIcon :name="sharingIncome ? 'refresh' : 'share'" />
+              <span>{{ sharingIncome ? "生成中…" : shareButtonText }}</span>
+            </button>
+          </header>
+          <dl class="selected-account-metrics">
             <div>
-              <p>本周实际所得</p>
-              <strong>{{ wanLabel(summary.week.actualIncome?.silverWan) }}</strong>
-              <span>{{ weekStatusText }}</span>
+              <dt>银子</dt>
+              <dd>{{ wanLabel(selectedBalance?.silverWan, false) }}</dd>
+              <small>{{ summary.latestSnapshotDate ? shortDate(summary.latestSnapshotDate) : "待录库存" }}</small>
             </div>
-            <dl>
-              <div><dt>库存净变化</dt><dd>{{ wanLabel(summary.week.inventoryNetChange?.silverWan) }}</dd></div>
-              <div><dt>流水修正</dt><dd>{{ wanLabel(summary.week.ledgerImpact?.silverWan) }}</dd></div>
-            </dl>
-          </article>
-        </div>
+            <div>
+              <dt>专用蛋</dt>
+              <dd>{{ inventoryCountLabel(selectedBalance?.dedicatedEggs, "个") }}</dd>
+              <small>当前库存</small>
+            </div>
+            <div>
+              <dt>普通蛋</dt>
+              <dd>{{ inventoryCountLabel(selectedBalance?.regularEggs, "个") }}</dd>
+              <small>当前库存</small>
+            </div>
+            <div>
+              <dt>碎片</dt>
+              <dd>{{ inventoryCountLabel(selectedBalance?.innerShardCount, "片") }}</dd>
+              <small>当前库存</small>
+            </div>
+          </dl>
 
-        <dl class="earnings-resource-strip">
-          <div><dt>当前银子</dt><dd>{{ wanLabel(selectedBalance?.silverWan, false) }}</dd><small>{{ summary.latestSnapshotDate ? `库存 ${shortDate(summary.latestSnapshotDate)}` : "待录库存" }}</small></div>
-          <div><dt>最近专用蛋所得</dt><dd>{{ resourceValue(latestInterval?.actualIncome, "dedicatedEggs") === null ? "—" : numberLabel(resourceValue(latestInterval?.actualIncome, "dedicatedEggs") || 0, " 个") }}</dd><small>独立于普通蛋</small></div>
-          <div><dt>最近普通蛋所得</dt><dd>{{ resourceValue(latestInterval?.actualIncome, "regularEggs") === null ? "—" : numberLabel(resourceValue(latestInterval?.actualIncome, "regularEggs") || 0, " 个") }}</dd><small>独立于专用蛋</small></div>
-          <div><dt>最近碎片所得</dt><dd>{{ resourceValue(latestInterval?.actualIncome, "innerShards") === null ? "未知" : numberLabel(resourceValue(latestInterval?.actualIncome, "innerShards") || 0, " 片") }}</dd><small>旧库存缺值时不猜</small></div>
-        </dl>
-
-        <aside v-if="summary.pending.entries.length" class="pending-ledger" aria-label="等待下次库存核销的流水">
-          <span><AppIcon name="refresh" /></span>
-          <div><strong>{{ summary.pending.entries.length }} 笔流水等待下次库存核销</strong><p>发生在 {{ summary.pending.afterSnapshotDate ? `${shortDate(summary.pending.afterSnapshotDate)} 库存记录之后` : "首份库存之前" }}，暂不并入已结算所得，避免重复计算。</p></div>
-          <b>{{ wanLabel(summary.pending.ledgerImpact.silverWan) }}</b>
-        </aside>
+          <aside v-if="summary.pending.entries.length" class="pending-ledger" aria-label="等待下次库存核销的流水">
+            <span><AppIcon name="refresh" /></span>
+            <div><strong>{{ summary.pending.entries.length }} 笔流水等待下次库存核销</strong><p>发生在 {{ summary.pending.afterSnapshotDate ? `${shortDate(summary.pending.afterSnapshotDate)} 库存记录之后` : "首份库存之前" }}，暂不并入已结算所得，避免重复计算。</p></div>
+            <b>{{ wanLabel(summary.pending.ledgerImpact.silverWan) }}</b>
+          </aside>
+        </section>
       </section>
 
-      <aside class="accounting-rule" aria-labelledby="accounting-rule-title">
-        <header><span><AppIcon name="analysis" /></span><div><p>核算口径</p><h2 id="accounting-rule-title">实际所得怎么来</h2></div></header>
-        <ol>
-          <li><b>先看真实库存</b><span>结束库存 − 开始库存</span></li>
-          <li><b>再加回已确认支出</b><span>任务、打书、洗护符和其他支出</span></li>
-          <li><b>排除非收益变化</b><span>账号转移与手动调整不算所得</span></li>
-        </ol>
-        <strong>实际所得 = 库存净变化 + 流水修正</strong>
-        <RouterLink to="/plans/tasks">去维护任务 <AppIcon name="chevron-right" /></RouterLink>
-      </aside>
+      <details class="accounting-rule">
+        <summary>
+          <span class="accounting-rule-icon"><AppIcon name="analysis" /></span>
+          <span class="accounting-rule-copy">
+            <small>核算说明</small>
+            <strong>实际所得 = 库存净变化 + 流水修正</strong>
+          </span>
+          <span class="accounting-rule-action">查看口径 <AppIcon name="chevron-right" /></span>
+        </summary>
+        <div class="accounting-rule-content">
+          <ol>
+            <li><b>先看真实库存</b><span>结束库存 − 开始库存</span></li>
+            <li><b>再加回已确认支出</b><span>任务、打书、洗护符和其他支出</span></li>
+            <li><b>排除非收益变化</b><span>账号转移与手动调整不算所得</span></li>
+          </ol>
+          <RouterLink to="/plans/tasks">去维护任务 <AppIcon name="chevron-right" /></RouterLink>
+        </div>
+      </details>
     </main>
 
-    <section class="earnings-detail-grid">
-      <section class="interval-history" aria-labelledby="interval-history-title">
-        <header><div><p>按库存区间</p><h2 id="interval-history-title">每日与最近区间</h2></div><span>缺天不伪装成单日</span></header>
-        <div v-if="latestIntervals.length" class="interval-list">
-          <article v-for="interval in latestIntervals" :key="`${interval.fromRecordedAt}:${interval.toRecordedAt}`">
-            <div><strong>{{ interval.kind === "daily" ? shortDate(interval.toDate) : `${interval.intervalDays} 天区间` }}</strong><span>{{ intervalRange(interval) }}</span></div>
-            <dl>
-              <div><dt>实际所得</dt><dd>{{ wanLabel(interval.actualIncome.silverWan) }}</dd></div>
-              <div><dt>库存变化</dt><dd>{{ wanLabel(interval.inventoryNetChange.silverWan) }}</dd></div>
-              <div><dt>流水修正</dt><dd>{{ wanLabel(interval.ledgerImpact.silverWan) }}</dd></div>
-            </dl>
-          </article>
+    <section class="earnings-detail-panel" aria-labelledby="earnings-detail-title">
+      <header>
+        <div>
+          <p>当前账号明细</p>
+          <h2 id="earnings-detail-title">{{ selectedAccount }} 核算记录</h2>
         </div>
-        <p v-else class="earnings-empty">录入第二个不同日期的库存后，这里会出现第一段真实区间。</p>
-      </section>
+        <div class="earnings-detail-tabs" role="tablist" aria-label="选择核算记录类型">
+          <button
+            id="ledger-tab"
+            type="button"
+            role="tab"
+            aria-controls="ledger-panel"
+            :aria-selected="detailView === 'ledger'"
+            :class="{ active: detailView === 'ledger' }"
+            @click="detailView = 'ledger'"
+          >
+            实际流水 <span>{{ ledgerEntries.length }}</span>
+          </button>
+          <button
+            id="interval-tab"
+            type="button"
+            role="tab"
+            aria-controls="interval-panel"
+            :aria-selected="detailView === 'intervals'"
+            :class="{ active: detailView === 'intervals' }"
+            @click="detailView = 'intervals'"
+          >
+            跨天区间 <span>{{ recentCrossDayIntervals.length }}</span>
+          </button>
+        </div>
+      </header>
 
-      <section class="ledger-history" aria-labelledby="ledger-history-title">
-        <header><div><p>只读真实事实</p><h2 id="ledger-history-title">{{ selectedAccount }} 实际流水</h2></div><span>{{ ledgerEntries.length }} 笔</span></header>
+      <section
+        v-if="detailView === 'ledger'"
+        id="ledger-panel"
+        class="ledger-history"
+        role="tabpanel"
+        aria-labelledby="ledger-tab"
+      >
         <div v-if="ledgerEntries.length" class="ledger-list">
           <article v-for="entry in ledgerEntries" :key="entry.id" :class="{ void: entry.status === 'void' }">
             <span :class="['ledger-kind', entryTone(entry)]">{{ entryKind(entry) }}</span>
@@ -803,6 +810,26 @@ function saveMovement() {
           </article>
         </div>
         <p v-else class="earnings-empty">还没有支出、转账或调整记录。完成任务时会自动进入这里。</p>
+      </section>
+
+      <section
+        v-else
+        id="interval-panel"
+        class="interval-history"
+        role="tabpanel"
+        aria-labelledby="interval-tab"
+      >
+        <div v-if="recentCrossDayIntervals.length" class="interval-list">
+          <article v-for="interval in recentCrossDayIntervals" :key="`${interval.fromRecordedAt}:${interval.toRecordedAt}`">
+            <div><strong>{{ interval.intervalDays }} 天区间</strong><span>{{ intervalRange(interval) }}</span></div>
+            <dl>
+              <div><dt>实际所得</dt><dd>{{ wanLabel(interval.actualIncome.silverWan) }}</dd></div>
+              <div><dt>库存变化</dt><dd>{{ wanLabel(interval.inventoryNetChange.silverWan) }}</dd></div>
+              <div><dt>流水修正</dt><dd>{{ wanLabel(interval.ledgerImpact.silverWan) }}</dd></div>
+            </dl>
+          </article>
+        </div>
+        <p v-else class="earnings-empty">每日记录已在上表展示；只有缺天形成的跨天区间才会列在这里。</p>
       </section>
     </section>
   </div>
@@ -827,10 +854,9 @@ function saveMovement() {
 }
 .earnings-intro > div { min-width: 0; }
 .earnings-intro p,
-.earnings-summary > header p,
-.accounting-rule header p,
-.interval-history > header p,
-.ledger-history > header p,
+.daily-earnings-table > header p,
+.selected-account-overview > header p,
+.earnings-detail-panel > header p,
 .movement-panel > header p {
   color: var(--radar-cyan-strong);
   font-size: 10px;
@@ -891,10 +917,10 @@ function saveMovement() {
 .earnings-account-tabs button.active span { color: var(--radar-cyan-strong); }
 
 .movement-panel,
-.earnings-summary,
+.daily-earnings-table,
+.selected-account-overview,
 .accounting-rule,
-.interval-history,
-.ledger-history {
+.earnings-detail-panel {
   border: 1px solid var(--radar-line);
   border-radius: 14px;
   background: #ffffff;
@@ -902,9 +928,8 @@ function saveMovement() {
 }
 .movement-panel { overflow: hidden; margin-top: 12px; }
 .movement-panel > header,
-.earnings-summary > header,
-.interval-history > header,
-.ledger-history > header {
+.selected-account-overview > header,
+.earnings-detail-panel > header {
   min-height: 62px;
   display: flex;
   align-items: center;
@@ -915,9 +940,8 @@ function saveMovement() {
   background: var(--radar-surface-2);
 }
 .movement-panel > header h2,
-.earnings-summary > header h2,
-.interval-history > header h2,
-.ledger-history > header h2 { margin-top: 1px; font-size: 18px; }
+.selected-account-overview > header h2,
+.earnings-detail-panel > header h2 { margin-top: 1px; font-size: 18px; }
 .movement-panel > header > button {
   width: 44px;
   height: 44px;
@@ -972,32 +996,11 @@ function saveMovement() {
 
 .earnings-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   margin-top: 14px;
 }
-.earnings-summary { min-width: 0; overflow: hidden; }
-.earnings-summary > header > span,
-.interval-history > header > span,
-.ledger-history > header > span { color: var(--radar-muted); font-size: 11px; font-weight: 750; }
-.earnings-summary-actions {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-.earnings-summary-actions > small {
-  color: var(--radar-muted);
-  font-size: 10px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-.earnings-share-buttons {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
+.earnings-summary { min-width: 0; display: grid; gap: 12px; }
 .earnings-share-button {
   min-height: 44px;
   display: inline-flex;
@@ -1019,11 +1022,6 @@ function saveMovement() {
   color: #ffffff;
   background: var(--radar-cyan-strong);
 }
-.earnings-share-button.combined.eggs {
-  border-color: color-mix(in srgb, var(--radar-cyan-strong) 62%, #ffffff);
-  color: var(--radar-cyan-strong);
-  background: color-mix(in srgb, var(--radar-cyan-soft) 76%, #ffffff);
-}
 .earnings-share-button.account {
   border-color: var(--radar-line);
   color: var(--radar-text);
@@ -1035,7 +1033,7 @@ function saveMovement() {
 }
 .earnings-share-button :deep(svg) { width: 16px; height: 16px; }
 .income-share-notice {
-  margin: 10px 13px 0;
+  margin: 0;
   padding: 9px 11px;
   border: 1px solid color-mix(in srgb, var(--radar-success) 34%, var(--radar-line));
   border-radius: 8px;
@@ -1045,19 +1043,17 @@ function saveMovement() {
   font-weight: 800;
 }
 .daily-earnings-table {
-  margin: 12px 13px 13px;
+  min-width: 0;
+  margin: 0;
   overflow: hidden;
-  border: 1px solid var(--radar-line);
-  border-radius: 11px;
-  background: #ffffff;
 }
 .daily-earnings-table > header {
-  min-height: 62px;
+  min-height: 66px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 9px 11px;
+  gap: 16px;
+  padding: 10px 13px;
   border-bottom: 1px solid var(--radar-line);
   background: color-mix(in srgb, var(--radar-cyan-soft) 42%, #ffffff);
 }
@@ -1067,12 +1063,20 @@ function saveMovement() {
   font-weight: 850;
   letter-spacing: .07em;
 }
-.daily-earnings-table > header h3 {
+.daily-earnings-table > header h2 {
   margin-top: 1px;
-  font-size: 15px;
+  font-size: 18px;
+}
+.daily-table-actions {
+  min-width: 0;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 .daily-metric-toggle {
-  flex: 0 0 auto;
+  min-width: 0;
+  flex: 1 1 auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   padding: 2px;
@@ -1096,6 +1100,7 @@ function saveMovement() {
   color: #ffffff;
   background: var(--radar-cyan-strong);
 }
+.daily-table-share { flex: 0 0 auto; }
 .daily-table-meta {
   min-height: 34px;
   display: flex;
@@ -1197,46 +1202,122 @@ function saveMovement() {
   font-size: 9px;
   line-height: 1.45;
 }
-.earnings-primary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--radar-line); }
-.earnings-primary-card { min-width: 0; padding: 16px; }
-.earnings-primary-card + .earnings-primary-card { border-left: 1px solid var(--radar-line); }
-.earnings-primary-card > div > p { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
-.earnings-primary-card > div > strong { display: block; margin-top: 2px; color: var(--radar-success); font-size: 29px; line-height: 1.2; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.earnings-primary-card.week > div > strong { color: var(--radar-cyan-strong); }
-.earnings-primary-card.unavailable > div > strong { color: var(--radar-muted); }
-.earnings-primary-card > div > span { display: block; min-height: 18px; margin-top: 4px; color: var(--radar-muted); font-size: 11px; line-height: 1.45; }
-.earnings-primary-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 13px 0 0; overflow: hidden; border: 1px solid var(--radar-line); border-radius: 9px; background: var(--radar-surface-2); }
-.earnings-primary-card dl > div { min-width: 0; padding: 8px 10px; border-left: 1px solid var(--radar-line); }
-.earnings-primary-card dl > div:first-child { border-left: 0; }
-.earnings-primary-card dt { color: var(--radar-muted); font-size: 10px; font-weight: 750; }
-.earnings-primary-card dd { overflow: hidden; margin: 1px 0 0; color: var(--radar-ink); font-size: 12px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
-.earnings-resource-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; }
-.earnings-resource-strip > div { min-width: 0; padding: 12px 13px; border-left: 1px solid var(--radar-line); }
-.earnings-resource-strip > div:first-child { border-left: 0; }
-.earnings-resource-strip dt { color: var(--radar-muted); font-size: 10px; font-weight: 750; }
-.earnings-resource-strip dd { overflow: hidden; margin: 2px 0 0; color: var(--radar-ink); font-size: 15px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
-.earnings-resource-strip small { display: block; margin-top: 1px; color: var(--radar-muted); font-size: 9px; }
-.pending-ledger { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: 0 13px 13px; padding: 10px 12px; border: 1px solid #e0bd78; border-radius: 9px; color: #774800; background: #fff8e8; }
+.selected-account-overview { min-width: 0; overflow: hidden; }
+.selected-account-overview > header > div { min-width: 0; }
+.account-overview-share { flex: 0 0 auto; }
+.selected-account-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+.selected-account-metrics > div {
+  min-width: 0;
+  padding: 10px 13px;
+  border-left: 1px solid var(--radar-line);
+}
+.selected-account-metrics > div:first-child { border-left: 0; }
+.selected-account-metrics dt {
+  color: var(--radar-muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+.selected-account-metrics dd {
+  overflow: hidden;
+  margin: 2px 0 0;
+  color: var(--radar-ink);
+  font-size: 16px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.selected-account-metrics small {
+  display: block;
+  margin-top: 1px;
+  color: var(--radar-muted);
+  font-size: 9px;
+}
+.pending-ledger { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; margin: 0 12px 12px; padding: 10px 12px; border: 1px solid #e0bd78; border-radius: 9px; color: #774800; background: #fff8e8; }
 .pending-ledger > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #ffffff; }
 .pending-ledger > span :deep(svg) { width: 17px; height: 17px; }
 .pending-ledger strong { font-size: 12px; }
 .pending-ledger p { margin-top: 1px; font-size: 10px; line-height: 1.4; }
 .pending-ledger > b { font-size: 13px; white-space: nowrap; }
 
-.accounting-rule { align-self: start; overflow: hidden; }
-.accounting-rule > header { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 13px; border-bottom: 1px solid var(--radar-line); background: var(--radar-surface-2); }
-.accounting-rule > header > span { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); }
-.accounting-rule h2 { margin-top: 1px; font-size: 17px; }
-.accounting-rule ol { display: grid; gap: 0; margin: 0; padding: 0 13px; list-style: none; counter-reset: rule; }
-.accounting-rule li { position: relative; display: grid; gap: 1px; padding: 11px 0 11px 34px; border-bottom: 1px solid var(--radar-line); counter-increment: rule; }
-.accounting-rule li::before { position: absolute; top: 12px; left: 0; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); font-size: 11px; font-weight: 850; content: counter(rule); }
+.accounting-rule { min-width: 0; overflow: hidden; }
+.accounting-rule > summary {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  list-style: none;
+  background: var(--radar-surface-2);
+}
+.accounting-rule > summary::-webkit-details-marker { display: none; }
+.accounting-rule-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--radar-cyan-strong);
+  background: var(--radar-cyan-soft);
+}
+.accounting-rule-icon :deep(svg) { width: 17px; height: 17px; }
+.accounting-rule-copy { min-width: 0; display: grid; gap: 1px; }
+.accounting-rule-copy small { color: var(--radar-cyan-strong); font-size: 9px; font-weight: 850; letter-spacing: .06em; }
+.accounting-rule-copy strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.accounting-rule-action {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--radar-cyan-strong);
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.accounting-rule-action :deep(svg) { width: 14px; height: 14px; transition: transform .18s ease; }
+.accounting-rule[open] .accounting-rule-action :deep(svg) { transform: rotate(90deg); }
+.accounting-rule-content { border-top: 1px solid var(--radar-line); }
+.accounting-rule ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; counter-reset: rule; }
+.accounting-rule li { position: relative; min-width: 0; display: grid; gap: 1px; padding: 12px 10px 12px 42px; border-left: 1px solid var(--radar-line); counter-increment: rule; }
+.accounting-rule li:first-child { border-left: 0; }
+.accounting-rule li::before { position: absolute; top: 12px; left: 10px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); font-size: 11px; font-weight: 850; content: counter(rule); }
 .accounting-rule li b { font-size: 12px; }
 .accounting-rule li span { color: var(--radar-muted); font-size: 10px; line-height: 1.4; }
-.accounting-rule > strong { display: block; margin: 12px 13px; padding: 10px; border-radius: 8px; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); font-size: 12px; text-align: center; }
-.accounting-rule > a { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 4px; margin: 0 13px 13px; border: 1px solid var(--radar-line); border-radius: 8px; color: var(--radar-cyan-strong); font-size: 12px; font-weight: 850; }
-.accounting-rule > a :deep(svg) { width: 15px; height: 15px; }
+.accounting-rule-content > a { min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 4px; border-top: 1px solid var(--radar-line); color: var(--radar-cyan-strong); font-size: 12px; font-weight: 850; }
+.accounting-rule-content > a :deep(svg) { width: 15px; height: 15px; }
 
-.earnings-detail-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 14px; margin-top: 14px; }
+.earnings-detail-panel { min-width: 0; overflow: hidden; margin-top: 14px; }
+.earnings-detail-panel > header > div { min-width: 0; }
+.earnings-detail-tabs {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--radar-line);
+  border-radius: 9px;
+  background: #ffffff;
+}
+.earnings-detail-tabs button {
+  min-width: 108px;
+  min-height: 44px;
+  padding: 0 11px;
+  border: 0;
+  border-left: 1px solid var(--radar-line);
+  color: var(--radar-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.earnings-detail-tabs button:first-child { border-left: 0; }
+.earnings-detail-tabs button.active { color: #ffffff; background: var(--radar-cyan-strong); }
+.earnings-detail-tabs button span { margin-left: 3px; opacity: .75; font-size: 9px; }
 .interval-history,
 .ledger-history { min-width: 0; overflow: hidden; }
 .interval-list,
@@ -1270,7 +1351,6 @@ function saveMovement() {
   .movement-mode,
   .movement-note { grid-column: span 2; }
   .movement-save { min-height: 44px; }
-  .earnings-workspace { grid-template-columns: minmax(0, 1fr) 270px; }
 }
 
 @media (max-width: 820px) {
@@ -1288,33 +1368,38 @@ function saveMovement() {
   .movement-mode,
   .movement-note { grid-column: 1 / -1; }
   .movement-save { grid-column: 1 / -1; min-height: 50px; }
-  .earnings-workspace { grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
-  .accounting-rule { order: 2; }
-  .earnings-detail-grid { grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+  .earnings-workspace { margin-top: 12px; }
+  .earnings-detail-panel { margin-top: 12px; }
 }
 
 @media (max-width: 520px) {
-  .earnings-summary > header { align-items: stretch; flex-direction: column; gap: 10px; padding-block: 11px; }
-  .earnings-summary-actions { width: 100%; gap: 0; }
-  .earnings-summary-actions > small { display: none; }
-  .earnings-share-buttons { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-  .earnings-share-button { min-width: 0; width: 100%; min-height: 44px; gap: 5px; padding-inline: 5px; font-size: 11px; letter-spacing: -.02em; }
+  .earnings-account-tabs button { min-height: 50px; }
+  .earnings-account-tabs button span { display: none; }
+  .earnings-share-button { min-width: 0; min-height: 44px; gap: 5px; padding-inline: 9px; font-size: 11px; letter-spacing: -.02em; }
   .earnings-share-button :deep(svg) { width: 15px; height: 15px; }
-  .daily-earnings-table { margin: 10px 9px 11px; }
-  .daily-earnings-table > header { min-height: 58px; padding: 7px 8px; }
-  .daily-earnings-table > header h3 { font-size: 14px; }
+  .daily-earnings-table > header { min-height: 0; align-items: stretch; flex-direction: column; gap: 7px; padding: 9px 8px 8px; }
+  .daily-earnings-table > header h2 { font-size: 15px; }
+  .daily-table-actions { width: 100%; }
   .daily-metric-toggle button { min-height: 44px; padding-inline: 8px; }
+  .daily-table-share { min-width: 98px; }
   .daily-table-meta { padding-inline: 8px; }
   .daily-table-note { padding-inline: 8px; }
-  .earnings-primary-grid { grid-template-columns: 1fr; }
-  .earnings-primary-card + .earnings-primary-card { border-top: 1px solid var(--radar-line); border-left: 0; }
-  .earnings-primary-card { padding: 14px; }
-  .earnings-primary-card > div > strong { font-size: 27px; }
-  .earnings-resource-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .earnings-resource-strip > div:nth-child(3) { border-top: 1px solid var(--radar-line); border-left: 0; }
-  .earnings-resource-strip > div:nth-child(4) { border-top: 1px solid var(--radar-line); }
+  .selected-account-overview > header { min-height: 56px; padding: 6px 8px; }
+  .selected-account-overview > header h2 { font-size: 15px; }
+  .selected-account-metrics > div { padding: 9px 5px; text-align: center; }
+  .selected-account-metrics dt { font-size: 9px; }
+  .selected-account-metrics dd { font-size: 14px; }
+  .selected-account-metrics small { display: none; }
   .pending-ledger { grid-template-columns: auto minmax(0, 1fr); }
   .pending-ledger > b { grid-column: 2; }
+  .accounting-rule ol { grid-template-columns: 1fr; }
+  .accounting-rule li { border-top: 1px solid var(--radar-line); border-left: 0; }
+  .accounting-rule li:first-child { border-top: 0; }
+  .accounting-rule-action { font-size: 9px; }
+  .earnings-detail-panel > header { align-items: stretch; flex-direction: column; gap: 8px; padding: 9px 10px; }
+  .earnings-detail-panel > header h2 { font-size: 16px; }
+  .earnings-detail-tabs { width: 100%; }
+  .earnings-detail-tabs button { min-width: 0; }
   .interval-list > article { grid-template-columns: 1fr; gap: 7px; padding: 11px 12px; }
   .interval-list dl > div { padding-inline: 7px; }
   .ledger-list > article { grid-template-columns: 62px minmax(0, 1fr) auto; gap: 7px; }
@@ -1323,12 +1408,15 @@ function saveMovement() {
 @media (max-width: 380px) {
   .earnings-page { padding-inline: 9px; }
   .earnings-intro > div > span { max-width: 220px; }
-  .earnings-account-tabs button span { display: none; }
-  .earnings-account-tabs button { min-height: 50px; }
   .movement-panel form { grid-template-columns: 1fr; }
   .movement-panel form > * { grid-column: 1 / -1; }
-  .earnings-share-button :deep(svg) { display: none; }
-  .daily-earnings-table > header { align-items: stretch; flex-direction: column; }
-  .daily-metric-toggle { width: 100%; }
+  .daily-table-actions { align-items: stretch; flex-direction: column; }
+  .daily-table-share { width: 100%; }
+  .selected-account-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .selected-account-metrics > div { border-top: 1px solid var(--radar-line); }
+  .selected-account-metrics > div:nth-child(-n+2) { border-top: 0; }
+  .selected-account-metrics > div:nth-child(odd) { border-left: 0; }
+  .accounting-rule-copy strong { font-size: 11px; }
+  .accounting-rule-action { width: 44px; justify-content: flex-end; font-size: 0; }
 }
 </style>

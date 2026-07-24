@@ -633,7 +633,7 @@ test.describe("mobile UX release gate", () => {
     await expect(dialog).toHaveCount(0);
   });
 
-  test("五账号与逐账号每日实际所得在 iPhone 16 Pro Max 调用系统分享", async ({ page }, testInfo) => {
+  test("精简后的五账号核算页在 iPhone 16 Pro Max 完整展示并调用系统分享", async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
       const accounts = (silverWan: number, regularEggs = 11) => Object.fromEntries(accountIds.map((accountId) => [accountId, {
@@ -699,10 +699,31 @@ test.describe("mobile UX release gate", () => {
     await expect(dailyTable.locator("tbody > tr")).toHaveCount(9);
     const dailyTableBox = await dailyTable.boundingBox();
     expect((dailyTableBox?.x || 0) + (dailyTableBox?.width || 0), "五账号每日所得表格不应撑出手机视口").toBeLessThanOrEqual(440);
+    const dailyTableScroll = dailyTable.locator(".daily-table-scroll");
+    expect(
+      await dailyTableScroll.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
+      "440px 视口下每日所得表格应直接完整展示",
+    ).toBe(true);
     const july23Row = dailyTable.locator("tr[data-date='2026-07-23']");
     await expect(july23Row.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
-    await dailyTable.getByRole("button", { name: "银+蛋折银", exact: true }).tap();
-    await expect(july23Row.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+
+    const accountOverview = page.getByRole("region", { name: "当前库存" });
+    await expect(accountOverview).toBeVisible();
+    await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["90 万", "9 个", "13 个", "32 片"]);
+    const inventoryMetricBoxes = await accountOverview.locator(".selected-account-metrics > div").evaluateAll((elements) => (
+      elements.map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, right: rect.right, height: rect.height };
+      })
+    ));
+    expect(inventoryMetricBoxes).toHaveLength(4);
+    expect(
+      Math.max(...inventoryMetricBoxes.map(({ top }) => top)) - Math.min(...inventoryMetricBoxes.map(({ top }) => top)),
+      "16 Pro Max 下四项当前库存应保持同一行",
+    ).toBeLessThanOrEqual(1);
+    expect(Math.max(...inventoryMetricBoxes.map(({ right }) => right)), "当前库存不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
+
+    await expect(dailyTable.locator(".daily-table-share")).toHaveCount(1);
     const combinedShareButton = page.getByRole("button", {
       name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得图片",
       exact: true,
@@ -711,11 +732,6 @@ test.describe("mobile UX release gate", () => {
     const combinedShareBox = await combinedShareButton.boundingBox();
     expect(combinedShareBox?.height, "五账号每日所得分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
     expect((combinedShareBox?.x || 0) + (combinedShareBox?.width || 0), "五账号分享按钮不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
-    await expect(page.locator(".earnings-share-button")).toHaveText([
-      "五号·银子",
-      "五号·银+蛋",
-      "FC·当日",
-    ]);
     await combinedShareButton.tap();
 
     await expect.poll(() => page.evaluate(() => (
@@ -729,6 +745,10 @@ test.describe("mobile UX release gate", () => {
     }));
     await expect(page.getByRole("status")).toContainText("五号每日所得图片已打开系统分享");
 
+    await dailyTable.getByRole("button", { name: "银+蛋折银", exact: true }).tap();
+    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
+    await expect(july23Row.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+    await expect(dailyTable).toContainText("专用蛋不参与折算");
     const combinedWithEggsShareButton = page.getByRole("button", {
       name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得银加蛋折银图片",
       exact: true,
@@ -750,14 +770,11 @@ test.describe("mobile UX release gate", () => {
     }));
     await expect(page.getByRole("status")).toContainText("五号银+蛋折银图片已打开系统分享");
 
-    const shareButton = page.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
+    const shareButton = accountOverview.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
     await expect(shareButton).toBeVisible();
     const shareBox = await shareButton.boundingBox();
     expect(shareBox?.height, "每日实际所得分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
     expect((shareBox?.x || 0) + (shareBox?.width || 0), "分享按钮不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
-    expect(Math.abs((combinedShareBox?.y || 0) - (combinedWithEggsShareBox?.y || 0)), "两个五账号入口应在同一行").toBeLessThanOrEqual(1);
-    expect(Math.abs((combinedShareBox?.y || 0) - (shareBox?.y || 0)), "当前账号入口应与五账号入口在同一行").toBeLessThanOrEqual(1);
-    expect(Math.abs((combinedShareBox?.width || 0) - (shareBox?.width || 0)), "三个分享入口应保持等宽").toBeLessThanOrEqual(1);
     await shareButton.tap();
 
     await expect.poll(() => page.evaluate(() => (
@@ -776,6 +793,29 @@ test.describe("mobile UX release gate", () => {
     ).__earningsShare);
     expect(shared?.size, "每日实际所得 PNG 不应为空白文件").toBeGreaterThan(10_000);
     await expect(page.getByRole("status")).toContainText("实际所得图片已打开系统分享");
+
+    const accountingRule = page.locator(".accounting-rule");
+    await expect(accountingRule).not.toHaveAttribute("open", "");
+    const accountingSummary = accountingRule.locator("summary");
+    const accountingSummaryBox = await accountingSummary.boundingBox();
+    expect(accountingSummaryBox?.height, "核算说明入口应保持足够触控高度").toBeGreaterThanOrEqual(44);
+    await accountingSummary.tap();
+    await expect(accountingRule).toHaveAttribute("open", "");
+    await expect(accountingRule).toContainText("先看真实库存");
+
+    const ledgerTab = page.getByRole("tab", { name: /实际流水/ });
+    await expect(ledgerTab).toHaveAttribute("aria-selected", "true");
+    const intervalTab = page.getByRole("tab", { name: /跨天区间/ });
+    await intervalTab.tap();
+    await expect(intervalTab).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tabpanel", { name: /跨天区间/ })).toContainText("每日记录已在上表展示");
+
+    const overflowReport = await pageOverflowReport(page);
+    expect(
+      overflowReport.documentScrollWidth - overflowReport.documentClientWidth,
+      "精简后的核算页不应产生整页横向溢出",
+    ).toBeLessThanOrEqual(1);
+    expect(overflowReport.offenders, "精简后的核算页不应有元素越出手机视口").toEqual([]);
     await page.screenshot({ path: testInfo.outputPath("earnings-share-iphone-16-pro-max.png") });
   });
 
