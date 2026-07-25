@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { featureNavigation, mobileNavigation, primaryNavigation } from "../app/navigation";
+import { mobileNavigation, primaryNavigation } from "../app/navigation";
 import { appName } from "../app/brand";
-import AppIcon from "./AppIcon.vue";
-import CommandSearch from "./CommandSearch.vue";
 import { useCatalogStore } from "../stores/catalog";
 import { useInventoryStore } from "../stores/inventory";
 import { useUiStore } from "../stores/ui";
 import { useAuthStore } from "../stores/auth";
 import { useSyncStore } from "../stores/sync";
+import AppIcon from "./AppIcon.vue";
+import CommandSearch from "./CommandSearch.vue";
+import GlobalRecordSheet from "./GlobalRecordSheet.vue";
 
 const route = useRoute();
 const catalog = useCatalogStore();
@@ -17,26 +18,33 @@ const inventory = useInventoryStore();
 const ui = useUiStore();
 const auth = useAuthStore();
 const cloudSync = useSyncStore();
-const menuButton = ref<HTMLButtonElement>();
-const mobileMoreButton = ref<HTMLButtonElement>();
-const mobileNav = ref<HTMLElement>();
-const mobileCloseButton = ref<HTMLButtonElement>();
-const mobileMedia = window.matchMedia("(max-width: 980px)");
-const isMobile = ref(mobileMedia.matches);
-let previousMobileFocus: HTMLElement | null = null;
-let previousBodyOverflow = "";
-let restoreMobileFocus = true;
+const mobileDockMedia = window.matchMedia("(max-width: 980px)");
+const mobileDockMinimized = ref(false);
+let dockLastScrollY = 0;
+let dockScrollTravel = 0;
+let dockScrollFrame = 0;
 
 const links = primaryNavigation;
 const mobileDockLinks = mobileNavigation;
-const mobileFeatureLinks = featureNavigation;
-const mobileSection = computed(() => String(route.meta.mobileSection || route.meta.section || "more"));
-const mobileDockMoreActive = computed(() => !mobileDockLinks.some((link) => link.section === mobileSection.value));
+const mobileSection = computed(() => String(route.meta.mobileSection || route.meta.section || "home"));
 const desktopSection = computed(() => String(route.meta.desktopSection || (
   ["home", "record", "week", "resources"].includes(String(route.meta.section))
     ? route.meta.section
     : "resources"
 )));
+const title = computed(() => String(route.meta.title || appName));
+const isDashboard = computed(() => route.meta.section === "home");
+const isImmersivePage = computed(() => route.name === "matrix" || Boolean(route.meta.immersive));
+const date = computed(() => inventory.latestSnapshot?.effectiveDate || catalog.data.generatedAt.slice(0, 10));
+const compactSyncLabel = computed(() => ({
+  local: "仅本机",
+  connecting: "连接中",
+  syncing: "同步中",
+  synced: "已同步",
+  offline: "离线",
+  conflict: "需处理",
+  error: "失败",
+})[cloudSync.status]);
 
 function mobileAriaCurrent(link: { to: string; section: string }) {
   if (route.path === link.to) return "page";
@@ -50,61 +58,15 @@ function desktopAriaCurrent(link: { to: string; section: string }) {
   return undefined;
 }
 
-const title = computed(() => String(route.meta.title || appName));
-const isDashboard = computed(() => route.meta.section === "home");
-const isImmersivePage = computed(() => route.name === "matrix" || Boolean(route.meta.immersive));
-const date = computed(() => inventory.latestSnapshot?.effectiveDate || catalog.data.generatedAt.slice(0, 10));
-const mobileDialogOpen = computed(() => isMobile.value && ui.mobileNavOpen);
-const mobileNavClosed = computed(() => isMobile.value && !ui.mobileNavOpen);
-const compactSyncLabel = computed(() => ({
-  local: "仅本机",
-  connecting: "连接中",
-  syncing: "同步中",
-  synced: "已同步",
-  offline: "离线",
-  conflict: "需处理",
-  error: "失败",
-})[cloudSync.status]);
-
-function closeMobileNavigation(restoreFocus = true) {
-  if (!ui.mobileNavOpen) return;
-  restoreMobileFocus = restoreFocus;
-  ui.mobileNavOpen = false;
-}
-
-function openMobileNavigation() {
-  previousMobileFocus = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
-    ? document.activeElement
-    : mobileMoreButton.value || menuButton.value || null;
-  ui.mobileNavOpen = true;
-}
-
 function openCommandSearch() {
-  closeMobileNavigation(false);
   ui.commandOpen = true;
 }
 
-function mobileNavKeydown(event: KeyboardEvent) {
-  if (!mobileDialogOpen.value || event.key !== "Tab") return;
-  const focusables = Array.from(mobileNav.value?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') || []);
-  if (!focusables.length) return;
-  const first = focusables[0];
-  const last = focusables[focusables.length - 1];
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault();
-    last.focus();
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault();
-    first.focus();
-  }
+function openGlobalRecordSheet() {
+  ui.openRecordSheet("inventory", { sourcePath: route.fullPath });
 }
 
 function keydown(event: KeyboardEvent) {
-  if (event.key === "Escape" && mobileDialogOpen.value) {
-    event.preventDefault();
-    closeMobileNavigation();
-    return;
-  }
   if (document.querySelector('[aria-modal="true"]')) return;
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
@@ -112,158 +74,104 @@ function keydown(event: KeyboardEvent) {
   }
 }
 
-function syncMobileMedia(event: MediaQueryListEvent) {
-  isMobile.value = event.matches;
-  if (!event.matches) closeMobileNavigation(false);
+function boundedWindowScrollY() {
+  const scrollRoot = document.scrollingElement || document.documentElement;
+  const maxScrollY = Math.max(0, scrollRoot.scrollHeight - scrollRoot.clientHeight);
+  const currentScrollY = window.scrollY || document.documentElement.scrollTop;
+  return Math.min(maxScrollY, Math.max(0, currentScrollY));
 }
 
-watch(mobileDialogOpen, async (open) => {
-  if (open) {
-    previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    await nextTick();
-    mobileCloseButton.value?.focus();
+function updateMobileDockForScroll() {
+  dockScrollFrame = 0;
+  const nextScrollY = boundedWindowScrollY();
+
+  if (!mobileDockMedia.matches) {
+    mobileDockMinimized.value = false;
+    dockLastScrollY = nextScrollY;
+    dockScrollTravel = 0;
     return;
   }
 
-  document.body.style.overflow = previousBodyOverflow;
-  if (restoreMobileFocus) {
-    await nextTick();
-    previousMobileFocus?.focus();
+  const delta = nextScrollY - dockLastScrollY;
+  dockLastScrollY = nextScrollY;
+
+  if (nextScrollY <= 16) {
+    mobileDockMinimized.value = false;
+    dockScrollTravel = 0;
+    return;
   }
-  previousMobileFocus = null;
-  restoreMobileFocus = true;
+
+  if (Math.abs(delta) < 0.5) return;
+  if (Math.sign(delta) !== Math.sign(dockScrollTravel)) {
+    dockScrollTravel = delta;
+  } else {
+    dockScrollTravel += delta;
+  }
+
+  if (!mobileDockMinimized.value && dockScrollTravel >= 24) {
+    mobileDockMinimized.value = true;
+    dockScrollTravel = 0;
+  } else if (mobileDockMinimized.value && dockScrollTravel <= -14) {
+    mobileDockMinimized.value = false;
+    dockScrollTravel = 0;
+  }
+}
+
+function handleMobileScroll() {
+  if (dockScrollFrame) return;
+  dockScrollFrame = window.requestAnimationFrame(updateMobileDockForScroll);
+}
+
+function expandMobileDock() {
+  mobileDockMinimized.value = false;
+  dockLastScrollY = boundedWindowScrollY();
+  dockScrollTravel = 0;
+}
+
+function handleMobileDockMediaChange() {
+  expandMobileDock();
+}
+
+watch(() => route.fullPath, () => {
+  expandMobileDock();
 });
 
-watch(() => route.fullPath, () => closeMobileNavigation(false));
-
 onMounted(() => {
+  dockLastScrollY = boundedWindowScrollY();
   window.addEventListener("keydown", keydown);
-  mobileMedia.addEventListener("change", syncMobileMedia);
+  window.addEventListener("scroll", handleMobileScroll, { passive: true });
+  mobileDockMedia.addEventListener("change", handleMobileDockMediaChange);
 });
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", keydown);
-  mobileMedia.removeEventListener("change", syncMobileMedia);
-  document.body.style.overflow = previousBodyOverflow;
+  window.removeEventListener("scroll", handleMobileScroll);
+  mobileDockMedia.removeEventListener("change", handleMobileDockMediaChange);
+  if (dockScrollFrame) window.cancelAnimationFrame(dockScrollFrame);
 });
 </script>
 
 <template>
   <div class="orbit-shell">
-    <header class="orbit-topbar">
-      <button
-        ref="menuButton"
-        class="orbit-menu-button"
-        aria-controls="orbit-primary-navigation"
-        :aria-expanded="mobileDialogOpen"
-        :aria-label="mobileDialogOpen ? '关闭导航' : '打开导航'"
-        :tabindex="mobileDialogOpen ? -1 : undefined"
-        @click="mobileDialogOpen ? closeMobileNavigation() : openMobileNavigation()"
-      ><AppIcon :name="mobileDialogOpen ? 'close' : 'menu'" /></button>
-      <RouterLink class="orbit-brand" to="/" :inert="mobileDialogOpen || undefined" :tabindex="mobileDialogOpen ? -1 : undefined" @click="closeMobileNavigation(false)">
+    <header class="orbit-topbar ios26-desktop-topbar">
+      <RouterLink class="orbit-brand" to="/">
         <strong>{{ appName }}</strong>
         <span>记录与本周小结</span>
       </RouterLink>
 
-      <nav
-        id="orbit-primary-navigation"
-        ref="mobileNav"
-        class="orbit-nav"
-        :class="{ open: mobileDialogOpen }"
-        :inert="mobileNavClosed || undefined"
-        :aria-hidden="mobileNavClosed ? 'true' : undefined"
-        :role="mobileDialogOpen ? 'dialog' : undefined"
-        :aria-modal="mobileDialogOpen ? 'true' : undefined"
-        aria-label="主导航"
-        @keydown="mobileNavKeydown"
-      >
-        <div class="orbit-mobile-nav-head">
-          <div class="orbit-mobile-nav-identity">
-            <strong>{{ appName }}</strong>
-            <span>功能导航</span>
-          </div>
-          <button
-            ref="mobileCloseButton"
-            class="orbit-mobile-nav-close"
-            type="button"
-            aria-label="关闭导航"
-            @click="closeMobileNavigation()"
-          >
-            <AppIcon name="close" />
-            <span class="visually-hidden">关闭导航</span>
-          </button>
-        </div>
-        <template v-if="isMobile">
-          <p class="orbit-mobile-nav-label">快速入口</p>
-          <div class="orbit-mobile-hub-links">
-            <RouterLink
-              v-for="link in mobileDockLinks"
-              :key="link.to"
-              :to="link.to"
-              :class="{ active: mobileSection === link.section }"
-              :aria-current="mobileAriaCurrent(link)"
-              @click="closeMobileNavigation(false)"
-            >
-              <AppIcon :name="link.icon" />
-              <span>{{ link.text }}</span>
-            </RouterLink>
-          </div>
-          <p class="orbit-mobile-nav-label">五个账号</p>
-          <div class="orbit-mobile-account-links" aria-label="账号快捷入口">
-            <RouterLink
-              v-for="account in catalog.data.accounts"
-              :key="account.id"
-              :to="`/accounts/${account.id}`"
-              :class="{ active: route.name === 'account' && route.params.accountId === account.id }"
-              :aria-current="route.name === 'account' && route.params.accountId === account.id ? 'page' : undefined"
-              @click="closeMobileNavigation(false)"
-            >{{ account.id }}</RouterLink>
-          </div>
-          <p class="orbit-mobile-nav-label orbit-mobile-feature-label">全部功能</p>
-          <div class="orbit-mobile-feature-links">
-            <RouterLink
-              v-for="link in mobileFeatureLinks"
-              :key="link.to"
-              :to="link.to"
-              :class="{ active: route.meta.section === link.section }"
-              :aria-current="route.meta.section === link.section ? 'page' : undefined"
-              @click="closeMobileNavigation(false)"
-            >
-              <AppIcon :name="link.icon" />
-              <span>{{ link.text }}</span>
-            </RouterLink>
-          </div>
-        </template>
-        <template v-else>
-          <RouterLink
-            v-for="link in links"
-            :key="link.to"
-            :to="link.to"
-            :class="{ active: desktopSection === link.section }"
-            :aria-current="desktopAriaCurrent(link)"
-          >
-            <AppIcon :name="link.icon" />
-            <span>{{ link.text }}</span>
-          </RouterLink>
-        </template>
-        <button class="orbit-mobile-logout" type="button" @click="closeMobileNavigation(false); auth.logout()">
-          <span>退出登录</span>
-          <small>结束当前设备会话</small>
-        </button>
+      <nav id="orbit-primary-navigation" class="orbit-nav" aria-label="主导航">
+        <RouterLink
+          v-for="link in links"
+          :key="link.to"
+          :to="link.to"
+          :class="{ active: desktopSection === link.section }"
+          :aria-current="desktopAriaCurrent(link)"
+        >
+          <AppIcon :name="link.icon" />
+          <span>{{ link.text }}</span>
+        </RouterLink>
       </nav>
 
-      <Transition name="orbit-nav-scrim">
-        <button
-          v-if="mobileDialogOpen"
-          class="orbit-nav-scrim"
-          type="button"
-          tabindex="-1"
-          aria-label="关闭导航"
-          @click="closeMobileNavigation()"
-        ></button>
-      </Transition>
-
-      <div class="orbit-header-tools" :inert="mobileDialogOpen || undefined">
+      <div class="orbit-header-tools">
         <button class="orbit-command-trigger" aria-label="搜索全系统" title="搜索全系统（Ctrl+K）" @click="openCommandSearch">
           <span class="orbit-command-label">搜索全系统</span>
           <AppIcon name="search" />
@@ -279,7 +187,27 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <main class="orbit-main" :inert="mobileDialogOpen || undefined">
+    <header class="ios26-mobile-header">
+      <RouterLink class="ios26-mobile-brand" to="/">
+        <strong>{{ appName }}</strong>
+      </RouterLink>
+      <div class="ios26-mobile-tools">
+        <button type="button" aria-label="快速录入" @click="openGlobalRecordSheet">
+          <AppIcon name="plus" />
+        </button>
+        <RouterLink
+          class="ios26-mobile-sync"
+          :class="`is-${cloudSync.statusTone}`"
+          to="/settings"
+          :aria-label="`同步与设置：${cloudSync.statusLabel}`"
+        >
+          <span aria-hidden="true"></span>
+          <b>{{ compactSyncLabel }}</b>
+        </RouterLink>
+      </div>
+    </header>
+
+    <main class="orbit-main">
       <p v-if="auth.warning" class="orbit-auth-warning" role="status">{{ auth.warning }}</p>
       <header v-if="!isDashboard && !isImmersivePage" class="orbit-route-context">
         <div>
@@ -289,31 +217,28 @@ onBeforeUnmount(() => {
       </header>
       <RouterView />
     </main>
-    <nav class="orbit-mobile-dock" aria-label="手机快捷导航" :inert="mobileDialogOpen || undefined">
+
+    <nav
+      class="orbit-mobile-dock ios26-mobile-dock"
+      :class="{ 'is-minimized': mobileDockMinimized }"
+      :data-state="mobileDockMinimized ? 'compact' : 'expanded'"
+      aria-label="手机快捷导航"
+      @click.self="expandMobileDock"
+    >
       <RouterLink
         v-for="link in mobileDockLinks"
         :key="link.to"
         :to="link.to"
         :class="{ active: mobileSection === link.section }"
         :aria-current="mobileAriaCurrent(link)"
-        @click="closeMobileNavigation(false)"
+        @click="expandMobileDock"
       >
-        <AppIcon :name="link.icon" />
+        <span class="ios26-mobile-dock-icon"><AppIcon :name="link.icon" /></span>
         <span>{{ link.text }}</span>
       </RouterLink>
-      <button
-        ref="mobileMoreButton"
-        type="button"
-        :class="{ active: mobileDockMoreActive || mobileDialogOpen }"
-        aria-controls="orbit-primary-navigation"
-        :aria-expanded="mobileDialogOpen"
-        aria-label="打开全部导航"
-        @click="openMobileNavigation"
-      >
-        <AppIcon name="menu" />
-        <span>更多</span>
-      </button>
     </nav>
+
+    <GlobalRecordSheet />
     <CommandSearch />
   </div>
 </template>

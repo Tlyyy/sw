@@ -18,10 +18,9 @@ export const featureNavigation = [
 ] as const;
 
 export const mobileNavigation = [
-  { to: "/", text: "首页", icon: "home", section: "home" },
-  { to: "/record", text: "录入", icon: "plus", section: "record" },
+  { to: "/", text: "今日", icon: "home", section: "home" },
   { to: "/plans/tasks", text: "任务", icon: "plan", section: "tasks" },
-  { to: "/week", text: "本周小结", icon: "report", section: "week" },
+  { to: "/week", text: "周报", icon: "report", section: "week" },
 ] as const;
 
 export const commandPages = [

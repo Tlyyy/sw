@@ -682,19 +682,14 @@ test.describe("mobile application", () => {
     const layout = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
       scroll: document.documentElement.scrollWidth,
-      navRight: document.querySelector(".orbit-nav")!.getBoundingClientRect().right,
     }));
     expect(layout.scroll).toBe(layout.client);
-    expect(layout.navRight).toBeLessThanOrEqual(0);
+    await expect(page.locator(".orbit-nav")).toBeHidden();
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("dashboard-mobile.png") });
 
-    await page.getByRole("button", { name: "打开全部导航" }).click();
-    const mobileNavigation = page.getByRole("dialog", { name: "主导航" });
-    await expect(mobileNavigation).toBeVisible();
-    await mobileNavigation.getByRole("link", { name: "分析工具" }).click();
-    await page.getByRole("link", { name: "固定矩阵", exact: true }).click();
+    await page.goto("/#/analysis/matrix");
     await expect(page.locator(".matrix-scroll")).toBeVisible();
-    await expect(page.locator(".orbit-nav-scrim")).toHaveCount(0);
     await page.waitForTimeout(250);
     const matrix = await page.evaluate(() => {
       const scroller = document.querySelector(".matrix-scroll")!;
@@ -712,11 +707,14 @@ test.describe("mobile application", () => {
     await page.screenshot({ path: testInfo.outputPath("matrix-mobile.png") });
 
     await page.goto("/#/plans/tasks");
-    await expect(page.locator(".task-worklist")).toBeVisible();
+    const mobileTaskWorkspace = page.getByRole("region", { name: "手机任务工作台" });
+    await expect(mobileTaskWorkspace).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
-    await expect(page.getByRole("group", { name: "任务状态筛选" })).toBeVisible();
-    await page.getByRole("button", { name: "更多筛选", exact: true }).click();
-    await expect(page.getByLabel("任务账号筛选")).toBeVisible();
+    await expect(mobileTaskWorkspace.getByRole("group", { name: "任务状态筛选" })).toBeVisible();
+    await mobileTaskWorkspace.getByRole("button", { name: "打开任务筛选", exact: true }).click();
+    const mobileTaskFilters = page.locator("#task-mobile-filters");
+    await expect(mobileTaskFilters).toBeVisible();
+    await expect(mobileTaskFilters.locator("select")).toHaveCount(2);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
     await page.screenshot({ path: testInfo.outputPath("plan-tasks-mobile.png") });
 
@@ -820,7 +818,7 @@ test.describe("tablet application", () => {
     test.skip(!testInfo.project.name.startsWith("tablet-"));
     for (const url of ["/#/", "/#/record", "/#/week", "/#/resources", "/#/accounts/PT", "/#/assets/pets", "/#/plans/beasts", "/#/plans/tasks", "/#/plans/parameters", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/analysis/matrix"]) {
       await page.goto(url);
-      await expect(page.locator(".desktop-home-page, .mobile-home-page, .page-wrap")).toBeVisible();
+      await expect(page.locator("[data-testid='desktop-week-home'], [data-testid='mobile-week-home'], .page-wrap")).toBeVisible();
       const width = await page.evaluate(() => ({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
       expect(width.scroll, `${url} 不应产生页面级横向滚动`).toBe(width.client);
     }
@@ -834,7 +832,7 @@ test.describe("tablet application", () => {
 });
 
 test.describe("schedule completion dates", () => {
-  test("首页轨道标记今天可完成，账号任务显示完整预计日期", async ({ page }, testInfo) => {
+  test("首页优先账号标记今天可完成，账号任务显示完整预计日期", async ({ page }, testInfo) => {
     await page.clock.setFixedTime(new Date("2026-07-13T02:00:00Z"));
     await page.addInitScript(() => {
       localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
@@ -861,12 +859,19 @@ test.describe("schedule completion dates", () => {
     const desktopHome = page.getByTestId("desktop-week-home");
     await expect(mobileHome.or(desktopHome)).toBeVisible();
     if (await mobileHome.isVisible()) {
-      const taskBrief = page.locator(".mobile-task-brief");
-      await expect(taskBrief).toContainText("按账号查看当前任务并标记完成");
-      const accountProgressRows = page.locator(".mobile-account-progress-list > article");
-      await expect(accountProgressRows).toHaveCount(5);
-      await expect(accountProgressRows.locator(".account-pill")).toHaveText(["FC", "LG1", "PT", "LG2", "MYT"]);
-      await page.locator(".mobile-today-card").screenshot({ path: testInfo.outputPath(`schedule-track-${testInfo.project.name}.png`) });
+      const progressCard = page.locator(".today-progress-card");
+      await expect(progressCard.getByRole("heading", { name: "今日进度", exact: true })).toBeVisible();
+      await expect(progressCard).toContainText("今日库存");
+      await expect(progressCard).toContainText("待记录");
+      const prioritySection = progressCard.locator(".priority-section");
+      await expect(prioritySection.getByRole("heading", { name: "优先处理账号", exact: true })).toBeVisible();
+      const priorityRows = prioritySection.locator("a.priority-account-row");
+      await expect(priorityRows).toHaveCount(2);
+      const ptHomeRow = prioritySection.locator("a.priority-account-row[data-account-id='PT']");
+      await expect(ptHomeRow.locator(".priority-copy strong")).toHaveText("剑气蛇 · 进阶2");
+      await expect(ptHomeRow.locator(".priority-meta small")).toHaveText("可以完成");
+      await expect(ptHomeRow).toHaveAttribute("href", "#/plans/tasks?account=PT");
+      await prioritySection.screenshot({ path: testInfo.outputPath(`schedule-priority-${testInfo.project.name}.png`) });
     } else {
       const accountRows = page.getByTestId("account-overview").locator("article[data-account-id]");
       await expect(accountRows).toHaveCount(5);
@@ -958,32 +963,65 @@ test.describe("week-to-date activity report", () => {
 
     await page.goto("/#/plans/tasks");
     await expect(page).toHaveTitle("万象册");
-    await expect(page.locator(".orbit-brand strong")).toHaveText("万象册");
-    const silverTask = page.locator(".task-work-row").filter({ hasText: /万/ }).first();
-    await expect(silverTask).toBeVisible();
-    const resourceText = (await silverTask.locator(".task-resource-cell").innerText()).replaceAll(",", "");
-    const taskExpense = Number(resourceText.match(/[\d.]+/)?.[0]);
-    const taskAccountId = (await silverTask.locator(".task-identity-cell span").innerText()).split(" · ")[0];
+    const mobileTaskWorkspace = page.getByRole("region", { name: "手机任务工作台" });
+    const usesMobileTaskWorkspace = await mobileTaskWorkspace.isVisible();
+    let taskExpense = 0;
+    let taskAccountId = "";
+    if (usesMobileTaskWorkspace) {
+      const lg2Summary = mobileTaskWorkspace.locator(".task-mobile-summary-main").filter({ hasText: "LG2" });
+      await expect(lg2Summary).toHaveCount(1);
+      await lg2Summary.click();
+      await expect(mobileTaskWorkspace.locator(".task-mobile-drilldown-head")).toContainText("LG2");
+      const silverTasks = mobileTaskWorkspace.locator(".task-mobile-account-group article").filter({ hasText: /[\d,.]+\s*万/ });
+      expect(await silverTasks.count()).toBeGreaterThan(0);
+      const silverTask = silverTasks.first();
+      await expect(silverTask).toBeVisible();
+      const resourceText = (await silverTask.locator(".task-mobile-row-main small").innerText()).replaceAll(",", "");
+      taskExpense = Number(resourceText.match(/([\d.]+)\s*万/)?.[1]);
+      taskAccountId = await silverTask.locator(".task-mobile-row-account").innerText();
+      await silverTask.getByRole("button", { name: "处理", exact: true }).click();
+    } else {
+      await expect(page.locator(".orbit-brand strong")).toHaveText("万象册");
+      const silverTask = page.locator(".task-work-row").filter({ hasText: /万/ }).first();
+      await expect(silverTask).toBeVisible();
+      const resourceText = (await silverTask.locator(".task-resource-cell").innerText()).replaceAll(",", "");
+      taskExpense = Number(resourceText.match(/[\d.]+/)?.[0]);
+      taskAccountId = (await silverTask.locator(".task-identity-cell span").innerText()).split(" · ")[0];
+      await silverTask.getByRole("button", { name: /标记完成/ }).click();
+    }
     expect(taskExpense).toBeGreaterThan(0);
     expect(["FC", "LG1", "PT", "LG2", "MYT"]).toContain(taskAccountId);
     const inventoryBeforeSettlement = await page.evaluate(() => localStorage.getItem("sw.app.inventory.v2"));
-    await silverTask.getByRole("button", { name: /标记完成/ }).click();
     const settlementDialog = page.getByRole("dialog", { name: /确认任务消耗|完成打书并记账/ });
     await expect(settlementDialog).toBeVisible();
     const actualSilverInput = settlementDialog.getByLabel("实际银子 / 万", { exact: true });
     if (await actualSilverInput.count()) await actualSilverInput.fill(String(taskExpense));
-    await settlementDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
+    if (usesMobileTaskWorkspace) {
+      await settlementDialog.locator(".task-settlement-mobile-header").getByRole("button", { name: "确认并完成", exact: true }).click();
+    } else {
+      await settlementDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
+    }
     await expect(page.getByRole("status")).toContainText("实际花费已独立记账");
     await expect(page.getByRole("status")).toContainText("库存未被修改");
     expect(await page.evaluate(() => localStorage.getItem("sw.app.inventory.v2"))).toBe(inventoryBeforeSettlement);
 
-    if (testInfo.project.name === "desktop") {
-      await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name: "本周小结", exact: true }).click();
+    if (usesMobileTaskWorkspace) {
+      await page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link", { name: "周报", exact: true }).click();
     } else {
-      await page.goto("/#/week");
+      await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name: "本周小结", exact: true }).click();
     }
     await expect(page).toHaveURL(/#\/week$/);
-    const activity = page.getByTestId("weekly-activity-panel");
+    let activity: Locator;
+    if (usesMobileTaskWorkspace) {
+      const fullReport = page.locator(".week-mobile-full-report");
+      await expect(fullReport).toBeVisible();
+      await fullReport.locator("summary").click();
+      await expect(fullReport).toHaveAttribute("open", "");
+      activity = fullReport.getByTestId("weekly-activity-panel");
+    } else {
+      activity = page.locator(".week-desktop-report").getByTestId("weekly-activity-panel");
+    }
+    await expect(activity).toBeVisible();
     await expect(activity.getByText("本周截至 7月22日", { exact: true })).toBeVisible();
     await expect(activity.getByText("2026-07-20 至 2026-07-22", { exact: true })).toBeVisible();
     await expect(activity.getByRole("heading", { name: /账号本周情况$/ })).toBeVisible();

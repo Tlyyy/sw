@@ -43,6 +43,7 @@ const emit = defineEmits<{
 
 const dialog = ref<HTMLFormElement>();
 const closeButton = ref<HTMLButtonElement>();
+const mobileCloseButton = ref<HTMLButtonElement>();
 const initialFocus = ref<HTMLInputElement>();
 const draft = ref<TaskSettlementDraft>(createTaskSettlementDraft(
   props.task,
@@ -105,6 +106,19 @@ const dialogTitle = computed(() => {
   if (isProgress.value) return "记录洗护符进度";
   if (isVariable.value) return "完成打书并记账";
   return "确认任务消耗";
+});
+const mobileConfirmLabel = computed(() => {
+  if (isProgress.value) return "记录并完成";
+  if (reuseExisting.value) return "确认完成";
+  return "确认并完成";
+});
+const taskRequirementLabel = computed(() => {
+  if (reuseExisting.value) return "沿用已有流水";
+  if (isProgress.value) return "按次记录实际银子";
+  if (isVariable.value) return "填写实际银子";
+  if (isFixedEgg.value) return `${props.task.eggCount} 个蛋`;
+  if (isFixedShard.value) return `${props.task.shardCount} 片碎片`;
+  return `${amountLabel(props.task.priceWan)} 万`;
 });
 const guidance = computed(() => {
   if (reuseExisting.value) return "这次只恢复任务完成状态，沿用已有实际流水；不会新增支出，也不会修改库存。";
@@ -225,7 +239,10 @@ function handleKeydown(event: KeyboardEvent) {
 async function focusDialog() {
   await nextTick();
   const usesTouchKeyboard = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-  if (usesTouchKeyboard) closeButton.value?.focus({ preventScroll: true });
+  const usesMobileLayout = window.matchMedia("(max-width: 720px)").matches;
+  if (usesTouchKeyboard) {
+    (usesMobileLayout ? mobileCloseButton.value : closeButton.value)?.focus({ preventScroll: true });
+  }
   else initialFocus.value?.focus();
 }
 
@@ -295,7 +312,13 @@ onBeforeUnmount(() => deactivateDialog());
         @submit.prevent="submit(isProgress ? false : true)"
         @keydown="handleKeydown"
       >
-        <header class="task-settlement-header">
+        <header class="task-settlement-mobile-header">
+          <button ref="mobileCloseButton" type="button" @click="requestCancel">取消</button>
+          <h2>任务结算</h2>
+          <button class="primary" type="button" @click="submit(true)">{{ mobileConfirmLabel }}</button>
+        </header>
+
+        <header class="task-settlement-header task-settlement-desktop-header">
           <div>
             <p>{{ task.accountId }} · {{ task.typeLabel }}</p>
             <h2 id="task-settlement-title">{{ dialogTitle }}</h2>
@@ -307,6 +330,16 @@ onBeforeUnmount(() => deactivateDialog());
         </header>
 
         <div class="task-settlement-body">
+          <p class="task-mobile-settlement-rule">先确认消耗，再完成任务</p>
+          <section class="task-mobile-settlement-summary" aria-label="当前结算任务">
+            <span>{{ task.accountId }}</span>
+            <div>
+              <strong>{{ task.typeLabel }} · {{ task.actionLabel }}</strong>
+              <small>{{ task.kind }}</small>
+            </div>
+            <b>{{ taskRequirementLabel }}</b>
+          </section>
+
           <p id="task-settlement-guidance" class="task-settlement-guidance">
             <AppIcon name="analysis" aria-hidden="true" />
             <span>{{ guidance }}</span>
@@ -465,13 +498,16 @@ onBeforeUnmount(() => deactivateDialog());
           </div>
         </div>
 
-        <footer class="task-settlement-footer">
+        <footer class="task-settlement-footer task-settlement-desktop-footer">
           <button class="settlement-button secondary" type="button" @click="requestCancel">取消</button>
           <template v-if="isProgress">
             <button class="settlement-button progress" type="submit">仅记录本次</button>
             <button class="settlement-button primary" type="button" @click="submit(true)">记录本次并完成</button>
           </template>
           <button v-else class="settlement-button primary" type="submit">{{ reuseExisting ? "沿用记录并完成" : "完成并记账" }}</button>
+        </footer>
+        <footer v-if="isProgress" class="task-settlement-mobile-progress-footer">
+          <button type="button" @click="submit(false)">仅记录本次，任务继续</button>
         </footer>
       </form>
     </div>
@@ -504,6 +540,12 @@ onBeforeUnmount(() => deactivateDialog());
   box-shadow: 0 28px 80px rgba(0, 0, 0, .34);
 }
 .task-settlement-dialog:focus { outline: 0; }
+.task-settlement-mobile-header,
+.task-mobile-settlement-rule,
+.task-mobile-settlement-summary,
+.task-settlement-mobile-progress-footer {
+  display: none;
+}
 
 .task-settlement-header {
   min-height: 88px;
@@ -802,36 +844,153 @@ onBeforeUnmount(() => deactivateDialog());
     width: var(--task-modal-width, 100vw);
     height: var(--task-modal-height, 100dvh);
     align-items: end;
-    padding: max(8px, env(safe-area-inset-top)) 0 0;
-    background: rgba(7, 22, 29, .6);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+    padding: max(10px, env(safe-area-inset-top)) 0 0;
+    background: rgba(18, 18, 20, .46);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: blur(12px) saturate(120%);
   }
   .task-settlement-dialog {
     width: 100%;
-    max-height: calc(var(--task-modal-height, 100dvh) - max(8px, env(safe-area-inset-top)));
+    max-height: min(
+      calc(var(--task-modal-height, 100dvh) - max(10px, env(safe-area-inset-top))),
+      56dvh
+    );
     border-right: 0;
     border-bottom: 0;
     border-left: 0;
-    border-radius: 20px 20px 0 0;
+    border-radius: 22px 22px 0 0;
+    background: #f5f5f7;
+    box-shadow: 0 -14px 55px rgba(0, 0, 0, .2);
   }
   .task-settlement-dialog::before {
     position: absolute;
-    top: 7px;
+    top: 6px;
     left: 50%;
     width: 38px;
     height: 4px;
     border-radius: 999px;
-    background: #c7d0ce;
+    background: #c8c8cc;
     content: "";
     transform: translateX(-50%);
   }
-  .task-settlement-header {
-    min-height: 82px;
-    padding: 18px 14px 11px;
+  .task-settlement-desktop-header,
+  .task-settlement-desktop-footer {
+    display: none;
   }
-  .task-settlement-header h2 { font-size: 21px; }
-  .task-settlement-body { padding: 11px 12px 14px; }
+  .task-settlement-mobile-header {
+    min-height: 68px;
+    display: grid;
+    grid-template-columns: minmax(72px, 1fr) auto minmax(72px, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 14px 14px 8px;
+    border-bottom: 1px solid rgba(45, 45, 50, .1);
+    background: rgba(255, 255, 255, .9);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+  .task-settlement-mobile-header h2 {
+    margin: 0;
+    color: #1d1d1f;
+    font-size: 16px;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .task-settlement-mobile-header button {
+    min-height: 38px;
+    padding: 0;
+    border: 0;
+    color: #55555c;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 650;
+    text-align: left;
+  }
+  .task-settlement-mobile-header button.primary {
+    color: #c95000;
+    font-size: 13px;
+    font-weight: 850;
+    text-align: right;
+  }
+  .task-settlement-body {
+    padding: 10px 12px max(16px, env(safe-area-inset-bottom));
+    background: #f5f5f7;
+  }
+  .task-mobile-settlement-rule {
+    min-height: 38px;
+    display: grid;
+    place-items: center;
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    border: 1px solid #c8ded9;
+    border-radius: 10px;
+    color: #066257;
+    background: #edf7f5;
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: .01em;
+  }
+  .task-mobile-settlement-summary {
+    min-height: 72px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+    padding: 11px 12px;
+    border: 1px solid #dedee3;
+    border-radius: 14px;
+    background: #ffffff;
+  }
+  .task-mobile-settlement-summary > span {
+    width: 40px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #d17a3b;
+    border-radius: 6px;
+    color: #9b4200;
+    background: #fffdfa;
+    font-size: 12px;
+    font-weight: 850;
+  }
+  .task-mobile-settlement-summary > div {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+  }
+  .task-mobile-settlement-summary strong {
+    overflow: hidden;
+    color: #1d1d1f;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .task-mobile-settlement-summary small {
+    overflow: hidden;
+    color: #77777f;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .task-mobile-settlement-summary > b {
+    max-width: 112px;
+    color: #9b4200;
+    font-size: 11px;
+    line-height: 1.35;
+    text-align: right;
+  }
+  .task-settlement-guidance {
+    margin-bottom: 10px;
+    border-color: #e0e0e4;
+    color: #5c5c63;
+    background: #ffffff;
+    font-size: 11px;
+    font-weight: 650;
+  }
+  .task-settlement-guidance :deep(svg) { color: #c95000; }
   .task-settlement-section > header {
     align-items: flex-start;
     flex-direction: column;
@@ -855,13 +1014,48 @@ onBeforeUnmount(() => deactivateDialog());
   .task-settlement-meta { grid-template-columns: 1fr; }
   .task-settlement-meta > header { grid-column: 1; }
   .task-settlement-meta > label + label { border-top: 1px solid var(--radar-line); border-left: 0; }
-  .task-settlement-footer {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 10px 12px max(12px, env(safe-area-inset-bottom));
+  .task-settlement-section,
+  .task-existing-settlement {
+    border-color: #dedee3;
+    border-radius: 14px;
   }
-  .settlement-button { min-width: 0; min-height: 50px; padding-inline: 9px; }
-  .task-settlement-footer > .primary:nth-child(3) { grid-column: 1 / -1; }
+  .task-settlement-section > header,
+  .task-existing-settlement > header {
+    min-height: 54px;
+    padding: 9px 12px;
+    background: #fafafc;
+  }
+  .task-settlement-field { padding: 11px 12px; }
+  .task-settlement-field input,
+  .task-settlement-field textarea {
+    min-height: 46px;
+    border-color: #d5d5da;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+  .task-settlement-field input[readonly] {
+    color: #9b4200;
+    background: #f7f2ee;
+  }
+  .task-settlement-mobile-progress-footer {
+    display: block;
+    padding: 9px 12px max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(45, 45, 50, .1);
+    background: rgba(255, 255, 255, .92);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+  .task-settlement-mobile-progress-footer button {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid #c95000;
+    border-radius: 12px;
+    color: #b64900;
+    background: #fff7f1;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 850;
+  }
 }
 
 @media (max-width: 440px) {

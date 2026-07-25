@@ -44,21 +44,19 @@ const formRoutes = [
 ] as const;
 
 const primaryTargetSelector = [
-  ".orbit-menu-button",
-  ".orbit-header-tools .orbit-command-trigger",
-  ".orbit-nav.open a",
-  ".orbit-nav.open button",
   ".orbit-mobile-dock > a",
-  ".orbit-mobile-dock > button",
   ".subnav a",
   "main .button",
   "main .workbench-primary",
   "main .radar-action-card.primary",
-  "main .mobile-record-primary",
-  "main .mobile-weekly-report-card",
-  "main .mobile-task-brief > a",
-  "main .mobile-account-progress-link",
-  "main .mobile-account-earnings-link",
+  "main .next-step-action",
+  "main .priority-account-row",
+  "main .week-pulse-card",
+  "main .task-mobile-summary-main",
+  "main .task-mobile-summary-action",
+  "main .task-mobile-row-main",
+  "main .task-mobile-row-action",
+  "main .week-mobile-full-report > summary",
   "main .earnings-intro .movement-toggle",
   "main .earnings-account-tabs button",
   "main .movement-panel button",
@@ -67,8 +65,6 @@ const primaryTargetSelector = [
   "main .record-option-card",
   "main .inventory-week-button",
   "main .inventory-week-current",
-  "main .task-select-cell",
-  "main .task-row-action",
   "main [role='tab']",
   "main button[aria-pressed]",
 ].join(",");
@@ -96,7 +92,7 @@ function currentShanghaiWeek() {
 }
 
 async function waitForApplicationPage(page: Page) {
-  await expect(page.locator(".mobile-home-page, .workbench-page, .page-wrap, .matrix-page, .earnings-page").first()).toBeVisible();
+  await expect(page.locator(".today-workbench, .mobile-home-page, .workbench-page, .page-wrap, .matrix-page, .earnings-page").first()).toBeVisible();
 }
 
 async function pageOverflowReport(page: Page) {
@@ -171,6 +167,7 @@ async function undersizedPrimaryTargets(page: Page) {
   return page.locator(primaryTargetSelector).evaluateAll((elements) => elements.flatMap((element) => {
     const target = element as HTMLElement;
     if (target.closest('[hidden], [aria-hidden="true"], [inert]')) return [];
+    if (target.closest(".task-mobile-segments")) return [];
     const style = getComputedStyle(target);
     const rect = target.getBoundingClientRect();
     if (style.display === "none" || style.visibility === "hidden" || rect.width < 1 || rect.height < 1) return [];
@@ -289,44 +286,47 @@ test.describe("mobile UX release gate", () => {
     }
   });
 
-  test("主要移动导航与操作保持 44px 触控面积", async ({ page }) => {
+  test("三项 Liquid Glass 底栏与主要移动操作保持可触控", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
-    await page.getByRole("button", { name: "打开全部导航" }).tap();
-    const mobileNavigation = page.getByRole("dialog", { name: "主导航" });
+
+    const mobileNavigation = page.getByRole("navigation", { name: "手机快捷导航" });
+    const dockLinks = mobileNavigation.getByRole("link");
     await expect(mobileNavigation).toBeVisible();
-    const accountQuickLinks = mobileNavigation.locator(".orbit-mobile-account-links > a");
-    await expect(accountQuickLinks).toHaveText(["FC", "LG1", "PT", "LG2", "MYT"]);
-    expect(await accountQuickLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
-      .toEqual(["#/accounts/FC", "#/accounts/LG1", "#/accounts/PT", "#/accounts/LG2", "#/accounts/MYT"]);
+    await expect(dockLinks).toHaveText(["今日", "任务", "周报"]);
+    expect(await dockLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
+      .toEqual(["#/", "#/plans/tasks", "#/week"]);
+    await expect(mobileNavigation.getByRole("button")).toHaveCount(0);
     expect(await undersizedPrimaryTargets(page), "移动主导航存在不足 44px 的主要触控目标").toEqual([]);
-    await mobileNavigation.getByRole("button", { name: "关闭导航" }).tap();
 
     for (const url of [
       "/#/",
-      "/#/record",
-      "/#/earnings",
       "/#/week",
-      "/#/resources",
-      "/#/accounts/FC",
       "/#/plans/tasks",
-      "/#/analysis/matrix",
-      "/#/settings",
     ] as const) {
       await test.step(url, async () => {
         await page.goto(url);
         await waitForApplicationPage(page);
+        const dock = page.getByRole("navigation", { name: "手机快捷导航" });
+        await expect(dock.getByRole("link")).toHaveCount(3);
+        if (url === "/#/plans/tasks") {
+          const segments = page.locator(".task-mobile-segments");
+          await expect(segments.getByRole("button")).toHaveText([/待处理/, /已完成/, /全部/]);
+          const completed = segments.getByRole("button", { name: /已完成/ });
+          await completed.tap();
+          await expect(completed).toHaveAttribute("aria-pressed", "true");
+          const pending = segments.getByRole("button", { name: /待处理/ });
+          await pending.tap();
+          await expect(pending).toHaveAttribute("aria-pressed", "true");
+        }
         expect(await undersizedPrimaryTargets(page), `${url} 存在不足 44px 的主要触控目标`).toEqual([]);
       });
     }
   });
 
-  test("iPhone 16 Pro Max 底栏避开 Home Indicator 且账号操作保持单行", async ({ page }) => {
+  test("iPhone 16 Pro Max 的 Liquid Glass 底栏安全悬浮且账号操作保持单行", async ({ page }) => {
     await page.goto("/#/accounts/FC");
     await waitForApplicationPage(page);
-    await page.addStyleTag({
-      content: ":root{--orbit-safe-area-top:59px!important;--orbit-safe-area-bottom:34px!important}",
-    });
 
     const mainlineSection = page.locator(".account-page .split-workspace > div").filter({ hasText: "主线任务与资源" });
     const inventoryLink = mainlineSection.getByRole("link", { name: /更新库存/ });
@@ -335,25 +335,32 @@ test.describe("mobile UX release gate", () => {
     const layout = await page.evaluate(() => {
       const dock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
       const main = document.querySelector<HTMLElement>(".orbit-main");
-      const topbar = document.querySelector<HTMLElement>(".orbit-topbar");
-      const brand = document.querySelector<HTMLElement>(".orbit-brand");
-      const syncState = document.querySelector<HTMLElement>(".orbit-sync-state");
+      const topbar = document.querySelector<HTMLElement>(".ios26-mobile-header");
+      const brand = document.querySelector<HTMLElement>(".ios26-mobile-brand");
+      const syncState = document.querySelector<HTMLElement>(".ios26-mobile-sync");
       const link = [...document.querySelectorAll<HTMLElement>(".account-page .section-head > a")]
         .find((element) => element.textContent?.includes("更新库存"));
       if (!dock || !main || !topbar || !brand || !syncState || !link) throw new Error("iPhone 安全区审查缺少目标元素");
       const dockRect = dock.getBoundingClientRect();
+      const topbarRect = topbar.getBoundingClientRect();
       const buttonBottom = Math.max(...[...dock.querySelectorAll<HTMLElement>("a, button")]
         .map((element) => element.getBoundingClientRect().bottom));
       const linkStyle = getComputedStyle(link);
+      const dockStyle = getComputedStyle(dock);
       return {
         viewportHeight: window.innerHeight,
         topbarHeight: topbar.getBoundingClientRect().height,
-        topbarContentHeight: topbar.getBoundingClientRect().height - 59,
         brandTop: brand.getBoundingClientRect().top,
         syncTop: syncState.getBoundingClientRect().top,
+        headerTop: topbarRect.top,
+        headerBottom: topbarRect.bottom,
         dockHeight: dockRect.height,
         dockTop: dockRect.top,
-        dockPaddingBottom: Number.parseFloat(getComputedStyle(dock).paddingBottom),
+        dockBottomGap: window.innerHeight - dockRect.bottom,
+        dockPosition: dockStyle.position,
+        dockColumns: dockStyle.gridTemplateColumns.split(" ").length,
+        dockBackdrop: dockStyle.backdropFilter || dockStyle.getPropertyValue("-webkit-backdrop-filter"),
+        dockRadius: Number.parseFloat(dockStyle.borderRadius),
         buttonBottom,
         mainPaddingBottom: Number.parseFloat(getComputedStyle(main).paddingBottom),
         linkHeight: link.getBoundingClientRect().height,
@@ -362,52 +369,60 @@ test.describe("mobile UX release gate", () => {
       };
     });
 
-    expect(layout.topbarContentHeight, "安全区外的顶部栏应保持 48px 紧凑高度").toBeCloseTo(48, 0);
-    expect(layout.topbarHeight, "顶部栏总高度应包含 59px iPhone 状态栏安全区").toBeCloseTo(107, 0);
-    expect(layout.brandTop, "品牌文字不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
-    expect(layout.syncTop, "同步状态不能进入灵动岛/状态栏区域").toBeGreaterThanOrEqual(59);
-    expect(layout.dockPaddingBottom, "底栏应为 Home Indicator 留出安全区").toBeGreaterThanOrEqual(34);
-    expect(layout.dockHeight, "底栏总高度应包含按钮区与底部安全区").toBeGreaterThanOrEqual(103);
-    expect(layout.buttonBottom, "底部按钮不能进入 Home Indicator 区域").toBeLessThanOrEqual(layout.viewportHeight - 34);
-    expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(layout.dockHeight + 10);
+    expect(layout.topbarHeight, "手机顶部工具栏应保持紧凑").toBeGreaterThanOrEqual(64);
+    expect(layout.brandTop, "品牌文字应位于手机工具栏内").toBeGreaterThanOrEqual(layout.headerTop);
+    expect(layout.syncTop, "同步入口应位于手机工具栏内").toBeGreaterThanOrEqual(layout.headerTop);
+    expect(layout.headerBottom).toBeLessThanOrEqual(layout.dockTop);
+    expect(layout.dockPosition).toBe("fixed");
+    expect(layout.dockColumns, "Liquid Glass 底栏应固定为三列").toBe(3);
+    expect(layout.dockBackdrop, "Liquid Glass 底栏应保留材质模糊").not.toBe("none");
+    expect(layout.dockRadius, "Liquid Glass 底栏应保持胶囊圆角").toBeGreaterThanOrEqual(28);
+    expect(layout.dockBottomGap, "底栏应与视口底边保留悬浮间距").toBeGreaterThanOrEqual(7);
+    expect(layout.dockHeight, "底栏应完整容纳三项主导航").toBeGreaterThanOrEqual(64);
+    expect(layout.buttonBottom, "底栏按钮不能超出悬浮容器").toBeLessThanOrEqual(layout.viewportHeight - layout.dockBottomGap + 1);
+    expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(82);
     expect(layout.linkHeight, "更新库存应保持可触控高度").toBeGreaterThanOrEqual(44);
     expect(layout.linkWhiteSpace).toBe("nowrap");
     expect(layout.linkFits, "更新库存不能被挤成两行").toBe(true);
   });
 
-  test("首页首屏保持紧凑并呈现逐账号本周入口", async ({ page }) => {
+  test("首页首屏呈现今日进度、两个优先账号与周报入口", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    await expect(page.getByTestId("mobile-week-home")).toBeVisible();
-    await expect(page.locator(".mobile-week-rhythm > article")).toHaveCount(7);
-    await expect(page.locator(".mobile-record-primary")).toBeVisible();
-    await expect(page.locator(".mobile-task-brief")).toBeVisible();
-    await expect(page.locator(".mobile-account-progress-list > article")).toHaveCount(5);
-    await expect(page.locator(".mobile-weekly-report-card")).toHaveAttribute("href", "#/week");
-    await expect(page.getByRole("navigation", { name: "手机快捷导航" }).locator("a, button")).toHaveText([
-      "首页",
-      "录入",
+    const home = page.getByTestId("mobile-week-home");
+    const priorityRows = home.locator(".priority-account-row");
+    const weekPulse = home.locator(".week-pulse-card");
+    await expect(home).toBeVisible();
+    await expect(home.getByRole("heading", { name: "今日进度", exact: true })).toBeVisible();
+    await expect(home.locator(".today-progress-grid > .progress-metric")).toHaveCount(3);
+    await expect(priorityRows).toHaveCount(2);
+    await expect(weekPulse).toHaveAttribute("href", "#/week");
+    await expect(weekPulse).toContainText("本周脉搏");
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link")).toHaveText([
+      "今日",
       "任务",
-      "本周小结",
-      "更多",
+      "周报",
     ]);
 
     const layout = await page.evaluate(() => {
-      const rhythm = document.querySelector<HTMLElement>(".mobile-week-rhythm");
-      const primaryAction = document.querySelector<HTMLElement>(".mobile-record-primary");
+      const progress = document.querySelector<HTMLElement>(".today-progress-card");
+      const primaryAction = document.querySelector<HTMLElement>(".next-step-action");
+      const priorityRows = [...document.querySelectorAll<HTMLElement>(".priority-account-row")];
       const mobileDock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
-      if (!rhythm || !primaryAction || !mobileDock) {
+      if (!progress || !primaryAction || priorityRows.length !== 2 || !mobileDock) {
         throw new Error("首页移动首屏关键区域未完整渲染");
       }
-      const rhythmRect = rhythm.getBoundingClientRect();
+      const progressRect = progress.getBoundingClientRect();
       const primaryRect = primaryAction.getBoundingClientRect();
       const dockRect = mobileDock.getBoundingClientRect();
       return {
-        rhythmLeft: rhythmRect.left,
-        rhythmRight: rhythmRect.right,
-        rhythmScrollWidth: rhythm.scrollWidth,
-        rhythmClientWidth: rhythm.clientWidth,
+        progressLeft: progressRect.left,
+        progressRight: progressRect.right,
+        priorityRowsFit: priorityRows.every((row) => {
+          const rect = row.getBoundingClientRect();
+          return rect.left >= -1 && rect.right <= document.documentElement.clientWidth + 1;
+        }),
         primaryBottom: primaryRect.bottom,
         dockTop: dockRect.top,
         documentWidth: document.documentElement.scrollWidth,
@@ -415,43 +430,33 @@ test.describe("mobile UX release gate", () => {
       };
     });
 
-    expect(layout.rhythmLeft, "七天节奏左侧不能超出视口").toBeGreaterThanOrEqual(0);
-    expect(layout.rhythmRight, "七天节奏右侧不能超出视口").toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.rhythmScrollWidth, "七天节奏必须一次完整展示").toBeLessThanOrEqual(layout.rhythmClientWidth + 1);
+    expect(layout.progressLeft, "今日进度卡左侧不能超出视口").toBeGreaterThanOrEqual(0);
+    expect(layout.progressRight, "今日进度卡右侧不能超出视口").toBeLessThanOrEqual(layout.viewportWidth);
+    expect(layout.priorityRowsFit, "两个优先账号入口应完整位于手机视口内").toBe(true);
     expect(layout.primaryBottom, "主操作不应被底部导航遮挡").toBeLessThanOrEqual(layout.dockTop - 6);
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
-  test("iPhone 16 Pro Max 首页记录今天一次点击直达库存弹窗", async ({ page }, testInfo) => {
-    let releaseRecordPage = () => undefined;
-    const recordPageGate = new Promise<void>((resolve) => {
-      releaseRecordPage = resolve;
-    });
-    let recordPageRequested = false;
-    await page.route(/\/(?:src\/features\/mobile\/RecordPage\.vue|assets\/RecordPage-[^/?]+\.js)(?:\?.*)?$/, async (route) => {
-      recordPageRequested = true;
-      await recordPageGate;
-      await route.continue();
-    });
+  test("iPhone 16 Pro Max 首页一次点击打开全局库存工作表", async ({ page }, testInfo) => {
     await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    const recordToday = page.locator(".mobile-record-primary");
-    await expect(recordToday).toHaveText("记录今天");
-    await expect(recordToday).toHaveAttribute("href", "#/record?open=inventory");
-    await expect.poll(() => recordPageRequested, { message: "手机首页应在点击前预热录入页" }).toBe(true);
-    await recordToday.evaluate((element) => (element as HTMLElement).click());
-    await expect(recordToday).toHaveAttribute("aria-busy", "true");
-    await expect(recordToday).toHaveText("正在打开…");
-    releaseRecordPage();
+    const recordToday = page.getByRole("button", { name: "记录今日库存", exact: true });
+    await expect(recordToday).toBeVisible();
+    await recordToday.tap();
 
-    const dialog = page.getByRole("dialog", { name: "录入库存快照" });
-    await expect(page).toHaveURL(/#\/record$/);
+    const dialog = page.getByRole("dialog", { name: "记录今日信息" });
+    await expect(page).toHaveURL(/#\/$/);
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("tab")).toHaveCount(5);
-    await expect(dialog.getByRole("tab", { name: /^FC 账号/ })).toHaveAttribute("aria-selected", "true");
-    await expect(dialog.getByRole("spinbutton")).toHaveCount(4);
+    await expect(dialog.locator(".ios26-record-segments").getByRole("button")).toHaveText(["库存", "支出", "行情"]);
+    await expect(dialog.getByRole("button", { name: "库存", exact: true })).toHaveClass(/active/);
+    await expect(dialog.locator(".ios26-inventory-row")).toHaveCount(5);
+    await expect(dialog.getByRole("spinbutton")).toHaveCount(20);
+    await expect(dialog.getByLabel("FC 专用蛋")).toBeVisible();
+    await expect(dialog.getByLabel("FC 普通蛋")).toBeVisible();
+    await expect(dialog.getByLabel("FC 银子")).toBeVisible();
+    await expect(dialog.getByLabel("FC 碎片")).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("home-direct-record-iphone-16-pro-max.png") });
     await dialog.getByRole("button", { name: "取消", exact: true }).tap();
     await expect(dialog).toHaveCount(0);
@@ -461,47 +466,38 @@ test.describe("mobile UX release gate", () => {
     await expect(dialog).toHaveCount(0);
   });
 
-  test("首页固定展示五个账号并提供详情与实际所得入口", async ({ page }) => {
+  test("首页展示两个优先账号并从账号行进入任务详情", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
     const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
-    const accountCards = page.locator(".mobile-account-progress-list > article");
-    const accountLinks = accountCards.locator(".mobile-account-progress-link");
-    const earningsLinks = accountCards.locator(".mobile-account-earnings-link");
-    await expect(accountCards).toHaveCount(accountIds.length);
-    expect(await accountCards.evaluateAll((elements) => elements.map((element) => (
-      (element as HTMLElement).dataset.accountId
-    ))), "首页账号顺序应与系统固定顺序一致").toEqual(accountIds);
-    expect(await accountLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
-      .toEqual(accountIds.map((accountId) => `#/accounts/${accountId}`));
-    expect(await earningsLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
-      .toEqual(accountIds.map((accountId) => `#/earnings?account=${accountId}`));
+    const priorityRows = page.locator(".priority-account-row");
+    await expect(priorityRows).toHaveCount(2);
+    const priorityAccountIds = await priorityRows.evaluateAll((elements) => elements.map((element) => (
+      (element as HTMLElement).dataset.accountId || ""
+    )));
+    expect(new Set(priorityAccountIds).size, "首页两个优先账号不能重复").toBe(2);
+    expect(priorityAccountIds.every((accountId) => accountIds.includes(accountId as typeof accountIds[number])),
+      "首页只能展示系统内的有效账号").toBe(true);
+    expect(await priorityRows.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
+      .toEqual(priorityAccountIds.map((accountId) => `#/plans/tasks?account=${accountId}`));
 
-    await page.getByRole("link", { name: "查看 PT 实际所得", exact: true }).tap();
-    await expect(page).toHaveURL(/#\/earnings\?account=PT$/);
-    await expect(page.getByTestId("earnings-page")).toBeVisible();
-    await expect(page.getByRole("button", { name: "查看 PT 实际所得", exact: true })).toHaveAttribute("aria-pressed", "true");
-
-    for (const accountId of accountIds) {
-      await test.step(`进入 ${accountId} 账号详情`, async () => {
-        await page.goto("/#/");
-        await waitForApplicationPage(page);
-        const accountLink = page.getByRole("link", { name: `查看 ${accountId} 账号详情`, exact: true });
-        await accountLink.scrollIntoViewIfNeeded();
-        expect((await accountLink.boundingBox())?.height, `${accountId} 账号入口应保持 44px 触控高度`).toBeGreaterThanOrEqual(44);
-        await accountLink.tap();
-        await expect(page).toHaveURL(new RegExp(`#\\/accounts\\/${accountId}$`));
-        await expect(page.getByRole("heading", { name: `${accountId} 账号详情`, exact: true })).toBeVisible();
-      });
-    }
+    const selectedAccountId = priorityAccountIds[0];
+    const selectedRow = priorityRows.first();
+    expect((await selectedRow.boundingBox())?.height, "优先账号入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await selectedRow.tap();
+    await expect(page).toHaveURL(new RegExp(`#\\/plans\\/tasks\\?account=${selectedAccountId}$`));
+    await expect(page.locator(".task-mobile-drilldown-head")).toContainText(`${selectedAccountId} ·`);
+    await expect(page.locator(".task-mobile-account-group")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" })
+      .getByRole("link", { name: "任务", exact: true })).toHaveAttribute("aria-current", "page");
   });
 
   test("首页任务入口能进入任务分区维护", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    await page.getByRole("link", { name: "查看任务", exact: true }).tap();
+    await page.locator(".priority-heading").getByRole("link", { name: "查看全部", exact: true }).tap();
     await expect(page).toHaveURL(/#\/plans\/tasks$/);
     await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link", { name: "任务", exact: true })).toHaveAttribute("aria-current", "page");
   });
@@ -509,16 +505,23 @@ test.describe("mobile UX release gate", () => {
   test("任务勾选、完成与批量操作避开固定底栏", async ({ page }) => {
     await page.goto("/#/plans/tasks");
     await waitForApplicationPage(page);
-    await page.addStyleTag({
-      content: ":root{--orbit-safe-area-bottom:34px!important}",
-    });
 
-    const taskRow = page.locator(".task-work-row").filter({ has: page.locator("input[type='checkbox']:not(:disabled)") }).first();
-    const selectTarget = taskRow.locator(".task-select-cell");
-    const completionAction = taskRow.locator(".task-row-action");
+    const accountSummary = page.locator(".task-mobile-summary-row").first();
+    const accountEntry = accountSummary.locator(".task-mobile-summary-main");
+    const accountAction = accountSummary.locator(".task-mobile-summary-action");
+    await expect(accountSummary).toBeVisible();
+    expect((await accountEntry.boundingBox())?.height, "账号任务入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((await accountAction.boundingBox())?.height, "账号首项处理入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await accountEntry.tap();
+
+    const taskRow = page.locator(".task-mobile-account-group article")
+      .filter({ has: page.locator("input[type='checkbox']:not(:disabled)") }).first();
+    const selectTarget = taskRow.locator(".task-mobile-check");
+    const completionAction = taskRow.locator(".task-mobile-row-action");
     await expect(taskRow).toBeVisible();
     expect((await selectTarget.boundingBox())?.height, "任务勾选区域应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
-    expect((await completionAction.boundingBox())?.height, "标记完成应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((await taskRow.locator(".task-mobile-row-main").boundingBox())?.height, "任务详情入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect((await completionAction.boundingBox())?.height, "任务处理入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
     await taskRow.locator("input[type='checkbox']").check();
 
     const bulk = page.getByRole("complementary", { name: "批量任务操作" });
@@ -537,7 +540,7 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("固定蛋任务在 iPhone 16 Pro Max 自动计算缺口且不修改库存", async ({ page }, testInfo) => {
-    await page.goto("/#/plans/tasks");
+    await page.goto("/#/plans/tasks?account=LG1");
     await waitForApplicationPage(page);
     await page.evaluate(() => {
       const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"];
@@ -562,16 +565,17 @@ test.describe("mobile UX release gate", () => {
     await page.reload();
     await waitForApplicationPage(page);
 
-    await page.getByRole("button", { name: "筛选 LG1 账号任务", exact: true }).tap();
-    await page.getByLabel("任务关键词筛选").fill("剑气蛇 皮肤");
-    const row = page.locator(".task-work-row").filter({ hasText: "剑气蛇" });
+    await expect(page.locator(".task-mobile-drilldown-head")).toContainText("LG1 ·");
+    await page.getByRole("button", { name: "打开任务筛选", exact: true }).tap();
+    await page.locator(".task-mobile-filters").getByPlaceholder("搜索账号、神兽或任务").fill("剑气蛇 皮肤");
+    const row = page.locator(".task-mobile-account-group article").filter({ hasText: "剑气蛇" });
     await expect(row).toHaveCount(1);
-    await row.getByRole("button", { name: /标记完成/ }).tap();
+    await row.locator(".task-mobile-row-action").tap();
 
-    const dialog = page.getByRole("dialog", { name: "确认任务消耗" });
+    const dialog = page.locator(".task-settlement-dialog");
     const automaticSilver = dialog.getByLabel(/^自动补购银子 \/ 万/);
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "取消并关闭任务结算" })).toBeFocused();
+    await expect(dialog.getByRole("button", { name: "取消", exact: true })).toBeFocused();
     await expect(dialog.getByLabel(/^本次实际使用专用蛋 \/ 个/)).not.toBeFocused();
     await expect(automaticSilver).toHaveValue("110");
     await expect(automaticSilver).toHaveAttribute("readonly", "");
@@ -594,41 +598,44 @@ test.describe("mobile UX release gate", () => {
     expect(await simulateVisualViewport(page, { height: 560, offsetTop: 20 }), "应能模拟 iOS 键盘后的 VisualViewport").toBe(true);
     await expect.poll(() => dialog.evaluate((element) => {
       const backdrop = element.closest<HTMLElement>(".task-settlement-backdrop");
-      const footer = element.querySelector<HTMLElement>(".task-settlement-footer");
-      if (!backdrop || !footer) return null;
+      const mobileHeader = element.querySelector<HTMLElement>(".task-settlement-mobile-header");
+      if (!backdrop || !mobileHeader) return null;
       const backdropRect = backdrop.getBoundingClientRect();
-      const footerRect = footer.getBoundingClientRect();
+      const mobileHeaderRect = mobileHeader.getBoundingClientRect();
       return {
         backdropTop: Math.round(backdropRect.top),
         backdropHeight: Math.round(backdropRect.height),
-        footerWithinViewport: footerRect.bottom <= backdropRect.bottom + 1,
+        mobileHeaderWithinViewport: mobileHeaderRect.top >= backdropRect.top - 1
+          && mobileHeaderRect.bottom <= backdropRect.bottom + 1,
       };
     })).toEqual({
       backdropTop: 20,
       backdropHeight: 560,
-      footerWithinViewport: true,
+      mobileHeaderWithinViewport: true,
     });
     await page.screenshot({ path: testInfo.outputPath("task-settlement-iphone-16-pro-max-keyboard.png") });
 
     const layout = await dialog.evaluate((element) => {
       const rect = element.getBoundingClientRect();
-      const footer = element.querySelector<HTMLElement>(".task-settlement-footer");
-      const buttons = Array.from(element.querySelectorAll<HTMLElement>(".task-settlement-footer button"));
+      const mobileHeader = element.querySelector<HTMLElement>(".task-settlement-mobile-header");
+      const buttons = Array.from(element.querySelectorAll<HTMLElement>(".task-settlement-mobile-header button"));
       return {
         viewportWidth: document.documentElement.clientWidth,
         viewportHeight: document.documentElement.clientHeight,
         documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         left: rect.left,
         right: rect.right,
-        footerBottom: footer?.getBoundingClientRect().bottom ?? 0,
+        mobileHeaderTop: mobileHeader?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY,
+        mobileHeaderBottom: mobileHeader?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY,
         buttonHeights: buttons.map((button) => button.getBoundingClientRect().height),
       };
     });
     expect(layout.documentOverflow).toBe(0);
     expect(layout.left).toBeGreaterThanOrEqual(-1);
     expect(layout.right).toBeLessThanOrEqual(layout.viewportWidth + 1);
-    expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
-    expect(layout.buttonHeights.every((height) => height >= 50)).toBe(true);
+    expect(layout.mobileHeaderTop).toBeGreaterThanOrEqual(19);
+    expect(layout.mobileHeaderBottom).toBeLessThanOrEqual(layout.viewportHeight + 1);
+    expect(layout.buttonHeights.every((height) => height >= 38)).toBe(true);
     await dialog.getByRole("button", { name: "取消", exact: true }).tap();
     await expect(dialog).toHaveCount(0);
   });
@@ -843,7 +850,19 @@ test.describe("mobile UX release gate", () => {
     await page.goto("/#/week");
     await waitForApplicationPage(page);
 
-    await page.getByRole("button", { name: "生成本周小结", exact: true }).tap();
+    const supplementButton = page.locator(".week-supplement-card")
+      .getByRole("button", { name: "补充记录", exact: true });
+    await expect(supplementButton).toBeVisible();
+    await supplementButton.tap();
+    const supplementSheet = page.getByRole("dialog", { name: "记录今日信息" });
+    await expect(supplementSheet).toBeVisible();
+    await supplementSheet.getByRole("button", { name: "取消", exact: true }).tap();
+    await expect(supplementSheet).toHaveCount(0);
+    const fullReport = page.locator(".week-mobile-full-report");
+    await expect(fullReport).not.toHaveAttribute("open", "");
+    await fullReport.locator(":scope > summary").tap();
+    await expect(fullReport).toHaveAttribute("open", "");
+    await fullReport.getByRole("button", { name: "生成本周小结", exact: true }).tap();
     const preview = page.getByRole("dialog", { name: "本周小结图片" });
     await expect(preview).toBeVisible();
     const shareButton = preview.getByRole("button", { name: "分享", exact: true });
@@ -875,19 +894,31 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("移动表单输入字号不触发浏览器自动缩放", async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(75_000);
     let auditedFields = 0;
     for (const url of formRoutes) {
       await test.step(url, async () => {
         await page.goto(url);
         await waitForApplicationPage(page);
         if (url === "/#/record") await page.locator(".record-option-card[aria-controls='quick-expense-form']").tap();
-        if (url === "/#/week") await page.getByRole("button", { name: "补记其他支出", exact: true }).tap();
+        if (url === "/#/week") {
+          await page.locator(".week-supplement-card")
+            .getByRole("button", { name: "补充记录", exact: true }).tap();
+          await page.locator(".ios26-record-sheet")
+            .getByRole("button", { name: "支出", exact: true }).tap();
+        }
+        if (url === "/#/plans/tasks") {
+          await page.getByRole("button", { name: "打开任务筛选", exact: true }).tap();
+        }
         const moreFilters = page.getByRole("button", { name: "更多筛选", exact: true });
         if (await moreFilters.isVisible().catch(() => false)) await moreFilters.tap();
         const report = await undersizedInputFonts(page);
         auditedFields += report.audited;
         expect(report.offenders, `${url} 存在小于 16px 的可见输入控件`).toEqual([]);
+        if (url === "/#/week") {
+          await page.locator(".ios26-record-sheet")
+            .getByRole("button", { name: "取消", exact: true }).tap();
+        }
       });
     }
     expect(auditedFields, "应实际审查一批移动表单控件").toBeGreaterThan(10);
@@ -1206,8 +1237,9 @@ test.describe("mobile UX release gate", () => {
 
     const dock = page.getByRole("navigation", { name: "手机快捷导航", exact: true });
     await expect(dock).toBeVisible();
-    await expect(dock.locator("a, button")).toHaveCount(5);
-    await expect(dock.getByRole("button", { name: "打开全部导航", exact: true })).toHaveClass(/active/);
+    await expect(dock.getByRole("link")).toHaveText(["今日", "任务", "周报"]);
+    await expect(dock.getByRole("link")).toHaveCount(3);
+    await expect(dock.getByRole("button")).toHaveCount(0);
 
     const overflow = await pageOverflowReport(page);
     expect(overflow.offenders, "展开手机日报后不应产生页面级横向裁切").toEqual([]);

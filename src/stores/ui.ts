@@ -5,6 +5,16 @@ import { parseUiState, type UiState } from "../persistence/state";
 
 export const uiStorageKey = "sw.app.ui.v2";
 export const legacyUiStorageKey = "sw.app.ui.v1";
+
+export type RecordSheetMode = "inventory" | "expense" | "market";
+
+export interface RecordSheetContext {
+  sourcePath?: string;
+  returnTo?: string;
+  accountId?: AccountId;
+  effectiveDate?: string;
+}
+
 export const useUiStore = defineStore("ui", () => {
   const hydrated = ref(false);
   const accountScope = ref<AccountScope>("ALL");
@@ -13,6 +23,22 @@ export const useUiStore = defineStore("ui", () => {
   const matrixDisplay = reactive({ stats: true, aptitudes: true, skills: true });
   const commandOpen = ref(false);
   const mobileNavOpen = ref(false);
+  const recordSheetOpen = ref(false);
+  const recordSheetMode = ref<RecordSheetMode | null>(null);
+  const recordSheetContext = ref<RecordSheetContext>({});
+  function openRecordSheet(mode: RecordSheetMode | null = null, context: RecordSheetContext = {}) {
+    recordSheetMode.value = mode;
+    recordSheetContext.value = { ...context };
+    recordSheetOpen.value = true;
+  }
+  function setRecordSheetMode(mode: RecordSheetMode | null) {
+    recordSheetMode.value = mode;
+  }
+  function closeRecordSheet() {
+    recordSheetOpen.value = false;
+    recordSheetMode.value = null;
+    recordSheetContext.value = {};
+  }
   function setState(value: UiState) {
     accountScope.value = value.accountScope;
     recentAccount.value = value.recentAccount;
@@ -52,5 +78,23 @@ export const useUiStore = defineStore("ui", () => {
     }
   }
   watch([accountScope, recentAccount, matrixDensity, matrixDisplay], persist, { deep: true });
-  return { hydrated, accountScope, recentAccount, matrixDensity, matrixDisplay, commandOpen, mobileNavOpen, hydrate, exportState, replaceState, resetPreferences };
+  return {
+    hydrated,
+    accountScope,
+    recentAccount,
+    matrixDensity,
+    matrixDisplay,
+    commandOpen,
+    mobileNavOpen,
+    recordSheetOpen,
+    recordSheetMode,
+    recordSheetContext,
+    hydrate,
+    exportState,
+    replaceState,
+    resetPreferences,
+    openRecordSheet,
+    setRecordSheetMode,
+    closeRecordSheet,
+  };
 });

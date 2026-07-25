@@ -296,86 +296,95 @@ test.describe("desktop regressions", () => {
   });
 });
 
-test("移动导航是可关闭、可困住焦点并恢复焦点的对话框", async ({ page }, testInfo) => {
+test("移动端使用三项悬浮底栏完成核心页面导航", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile");
   await page.goto("/#/");
-  const menuButton = page.getByRole("button", { name: "打开全部导航" });
-  await expect(menuButton).toHaveAttribute("aria-label", "打开全部导航");
-  await expect(menuButton).toHaveAttribute("aria-expanded", "false");
-  await menuButton.click();
 
-  const navigation = page.getByRole("dialog", { name: "主导航" });
-  const navigationPanel = page.locator("#orbit-primary-navigation");
-  const scrim = page.locator(".orbit-nav-scrim");
-  const closeButton = navigation.getByRole("button", { name: "关闭导航" });
-  const logoutButton = navigation.getByRole("button", { name: "退出登录" });
-  await expect(navigation).toBeVisible();
-  await expect(menuButton).toHaveAttribute("aria-expanded", "true");
-  await expect(closeButton).toBeFocused();
-  await expect.poll(() => navigationPanel.evaluate((element) => Math.abs(element.getBoundingClientRect().left) < 0.5)).toBe(true);
+  const dock = page.getByRole("navigation", { name: "手机快捷导航" });
+  const dockLinks = dock.getByRole("link");
+  const todayLink = dock.getByRole("link", { name: "今日", exact: true });
+  const taskLink = dock.getByRole("link", { name: "任务", exact: true });
+  const weekLink = dock.getByRole("link", { name: "周报", exact: true });
 
-  const viewportCoverage = await page.evaluate(() => {
-    const navigationElement = document.querySelector<HTMLElement>(".orbit-nav.open");
-    const scrimElement = document.querySelector<HTMLElement>(".orbit-nav-scrim");
-    if (!navigationElement || !scrimElement) throw new Error("移动导航或遮罩未渲染");
-    const navigationRect = navigationElement.getBoundingClientRect();
-    const scrimRect = scrimElement.getBoundingClientRect();
-    const navigationStyle = getComputedStyle(navigationElement);
-    const scrimStyle = getComputedStyle(scrimElement);
+  await expect(dock).toBeVisible();
+  await expect(dock).toHaveAttribute("data-state", "expanded");
+  await expect(dockLinks).toHaveCount(3);
+  await expect(todayLink).toHaveAttribute("href", "#/");
+  await expect(taskLink).toHaveAttribute("href", "#/plans/tasks");
+  await expect(weekLink).toHaveAttribute("href", "#/week");
+  await expect(todayLink).toHaveAttribute("aria-current", "page");
+  await expect(taskLink).not.toHaveAttribute("aria-current");
+  await expect(weekLink).not.toHaveAttribute("aria-current");
+
+  await expect(page.getByRole("button", { name: "打开全部导航" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "主导航" })).toHaveCount(0);
+  await expect(page.locator(".orbit-nav-scrim")).toHaveCount(0);
+  await expect(page.locator("#orbit-primary-navigation")).not.toBeVisible();
+
+  const dockGeometry = await dock.evaluate((element) => {
+    const dockRect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const targets = Array.from(element.querySelectorAll("a")).map((target) => {
+      const rect = target.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+      };
+    });
     return {
+      viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight,
-      navigationTop: navigationRect.top,
-      navigationBottom: navigationRect.bottom,
-      scrimTop: scrimRect.top,
-      scrimBottom: scrimRect.bottom,
-      navigationZ: Number(navigationStyle.zIndex),
-      scrimZ: Number(scrimStyle.zIndex),
-      navigationTransition: navigationStyle.transitionProperty,
-      scrimTransition: scrimStyle.transitionProperty,
-      scrimBackdropFilter: scrimStyle.backdropFilter,
-      navigationIsTopLayer: Boolean(
-        document
-          .elementFromPoint(
-            navigationRect.left + Math.min(24, navigationRect.width / 2),
-            navigationRect.top + Math.min(24, navigationRect.height / 2),
-          )
-          ?.closest(".orbit-nav.open"),
-      ),
-      scrimIsTopLayer: Boolean(
-        document
-          .elementFromPoint(
-            navigationRect.right + (window.innerWidth - navigationRect.right) / 2,
-            window.innerHeight / 2,
-          )
-          ?.closest(".orbit-nav-scrim"),
-      ),
+      dockLeft: dockRect.left,
+      dockRight: dockRect.right,
+      dockTop: dockRect.top,
+      dockBottom: dockRect.bottom,
+      position: style.position,
+      zIndex: Number(style.zIndex),
+      transition: style.transitionProperty,
+      backdropFilter: style.backdropFilter,
+      targets,
     };
   });
 
-  expect(viewportCoverage.navigationTop).toBe(0);
-  expect(viewportCoverage.navigationBottom).toBe(viewportCoverage.viewportHeight);
-  expect(viewportCoverage.scrimTop).toBe(0);
-  expect(viewportCoverage.scrimBottom).toBe(viewportCoverage.viewportHeight);
-  expect(viewportCoverage.navigationZ).toBeGreaterThan(viewportCoverage.scrimZ);
-  expect(viewportCoverage.navigationIsTopLayer).toBe(true);
-  expect(viewportCoverage.scrimIsTopLayer).toBe(true);
-  expect(viewportCoverage.navigationTransition).toContain("transform");
-  expect(viewportCoverage.scrimTransition).toContain("opacity");
-  expect(viewportCoverage.scrimBackdropFilter).toBe("none");
+  expect(dockGeometry.position).toBe("fixed");
+  expect(dockGeometry.zIndex).toBeGreaterThan(0);
+  expect(dockGeometry.transition).toContain("transform");
+  expect(dockGeometry.backdropFilter).not.toBe("none");
+  expect(dockGeometry.dockLeft).toBeGreaterThanOrEqual(0);
+  expect(dockGeometry.dockRight).toBeLessThanOrEqual(dockGeometry.viewportWidth);
+  expect(dockGeometry.dockTop).toBeGreaterThanOrEqual(0);
+  expect(dockGeometry.dockBottom).toBeLessThanOrEqual(dockGeometry.viewportHeight);
+  expect(dockGeometry.targets).toHaveLength(3);
+  for (const target of dockGeometry.targets) {
+    expect(target.width).toBeGreaterThanOrEqual(44);
+    expect(target.height).toBeGreaterThanOrEqual(44);
+    expect(target.left).toBeGreaterThanOrEqual(dockGeometry.dockLeft);
+    expect(target.right).toBeLessThanOrEqual(dockGeometry.dockRight);
+    expect(target.top).toBeGreaterThanOrEqual(dockGeometry.dockTop);
+    expect(target.bottom).toBeLessThanOrEqual(dockGeometry.dockBottom);
+  }
 
-  await closeButton.press("Shift+Tab");
-  await expect(logoutButton).toBeFocused();
-  await logoutButton.press("Tab");
-  await expect(closeButton).toBeFocused();
+  await taskLink.click();
+  await expect(page).toHaveURL(/#\/plans\/tasks$/);
+  await expect(page.getByRole("region", { name: "手机任务工作台" })).toBeVisible();
+  await expect(page.getByText("按账号处理", { exact: true })).toBeVisible();
+  await expect(taskLink).toHaveAttribute("aria-current", "page");
+  await expect(todayLink).not.toHaveAttribute("aria-current");
 
-  await page.keyboard.press("Escape");
-  await expect(navigationPanel).toHaveCSS("visibility", "visible");
-  await expect(scrim).toHaveCount(1);
-  await expect(navigation).toHaveCount(0);
-  await expect(menuButton).toHaveAttribute("aria-expanded", "false");
-  await expect(menuButton).toHaveAttribute("aria-label", "打开全部导航");
-  await expect(menuButton).toBeFocused();
-  await page.waitForTimeout(240);
-  await expect(navigationPanel).toHaveCSS("visibility", "hidden");
-  await expect(scrim).toHaveCount(0);
+  await weekLink.click();
+  await expect(page).toHaveURL(/#\/week$/);
+  await expect(page.getByRole("region", { name: "手机端周报" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "五个账号本周情况", exact: true })).toBeVisible();
+  await expect(weekLink).toHaveAttribute("aria-current", "page");
+  await expect(taskLink).not.toHaveAttribute("aria-current");
+
+  await todayLink.click();
+  await expect(page).toHaveURL(/#\/$/);
+  await expect(page.getByTestId("mobile-week-home")).toBeVisible();
+  await expect(todayLink).toHaveAttribute("aria-current", "page");
+  await expect(weekLink).not.toHaveAttribute("aria-current");
 });

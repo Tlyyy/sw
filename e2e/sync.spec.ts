@@ -19,37 +19,67 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => sessionStorage.setItem("sw-e2e-auth-v1", "1"));
 });
 
-test("automation 本机状态在桌面与手机端提供可访问的同步入口", async ({ page }, testInfo) => {
+test("本机状态在桌面工具区与手机顶部提供可用的同步入口", async ({ page }, testInfo) => {
   test.skip(!["desktop", "mobile"].includes(testInfo.project.name), "仅覆盖桌面与手机断点");
   await page.goto("/#/");
 
-  const entry = page.getByRole("link", { name: "查看云同步状态" });
-  const liveRegion = entry.locator('[aria-live="polite"]');
-  const fullLabel = entry.locator(".orbit-sync-label-full");
-  const compactLabel = entry.locator(".orbit-sync-label-compact");
-
-  await expect(entry).toBeVisible();
-  await expect(entry).toHaveAttribute("href", "#/settings");
-  await expect(entry).toHaveAttribute("title", "仅本机");
-  await expect(entry).toHaveClass(/(?:^|\s)is-neutral(?:\s|$)/);
-  await expect(entry).not.toHaveClass(/(?:^|\s)is-(?:info|success|warning|danger)(?:\s|$)/);
-  await expect(liveRegion).toHaveCount(1);
-  await expect(liveRegion).toHaveAttribute("aria-live", "polite");
-  await expect(fullLabel).toHaveText("仅本机");
-  await expect(compactLabel).toHaveText("仅本机");
+  const desktopEntry = page.getByRole("link", { name: "查看云同步状态" });
+  const mobileHeader = page.locator(".ios26-mobile-header");
+  const mobileEntry = mobileHeader.getByRole("link", { name: "同步与设置：仅本机", exact: true });
+  const entry = testInfo.project.name === "desktop" ? desktopEntry : mobileEntry;
 
   if (testInfo.project.name === "desktop") {
+    const liveRegion = entry.locator('[aria-live="polite"]');
+    const fullLabel = entry.locator(".orbit-sync-label-full");
+    const compactLabel = entry.locator(".orbit-sync-label-compact");
+
+    await expect(entry).toBeVisible();
+    await expect(entry).toHaveAttribute("title", "仅本机");
+    await expect(liveRegion).toHaveCount(1);
+    await expect(liveRegion).toHaveAttribute("aria-live", "polite");
+    await expect(fullLabel).toHaveText("仅本机");
+    await expect(compactLabel).toHaveText("仅本机");
     await expect(fullLabel).toBeVisible();
     await expect(compactLabel).not.toBeVisible();
   } else {
-    await expect(fullLabel).not.toBeVisible();
-    await expect(compactLabel).toBeVisible();
+    await expect(mobileHeader).toBeVisible();
+    await expect(desktopEntry).not.toBeVisible();
+    await expect(entry).toBeVisible();
+    await expect(entry).toHaveClass(/(?:^|\s)ios26-mobile-sync(?:\s|$)/);
+    await expect(entry.locator("b")).toHaveText("仅本机");
+    await expect(entry.locator('span[aria-hidden="true"]')).toHaveCount(1);
 
-    const touchTarget = await entry.boundingBox();
-    expect(touchTarget).not.toBeNull();
-    expect(touchTarget!.width).toBeGreaterThanOrEqual(44);
-    expect(touchTarget!.height).toBeGreaterThanOrEqual(44);
+    const placement = await mobileHeader.evaluate((element) => {
+      const headerRect = element.getBoundingClientRect();
+      const entryRect = element.querySelector<HTMLElement>(".ios26-mobile-sync")!.getBoundingClientRect();
+      return {
+        header: {
+          left: headerRect.left,
+          right: headerRect.right,
+          top: headerRect.top,
+          bottom: headerRect.bottom,
+        },
+        entry: {
+          left: entryRect.left,
+          right: entryRect.right,
+          top: entryRect.top,
+          bottom: entryRect.bottom,
+          width: entryRect.width,
+          height: entryRect.height,
+        },
+      };
+    });
+    expect(placement.entry.width).toBeGreaterThanOrEqual(72);
+    expect(placement.entry.height).toBeGreaterThanOrEqual(32);
+    expect(placement.entry.left).toBeGreaterThanOrEqual(placement.header.left);
+    expect(placement.entry.right).toBeLessThanOrEqual(placement.header.right);
+    expect(placement.entry.top).toBeGreaterThanOrEqual(placement.header.top);
+    expect(placement.entry.bottom).toBeLessThanOrEqual(placement.header.bottom);
   }
+
+  await expect(entry).toHaveAttribute("href", "#/settings");
+  await expect(entry).toHaveClass(/(?:^|\s)is-neutral(?:\s|$)/);
+  await expect(entry).not.toHaveClass(/(?:^|\s)is-(?:info|success|warning|danger)(?:\s|$)/);
 
   await entry.click();
   await expect(page).toHaveURL(/#\/settings$/);
