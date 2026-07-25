@@ -53,6 +53,8 @@ const accountError = ref("");
 const errorFieldKey = ref<InventoryFieldKey>();
 const flowMessage = ref("");
 const rows = reactive<Record<AccountId, InventoryBalance>>(emptyRows());
+const desktopEntryMedia = window.matchMedia("(min-width: 721px)");
+const combinedDesktopEntry = ref(desktopEntryMedia.matches);
 const {
   keyboardOpen,
   visualViewportStyle,
@@ -62,12 +64,18 @@ let previousBodyOverflow = "";
 let previousRootOverflow = "";
 let fieldFocusTimer = 0;
 
+desktopEntryMedia.addEventListener("change", handleDesktopEntryChange);
+
 const matchingSnapshot = computed(() => props.snapshots.find((item) => item.effectiveDate === snapshotDate.value) || null);
 const maxDate = computed(() => props.maxDate || shanghaiDateKey());
 const dateOutOfRange = computed(() => Boolean(snapshotDate.value) && !canRecordInventoryDate(snapshotDate.value, maxDate.value));
 const activeAccountId = computed(() => accountOrder[activeAccountIndex.value]);
 const previousAccountId = computed(() => accountOrder[activeAccountIndex.value - 1]);
 const nextAccountId = computed(() => accountOrder[activeAccountIndex.value + 1]);
+
+function handleDesktopEntryChange(event: MediaQueryListEvent) {
+  combinedDesktopEntry.value = event.matches;
+}
 
 function emptyRows(): Record<AccountId, InventoryBalance> {
   return Object.fromEntries(accountOrder.map((accountId) => [accountId, {
@@ -160,9 +168,11 @@ function invalidField(accountId: AccountId) {
   });
 }
 
-async function focusField(fieldKey: InventoryFieldKey) {
+async function focusField(accountId: AccountId, fieldKey: InventoryFieldKey) {
   await nextTick();
-  dialog.value?.querySelector<HTMLInputElement>(`[data-inventory-field="${fieldKey}"]`)?.focus({ preventScroll: true });
+  dialog.value?.querySelector<HTMLInputElement>(
+    `[data-inventory-account="${accountId}"][data-inventory-field="${fieldKey}"]`,
+  )?.focus({ preventScroll: true });
 }
 
 function validateAccount(accountId: AccountId) {
@@ -174,8 +184,23 @@ function validateAccount(accountId: AccountId) {
   }
   accountError.value = `${accountId} 的${invalid.label}还没有确认；如果库存为零，请明确填写 0。`;
   errorFieldKey.value = invalid.key;
-  void focusField(invalid.key);
+  void focusField(accountId, invalid.key);
   return false;
+}
+
+function validateAllAccounts() {
+  for (const accountId of accountOrder) {
+    const invalid = invalidField(accountId);
+    if (!invalid) continue;
+    activeAccountIndex.value = accountOrder.indexOf(accountId);
+    accountError.value = `${accountId} 的${invalid.label}还没有确认；如果库存为零，请明确填写 0。`;
+    errorFieldKey.value = invalid.key;
+    void focusField(accountId, invalid.key);
+    return false;
+  }
+  accountError.value = "";
+  errorFieldKey.value = undefined;
+  return true;
 }
 
 async function selectAccount(index: number, keepEditing = entryFieldFocused.value || keyboardOpen.value) {
@@ -207,14 +232,19 @@ async function goPreviousAccount() {
 function submit() {
   submitted.value = true;
   if (!snapshotDate.value || dateOutOfRange.value) return;
-  const current = activeAccountId.value;
-  if (!validateAccount(current)) return;
-  if (!reviewedAccounts.value.includes(current)) reviewedAccounts.value = [...reviewedAccounts.value, current];
-  const unreviewed = accountOrder.filter((accountId) => !reviewedAccounts.value.includes(accountId));
-  if (unreviewed.length) {
-    flowMessage.value = `还需核对 ${unreviewed.join("、")}；已带入的数值不会自动视为今日确认。`;
-    void selectAccount(accountOrder.indexOf(unreviewed[0]), false);
-    return;
+  if (combinedDesktopEntry.value) {
+    if (!validateAllAccounts()) return;
+    reviewedAccounts.value = [...accountOrder];
+  } else {
+    const current = activeAccountId.value;
+    if (!validateAccount(current)) return;
+    if (!reviewedAccounts.value.includes(current)) reviewedAccounts.value = [...reviewedAccounts.value, current];
+    const unreviewed = accountOrder.filter((accountId) => !reviewedAccounts.value.includes(accountId));
+    if (unreviewed.length) {
+      flowMessage.value = `还需核对 ${unreviewed.join("、")}；已带入的数值不会自动视为今日确认。`;
+      void selectAccount(accountOrder.indexOf(unreviewed[0]), false);
+      return;
+    }
   }
   const payloadRows = emptyRows();
   accountOrder.forEach((accountId) => {
@@ -296,6 +326,7 @@ watch(() => props.open, async (open) => {
 
 onBeforeUnmount(() => {
   window.clearTimeout(fieldFocusTimer);
+  desktopEntryMedia.removeEventListener("change", handleDesktopEntryChange);
   deactivateDialog(false);
 });
 </script>
@@ -312,7 +343,7 @@ onBeforeUnmount(() => {
         <header>
           <div>
             <h2 id="inventory-dialog-title">录入库存快照</h2>
-            <p>逐账号核对，最后统一保存。</p>
+            <p>{{ combinedDesktopEntry ? "五个账号同屏填写，一次统一保存。" : "逐账号核对，最后统一保存。" }}</p>
           </div>
           <button ref="closeButton" class="snapshot-dialog-close" type="button" aria-label="关闭库存快照录入" @click="requestClose"><AppIcon name="close" /></button>
         </header>
@@ -326,69 +357,119 @@ onBeforeUnmount(() => {
         <p v-if="submitted && !snapshotDate" class="snapshot-dialog-error" role="alert">请选择库存所属日期</p>
         <p v-else-if="submitted && dateOutOfRange" class="snapshot-dialog-error" role="alert">库存日期不能晚于 {{ maxDate }}</p>
 
-        <div class="snapshot-account-stepper" role="tablist" aria-label="选择要核对的账号">
-          <button
-            v-for="(accountId, index) in accountOrder"
-            :id="`snapshot-account-tab-${accountId}`"
-            :key="accountId"
-            class="snapshot-account-tab"
-            :class="{ active: index === activeAccountIndex, reviewed: isReviewed(accountId) }"
-            type="button"
-            role="tab"
-            :aria-controls="`snapshot-account-panel-${accountId}`"
-            :aria-selected="index === activeAccountIndex"
-            :aria-label="`${accountId} 账号，${isReviewed(accountId) ? '已核对' : index === activeAccountIndex ? '当前账号' : '待核对'}`"
-            @click="selectAccount(index)"
-          >
-            <strong>{{ accountId }}</strong>
-            <small>{{ isReviewed(accountId) ? "已核对" : index === activeAccountIndex ? "当前" : "待核" }}</small>
-          </button>
-        </div>
-
-        <div class="snapshot-entry-scroll">
-          <fieldset
-            :id="`snapshot-account-panel-${activeAccountId}`"
-            class="snapshot-account-panel"
-            role="tabpanel"
-            :aria-labelledby="`snapshot-account-tab-${activeAccountId}`"
-          >
-            <legend class="visually-hidden">{{ activeAccountId }} 账号库存</legend>
-            <header class="snapshot-account-heading">
-              <strong :class="`account-pill account-${activeAccountId.toLowerCase()}`">{{ activeAccountId }}</strong>
-              <div>
-                <h3>{{ activeAccountId }} 当前库存</h3>
-                <p>第 {{ activeAccountIndex + 1 }} / {{ accountOrder.length }} 个账号 · 已带入上次数据，只修改变化项</p>
-              </div>
-            </header>
-
-            <div class="snapshot-account-fields">
-              <label v-for="(field, fieldIndex) in inventoryFields" :key="field.key" class="snapshot-account-field">
-                <span><strong>{{ field.label }}</strong><small>/ {{ field.unit }}</small></span>
+        <div v-if="combinedDesktopEntry" class="snapshot-desktop-entry snapshot-entry-scroll">
+          <div class="snapshot-entry-table">
+            <div class="snapshot-entry-head">
+              <span>账号</span>
+              <span v-for="field in inventoryFields" :key="field.key">
+                {{ field.label }} <small>/ {{ field.unit }}</small>
+              </span>
+            </div>
+            <div
+              v-for="accountId in accountOrder"
+              :key="accountId"
+              class="snapshot-entry-row"
+              :data-account-id="accountId"
+            >
+              <span class="snapshot-entry-account">
+                <strong :class="`account-pill account-${accountId.toLowerCase()}`">{{ accountId }}</strong>
+              </span>
+              <label v-for="field in inventoryFields" :key="field.key">
+                <span class="visually-hidden">{{ accountId }} {{ field.label }}</span>
                 <input
-                  v-model.number="rows[activeAccountId][field.key]"
+                  v-model.number="rows[accountId][field.key]"
                   type="number"
                   min="0"
                   :step="field.step"
                   :inputmode="field.inputMode"
-                  :enterkeyhint="fieldIndex < inventoryFields.length - 1 ? 'next' : 'done'"
+                  :data-inventory-account="accountId"
                   :data-inventory-field="field.key"
-                  :aria-label="`${activeAccountId}${field.label}库存${field.key === 'silverWan' ? '（万）' : ''}`"
-                  :aria-invalid="errorFieldKey === field.key ? 'true' : undefined"
-                  :aria-describedby="errorFieldKey === field.key ? 'snapshot-account-error' : undefined"
-                  @focus="keepEntryFieldVisible"
-                  @blur="entryFieldFocused = false"
-                  @input="markAccountDirty(activeAccountId)"
+                  :aria-label="`${accountId}${field.label}库存${field.key === 'silverWan' ? '（万）' : ''}`"
+                  :aria-invalid="activeAccountId === accountId && errorFieldKey === field.key ? 'true' : undefined"
+                  @input="markAccountDirty(accountId)"
                 />
               </label>
             </div>
-
-            <p v-if="accountError" id="snapshot-account-error" class="snapshot-account-error" role="alert">{{ accountError }}</p>
-            <p v-else class="snapshot-account-help">库存为 0 时直接填写 0；离开本账号前会进行核对。</p>
-            <p class="snapshot-flow-message" aria-live="polite">{{ flowMessage }}</p>
-          </fieldset>
+          </div>
+          <div class="snapshot-desktop-messages">
+            <p v-if="accountError" class="snapshot-account-error" role="alert">{{ accountError }}</p>
+            <p v-else class="snapshot-account-help">已带入前一份快照；只需修改发生变化的数值，库存为 0 时填写 0。</p>
+          </div>
         </div>
 
-        <footer>
+        <div v-else class="snapshot-mobile-flow">
+          <div class="snapshot-account-stepper" role="tablist" aria-label="选择要核对的账号">
+            <button
+              v-for="(accountId, index) in accountOrder"
+              :id="`snapshot-account-tab-${accountId}`"
+              :key="accountId"
+              class="snapshot-account-tab"
+              :class="{ active: index === activeAccountIndex, reviewed: isReviewed(accountId) }"
+              type="button"
+              role="tab"
+              :aria-controls="`snapshot-account-panel-${accountId}`"
+              :aria-selected="index === activeAccountIndex"
+              :aria-label="`${accountId} 账号，${isReviewed(accountId) ? '已核对' : index === activeAccountIndex ? '当前账号' : '待核对'}`"
+              @click="selectAccount(index)"
+            >
+              <strong>{{ accountId }}</strong>
+              <small>{{ isReviewed(accountId) ? "已核对" : index === activeAccountIndex ? "当前" : "待核" }}</small>
+            </button>
+          </div>
+
+          <div class="snapshot-entry-scroll">
+            <fieldset
+              :id="`snapshot-account-panel-${activeAccountId}`"
+              class="snapshot-account-panel"
+              role="tabpanel"
+              :aria-labelledby="`snapshot-account-tab-${activeAccountId}`"
+            >
+              <legend class="visually-hidden">{{ activeAccountId }} 账号库存</legend>
+              <header class="snapshot-account-heading">
+                <strong :class="`account-pill account-${activeAccountId.toLowerCase()}`">{{ activeAccountId }}</strong>
+                <div>
+                  <h3>{{ activeAccountId }} 当前库存</h3>
+                  <p>第 {{ activeAccountIndex + 1 }} / {{ accountOrder.length }} 个账号 · 已带入上次数据，只修改变化项</p>
+                </div>
+              </header>
+
+              <div class="snapshot-account-fields">
+                <label v-for="(field, fieldIndex) in inventoryFields" :key="field.key" class="snapshot-account-field">
+                  <span><strong>{{ field.label }}</strong><small>/ {{ field.unit }}</small></span>
+                  <input
+                    v-model.number="rows[activeAccountId][field.key]"
+                    type="number"
+                    min="0"
+                    :step="field.step"
+                    :inputmode="field.inputMode"
+                    :enterkeyhint="fieldIndex < inventoryFields.length - 1 ? 'next' : 'done'"
+                    :data-inventory-account="activeAccountId"
+                    :data-inventory-field="field.key"
+                    :aria-label="`${activeAccountId}${field.label}库存${field.key === 'silverWan' ? '（万）' : ''}`"
+                    :aria-invalid="errorFieldKey === field.key ? 'true' : undefined"
+                    :aria-describedby="errorFieldKey === field.key ? 'snapshot-account-error' : undefined"
+                    @focus="keepEntryFieldVisible"
+                    @blur="entryFieldFocused = false"
+                    @input="markAccountDirty(activeAccountId)"
+                  />
+                </label>
+              </div>
+
+              <p v-if="accountError" id="snapshot-account-error" class="snapshot-account-error" role="alert">{{ accountError }}</p>
+              <p v-else class="snapshot-account-help">库存为 0 时直接填写 0；离开本账号前会进行核对。</p>
+              <p class="snapshot-flow-message" aria-live="polite">{{ flowMessage }}</p>
+            </fieldset>
+          </div>
+        </div>
+
+        <footer v-if="combinedDesktopEntry" class="snapshot-desktop-footer">
+          <button class="button secondary" type="button" @click="requestClose">取消</button>
+          <button class="button primary" type="submit">
+            {{ matchingSnapshot ? "更新五号快照" : "保存五号快照" }}
+          </button>
+        </footer>
+
+        <footer v-else class="snapshot-mobile-footer">
           <button class="button secondary" type="button" @click="activeAccountIndex === 0 ? requestClose() : goPreviousAccount()">
             {{ activeAccountIndex === 0 ? "取消" : `上一个 · ${previousAccountId}` }}
           </button>
@@ -407,7 +488,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .snapshot-dialog {
   container: inventory-dialog / inline-size;
-  width: min(720px, 100%);
+  width: min(980px, 100%);
   max-width: 100%;
   min-width: 0;
   display: flex;
@@ -438,6 +519,58 @@ onBeforeUnmount(() => {
 
 .snapshot-dialog > footer .button {
   min-width: 0;
+}
+
+.snapshot-mobile-flow,
+.snapshot-mobile-footer {
+  display: none !important;
+}
+
+.snapshot-desktop-entry {
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.snapshot-entry-table {
+  min-width: 820px;
+}
+
+.snapshot-entry-head small {
+  color: var(--radar-muted);
+  font-size: inherit;
+}
+
+.snapshot-entry-row {
+  grid-template-columns: 85px repeat(4, minmax(0, 1fr));
+}
+
+.snapshot-entry-account {
+  display: grid;
+  place-items: center start;
+}
+
+.snapshot-entry-row input {
+  color: var(--radar-ink);
+  background: #ffffff;
+  font-size: 16px;
+}
+
+.snapshot-entry-row input:focus {
+  border-color: var(--radar-cyan-strong);
+  outline: 3px solid rgba(10, 138, 133, .14);
+  outline-offset: 1px;
+}
+
+.snapshot-entry-row input[aria-invalid="true"] {
+  border-color: var(--radar-danger);
+}
+
+.snapshot-desktop-messages {
+  min-height: 42px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--radar-line);
+  background: var(--radar-surface-2);
 }
 
 .snapshot-date-field {
@@ -633,6 +766,22 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 720px) {
+  .snapshot-desktop-entry,
+  .snapshot-desktop-footer {
+    display: none !important;
+  }
+
+  .snapshot-mobile-flow {
+    display: flex !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .snapshot-mobile-footer {
+    display: grid !important;
+  }
+
   .snapshot-dialog-backdrop {
     inset: var(--inventory-modal-top, 0px) auto auto var(--inventory-modal-left, 0px);
     width: var(--inventory-modal-width, 100vw);

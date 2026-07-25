@@ -132,7 +132,8 @@
   }
 
   .ios26-mobile-header :where(a, button):focus,
-  .orbit-mobile-dock.ios26-mobile-dock a:focus {
+  .orbit-mobile-dock.ios26-mobile-dock a:focus,
+  .ios26-mobile-search:focus {
     outline: 0 !important;
   }
 
@@ -142,8 +143,8 @@
 
   .orbit-main {
     min-height: calc(100dvh - 64px - env(safe-area-inset-top));
-    padding-bottom: calc(82px + env(safe-area-inset-bottom));
-    scroll-padding-bottom: calc(82px + env(safe-area-inset-bottom));
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(90px + env(safe-area-inset-bottom));
     background: var(--ios26-page);
   }
 
@@ -160,7 +161,7 @@
     padding: 12px 16px 0;
   }
 
-  .orbit-mobile-dock.ios26-mobile-dock {
+  .ios26-mobile-dock-shell {
     --ios26-dock-motion: 420ms linear(
       0,
       0.095 5%,
@@ -184,21 +185,26 @@
     );
     position: fixed;
     z-index: 90;
-    right: 12px;
-    bottom: calc(8px + env(safe-area-inset-bottom));
-    left: 12px;
-    height: 64px;
-    min-height: 64px;
+    right: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 16px;
+    height: 56px;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-rows: 60px;
-    align-content: center;
-    gap: 0;
-    overflow: hidden;
-    padding: 2px 6px;
+    grid-template-columns: minmax(0, 1fr) 56px;
+    gap: 8px;
+    transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
+    transform-origin: center bottom;
+    transition: transform var(--ios26-dock-motion) !important;
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock,
+  .ios26-mobile-search {
+    height: 56px;
     border: 1px solid rgba(255, 255, 255, 0.82);
     border-radius: 28px;
-    background: rgba(248, 250, 253, 0.72);
+    background: rgba(248, 250, 253, 0.7);
     box-shadow:
       0 12px 34px rgba(28, 39, 57, 0.16),
       0 2px 10px rgba(28, 39, 57, 0.08),
@@ -207,23 +213,33 @@
     backdrop-filter: blur(28px) saturate(180%);
     backface-visibility: hidden;
     isolation: isolate;
-    transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
-    transform-origin: center bottom;
-    transition: transform var(--ios26-dock-motion) !important;
-    will-change: transform;
+    pointer-events: auto;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock {
+    position: relative;
+    inset: auto;
+    min-height: 56px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 48px;
+    align-content: center;
+    gap: 0;
+    overflow: hidden;
+    padding: 3px;
   }
 
   .orbit-mobile-dock.ios26-mobile-dock > a {
     position: relative;
     min-width: 0;
-    min-height: 60px;
+    min-height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
     gap: 2px;
-    padding: 2px 3px;
-    border-radius: 22px;
+    padding: 2px 3px 3px;
+    border-radius: 24px;
     color: #737d8b;
     background: transparent;
     font-size: 10.5px;
@@ -231,7 +247,8 @@
     line-height: 1.15;
     transition:
       color 180ms ease,
-      background 180ms ease,
+      background 220ms ease,
+      box-shadow 220ms ease,
       transform 180ms cubic-bezier(0.22, 1, 0.36, 1) !important;
   }
 
@@ -249,11 +266,11 @@
   }
 
   .ios26-mobile-dock-icon {
-    width: 40px;
-    height: 34px;
+    width: 28px;
+    height: 25px;
     display: grid;
     place-items: center;
-    border-radius: 13px;
+    border-radius: 12px;
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
     transform-origin: center;
     transition:
@@ -274,12 +291,15 @@
 
   .orbit-mobile-dock.ios26-mobile-dock > a.active {
     color: var(--ios26-accent);
-    background: transparent;
+    background: rgba(211, 92, 0, 0.12);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+      0 3px 12px rgba(177, 73, 0, 0.08);
   }
 
   .orbit-mobile-dock.ios26-mobile-dock > a.active .ios26-mobile-dock-icon {
-    background: rgba(211, 92, 0, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(211, 92, 0, 0.04);
+    background: transparent;
+    box-shadow: none;
   }
 
   .orbit-mobile-dock.ios26-mobile-dock > a > span:last-child {
@@ -293,15 +313,38 @@
     will-change: opacity, transform;
   }
 
-  .orbit-mobile-dock.ios26-mobile-dock.is-minimized {
-    transform: translate3d(0, 2px, 0) scale3d(0.77, 0.78125, 1);
+  .ios26-mobile-search {
+    width: 56px;
+    min-width: 56px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: var(--ios26-ink);
+    cursor: pointer;
+    transition:
+      color 180ms ease,
+      background 220ms ease,
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1) !important;
   }
 
-  .orbit-mobile-dock.ios26-mobile-dock.is-minimized .ios26-mobile-dock-icon {
-    transform: translate3d(0, 7px, 0) scale3d(1.2987, 1.28, 1);
+  .ios26-mobile-search svg {
+    width: 23px;
+    height: 23px;
   }
 
-  .orbit-mobile-dock.ios26-mobile-dock.is-minimized > a > span:last-child {
+  .ios26-mobile-search:active {
+    transform: scale(0.92);
+  }
+
+  .ios26-mobile-dock-shell.is-minimized {
+    transform: translate3d(0, 2px, 0) scale3d(0.8, 0.8, 1);
+  }
+
+  .ios26-mobile-dock-shell.is-minimized .ios26-mobile-dock-icon {
+    transform: translate3d(0, 6px, 0) scale3d(1.25, 1.25, 1);
+  }
+
+  .ios26-mobile-dock-shell.is-minimized .orbit-mobile-dock > a > span:last-child {
     opacity: 0;
     transform: translate3d(0, 6px, 0) scale(0.92);
   }
@@ -374,9 +417,9 @@
     padding-left: 12px;
   }
 
-  .orbit-mobile-dock.ios26-mobile-dock {
-    right: 10px;
-    left: 10px;
+  .ios26-mobile-dock-shell {
+    right: 16px;
+    left: 16px;
   }
 
 }

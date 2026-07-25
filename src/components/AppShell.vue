@@ -218,25 +218,38 @@ onBeforeUnmount(() => {
       <RouterView />
     </main>
 
-    <nav
-      class="orbit-mobile-dock ios26-mobile-dock"
+    <div
+      class="ios26-mobile-dock-shell"
       :class="{ 'is-minimized': mobileDockMinimized }"
-      :data-state="mobileDockMinimized ? 'compact' : 'expanded'"
-      aria-label="手机快捷导航"
       @click.self="expandMobileDock"
     >
-      <RouterLink
-        v-for="link in mobileDockLinks"
-        :key="link.to"
-        :to="link.to"
-        :class="{ active: mobileSection === link.section }"
-        :aria-current="mobileAriaCurrent(link)"
-        @click="expandMobileDock"
+      <nav
+        class="orbit-mobile-dock ios26-mobile-dock"
+        :data-state="mobileDockMinimized ? 'compact' : 'expanded'"
+        aria-label="手机快捷导航"
       >
-        <span class="ios26-mobile-dock-icon"><AppIcon :name="link.icon" /></span>
-        <span>{{ link.text }}</span>
-      </RouterLink>
-    </nav>
+        <RouterLink
+          v-for="link in mobileDockLinks"
+          :key="link.to"
+          :to="link.to"
+          :class="{ active: mobileSection === link.section }"
+          :aria-current="mobileAriaCurrent(link)"
+          @click="expandMobileDock"
+        >
+          <span class="ios26-mobile-dock-icon"><AppIcon :name="link.icon" /></span>
+          <span>{{ link.text }}</span>
+        </RouterLink>
+      </nav>
+      <button
+        class="ios26-mobile-search"
+        type="button"
+        aria-label="搜索全系统"
+        title="搜索全系统"
+        @click="openCommandSearch"
+      >
+        <AppIcon name="search" />
+      </button>
+    </div>
 
     <GlobalRecordSheet />
     <CommandSearch />

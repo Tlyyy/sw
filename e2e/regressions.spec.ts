@@ -323,7 +323,13 @@ test("移动端使用三项悬浮底栏完成核心页面导航", async ({ page 
 
   const dockGeometry = await dock.evaluate((element) => {
     const dockRect = element.getBoundingClientRect();
+    const shell = element.closest<HTMLElement>(".ios26-mobile-dock-shell");
+    const search = shell?.querySelector<HTMLElement>(".ios26-mobile-search");
+    if (!shell || !search) throw new Error("iOS 26 底栏缺少主胶囊或独立搜索按钮");
+    const shellRect = shell.getBoundingClientRect();
+    const searchRect = search.getBoundingClientRect();
     const style = getComputedStyle(element);
+    const shellStyle = getComputedStyle(shell);
     const targets = Array.from(element.querySelectorAll("a")).map((target) => {
       const rect = target.getBoundingClientRect();
       return {
@@ -342,9 +348,14 @@ test("移动端使用三项悬浮底栏完成核心页面导航", async ({ page 
       dockRight: dockRect.right,
       dockTop: dockRect.top,
       dockBottom: dockRect.bottom,
-      position: style.position,
-      zIndex: Number(style.zIndex),
-      transition: style.transitionProperty,
+      shellLeft: shellRect.left,
+      shellRight: shellRect.right,
+      searchWidth: searchRect.width,
+      searchHeight: searchRect.height,
+      searchGap: searchRect.left - dockRect.right,
+      position: shellStyle.position,
+      zIndex: Number(shellStyle.zIndex),
+      transition: shellStyle.transitionProperty,
       backdropFilter: style.backdropFilter,
       targets,
     };
@@ -358,6 +369,11 @@ test("移动端使用三项悬浮底栏完成核心页面导航", async ({ page 
   expect(dockGeometry.dockRight).toBeLessThanOrEqual(dockGeometry.viewportWidth);
   expect(dockGeometry.dockTop).toBeGreaterThanOrEqual(0);
   expect(dockGeometry.dockBottom).toBeLessThanOrEqual(dockGeometry.viewportHeight);
+  expect(dockGeometry.shellLeft).toBeCloseTo(16, 0);
+  expect(dockGeometry.shellRight).toBeCloseTo(dockGeometry.viewportWidth - 16, 0);
+  expect(dockGeometry.searchWidth).toBeCloseTo(56, 0);
+  expect(dockGeometry.searchHeight).toBeCloseTo(56, 0);
+  expect(dockGeometry.searchGap).toBeCloseTo(8, 0);
   expect(dockGeometry.targets).toHaveLength(3);
   for (const target of dockGeometry.targets) {
     expect(target.width).toBeGreaterThanOrEqual(44);

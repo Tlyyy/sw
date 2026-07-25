@@ -286,7 +286,7 @@ test.describe("mobile UX release gate", () => {
     }
   });
 
-  test("三项 Liquid Glass 底栏与主要移动操作保持可触控", async ({ page }) => {
+  test("iOS 26 Liquid Glass 底栏与独立搜索入口保持可触控", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
@@ -296,7 +296,11 @@ test.describe("mobile UX release gate", () => {
     await expect(dockLinks).toHaveText(["今日", "任务", "周报"]);
     expect(await dockLinks.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
       .toEqual(["#/", "#/plans/tasks", "#/week"]);
-    await expect(mobileNavigation.getByRole("button")).toHaveCount(0);
+    const searchButton = page.getByRole("button", { name: "搜索全系统", exact: true });
+    await expect(searchButton).toBeVisible();
+    await searchButton.tap();
+    await expect(page.getByRole("dialog", { name: "全局搜索" })).toBeVisible();
+    await page.keyboard.press("Escape");
     expect(await undersizedPrimaryTargets(page), "移动主导航存在不足 44px 的主要触控目标").toEqual([]);
 
     for (const url of [
@@ -334,13 +338,15 @@ test.describe("mobile UX release gate", () => {
 
     const layout = await page.evaluate(() => {
       const dock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
+      const dockShell = document.querySelector<HTMLElement>(".ios26-mobile-dock-shell");
+      const search = document.querySelector<HTMLElement>(".ios26-mobile-search");
       const main = document.querySelector<HTMLElement>(".orbit-main");
       const topbar = document.querySelector<HTMLElement>(".ios26-mobile-header");
       const brand = document.querySelector<HTMLElement>(".ios26-mobile-brand");
       const syncState = document.querySelector<HTMLElement>(".ios26-mobile-sync");
       const link = [...document.querySelectorAll<HTMLElement>(".account-page .section-head > a")]
         .find((element) => element.textContent?.includes("更新库存"));
-      if (!dock || !main || !topbar || !brand || !syncState || !link) throw new Error("iPhone 安全区审查缺少目标元素");
+      if (!dock || !dockShell || !search || !main || !topbar || !brand || !syncState || !link) throw new Error("iPhone 安全区审查缺少目标元素");
       const dockRect = dock.getBoundingClientRect();
       const topbarRect = topbar.getBoundingClientRect();
       const buttonBottom = Math.max(...[...dock.querySelectorAll<HTMLElement>("a, button")]
@@ -355,9 +361,13 @@ test.describe("mobile UX release gate", () => {
         headerTop: topbarRect.top,
         headerBottom: topbarRect.bottom,
         dockHeight: dockRect.height,
+        dockShellWidth: dockShell.getBoundingClientRect().width,
+        searchWidth: search.getBoundingClientRect().width,
+        searchHeight: search.getBoundingClientRect().height,
+        dockSearchGap: search.getBoundingClientRect().left - dockRect.right,
         dockTop: dockRect.top,
         dockBottomGap: window.innerHeight - dockRect.bottom,
-        dockPosition: dockStyle.position,
+        dockPosition: getComputedStyle(dockShell).position,
         dockColumns: dockStyle.gridTemplateColumns.split(" ").length,
         dockBackdrop: dockStyle.backdropFilter || dockStyle.getPropertyValue("-webkit-backdrop-filter"),
         dockRadius: Number.parseFloat(dockStyle.borderRadius),
@@ -377,10 +387,14 @@ test.describe("mobile UX release gate", () => {
     expect(layout.dockColumns, "Liquid Glass 底栏应固定为三列").toBe(3);
     expect(layout.dockBackdrop, "Liquid Glass 底栏应保留材质模糊").not.toBe("none");
     expect(layout.dockRadius, "Liquid Glass 底栏应保持胶囊圆角").toBeGreaterThanOrEqual(28);
-    expect(layout.dockBottomGap, "底栏应与视口底边保留悬浮间距").toBeGreaterThanOrEqual(7);
-    expect(layout.dockHeight, "底栏应完整容纳三项主导航").toBeGreaterThanOrEqual(64);
+    expect(layout.dockBottomGap, "底栏应与视口底边保留参考图的 16px 悬浮间距").toBeGreaterThanOrEqual(15);
+    expect(layout.dockHeight, "主胶囊应采用参考图的 56px 紧凑高度").toBeCloseTo(56, 0);
+    expect(layout.searchWidth, "独立搜索按钮应为 56px 圆形").toBeCloseTo(56, 0);
+    expect(layout.searchHeight, "独立搜索按钮应为 56px 圆形").toBeCloseTo(56, 0);
+    expect(layout.dockSearchGap, "主胶囊与搜索按钮间距应为 8px").toBeCloseTo(8, 0);
+    expect(layout.dockShellWidth, "底栏左右应各留 16px").toBeCloseTo(440 - 32, 0);
     expect(layout.buttonBottom, "底栏按钮不能超出悬浮容器").toBeLessThanOrEqual(layout.viewportHeight - layout.dockBottomGap + 1);
-    expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(82);
+    expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(90);
     expect(layout.linkHeight, "更新库存应保持可触控高度").toBeGreaterThanOrEqual(44);
     expect(layout.linkWhiteSpace).toBe("nowrap");
     expect(layout.linkFits, "更新库存不能被挤成两行").toBe(true);
