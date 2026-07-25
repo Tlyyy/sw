@@ -829,7 +829,7 @@ onBeforeUnmount(() => {
 
   .ios26-record-sheet {
     width: 100%;
-    height: clamp(480px, 62dvh, 620px);
+    height: min(83dvh, 780px);
     max-height: 100dvh;
     display: flex;
     flex-direction: column;

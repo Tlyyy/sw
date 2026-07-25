@@ -437,7 +437,8 @@ test.describe("mobile UX release gate", () => {
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
-  test("iPhone 16 Pro Max 首页一次点击打开全局库存工作表", async ({ page }, testInfo) => {
+  test("393×852 首页一次点击打开完整的全局库存工作表", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 393, height: 852 });
     await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
     await page.goto("/#/");
     await waitForApplicationPage(page);
@@ -457,6 +458,33 @@ test.describe("mobile UX release gate", () => {
     await expect(dialog.getByLabel("FC 普通蛋")).toBeVisible();
     await expect(dialog.getByLabel("FC 银子")).toBeVisible();
     await expect(dialog.getByLabel("FC 碎片")).toBeVisible();
+    const inventoryLayout = await dialog.evaluate((element) => {
+      const body = element.querySelector<HTMLElement>(".ios26-record-body");
+      const footer = element.querySelector<HTMLElement>(".ios26-record-footer");
+      const rows = [...element.querySelectorAll<HTMLElement>(".ios26-inventory-row")];
+      if (!body || !footer || rows.length !== 5) {
+        throw new Error("库存工作表缺少完整的五账号布局");
+      }
+      const bodyRect = body.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      const lastRowRect = rows.at(-1)!.getBoundingClientRect();
+      return {
+        bodyClientHeight: body.clientHeight,
+        bodyScrollHeight: body.scrollHeight,
+        lastRowBottom: lastRowRect.bottom,
+        bodyBottom: bodyRect.bottom,
+        footerTop: footerRect.top,
+      };
+    });
+    expect(inventoryLayout.bodyScrollHeight,
+      "393×852 首屏应完整容纳库存主体，无需滚动才能看到第五个账号")
+      .toBeLessThanOrEqual(inventoryLayout.bodyClientHeight + 1);
+    expect(inventoryLayout.lastRowBottom,
+      "MYT 最后一行应完整显示在库存主体内")
+      .toBeLessThanOrEqual(inventoryLayout.bodyBottom + 1);
+    expect(inventoryLayout.lastRowBottom,
+      "MYT 最后一行不能被底部保存按钮遮挡")
+      .toBeLessThanOrEqual(inventoryLayout.footerTop + 1);
     await page.screenshot({ path: testInfo.outputPath("home-direct-record-iphone-16-pro-max.png") });
     await dialog.getByRole("button", { name: "取消", exact: true }).tap();
     await expect(dialog).toHaveCount(0);
@@ -561,7 +589,6 @@ test.describe("mobile UX release gate", () => {
       }, mode);
 
       expect(["auto", "scroll"]).toContain(snapshot.bodyOverflowY);
-      expect(snapshot.bodyScrollHeight).toBeGreaterThan(snapshot.bodyClientHeight);
       expect(snapshot.labelFontSize).toBe(13);
       expect(snapshot.inputFontSize).toBe(16);
       expect(snapshot.inputFontWeight).toBe(600);
@@ -572,7 +599,11 @@ test.describe("mobile UX release gate", () => {
         element.scrollTop = element.scrollHeight;
         return element.scrollTop;
       });
-      expect(scrollTop, `${mode.label} 内容应只在表单主体内滚动`).toBeGreaterThan(0);
+      if (snapshot.bodyScrollHeight > snapshot.bodyClientHeight) {
+        expect(scrollTop, `${mode.label} 超出内容应只在表单主体内滚动`).toBeGreaterThan(0);
+      } else {
+        expect(scrollTop, `${mode.label} 内容完整时不应产生无意义滚动`).toBe(0);
+      }
 
       snapshots.push(snapshot);
     }
