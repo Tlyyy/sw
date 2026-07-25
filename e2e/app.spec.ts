@@ -399,7 +399,7 @@ test.describe("desktop application", () => {
     await expect(page.locator(".pet-list .pet-row")).toHaveCount(5);
 
     await page.goto("/#/");
-    await page.getByRole("button", { name: "搜索全系统" }).click();
+    await page.locator(".orbit-command-trigger").click();
     await page.getByPlaceholder("搜索账号、宠物、装备、技能或页面").fill("矩阵");
     await page.getByText("固定矩阵", { exact: true }).click();
     await expect(page).toHaveURL(/#\/analysis\/matrix$/);

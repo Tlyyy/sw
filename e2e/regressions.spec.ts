@@ -35,7 +35,7 @@ test.describe("desktop regressions", () => {
 
   test("全局技能搜索保留分类，并支持键盘选择和焦点恢复", async ({ page }) => {
     await page.goto("/#/");
-    const trigger = page.getByRole("button", { name: "搜索全系统" });
+    const trigger = page.locator(".orbit-command-trigger");
     await trigger.focus();
     await trigger.press("Enter");
 
