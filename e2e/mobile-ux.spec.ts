@@ -11,7 +11,7 @@ const mobileRoutes = [
   "/#/assets/equipment",
   "/#/assets/skills",
   "/#/assets/evidence",
-  "/#/plans/upgrades",
+  "/#/plans/gems",
   "/#/plans/beasts",
   "/#/plans/tasks",
   "/#/plans/timeline",
@@ -207,6 +207,137 @@ async function undersizedInputFonts(page: Page) {
   });
 }
 
+async function mobileTypographyReport(page: Page) {
+  return page.evaluate(() => {
+    const root = document.documentElement;
+    const main = document.querySelector<HTMLElement>(".orbit-main");
+    if (!main) throw new Error("移动排版审查缺少 .orbit-main");
+
+    const px = (value: string) => Number.parseFloat(value);
+    const visible = (element: HTMLElement) => {
+      if (element.closest('[hidden], [aria-hidden="true"], [inert]')) return false;
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return style.display !== "none"
+        && style.visibility !== "hidden"
+        && Number(style.opacity) !== 0
+        && rect.width > 0
+        && rect.height > 0;
+    };
+    const describe = (element: HTMLElement) => {
+      const id = element.id ? `#${element.id}` : "";
+      const classes = Array.from(element.classList).slice(0, 3).map((name) => `.${name}`).join("");
+      const text = (element.innerText || element.getAttribute("placeholder") || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .slice(0, 52);
+      return `${element.tagName.toLowerCase()}${id}${classes}${text ? ` “${text}”` : ""}`;
+    };
+    const styleContract = {
+      largeTitle: [34, 41],
+      title1: [28, 34],
+      title2: [22, 28],
+      title3: [20, 25],
+      headline: [17, 22],
+      body: [17, 22],
+      callout: [16, 21],
+      subheadline: [15, 20],
+      footnote: [13, 18],
+      caption1: [12, 16],
+      caption2: [11, 13],
+    } as const;
+    const tokenNames = {
+      largeTitle: ["--ios26-type-large-title", "--ios26-leading-large-title"],
+      title1: ["--ios26-type-title-1", "--ios26-leading-title-1"],
+      title2: ["--ios26-type-title-2", "--ios26-leading-title-2"],
+      title3: ["--ios26-type-title-3", "--ios26-leading-title-3"],
+      headline: ["--ios26-type-headline", "--ios26-leading-headline"],
+      body: ["--ios26-type-body", "--ios26-leading-body"],
+      callout: ["--ios26-type-callout", "--ios26-leading-callout"],
+      subheadline: ["--ios26-type-subheadline", "--ios26-leading-subheadline"],
+      footnote: ["--ios26-type-footnote", "--ios26-leading-footnote"],
+      caption1: ["--ios26-type-caption-1", "--ios26-leading-caption-1"],
+      caption2: ["--ios26-type-caption-2", "--ios26-leading-caption-2"],
+    } as const;
+    const rootStyle = getComputedStyle(root);
+    const tokenOffenders = Object.entries(styleContract).flatMap(([key, expected]) => {
+      const [sizeToken, leadingToken] = tokenNames[key as keyof typeof tokenNames];
+      const actual = [px(rootStyle.getPropertyValue(sizeToken)), px(rootStyle.getPropertyValue(leadingToken))];
+      return actual[0] === expected[0] && actual[1] === expected[1]
+        ? []
+        : [{ token: key, expected, actual }];
+    });
+
+    const headingOffenders = Array.from(main.querySelectorAll<HTMLElement>("h1, h2, h3, h4"))
+      .filter(visible)
+      .flatMap((element) => {
+        let expected: readonly [number, number];
+        if (element.matches(".next-step-card h1")) {
+          expected = styleContract.title2;
+        } else if (element.tagName === "H1") {
+          expected = styleContract.title1;
+        } else if (
+          element.matches(".page-intro h2, .inventory-page-head h2, .gem-plan-heading-mobile")
+        ) {
+          expected = styleContract.title1;
+        } else if (element.tagName === "H2") {
+          expected = styleContract.title3;
+        } else if (element.matches(".resource-tool-columns h3")) {
+          expected = styleContract.footnote;
+        } else {
+          expected = styleContract.headline;
+        }
+        const style = getComputedStyle(element);
+        const actual = [px(style.fontSize), px(style.lineHeight)];
+        return Math.abs(actual[0] - expected[0]) <= 0.1 && Math.abs(actual[1] - expected[1]) <= 0.1
+          ? []
+          : [{ element: describe(element), expected, actual }];
+      });
+
+    const smallTextOffenders = Array.from(
+      main.querySelectorAll<HTMLElement>("p, small, label, dt, dd, th, td, li, strong, span"),
+    )
+      .filter(visible)
+      .filter((element) => (element.innerText || "").trim().length > 0)
+      .flatMap((element) => {
+        const size = px(getComputedStyle(element).fontSize);
+        return size >= styleContract.caption2[0]
+          ? []
+          : [{ element: describe(element), size }];
+      })
+      .slice(0, 24);
+
+    const fieldSelector = [
+      'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"])',
+      "select",
+      "textarea",
+    ].join(",");
+    const fieldOffenders = Array.from(main.querySelectorAll<HTMLElement>(fieldSelector))
+      .filter(visible)
+      .flatMap((element) => {
+        const style = getComputedStyle(element);
+        const actual = [px(style.fontSize), px(style.lineHeight)];
+        return Math.abs(actual[0] - styleContract.body[0]) <= 0.1
+          && Math.abs(actual[1] - styleContract.body[1]) <= 0.1
+          ? []
+          : [{ element: describe(element), expected: styleContract.body, actual }];
+      });
+
+    return {
+      tokenOffenders,
+      headingOffenders,
+      smallTextOffenders,
+      fieldOffenders,
+      horizontalOverflow: Math.max(
+        document.documentElement.scrollWidth,
+        document.body.scrollWidth,
+      ) - document.documentElement.clientWidth,
+      auditedHeadings: Array.from(main.querySelectorAll("h1, h2, h3, h4")).filter((element) => visible(element as HTMLElement)).length,
+      auditedFields: Array.from(main.querySelectorAll(fieldSelector)).filter((element) => visible(element as HTMLElement)).length,
+    };
+  });
+}
+
 async function expectCurrentSectionLinkInView(page: Page, url: string, navigationName: string, linkName: string) {
   await page.goto(url);
   await waitForApplicationPage(page);
@@ -287,6 +418,7 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("iOS 26 Liquid Glass 底栏与独立搜索入口保持可触控", async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
@@ -301,6 +433,43 @@ test.describe("mobile UX release gate", () => {
     await searchButton.tap();
     await expect(page.getByRole("dialog", { name: "全局搜索" })).toBeVisible();
     await page.keyboard.press("Escape");
+    const dockScale = await page.evaluate(() => {
+      const dock = document.querySelector<HTMLElement>(".orbit-mobile-dock.ios26-mobile-dock");
+      const activeDockLink = document.querySelector<HTMLElement>(".orbit-mobile-dock a.active");
+      const search = document.querySelector<HTMLElement>(".ios26-mobile-search");
+      if (!dock || !activeDockLink || !search) throw new Error("首页底栏视觉尺寸审查缺少目标元素");
+      const colorAlpha = (value: string) => {
+        const match = value.match(/rgba?\([^)]*?(?:,\s*([\d.]+))?\)$/);
+        return match?.[1] ? Number.parseFloat(match[1]) : 1;
+      };
+      const dockStyle = getComputedStyle(dock);
+      return {
+        activePlateWidth: Number.parseFloat(getComputedStyle(activeDockLink, "::before").width),
+        activePlateHeight: Number.parseFloat(getComputedStyle(activeDockLink, "::before").height),
+        activeTintAlpha: colorAlpha(getComputedStyle(activeDockLink, "::before").backgroundColor),
+        dockBackdrop: dockStyle.backdropFilter || dockStyle.getPropertyValue("-webkit-backdrop-filter"),
+        dockBackgroundAlpha: colorAlpha(dockStyle.backgroundColor),
+        dockGlossOpacity: Number.parseFloat(getComputedStyle(dock, "::before").opacity),
+        dockRimShadow: getComputedStyle(dock, "::after").boxShadow,
+        dockLabelSize: Number.parseFloat(getComputedStyle(activeDockLink).fontSize),
+        dockIconWidth: activeDockLink.querySelector("svg")?.getBoundingClientRect().width || 0,
+        searchIconWidth: search.querySelector("svg")?.getBoundingClientRect().width || 0,
+      };
+    });
+    expect(dockScale.activePlateWidth, "选中按钮应接近参考图的 105px 宽度").toBeCloseTo(105, 0);
+    expect(dockScale.activePlateHeight, "选中按钮应保持 48px 高度").toBeCloseTo(48, 0);
+    expect(dockScale.dockLabelSize, "底栏文字应采用参考图的 10.5px 视觉字号").toBeCloseTo(10.5, 1);
+    expect(dockScale.dockIconWidth, "主导航图标应为 26px").toBeCloseTo(26, 0);
+    expect(dockScale.searchIconWidth, "搜索图标应为 28px").toBeCloseTo(28, 0);
+    expect(dockScale.dockBackgroundAlpha, "Regular Liquid Glass 必须允许内容透过").toBeLessThanOrEqual(0.5);
+    expect(dockScale.dockBackgroundAlpha, "Regular Liquid Glass 仍需保持控件可读性").toBeGreaterThanOrEqual(0.28);
+    expect(dockScale.dockBackdrop, "Liquid Glass 应同时模糊、提饱和并调整明暗").toContain("blur(18px)");
+    expect(dockScale.dockBackdrop).toContain("saturate(1.85)");
+    expect(dockScale.dockBackdrop).toContain("contrast(1.1)");
+    expect(dockScale.dockBackdrop).toContain("brightness(1.02)");
+    expect(dockScale.dockGlossOpacity, "Liquid Glass 应保留迎光高光层").toBeGreaterThanOrEqual(0.65);
+    expect(dockScale.dockRimShadow, "Liquid Glass 应保留折射边缘").toContain("inset");
+    expect(dockScale.activeTintAlpha, "选中态应是低浓度 tint 而非实色底板").toBeLessThanOrEqual(0.1);
     expect(await undersizedPrimaryTargets(page), "移动主导航存在不足 44px 的主要触控目标").toEqual([]);
 
     for (const url of [
@@ -326,6 +495,120 @@ test.describe("mobile UX release gate", () => {
         expect(await undersizedPrimaryTargets(page), `${url} 存在不足 44px 的主要触控目标`).toEqual([]);
       });
     }
+  });
+
+  test("移动搜索从底栏展开、即时分组并适配软键盘视口", async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await page.goto("/#/week");
+    await waitForApplicationPage(page);
+
+    const searchButton = page.getByRole("button", { name: "搜索全系统", exact: true });
+    const dialog = page.getByRole("dialog", { name: "全局搜索" });
+    const input = page.getByPlaceholder("搜索账号、宠物、装备、技能或页面");
+    await searchButton.tap();
+
+    await expect(dialog).toBeVisible();
+    await expect(input).toBeFocused();
+    await expect(dialog.locator(".command-result-group-label strong")).toHaveText(["快速前往"]);
+    await expect(dialog.locator(".command-result-card > button")).toHaveCount(6);
+    await expect(dialog.locator("footer")).toBeHidden();
+    await page.waitForTimeout(500);
+
+    const emptyLayout = await page.evaluate(() => {
+      const backdrop = document.querySelector<HTMLElement>(".command-backdrop");
+      const searchDialog = document.querySelector<HTMLElement>(".command-dialog");
+      const results = document.querySelector<HTMLElement>(".command-results");
+      const toolbar = document.querySelector<HTMLElement>(".command-search-toolbar");
+      const searchInput = document.querySelector<HTMLInputElement>("#command-search-input");
+      const searchTitle = document.querySelector<HTMLElement>(".command-mobile-head > strong");
+      const resultTitle = document.querySelector<HTMLElement>(".command-result-copy > strong");
+      const resultDetail = document.querySelector<HTMLElement>(".command-result-copy > small");
+      if (!backdrop || !searchDialog || !results || !toolbar || !searchInput || !searchTitle || !resultTitle || !resultDetail) {
+        throw new Error("移动搜索布局审查缺少目标元素");
+      }
+      const colorAlpha = (value: string) => {
+        const match = value.match(/rgba?\([^)]*?(?:,\s*([\d.]+))?\)$/);
+        return match?.[1] ? Number.parseFloat(match[1]) : 1;
+      };
+      const toolbarStyle = getComputedStyle(toolbar);
+      const resultsStyle = getComputedStyle(results);
+      const dialogStyle = getComputedStyle(searchDialog);
+      const inputStyle = getComputedStyle(searchInput);
+      const toolbarRect = toolbar.getBoundingClientRect();
+      const resultsRect = results.getBoundingClientRect();
+      return {
+        backdropWidth: backdrop.getBoundingClientRect().width,
+        dialogHeight: searchDialog.getBoundingClientRect().height,
+        toolbarHeight: toolbarRect.height,
+        toolbarBottomGap: window.visualViewport!.height - toolbarRect.bottom,
+        toolbarBackdrop: toolbarStyle.backdropFilter || toolbarStyle.getPropertyValue("-webkit-backdrop-filter"),
+        toolbarBackgroundAlpha: colorAlpha(toolbarStyle.backgroundColor),
+        resultsBackdrop: resultsStyle.backdropFilter || resultsStyle.getPropertyValue("-webkit-backdrop-filter"),
+        dialogBackdrop: dialogStyle.backdropFilter || dialogStyle.getPropertyValue("-webkit-backdrop-filter"),
+        inputFontSize: Number.parseFloat(inputStyle.fontSize),
+        searchTitleSize: Number.parseFloat(getComputedStyle(searchTitle).fontSize),
+        searchTitleLeading: Number.parseFloat(getComputedStyle(searchTitle).lineHeight),
+        resultTitleSize: Number.parseFloat(getComputedStyle(resultTitle).fontSize),
+        resultTitleLeading: Number.parseFloat(getComputedStyle(resultTitle).lineHeight),
+        resultDetailSize: Number.parseFloat(getComputedStyle(resultDetail).fontSize),
+        resultDetailLeading: Number.parseFloat(getComputedStyle(resultDetail).lineHeight),
+        inputBackgroundAlpha: colorAlpha(inputStyle.backgroundColor),
+        resultToolbarGap: toolbarRect.top - resultsRect.bottom,
+        documentWidth: document.documentElement.clientWidth,
+        documentScrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+
+    expect(emptyLayout.backdropWidth).toBeCloseTo(emptyLayout.documentWidth, 0);
+    expect(emptyLayout.dialogHeight).toBeCloseTo(852, 0);
+    expect(emptyLayout.toolbarHeight, "展开后的底部搜索控件应保持 64px").toBeCloseTo(64, 0);
+    expect(emptyLayout.toolbarBottomGap, "底部搜索控件应保留 10px 安全间距").toBeGreaterThanOrEqual(9);
+    expect(emptyLayout.toolbarBackdrop, "只有底部搜索控制层使用 Regular Liquid Glass").toContain("blur(20px)");
+    expect(emptyLayout.toolbarBackgroundAlpha).toBeGreaterThanOrEqual(0.35);
+    expect(emptyLayout.toolbarBackgroundAlpha).toBeLessThanOrEqual(0.5);
+    expect(emptyLayout.resultsBackdrop, "结果内容层不能叠加 Liquid Glass").toBe("none");
+    expect(emptyLayout.dialogBackdrop, "搜索内容页不能整层玻璃化").toBe("none");
+    expect(emptyLayout.inputBackgroundAlpha, "搜索字段内部不能 glass-on-glass").toBe(0);
+    expect(emptyLayout.inputFontSize, "搜索输入应使用 iOS 正文字号").toBeCloseTo(17, 0);
+    expect([emptyLayout.searchTitleSize, emptyLayout.searchTitleLeading], "搜索页标题应采用 Title 1 28/34").toEqual([28, 34]);
+    expect([emptyLayout.resultTitleSize, emptyLayout.resultTitleLeading], "搜索结果标题应采用 Headline 17/22").toEqual([17, 22]);
+    expect([emptyLayout.resultDetailSize, emptyLayout.resultDetailLeading], "搜索结果说明应采用 Footnote 13/18").toEqual([13, 18]);
+    expect(emptyLayout.resultToolbarGap, "结果内容只能轻微下穿浮动搜索控件").toBeGreaterThanOrEqual(-16);
+    expect(emptyLayout.documentScrollWidth).toBeLessThanOrEqual(emptyLayout.documentWidth + 1);
+
+    await input.fill("FC");
+    await expect(dialog.locator(".command-result-group-label strong")).toHaveText(["账号", "宠物", "装备"]);
+    await expect(dialog.locator(".command-result-card > button").first()).toContainText("FC · 账号详情");
+    await expect(dialog.getByRole("button", { name: "清空搜索" })).toBeVisible();
+
+    await dialog.getByRole("button", { name: "清空搜索" }).tap();
+    await expect(input).toHaveValue("");
+    await expect(dialog.locator(".command-result-group-label strong")).toHaveText(["快速前往"]);
+
+    await input.fill("不存在的搜索内容");
+    await expect(dialog.locator(".command-empty")).toContainText("没有找到");
+    await expect(dialog.locator(".command-empty").getByRole("button")).toHaveText(["FC", "宠物", "技能"]);
+
+    await page.setViewportSize({ width: 393, height: 600 });
+    await expect(page.locator(".command-backdrop")).toHaveClass(/is-keyboard-open/);
+    const compactLayout = await page.evaluate(() => {
+      const toolbar = document.querySelector<HTMLElement>(".command-search-toolbar");
+      const results = document.querySelector<HTMLElement>(".command-results");
+      if (!toolbar || !results) throw new Error("软键盘视口审查缺少目标元素");
+      return {
+        viewportHeight: window.visualViewport!.height,
+        toolbarBottom: toolbar.getBoundingClientRect().bottom,
+        resultsClientHeight: results.clientHeight,
+        resultsScrollHeight: results.scrollHeight,
+      };
+    });
+    expect(compactLayout.toolbarBottom).toBeLessThanOrEqual(compactLayout.viewportHeight - 9);
+    expect(compactLayout.resultsClientHeight).toBeGreaterThan(0);
+    expect(compactLayout.resultsScrollHeight).toBeGreaterThanOrEqual(compactLayout.resultsClientHeight);
+
+    await dialog.getByRole("button", { name: "取消" }).tap();
+    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(/#\/week$/);
   });
 
   test("iPhone 16 Pro Max 的 Liquid Glass 底栏安全悬浮且账号操作保持单行", async ({ page }) => {
@@ -391,8 +674,8 @@ test.describe("mobile UX release gate", () => {
     expect(layout.dockHeight, "主胶囊应采用参考图的 56px 紧凑高度").toBeCloseTo(56, 0);
     expect(layout.searchWidth, "独立搜索按钮应为 56px 圆形").toBeCloseTo(56, 0);
     expect(layout.searchHeight, "独立搜索按钮应为 56px 圆形").toBeCloseTo(56, 0);
-    expect(layout.dockSearchGap, "主胶囊与搜索按钮间距应为 8px").toBeCloseTo(8, 0);
-    expect(layout.dockShellWidth, "底栏左右应各留 16px").toBeCloseTo(440 - 32, 0);
+    expect(layout.dockSearchGap, "主胶囊与搜索按钮间距应为 7px").toBeCloseTo(7, 0);
+    expect(layout.dockShellWidth, "底栏左右应各留 18px").toBeCloseTo(440 - 36, 0);
     expect(layout.buttonBottom, "底栏按钮不能超出悬浮容器").toBeLessThanOrEqual(layout.viewportHeight - layout.dockBottomGap + 1);
     expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(90);
     expect(layout.linkHeight, "更新库存应保持可触控高度").toBeGreaterThanOrEqual(44);
@@ -603,10 +886,13 @@ test.describe("mobile UX release gate", () => {
       }, mode);
 
       expect(["auto", "scroll"]).toContain(snapshot.bodyOverflowY);
-      expect(snapshot.labelFontSize).toBe(13);
-      expect(snapshot.inputFontSize).toBe(16);
+      expect(snapshot.titleFontSize, "工作表标题应使用 Headline").toBe(17);
+      expect(snapshot.segmentFontSize, "分段控件应使用 Subheadline").toBe(15);
+      expect(snapshot.labelFontSize, "紧凑字段标签应使用 Footnote").toBe(13);
+      expect(snapshot.inputFontSize, "输入值应使用 Body").toBe(17);
       expect(snapshot.inputFontWeight).toBe(600);
       expect(snapshot.inputHeight).toBe(50);
+      expect(snapshot.saveFontSize, "保存按钮应使用 Headline").toBe(17);
       expect(snapshot.saveHeight).toBe(50);
 
       const scrollTop = await sheet.locator(".ios26-record-body").evaluate((element) => {
@@ -1100,6 +1386,34 @@ test.describe("mobile UX release gate", () => {
     expect(auditedFields, "应实际审查一批移动表单控件").toBeGreaterThan(10);
   });
 
+  test("全部移动页面遵守 iOS 语义字号与行高契约", async ({ page }) => {
+    test.setTimeout(120_000);
+    let auditedHeadings = 0;
+    let auditedFields = 0;
+    for (const viewport of [
+      { width: 393, height: 852 },
+      { width: 430, height: 932 },
+    ] as const) {
+      await page.setViewportSize(viewport);
+      for (const url of mobileRoutes) {
+        await test.step(`${viewport.width}×${viewport.height} ${url}`, async () => {
+          await page.goto(url);
+          await waitForApplicationPage(page);
+          const report = await mobileTypographyReport(page);
+          auditedHeadings += report.auditedHeadings;
+          auditedFields += report.auditedFields;
+          expect.soft(report.tokenOffenders, `${url} 的 iOS 语义字号 token 不完整`).toEqual([]);
+          expect.soft(report.headingOffenders, `${url} 的标题字号或行高偏离语义层级`).toEqual([]);
+          expect.soft(report.smallTextOffenders, `${url} 存在低于 iOS Caption 2（11px）的普通文字`).toEqual([]);
+          expect.soft(report.fieldOffenders, `${url} 的输入控件未统一为 Body 17/22`).toEqual([]);
+          expect.soft(report.horizontalOverflow, `${url} 存在移动页面横向溢出`).toBeLessThanOrEqual(1);
+        });
+      }
+    }
+    expect(auditedHeadings, "应实际审查全部移动页面的标题").toBeGreaterThan(30);
+    expect(auditedFields, "应实际审查移动页面中的表单控件").toBeGreaterThan(20);
+  });
+
   test("库存录入弹窗逐账号录入并适配缩放后的 VisualViewport", async ({ page }, testInfo) => {
     await page.goto("/#/record");
     await waitForApplicationPage(page);
@@ -1149,7 +1463,7 @@ test.describe("mobile UX release gate", () => {
         ...element.querySelectorAll<HTMLElement>(
           ".snapshot-account-stepper, .snapshot-account-tab, .snapshot-entry-scroll, .snapshot-account-panel, .snapshot-account-fields, .snapshot-account-field, .snapshot-account-field input, footer, footer .button",
         ),
-      ].filter((item) => item.offsetParent !== null);
+      ].filter((item): item is HTMLElement => item instanceof HTMLElement && item.offsetParent !== null);
       const horizontalOffenders = constrainedElements.flatMap((item) => {
         const rect = item.getBoundingClientRect();
         if (rect.left >= viewportLeft - 1 && rect.right <= viewportRight + 1) return [];

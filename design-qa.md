@@ -150,6 +150,99 @@
 
 final result: passed
 
+## iOS 26 全站移动排版系统（2026-07-25）
+
+### Official design basis
+
+- Apple HIG Typography 的 Large 默认语义字号被固化为移动端设计令牌：Large Title `34/41`、Title 1 `28/34`、Title 2 `22/28`、Title 3 `20/25`、Headline 与 Body `17/22`、Callout `16/21`、Subheadline `15/20`、Footnote `13/18`、Caption 1 `12/16`、Caption 2 `11/13`（字号/行高，CSS px）。
+- 页面标题、分区标题、正文、辅助文案、表头、标签和紧凑数据各自绑定语义样式，不再由页面任意声明字号。首页主任务标题保留 Title 2，常规页面标题使用 Title 1。
+- 移动端输入、选择器和多行文本统一为 Body `17/22`；主操作按钮统一为 Headline `17/22`；分段控件统一为 Subheadline `15/20`；密集表格的最小正常文字为 Caption 2 `11/13`。
+- 参考：Apple Human Interface Guidelines `Typography`、UIKit `UIFont.TextStyle` 与 WWDC25 `Get to know the new design system`。无障碍和 Dynamic Type 适配按用户要求不在本轮范围内。
+
+### Source and implementation evidence
+
+- 修改前移动端捕获：`C:\Users\T\AppData\Local\Temp\sw-ios26-type-qa\before-home.png`、`before-week.png`、`before-resources.png`、`before-tasks.png`、`before-pets.png`、`before-inventory.png`、`before-settings.png`。
+- 修改后移动端捕获：`C:\Users\T\AppData\Local\Temp\sw-ios26-type-qa\after-home.png`、`after-week.png`、`after-resources-reload-430.png`、`after-tasks.png`、`after-pets.png`、`after-inventory.png`、`after-settings.png`。
+- 搜索与录入层：`C:\Users\T\AppData\Local\Temp\sw-ios26-type-qa\after-search-393x852.png`、`after-record-sheet-393x852.png`、`after-global-sheet-393x852.png`。
+- 同画布前后对照：`C:\Users\T\AppData\Local\Temp\sw-ios26-type-qa\comparison-home-before-after.png`、`comparison-week-before-after.png`、`comparison-resources-before-after.png`、`comparison-tasks-before-after.png`、`comparison-pets-before-after.png`、`comparison-settings-before-after.png`。
+- 汇总同画布：`C:\Users\T\AppData\Local\Temp\sw-ios26-type-qa\comparison-all-pages-before-after.png`。
+
+### Findings and fixes
+
+- P1 — 9 个移动样式来源共有 221 处显式 `font-size`，形成 8–32 px 的 23 种字号和 18 种字重；同一级标题、按钮、表头和辅助文字会因页面不同而改变。
+- Fix — 在 `ios26-mobile.css` 建立 11 个 Apple 语义字号/行高令牌，并把历史 `--font-*`、`--text-*` 别名桥接到同一套令牌。移动端系统字体栈改为 iOS 系统字体优先。
+- P1 — Home、Week、Tasks、Resources、Inventory 和 Earnings 的局部 scoped CSS 覆盖全局层级；Earnings 密集表格存在 8–10 px 正常文字，搜索和录入弹层又使用另一套尺寸。
+- Fix — 对七个核心页面及搜索、快照录入、全局录入层做语义化收口；密集表格最低统一到 Caption 2 `11/13`，表头/标签统一到 Footnote `13/18`，输入与主要动作回归 17 px。
+- P2 — 393 px 视口下发布页筛选器存在 11 px 横向溢出，资料页的短页面标签会因新字号被逐字换行。
+- Fix — 发布筛选列改为弹性主列加 100 px 固定列；紧凑页面标签保持单行。两处修复均不缩小文字。
+- Scope — 页面结构、业务字段、底栏几何和既有 Liquid Glass 材质没有被重新设计；本轮只统一全站排版尺寸与相关防溢出布局。
+
+### Verification
+
+- In-app Browser 在 `393 × 852` 与 `430 × 932` 两个 CSS 视口遍历 23 个移动路由；未发现可见正常文字小于 11 px、文本输入小于 17 px、标题偏离语义令牌或页面横向溢出。
+- 搜索层实测：标题 `28/34`、结果 `17/22`、说明 `13/18`、输入 `17/22`；录入层实测：标题 `17/22`、分段按钮 `15/20`、紧凑标签 `13/18`、输入与保存按钮 `17/22`。
+- 新增移动排版回归契约，覆盖 23 个路由和两个目标视口，并校验根语义令牌、标题、最小文字、输入字号和横向溢出。
+- 149 项单元测试、Vue/TypeScript 检查、数据完整性检查、生产构建和 `git diff --check` 通过。
+- 无障碍专项检查按用户要求不在范围内。
+
+final result: passed
+
+## iOS 26 移动全局搜索重构（2026-07-25）
+
+**Source and implementation evidence**
+
+- 用户问题截图：`C:\Users\T\AppData\Local\Temp\codex-clipboard-e69c7ff3-b8c8-41f7-95c3-661d2ca0345b.png`。
+- 重构前同状态捕获：`C:\Users\T\AppData\Local\Temp\sw-ios26-search-qa\before-430x932.png`。
+- 重构后快捷入口：`C:\Users\T\AppData\Local\Temp\sw-ios26-search-qa\after-final-430x932.png`。
+- 重构后分组结果：`C:\Users\T\AppData\Local\Temp\sw-ios26-search-qa\after-fc-results-430x932.png`。
+- 重构后最近搜索：`C:\Users\T\AppData\Local\Temp\sw-ios26-search-qa\after-recent-search-fixed-430x932.png`。
+- 同画布前后对照：`C:\Users\T\AppData\Local\Temp\sw-ios26-search-qa\comparison-before-after-430x932.png`（左侧旧搜索，右侧新搜索）。
+- CSS 视口为 430 × 932；in-app Browser 的可捕获内容宽度因可见滚动条为 415 px，前后证据使用完全相同的 415 × 932 像素状态。
+
+**Official design basis**
+
+- Apple HIG 将当前场景定义为独立按钮式 Search tab：点击后立即聚焦、显示键盘，退出后回到之前标签，适合快速定位内容。
+- iPhone 搜索字段位于底部；搜索按钮展开为字段，其他标签退出搜索状态后恢复。
+- Liquid Glass 仅用于浮动导航和重要控制层。搜索结果属于内容层，不应整页玻璃化；本实现使用 Regular Glass，不叠加 glass-on-glass。
+- 依据：Apple HIG `Search fields`、WWDC25 `Build a SwiftUI app with the new design` 与 `Build a UIKit app with the new design` 的 Search 章节。
+
+**Findings and fixes**
+
+- P1 — 旧实现是桌面 Command Palette 直接缩进手机：顶部窄输入、无层级页面长表、桌面键盘提示和方形关闭按钮。
+- Fix — 手机端改为独立 Search tab 的四态流程：底栏圆钮 → 原位展开的底部搜索字段 → 即时分组结果 → 取消后恢复原标签。桌面仍保留命令面板和完整键盘导航。
+- P1 — 旧结果按“页面优先”简单拼接，精确账号也会被页面列表压后，每行重复“页面”。
+- Fix — 引入精确、分词、前缀、包含四级评分；结果按最低匹配分数动态排序并分为账号、宠物、装备、技能、页面，保留原账号/宠物/装备/技能 URL 和查询参数契约。
+- P2 — 空查询只是任意前八个页面，没有任务导向。
+- Fix — 提供今日、录入、任务、周报、资料、核算六个真实高频入口，并持久化最近四个搜索词；清空、无结果建议和结果计数均可操作。
+- P2 — 第一轮最近搜索按钮继承旧 `.command-results button { width: 100% }`，导致“最近搜索”标题被清除按钮挤成两行。
+- Fix — 最近搜索标题动作和历史词条显式使用内容宽度；最终 430 × 932 捕获中标题、清除动作与 `FC` 历史词均保持单行。
+
+**Material, typography, spacing, and motion**
+
+- 结果页使用普通浅色内容材质；只有 64 px 底部搜索控制层使用 0.42 中性填充、20 px blur、185% saturation、108% contrast、102% brightness 的 Regular Liquid Glass。
+- 输入字段内部透明，不再叠一层玻璃；结果卡仅使用普通白色表面、细边和轻投影。
+- 搜索标题为 32 px，结果标题 15.5 px，说明 12.5 px，输入 17 px；所有文本在 430 × 932 和 393 × 852 下无裁切。
+- 展开动作以底部右侧搜索圆钮为变形原点，使用 440 ms 连续弹簧曲线；搜索控制层先横向展开，内容层随后淡入和轻微上移，退出时反向恢复。
+- 复用 `useVisualViewport`；软件键盘缩短视口时，搜索字段保持在可视区域底部，标题收紧，结果区单独滚动。
+
+**Interaction and runtime evidence**
+
+- 打开后输入框立即获得焦点；Escape、取消和桌面关闭均恢复滚动、背景 inert 与先前焦点。
+- `FC` 返回 13 项并按账号、宠物、装备分组，账号结果置顶；点击后进入 `#/accounts/FC`。
+- 最近搜索会保存 `FC`，清除动作恢复空查询，无法匹配时显示可点击建议。
+- 393 × 852 自动化验证了完整搜索布局、64 px 搜索控制层、17 px 输入、无横向溢出、内容层无玻璃、清除与取消。
+- 将视口从 393 × 852 缩到 393 × 600 后，`is-keyboard-open` 生效，底部字段仍位于视觉视口内，结果区保持可滚动。
+- in-app Browser 控制台只有 Vite 连接和热更新 debug 记录，无 warning/error。
+- 149 项单元测试、17 项完整移动端 E2E、2 项桌面搜索回归、生产构建与 `git diff --check` 均通过。
+- 无障碍专项检查按用户要求不在范围内。
+
+**Residual**
+
+- P3 — 桌面设备模拟不显示 iOS 系统键盘；已用 VisualViewport 从 852 px 缩至 600 px 的真实布局变化验证键盘占位与贴底行为。
+- P3 — Web `backdrop-filter` 无法复刻系统级像素位移折射；当前以连续形变、背景透传、迎光边缘和低位阴影实现稳定近似。
+
+final result: passed
+
 ## Desktop five-account combined inventory entry — 2026-07-25
 
 ### Source and implementation evidence
@@ -271,28 +364,30 @@ final result: passed
 
 **Rendered implementation**
 
-- `D:\0------Code\14-----------------------Tools\sw\artifacts\ios26-dock-393x852.png`
-- 实现像素与 CSS 视口：393 × 852，density 1。
-- 同画布对照：`D:\0------Code\14-----------------------Tools\sw\artifacts\ios26-dock-comparison.png`（786 × 853；左侧参考、右侧实现）。
+- `D:\0------Code\14-----------------------Tools\sw\artifacts\ios26-dock-393x852-final.png`
+- 原始实现截图：1179 × 2556，device scale factor 3；归一化实现与 CSS 视口：393 × 852。
+- 全屏同画布对照：`D:\0------Code\14-----------------------Tools\sw\artifacts\ios26-dock-comparison-final.png`（786 × 853；左侧参考、右侧实现）。
+- 底栏聚焦同画布对照：`D:\0------Code\14-----------------------Tools\sw\artifacts\ios26-dock-focus-comparison-final.png`（786 × 133；左侧参考、右侧实现）。
 - 状态：首页、底栏展开、今日选中、搜索弹层关闭。
 
 **Full-view comparison evidence**
 
-- 实现使用与参考一致的两段式结构：297.33 × 56 主胶囊、56 × 56 独立搜索圆钮、8px 间距、左右 16px、底部 16px。
+- 实现使用与参考一致的两段式结构：294 × 56 主胶囊、56 × 56 独立搜索圆钮、7px 间距、左右 18px、底部 16px。
 - 内容延伸到底栏之后，没有整块不透明底板或顶部分隔线。
-- 选中态为约 96.67 × 48 的完整着色玻璃滑块；未选中项保持单色图标与标签。
+- 选中态为约 104.67 × 48 的完整着色玻璃滑块；未选中项保持单色图标与标签。
 
 **Focused region comparison evidence**
 
-- 已在同画布底部区域检查轮廓、圆角、间距、选中态占比、图标与标签层级。
-- 参考与实现的主胶囊/搜索按钮比例、按钮高度和悬浮位置一致；实现沿用产品橙色强调色，属于既有品牌令牌，不是结构漂移。
+- 已在 393px 等宽同画布底部区域检查轮廓、圆角、间距、选中态占比、图标和标签的实际视觉占比。
+- 参考与实现的主胶囊/搜索按钮比例、按钮高度和悬浮位置一致；选中按钮均约 105 × 48，主导航图标为 26px，搜索图标为 28px，标签为 10.5px。
+- 实现沿用产品橙色强调色，属于既有品牌令牌，不是结构漂移。
 
 **Required fidelity surfaces**
 
-- Fonts and typography: 沿用系统中文字体栈；10.5px 标签、约 21–23px 图标与参考的小型底栏层级一致，无截断。
-- Spacing and layout rhythm: 56px 高度、28px 圆角、8px 分组间距、16px 横向与底部留白均已测量验证。
+- Fonts and typography: 沿用系统中文字体栈；标签为 10.5px / 650，选中态为 750；避免第一轮视觉放大后的过粗问题，字面高度与参考一致且无截断。
+- Spacing and layout rhythm: 56px 高度、28px 圆角、7px 分组间距、18px 横向留白与 16px 底部留白均已测量验证。
 - Colors and visual tokens: 使用半透明浅色 Liquid Glass 与产品橙色选中态；未给所有控件着色。
-- Image quality and asset fidelity: 底栏仅使用已有矢量图标组件，无占位图、位图拉伸或装饰资产缺失。
+- Image quality and asset fidelity: 底栏使用已有矢量图标组件；主导航图标为 26px / 2.3px 描边，搜索图标为 28px / 2.5px 描边，无占位图、位图拉伸或装饰资产缺失。
 - Copy and content: 保留本产品的“今日 / 任务 / 周报”和现有全局搜索能力；参考图的 Apple Music 文案不属于本产品复刻范围。
 
 **Findings**
@@ -312,13 +407,57 @@ final result: passed
 - Iteration 1 finding [P2]: 实现底部间距为 8px，低于参考图约 16–19px；搜索按钮关闭弹层后出现品牌色焦点外圈。
 - Fix: 底部改为 `max(16px, env(safe-area-inset-bottom))`，正文预留同步增至 90px，并移除搜索按钮非必要焦点外圈。
 - Post-fix evidence: 最终同画布对照中底栏底边与参考位置一致；搜索圆钮恢复纯玻璃轮廓。
+- Iteration 2 finding [P2]: 第一版内部控件偏小，选中底板仅约 96.67px 宽，标签为 10.5px，主导航图标为 21px，搜索图标为 23px，视觉重量明显弱于参考。
+- Fix: 选中底板扩展到约 104.66 × 48；主导航图标提升到 26px，搜索图标提升到 28px并强化描边；标签保持参考图的小型 10.5px 字面，同时将默认/选中字重校准为 650/750；外层横向留白与分组间距收敛到 18px/7px。
+- Post-fix evidence: 393px 等宽聚焦同画布对照中，选中底板宽高、文字字面、主图标与搜索图标可见轮廓均与参考一致；尺寸回归断言验证约 105px / 48px / 10.5px / 26px / 28px。
 
 **Implementation checklist**
 
 - [x] 主胶囊与搜索圆钮拆分
 - [x] 参考图尺寸与安全区
 - [x] 完整选中玻璃滑块
+- [x] 按钮、标签和图标视觉尺度
 - [x] 搜索真实交互
 - [x] 触控尺寸、路由、构建与控制台检查
+
+final result: passed
+
+## iOS 26 Liquid Glass 材质校准（2026-07-25）
+
+**Source and rendered evidence**
+
+- Source visual truth: `C:\Users\T\.codex\codex-remote-attachments\019f9503-9e22-7791-9ff5-845e36732211\634073BC-DAD3-4FC7-876E-88690A8FE519\1-照片-1.jpg`（589 × 1280）。
+- Browser-rendered implementation: `C:\Users\T\AppData\Local\Temp\sw-ios26-glass-after-final.png`（378 × 819）。
+- In-app Browser viewport override: 393 × 852 CSS px；浏览器内容截图为 378 × 819，参考图按同一 378 × 819 像素尺寸归一化后比较。
+- Full-view comparison: `C:\Users\T\AppData\Local\Temp\sw-ios26-glass-reference-vs-final.png`（756 × 819；左参考、右实现）。
+- Focused dock comparison: `C:\Users\T\AppData\Local\Temp\sw-ios26-glass-reference-vs-final-focus.png`（756 × 128；左参考、右实现）。
+- Before/after focused evidence: `C:\Users\T\AppData\Local\Temp\sw-ios26-glass-before-vs-final-focus.png`（756 × 128；左修改前、右修改后）。
+- State: 已登录、浅色界面、周报页、周报选中、搜索弹层关闭。
+
+**Findings and iteration**
+
+- Iteration 3 finding [P2]: 原底栏使用 `rgba(248, 250, 253, 0.70)` 白色填充、28px 均匀模糊和单层阴影；在浅色页面上背景细节被抹平，材质更像白色磨砂卡片，缺少 Liquid Glass 的透色、迎光边缘和折射厚度。
+- Fix: 主胶囊和独立搜索圆统一改为 Regular Liquid Glass：0.34 中性填充、18px blur、185% saturation、110% contrast、102% brightness；增加迎光渐变、上下异色折射边和低位环境阴影。选中板改为 0.08 品牌橙 tint，并保留独立高光而不叠第二层 blur。
+- Post-fix evidence: 同画布聚焦对照中，底栏仍保持 56px 几何与 105 × 48 选中板，但外壳由不透明白卡片变为可透过底层内容的中性玻璃；搜索圆与主胶囊拥有一致的亮边、暗底缘和环境阴影。
+
+**Required fidelity surfaces**
+
+- Fonts and typography: 10.5px 标签、650/750 字重、26px 主图标和 28px 搜索图标均未改变；材质调整未造成截断、重排或字面发灰。
+- Spacing and layout rhythm: 294 × 56 主胶囊、56 × 56 搜索圆、7px 间距、18px 横向留白与 16px 底部安全间距保持不变。
+- Colors and visual tokens: 外壳使用中性 Regular glass，不给整条导航染色；仅选中态使用低浓度产品橙 tint，符合 Apple 对选择性 tint 的指导。
+- Image quality and asset fidelity: 无新增位图、占位图或近似资产；现有矢量图标保持清晰。
+- Copy and content: “今日 / 任务 / 周报”与搜索能力未改变。
+
+**Interaction and runtime evidence**
+
+- In-app Browser: `http://127.0.0.1:4173/#/week`。
+- 搜索圆钮可打开“全局搜索”并通过关闭按钮恢复；导航与选中态保持工作。
+- 页面身份、有效内容、无框架错误覆盖层和控制台 warning/error 均已检查。
+- 149 项单元测试、2 项 Liquid Glass 聚焦移动端 E2E、生产构建与 `git diff --check` 通过。
+- 无障碍专项检查按用户要求不在范围内。
+
+**Residual**
+
+- [P3] Web `backdrop-filter` 无法实现原生 Liquid Glass 的实时物理位移贴图；当前以背景透传、明暗调整、几何高光、折射边和触摸形变做稳定近似。
 
 final result: passed
