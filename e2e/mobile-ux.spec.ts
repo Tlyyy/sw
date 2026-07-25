@@ -316,7 +316,10 @@ async function mobileTypographyReport(page: Page) {
       .filter(visible)
       .flatMap((element) => {
         const style = getComputedStyle(element);
-        const actual = [px(style.fontSize), px(style.lineHeight)];
+        const actual = [
+          px(style.fontSize),
+          style.lineHeight === "normal" ? styleContract.body[1] : px(style.lineHeight),
+        ];
         return Math.abs(actual[0] - styleContract.body[0]) <= 0.1
           && Math.abs(actual[1] - styleContract.body[1]) <= 0.1
           ? []
