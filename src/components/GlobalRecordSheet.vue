@@ -373,6 +373,13 @@ onBeforeUnmount(() => {
 }
 
 .ios26-record-sheet {
+  --ios26-record-title-size: 17px;
+  --ios26-record-label-size: 13px;
+  --ios26-record-input-size: 16px;
+  --ios26-record-input-weight: 600;
+  --ios26-record-meta-size: 12px;
+  --ios26-record-control-height: 50px;
+
   width: min(100%, 560px);
   max-height: min(88dvh, 780px);
   overflow: auto;
@@ -421,7 +428,7 @@ onBeforeUnmount(() => {
 }
 
 .ios26-record-head h2 {
-  font-size: 17px;
+  font-size: var(--ios26-record-title-size);
   line-height: 1.25;
   letter-spacing: -0.02em;
 }
@@ -559,7 +566,7 @@ onBeforeUnmount(() => {
 .ios26-inventory-meta p {
   margin: 0 0 4px;
   color: #7b8492;
-  font-size: 11px;
+  font-size: var(--ios26-record-meta-size);
   line-height: 1.45;
 }
 
@@ -583,33 +590,33 @@ onBeforeUnmount(() => {
   min-height: 34px;
   color: #7b8492;
   background: rgba(118, 118, 128, 0.07);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 720;
   text-align: center;
 }
 
 .ios26-inventory-row {
-  min-height: 56px;
+  min-height: 64px;
   border-top: 1px solid rgba(17, 24, 39, 0.07);
 }
 
 .ios26-inventory-row strong {
   color: #263244;
-  font-size: 12px;
+  font-size: var(--ios26-record-label-size);
 }
 
 .ios26-inventory-row input {
   min-width: 0;
   width: 100%;
-  height: 40px;
+  height: var(--ios26-record-control-height);
   padding: 0 5px;
   border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 10px;
   color: #111827;
   background: #ffffff;
   font: inherit;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--ios26-record-input-size);
+  font-weight: var(--ios26-record-input-weight);
   text-align: center;
 }
 
@@ -629,29 +636,34 @@ onBeforeUnmount(() => {
 .ios26-account-picker legend,
 .ios26-market-grid label > span:first-child {
   color: #465366;
-  font-size: 13px;
+  font-size: var(--ios26-record-label-size);
   font-weight: 720;
 }
 
 .ios26-sheet-field > span small {
   color: #8a94a3;
+  font-size: var(--ios26-record-meta-size);
   font-weight: 600;
 }
 
 .ios26-sheet-field input,
 .ios26-market-input {
-  min-height: 50px;
+  height: var(--ios26-record-control-height);
+  min-height: var(--ios26-record-control-height);
   width: 100%;
+  box-sizing: border-box;
   border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.92);
 }
 
 .ios26-sheet-field input {
+  display: block;
   padding: 0 14px;
   color: #111827;
   font: inherit;
-  font-size: 16px;
+  font-size: var(--ios26-record-input-size);
+  font-weight: var(--ios26-record-input-weight);
 }
 
 .ios26-account-picker > div {
@@ -663,13 +675,13 @@ onBeforeUnmount(() => {
 
 .ios26-account-picker button {
   min-width: 0;
-  min-height: 42px;
+  min-height: 44px;
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 12px;
   color: #596579;
   background: rgba(255, 255, 255, 0.76);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--ios26-record-label-size);
   font-weight: 800;
 }
 
@@ -682,7 +694,7 @@ onBeforeUnmount(() => {
 .ios26-sheet-intro {
   margin: 0;
   color: #667085;
-  font-size: 13px;
+  font-size: var(--ios26-record-meta-size);
   line-height: 1.5;
 }
 
@@ -699,6 +711,7 @@ onBeforeUnmount(() => {
 }
 
 .ios26-market-input {
+  min-width: 0;
   display: flex;
   align-items: center;
   padding: 0 11px;
@@ -712,12 +725,13 @@ onBeforeUnmount(() => {
   color: #111827;
   background: transparent;
   font: inherit;
-  font-size: 16px;
+  font-size: var(--ios26-record-input-size);
+  font-weight: var(--ios26-record-input-weight);
 }
 
 .ios26-market-input small {
   color: #8a94a3;
-  font-size: 11px;
+  font-size: var(--ios26-record-meta-size);
 }
 
 .ios26-record-error {
@@ -815,11 +829,38 @@ onBeforeUnmount(() => {
 
   .ios26-record-sheet {
     width: 100%;
-    max-height: 62dvh;
+    height: clamp(480px, 62dvh, 620px);
+    max-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     border-right: 0;
     border-bottom: 0;
     border-left: 0;
     border-radius: 28px 28px 0 0;
+  }
+
+  .ios26-sheet-grabber,
+  .ios26-record-head,
+  .ios26-record-segments,
+  .ios26-record-error,
+  .ios26-record-footer {
+    flex: 0 0 auto;
+  }
+
+  .ios26-record-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    align-content: start;
+    grid-auto-rows: max-content;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ios26-record-body::-webkit-scrollbar {
+    display: none;
   }
 }
 </style>

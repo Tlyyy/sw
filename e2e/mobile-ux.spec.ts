@@ -466,6 +466,137 @@ test.describe("mobile UX release gate", () => {
     await expect(dialog).toHaveCount(0);
   });
 
+  test("全局录入工作表切换模式时保持统一高度、字号与内部滚动", async ({ page }) => {
+    await page.setViewportSize({ width: 440, height: 700 });
+    await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
+    await page.goto("/#/");
+    await waitForApplicationPage(page);
+
+    await page.getByRole("button", { name: "记录今日库存", exact: true }).tap();
+
+    const sheet = page.locator(".ios26-record-sheet");
+    await expect(sheet).toBeVisible();
+    await expect.poll(() => sheet.evaluate(
+      (element) => getComputedStyle(element).transform,
+    )).toBe("none");
+
+    const modes = [
+      {
+        label: "库存",
+        title: "记录今日信息",
+        fieldSelector: ".ios26-inventory-row input",
+        labelSelector: ".ios26-inventory-row strong",
+      },
+      {
+        label: "支出",
+        title: "记录支出",
+        fieldSelector: '.ios26-sheet-field input[placeholder="0.00"]',
+        labelSelector: ".ios26-sheet-field > span",
+      },
+      {
+        label: "行情",
+        title: "更新行情",
+        fieldSelector: ".ios26-market-input",
+        labelSelector: ".ios26-market-grid label > span:first-child",
+      },
+    ] as const;
+
+    type ModeSnapshot = {
+      label: string;
+      sheetTop: number;
+      sheetHeight: number;
+      bodyOverflowY: string;
+      bodyClientHeight: number;
+      bodyScrollHeight: number;
+      titleFontSize: number;
+      segmentFontSize: number;
+      labelFontSize: number;
+      inputFontSize: number;
+      inputFontWeight: number;
+      inputHeight: number;
+      saveFontSize: number;
+      saveHeight: number;
+    };
+
+    const snapshots: ModeSnapshot[] = [];
+
+    for (const mode of modes) {
+      const modeButton = sheet.getByRole("button", { name: mode.label, exact: true });
+      await modeButton.tap();
+      await expect(modeButton).toHaveClass(/active/);
+      await expect(sheet.getByRole("heading", { name: mode.title, exact: true })).toBeVisible();
+
+      const snapshot = await sheet.evaluate((element, currentMode) => {
+        const body = element.querySelector<HTMLElement>(".ios26-record-body");
+        const field = body?.querySelector<HTMLElement>(currentMode.fieldSelector);
+        const input = field?.matches("input")
+          ? field as HTMLInputElement
+          : field?.querySelector<HTMLInputElement>("input");
+        const label = body?.querySelector<HTMLElement>(currentMode.labelSelector);
+        const title = element.querySelector<HTMLElement>(".ios26-record-head h2");
+        const segment = element.querySelector<HTMLElement>(".ios26-record-segments button");
+        const save = element.querySelector<HTMLElement>(".ios26-record-save");
+
+        if (!body || !field || !input || !label || !title || !segment || !save) {
+          throw new Error(`${currentMode.label} 模式缺少统一录入结构`);
+        }
+
+        const sheetRect = element.getBoundingClientRect();
+        return {
+          label: currentMode.label,
+          sheetTop: Math.round(sheetRect.top),
+          sheetHeight: Math.round(sheetRect.height),
+          bodyOverflowY: getComputedStyle(body).overflowY,
+          bodyClientHeight: body.clientHeight,
+          bodyScrollHeight: body.scrollHeight,
+          titleFontSize: Number.parseFloat(getComputedStyle(title).fontSize),
+          segmentFontSize: Number.parseFloat(getComputedStyle(segment).fontSize),
+          labelFontSize: Number.parseFloat(getComputedStyle(label).fontSize),
+          inputFontSize: Number.parseFloat(getComputedStyle(input).fontSize),
+          inputFontWeight: Number.parseInt(getComputedStyle(input).fontWeight, 10),
+          inputHeight: Math.round(field.getBoundingClientRect().height),
+          saveFontSize: Number.parseFloat(getComputedStyle(save).fontSize),
+          saveHeight: Math.round(save.getBoundingClientRect().height),
+        };
+      }, mode);
+
+      expect(["auto", "scroll"]).toContain(snapshot.bodyOverflowY);
+      expect(snapshot.bodyScrollHeight).toBeGreaterThan(snapshot.bodyClientHeight);
+      expect(snapshot.labelFontSize).toBe(13);
+      expect(snapshot.inputFontSize).toBe(16);
+      expect(snapshot.inputFontWeight).toBe(600);
+      expect(snapshot.inputHeight).toBe(50);
+      expect(snapshot.saveHeight).toBe(50);
+
+      const scrollTop = await sheet.locator(".ios26-record-body").evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+        return element.scrollTop;
+      });
+      expect(scrollTop, `${mode.label} 内容应只在表单主体内滚动`).toBeGreaterThan(0);
+
+      snapshots.push(snapshot);
+    }
+
+    const baseline = snapshots[0];
+    for (const current of snapshots.slice(1)) {
+      expect(Math.abs(current.sheetTop - baseline.sheetTop),
+        `${current.label} 切换后工作表顶部不应跳动`).toBeLessThanOrEqual(1);
+      expect(Math.abs(current.sheetHeight - baseline.sheetHeight),
+        `${current.label} 切换后工作表高度不应变化`).toBeLessThanOrEqual(1);
+      expect(current.titleFontSize).toBe(baseline.titleFontSize);
+      expect(current.segmentFontSize).toBe(baseline.segmentFontSize);
+      expect(current.labelFontSize).toBe(baseline.labelFontSize);
+      expect(current.inputFontSize).toBe(baseline.inputFontSize);
+      expect(current.inputFontWeight).toBe(baseline.inputFontWeight);
+      expect(current.inputHeight).toBe(baseline.inputHeight);
+      expect(current.saveFontSize).toBe(baseline.saveFontSize);
+      expect(current.saveHeight).toBe(baseline.saveHeight);
+    }
+
+    await sheet.getByRole("button", { name: "取消", exact: true }).tap();
+    await expect(sheet).toHaveCount(0);
+  });
+
   test("首页展示两个优先账号并从账号行进入任务详情", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
