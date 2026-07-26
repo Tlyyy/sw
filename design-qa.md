@@ -150,6 +150,45 @@
 
 final result: passed
 
+## 最新 iOS / iPhone 16 Pro Max 全站手机重构（2026-07-26）
+
+**Source truth and rendered evidence**
+
+- 规范基线：[Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)、[Apple Design Resources](https://developer.apple.com/design/resources/)、[Layout](https://developer.apple.com/design/human-interface-guidelines/layout)、[Materials](https://developer.apple.com/design/human-interface-guidelines/materials)、[Dark Mode](https://developer.apple.com/design/human-interface-guidelines/dark-mode) 与 [Tab bars](https://developer.apple.com/design/human-interface-guidelines/tab-bars)。代码中的 `ios26-*` 仅作为历史兼容命名，新增规则按 Apple 当前公开设计基线执行。
+- 已接受的交互方向：`D:\0------Code\14-----------------------Tools\sw\artifacts\ios26-interaction-directions\01-today-workbench.png`。
+- 主验收视口：iPhone 16 Pro Max，440 × 956 CSS px。
+- Safari 压力视口：440 × 763 CSS px，用于地址栏占位、软键盘和 Sheet 可用高度验证。
+- 浅色证据：`C:\Users\T\AppData\Local\Temp\sw-iphone16pm-qa\home-light-440x956.png`、`week-light-440x956.png`、`settings-light-440x956.png`、`search-light-440x956.png`、`record-sheet-light-440x956.png`。
+- 深色证据：`C:\Users\T\AppData\Local\Temp\sw-iphone16pm-qa\home-dark-440x956.png`、`tasks-dark-440x956.png`、`week-dark-440x956.png`、`earnings-dark-440x956.png`、`settings-dark-440x956.png`。
+- 压力证据：`C:\Users\T\AppData\Local\Temp\sw-iphone16pm-qa\record-sheet-pressure-440x763.png`。
+
+**Fidelity and mismatch ledger**
+
+1. Hierarchy：手机顶栏固定为 68px；品牌使用 34/41 Large Title 层级，页面标题、正文、辅助说明不再各自漂移。
+2. Controls：所有可见交互目标不小于 44 × 44；常规输入为 50px，分段选择器为 44px，主保存操作为 50px。
+3. Navigation：底部保持“今日 / 任务 / 周报”三项稳定导航，并将搜索作为独立 56 × 56 玻璃控制；滚动不再缩放整条 Dock。
+4. Material：Regular Liquid Glass 只用于导航、搜索和必要浮层；内容卡片使用系统分组表面，避免整页粉色玻璃或多层 blur。
+5. Typography：Caption 2 从历史 10.5px 修正为 11/13；分段标签 15px，正文 17px；23 个路由中无低于 11px 的正常可见文本。
+6. Sheet：库存、支出、行情三种模式共用同一 44px 分段器与固定页脚；五个账号在 440 × 956 下完整可见，并通过 VisualViewport 在 440 × 763 压力视口保持保存按钮可达。
+7. System dark：外观实时跟随 `prefers-color-scheme`，不是应用内自造主题开关；23 个路由未发现不透明近白表面泄漏，active、selected、warning、empty、positive 与 negative 状态保留语义层级。
+8. Motion：移除整条 Dock 的缩放和滚动收起；微交互只使用短时 transform / opacity / tint 变化，导航位置保持连续。
+
+**Interaction and runtime evidence**
+
+- 今日 → 任务 → 周报路由、选中状态与返回路径均通过 In-app Browser 实际操作。
+- 全局搜索聚焦后输入 `FC` 返回 13 条跨账号、宠物、装备结果；清除按钮为 44 × 44，取消后回到原页面。
+- 快速录入的库存、支出、行情模式切换保持同一 Sheet 尺寸和页脚位置；440 × 763 下保存按钮底边仍在可视区内。
+- 23 个手机路由在 440 × 956 下逐页扫描：横向溢出 0、可见交互目标不小于 44 × 44、正常可见文字不小于 11px、无 Vite 错误覆盖层。
+- 深色模式逐页扫描未发现固定近白表面；In-app Browser 未报告页面错误通知。
+- 149 项单元测试、生产构建与 `git diff --check` 通过。
+- 无障碍专项适配与专项 QA 按用户明确要求不在本轮范围内。
+
+**Residual**
+
+- [P3] Web `backdrop-filter` 无法一比一复刻原生 Liquid Glass 的实时折射、采样和物理位移；当前以背景透传、饱和度、迎光边、低位阴影和状态 tint 提供稳定近似。
+
+final result: passed
+
 ## iOS 26 全站移动排版系统（2026-07-25）
 
 ### Official design basis

@@ -1,0 +1,1113 @@
+/*
+ * Current Apple mobile design layer.
+ *
+ * The existing ios26-* selectors are compatibility hooks. This file owns the
+ * current mobile shell, iPhone 16 Pro Max geometry, Regular Liquid Glass,
+ * grouped data/settings surfaces, and primary interaction sizes.
+ */
+
+.ios26-mobile-dock-shell {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  :root {
+    --ios-mobile-header-height: 68px;
+    --ios-mobile-dock-height: 56px;
+    --ios-mobile-dock-inset: 18px;
+    --ios-mobile-dock-bottom: 16px;
+    --ios-mobile-content-bottom: 90px;
+    --ios26-type-tab-label: 11px;
+    --ios26-leading-tab-label: 13px;
+
+    --ios-system-background: #f4f6f9;
+    --ios-secondary-system-background: #ffffff;
+    --ios-tertiary-system-background: #eef1f5;
+    --ios-elevated-background: #ffffff;
+    --ios-primary-label: #111827;
+    --ios-secondary-label: #667085;
+    --ios-tertiary-label: #8c95a3;
+    --ios-separator: rgba(60, 60, 67, 0.16);
+    --ios-opaque-separator: #d7dbe2;
+    --ios-tint: var(--ios26-accent, #d35c00);
+    --ios-tint-soft: rgba(211, 92, 0, 0.1);
+    --ios-regular-glass-fill: rgba(247, 249, 253, 0.46);
+    --ios-regular-glass-border: rgba(255, 255, 255, 0.58);
+    --ios-regular-glass-filter: blur(22px) saturate(175%) contrast(108%) brightness(101%);
+    --ios-regular-glass-shadow:
+      0 12px 30px rgba(28, 39, 57, 0.13),
+      0 2px 8px rgba(28, 39, 57, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -1px 0 rgba(56, 72, 102, 0.14);
+  }
+
+  .ios26-mobile-header {
+    min-height: calc(var(--ios-mobile-header-height) + env(safe-area-inset-top));
+    align-items: flex-end;
+    padding: env(safe-area-inset-top) 18px 8px;
+    border: 0;
+    background: color-mix(in srgb, var(--ios-system-background) 84%, transparent);
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(14px) saturate(135%);
+    backdrop-filter: blur(14px) saturate(135%);
+  }
+
+  .ios26-mobile-header::after {
+    position: absolute;
+    right: 0;
+    bottom: -10px;
+    left: 0;
+    height: 11px;
+    content: "";
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ios-system-background) 44%, transparent),
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  .ios26-mobile-brand {
+    min-height: 44px;
+  }
+
+  .ios26-mobile-brand strong {
+    font-size: var(--ios26-type-large-title);
+    font-weight: 700;
+    line-height: var(--ios26-leading-large-title);
+    letter-spacing: normal;
+  }
+
+  .ios26-mobile-tools {
+    gap: 8px;
+  }
+
+  .ios26-mobile-tools > button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    border: 1px solid color-mix(in srgb, var(--ios-tint) 78%, #ffffff);
+    box-shadow:
+      0 7px 18px color-mix(in srgb, var(--ios-tint) 20%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .ios26-mobile-tools > button svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .ios26-mobile-sync {
+    min-height: 44px;
+    padding: 0 13px;
+    border-color: var(--ios-regular-glass-border);
+    color: var(--ios-primary-label);
+    background: var(--ios-regular-glass-fill);
+    box-shadow: var(--ios-regular-glass-shadow);
+    -webkit-backdrop-filter: var(--ios-regular-glass-filter);
+    backdrop-filter: var(--ios-regular-glass-filter);
+  }
+
+  .ios26-mobile-sync b {
+    font-size: var(--ios26-type-subheadline);
+    font-weight: 600;
+    line-height: var(--ios26-leading-subheadline);
+  }
+
+  .orbit-main {
+    min-height: calc(100dvh - var(--ios-mobile-header-height) - env(safe-area-inset-top));
+    padding-bottom: calc(var(--ios-mobile-content-bottom) + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(var(--ios-mobile-content-bottom) + env(safe-area-inset-bottom));
+  }
+
+  .ios26-mobile-dock-shell {
+    right: var(--ios-mobile-dock-inset);
+    bottom: max(var(--ios-mobile-dock-bottom), env(safe-area-inset-bottom));
+    left: var(--ios-mobile-dock-inset);
+    height: var(--ios-mobile-dock-height);
+    display: grid;
+    transform: none;
+    transition: none !important;
+    will-change: auto;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock,
+  .ios26-mobile-search {
+    height: var(--ios-mobile-dock-height);
+    border-color: var(--ios-regular-glass-border);
+    background: var(--ios-regular-glass-fill);
+    box-shadow: var(--ios-regular-glass-shadow);
+    -webkit-backdrop-filter: var(--ios-regular-glass-filter);
+    backdrop-filter: var(--ios-regular-glass-filter);
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock::before,
+  .ios26-mobile-search::before {
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.08) 38%,
+      rgba(255, 255, 255, 0.01) 62%,
+      rgba(65, 78, 101, 0.08) 100%
+    );
+    opacity: 0.54;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock::after,
+  .ios26-mobile-search::after {
+    box-shadow:
+      inset 0 1.25px 1px rgba(255, 255, 255, 0.72),
+      inset 0 -1.5px 1px rgba(48, 61, 84, 0.16),
+      inset 1px 0 1px rgba(255, 255, 255, 0.22),
+      inset -1px 0 1px rgba(48, 61, 84, 0.08);
+    opacity: 0.82;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a {
+    font-weight: 600;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a.active {
+    font-weight: 700;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a.active::before {
+    background: var(--ios-tint-soft);
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a.active::after {
+    opacity: 0.42;
+  }
+
+  .ios26-mobile-dock-shell.is-minimized {
+    transform: none;
+  }
+
+  .ios26-mobile-dock-shell.is-minimized .ios26-mobile-dock-icon {
+    transform: none;
+  }
+
+  .ios26-mobile-dock-shell.is-minimized .orbit-mobile-dock > a > span:last-child {
+    opacity: 1;
+    transform: none;
+  }
+
+  .orbit-main .data-center-nav.subnav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
+    margin: 0 0 16px;
+    padding: 3px;
+    overflow: visible;
+    border: 1px solid var(--ios-separator);
+    border-radius: 14px;
+    background: var(--ios-tertiary-system-background);
+    box-shadow: inset 0 1px 1px rgba(17, 24, 39, 0.04);
+  }
+
+  .orbit-main .data-center-nav.subnav a {
+    min-width: 0;
+    min-height: 44px;
+    display: grid;
+    place-items: center;
+    padding: 0 5px;
+    border: 0;
+    border-radius: 11px;
+    color: var(--ios-secondary-label);
+    background: transparent;
+    font-size: var(--ios26-type-subheadline);
+    font-weight: 600;
+    line-height: var(--ios26-leading-subheadline);
+    white-space: nowrap;
+  }
+
+  .orbit-main .data-center-nav.subnav a.router-link-active {
+    color: var(--ios-tint);
+    background: var(--ios-elevated-background);
+    box-shadow:
+      0 2px 8px rgba(17, 24, 39, 0.08),
+      inset 0 0 0 1px color-mix(in srgb, var(--ios-tint) 14%, transparent);
+  }
+
+  .settings-page {
+    padding-top: 12px;
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .settings-page > .page-intro {
+    margin: 0 2px 14px;
+    padding: 2px 0 12px;
+    border: 0;
+  }
+
+  .settings-page > .page-intro h2 {
+    font-size: var(--ios26-type-title-2) !important;
+    font-weight: 700;
+    line-height: var(--ios26-leading-title-2) !important;
+    letter-spacing: normal;
+  }
+
+  .settings-page > .page-intro p {
+    margin-top: 4px;
+    color: var(--ios-secondary-label);
+    font-size: var(--ios26-type-subheadline) !important;
+    line-height: var(--ios26-leading-subheadline) !important;
+  }
+
+  .settings-page > :is(.settings-section, .danger-zone) {
+    margin: 0 0 14px;
+    padding: 16px;
+    overflow: hidden;
+    border: 1px solid var(--ios-separator);
+    border-radius: 20px;
+    color: var(--ios-primary-label);
+    background: var(--ios-elevated-background);
+    box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+  }
+
+  .settings-page > .settings-section {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .settings-page > .settings-section h2,
+  .settings-page > .danger-zone h2 {
+    font-size: var(--ios26-type-title-3) !important;
+    font-weight: 700;
+    line-height: var(--ios26-leading-title-3) !important;
+    letter-spacing: normal;
+  }
+
+  .settings-page > :is(.settings-section, .danger-zone) p {
+    margin-top: 4px;
+    color: var(--ios-secondary-label);
+    font-size: var(--ios26-type-subheadline) !important;
+    line-height: var(--ios26-leading-subheadline) !important;
+  }
+
+  .settings-page .section-head {
+    align-items: flex-start;
+    padding: 0;
+    border: 0;
+  }
+
+  .settings-page .cloud-sync-section {
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background);
+  }
+
+  .settings-page .cloud-sync-section > strong {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--ios-tertiary-system-background);
+  }
+
+  .settings-page .cloud-sync-section > strong small {
+    color: var(--ios-secondary-label);
+  }
+
+  .settings-page .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .settings-page :is(.settings-grid, .password-rotation-form) label {
+    display: grid;
+    gap: 6px;
+    color: var(--ios-secondary-label);
+    font-size: var(--ios26-type-footnote);
+    font-weight: 600;
+    line-height: var(--ios26-leading-footnote);
+  }
+
+  .settings-page :is(input, select) {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 14px;
+    border: 1px solid var(--ios-separator);
+    border-radius: 13px;
+    color: var(--ios-primary-label);
+    background: var(--ios-secondary-system-background);
+    font-size: var(--ios26-type-body) !important;
+    font-weight: 400;
+    line-height: var(--ios26-leading-body) !important;
+  }
+
+  .settings-page .password-rotation-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .settings-page .preference-options {
+    display: grid;
+    margin-top: 0;
+    overflow: hidden;
+    border: 1px solid var(--ios-separator);
+    border-radius: 14px;
+    background: var(--ios-tertiary-system-background);
+  }
+
+  .settings-page .preference-options label {
+    min-height: 50px;
+    padding: 0 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ios-separator);
+    font-size: var(--ios26-type-body);
+    font-weight: 400;
+    line-height: var(--ios26-leading-body);
+  }
+
+  .settings-page .preference-options label:last-child {
+    border-bottom: 0;
+  }
+
+  .settings-page .preference-options input {
+    width: 22px;
+    min-height: 22px;
+    padding: 0;
+    accent-color: var(--ios-tint);
+  }
+
+  .settings-page :is(.button, button[type="submit"]) {
+    min-height: 44px;
+    border-color: var(--ios-separator);
+    border-radius: 12px;
+    font-size: var(--ios26-type-headline) !important;
+    font-weight: 600;
+    line-height: var(--ios26-leading-headline) !important;
+  }
+
+  .settings-page .workspace-state-section > div:last-child {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .settings-page > .danger-zone {
+    display: grid;
+    align-items: stretch;
+    gap: 10px;
+    border-color: color-mix(in srgb, #ff3b30 24%, var(--ios-separator));
+    background: color-mix(in srgb, #ff3b30 5%, var(--ios-elevated-background));
+  }
+
+  .settings-page > .danger-zone .button:last-child {
+    color: #d70015;
+  }
+
+  .task-maintenance-page {
+    padding-bottom: 28px !important;
+  }
+
+  .week-page {
+    padding-bottom: 28px !important;
+  }
+
+  .task-maintenance-page .task-mobile-controller {
+    top: calc(var(--ios-mobile-header-height) + env(safe-area-inset-top));
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  body .task-maintenance-page .task-mobile-controller .task-mobile-segments button {
+    min-height: 44px;
+    font-size: var(--ios26-type-subheadline);
+    font-weight: 600;
+    line-height: var(--ios26-leading-subheadline);
+  }
+
+  body .task-maintenance-page .task-mobile-controller .task-mobile-segments button span {
+    font-size: var(--ios26-type-caption-2);
+    font-weight: 600;
+    line-height: var(--ios26-leading-caption-2);
+  }
+
+  .task-maintenance-page .task-mobile-controller > button {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    color: var(--ios-primary-label);
+    background: var(--ios-tertiary-system-background);
+    box-shadow: inset 0 0 0 1px var(--ios-separator);
+  }
+
+  .task-maintenance-page .task-mobile-controller > button svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  body .ios26-record-sheet .ios26-record-segments button {
+    min-height: 44px;
+    font-size: var(--ios26-type-subheadline);
+    font-weight: 600;
+    line-height: var(--ios26-leading-subheadline);
+  }
+
+  body .command-input .command-clear {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  body .command-recent > header button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  body .today-workbench .priority-heading > a {
+    min-height: 44px;
+  }
+
+  body .week-page .week-mobile-switcher > button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  body .week-page .week-supplement-card > button {
+    min-height: 44px;
+  }
+
+  body .week-page .week-mobile-full-report small {
+    font-size: var(--ios26-type-caption-2);
+    line-height: var(--ios26-leading-caption-2);
+  }
+
+  body .week-page .week-inventory-details > summary > b {
+    font-size: var(--ios26-type-caption-2);
+    line-height: var(--ios26-leading-caption-2);
+  }
+
+  body .plan-page .gem-market-strip > header > a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  body .plan-parameters-page .task-filter-bar > .button {
+    min-height: 44px;
+  }
+
+  body .publish-page .material-pool .link-button {
+    min-width: 44px;
+  }
+
+  body .orbit-main .pet-row .row-check {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding-left: 0;
+  }
+
+  body .assets-page .pet-detail-share-button {
+    min-height: 44px;
+  }
+
+  body .plan-page .readonly-resource-table b > a {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .ios26-mobile-header {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .ios26-mobile-dock-shell {
+    right: 16px;
+    left: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .ios26-mobile-sync {
+    padding: 0 10px;
+  }
+
+  .ios26-mobile-sync b {
+    font-size: var(--ios26-type-footnote);
+  }
+}
+
+html[data-theme="dark"] {
+  --ios-system-background: #000000;
+  --ios-secondary-system-background: #1c1c1e;
+  --ios-tertiary-system-background: #2c2c2e;
+  --ios-elevated-background: #1c1c1e;
+  --ios-primary-label: #ffffff;
+  --ios-secondary-label: rgba(235, 235, 245, 0.6);
+  --ios-tertiary-label: rgba(235, 235, 245, 0.3);
+  --ios-separator: rgba(84, 84, 88, 0.65);
+  --ios-opaque-separator: #38383a;
+  --ios-tint: #ff9f0a;
+  --ios-tint-soft: rgba(255, 159, 10, 0.12);
+  --ios-regular-glass-fill: rgba(44, 44, 46, 0.52);
+  --ios-regular-glass-border: rgba(255, 255, 255, 0.12);
+  --ios-regular-glass-filter: blur(22px) saturate(155%) contrast(108%) brightness(96%);
+  --ios-regular-glass-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.42),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.42);
+}
+
+@media (max-width: 980px) {
+  html[data-theme="dark"] .ios26-mobile-header {
+    border: 0;
+    background: color-mix(in srgb, var(--ios-system-background) 76%, transparent);
+    box-shadow: none;
+  }
+
+  html[data-theme="dark"] .ios26-mobile-sync {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-regular-glass-border);
+    background: var(--ios-regular-glass-fill);
+    box-shadow: var(--ios-regular-glass-shadow);
+  }
+
+  html[data-theme="dark"] :is(
+    .orbit-mobile-dock.ios26-mobile-dock,
+    .ios26-mobile-search
+  ) {
+    border-color: var(--ios-regular-glass-border);
+    background: var(--ios-regular-glass-fill);
+    box-shadow: var(--ios-regular-glass-shadow);
+  }
+
+  html[data-theme="dark"] .ios26-mobile-search {
+    color: var(--ios-primary-label);
+  }
+
+  html[data-theme="dark"] body .command-search-toolbar {
+    border-color: var(--ios-regular-glass-border);
+    background: var(--ios-regular-glass-fill);
+    box-shadow: var(--ios-regular-glass-shadow);
+    -webkit-backdrop-filter: var(--ios-regular-glass-filter);
+    backdrop-filter: var(--ios-regular-glass-filter);
+  }
+
+  html[data-theme="dark"] body .command-input input {
+    background: transparent !important;
+  }
+
+  html[data-theme="dark"] body .command-results.is-suggestions .command-result-card > button {
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background);
+    box-shadow: none;
+  }
+
+  html[data-theme="dark"] .orbit-mobile-dock.ios26-mobile-dock > a {
+    color: var(--ios-secondary-label);
+  }
+
+  html[data-theme="dark"] .orbit-mobile-dock.ios26-mobile-dock > a.active {
+    color: var(--ios-tint);
+  }
+
+  html[data-theme="dark"] .orbit-main .data-center-nav.subnav a.router-link-active {
+    color: var(--ios-tint);
+    background: #3a3a3c;
+  }
+
+  html[data-theme="dark"] .settings-page > :is(.settings-section, .danger-zone) {
+    border-color: var(--ios-separator);
+    color: var(--ios-primary-label);
+    background: var(--ios-elevated-background);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  }
+
+  html[data-theme="dark"] .settings-page > .danger-zone {
+    border-color: rgba(255, 69, 58, 0.28);
+    background: color-mix(in srgb, #ff453a 10%, var(--ios-elevated-background));
+  }
+
+  html[data-theme="dark"] .settings-page > .danger-zone .button:last-child {
+    color: #ff453a;
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page {
+    color: var(--ios-primary-label);
+    background: var(--ios-system-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-controller {
+    border-color: var(--ios-separator);
+    background: color-mix(in srgb, var(--ios-system-background) 82%, transparent);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-segments {
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-segments button:not(.active) {
+    color: var(--ios-primary-label);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-segments button:not(.active) span {
+    color: var(--ios-secondary-label);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page :is(
+    .task-mobile-filters,
+    .task-mobile-list,
+    .task-mobile-summary-main,
+    .task-mobile-account-group article,
+    .task-mobile-empty
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-filter-button {
+    color: var(--ios-primary-label);
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-filters > label > span,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-selection > div span,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-summary-main small,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-account-group > header small,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-row-main small {
+    color: var(--ios-secondary-label);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-selection strong,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-summary-main strong,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-account-group > header strong,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-row-main {
+    color: var(--ios-primary-label);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-summary-row,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-account-group article {
+    border-color: var(--ios-separator);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-account-group + .task-mobile-account-group {
+    border-color: var(--ios-system-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-account-group > header {
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page :is(
+    .task-mobile-account-mark,
+    .task-mobile-row-account
+  ) {
+    border-color: color-mix(in srgb, var(--ios-tint) 58%, var(--ios-separator));
+    color: var(--ios-tint);
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page :is(
+    .task-mobile-summary-main,
+    .task-mobile-row-main
+  ) svg {
+    color: var(--ios-tertiary-label);
+  }
+
+  html[data-theme="dark"] body .today-workbench :is(
+    .next-step-card,
+    .today-progress-card,
+    .week-pulse-card
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background);
+  }
+
+  html[data-theme="dark"] body .today-workbench :is(
+    .card-heading h2,
+    .priority-heading h3,
+    .progress-metric > strong,
+    .priority-account-row,
+    .priority-account-row strong,
+    .priority-meta strong,
+    .week-pulse-card h2
+  ) {
+    color: var(--ios-primary-label);
+  }
+
+  html[data-theme="dark"] body .today-workbench :is(
+    .card-heading p,
+    .card-heading > span,
+    .progress-metric > span,
+    .progress-metric > small,
+    .priority-heading p,
+    .priority-account-row > span:nth-child(2) small,
+    .week-pulse-card header > span
+  ) {
+    color: var(--ios-secondary-label);
+  }
+
+  html[data-theme="dark"] body .today-workbench .today-progress-grid {
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .today-workbench :is(
+    .progress-metric + .progress-metric,
+    .priority-section,
+    .priority-account-row,
+    .week-pulse-card > header
+  ) {
+    border-color: var(--ios-separator);
+  }
+
+  html[data-theme="dark"] body .today-workbench .priority-account-row:active {
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .week-page {
+    color: var(--ios-primary-label);
+    background: var(--ios-system-background);
+  }
+
+  html[data-theme="dark"] body .week-page :is(
+    .week-mobile-switcher,
+    .week-day-strip,
+    .week-summary-card,
+    .week-account-card,
+    .week-supplement-card,
+    .week-mobile-full-report,
+    .week-inventory-details
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background);
+  }
+
+  html[data-theme="dark"] body .week-page .week-mobile-switcher > button {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .week-page .week-mobile-switcher > button:disabled {
+    color: var(--ios-tertiary-label);
+    background: var(--ios-secondary-system-background);
+  }
+
+  html[data-theme="dark"] body .week-page :is(
+    .week-mobile-switcher strong,
+    .week-summary-card h2,
+    .week-account-card h2,
+    .week-supplement-card h2,
+    .week-account-table article,
+    .week-account-table article strong,
+    .week-mobile-full-report strong,
+    .week-inventory-details strong,
+    .week-summary-metrics dd.neutral,
+    .week-account-table .neutral
+  ) {
+    color: var(--ios-primary-label);
+  }
+
+  html[data-theme="dark"] body .week-page :is(
+    .week-mobile-switcher span,
+    .week-summary-card p,
+    .week-summary-card header > span,
+    .week-summary-metrics dt,
+    .week-account-head,
+    .week-supplement-card p,
+    .week-mobile-full-report small,
+    .week-inventory-details summary
+  ) {
+    color: var(--ios-secondary-label);
+  }
+
+  html[data-theme="dark"] body .week-page .week-day-strip li {
+    color: var(--ios-secondary-label);
+    border-color: var(--ios-separator);
+  }
+
+  html[data-theme="dark"] body .week-page .week-day-strip li.is-recorded {
+    color: var(--ios-primary-label);
+  }
+
+  html[data-theme="dark"] body .week-page .week-day-strip li.is-future {
+    color: var(--ios-tertiary-label);
+  }
+
+  html[data-theme="dark"] body .week-page :is(
+    .week-summary-card > header,
+    .week-summary-metrics,
+    .week-account-head,
+    .week-account-table article,
+    .week-mobile-full-report > summary,
+    .week-inventory-details > summary
+  ) {
+    border-color: var(--ios-separator);
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    .daily-earnings-table,
+    .earnings-detail-panel,
+    .selected-account-overview,
+    .accounting-rule,
+    .earnings-account-tabs,
+    .earnings-detail-tabs,
+    .daily-metric-toggle,
+    .pet-list,
+    .detail-panel,
+    .account-switch,
+    .equipment-table,
+    .skill-grid,
+    .evidence-list,
+    .gem-equipment-plan,
+    .gem-market-strip,
+    .gem-plan-summary,
+    .gem-account-ledger,
+    .resource-table,
+    .task-list,
+    .timeline-ledger,
+    .plan-parameters-page .settings-section,
+    .task-filter-bar,
+    .recommendation-board,
+    .species-table,
+    .matrix-control-panel,
+    .matrix-scroll,
+    .matrix-table,
+    .material-pool,
+    .composer-settings,
+    .output-panel,
+    .image-order,
+    .inventory-current-account,
+    .data-maintenance-table,
+    .gem-history-table,
+    .data-center-page .settings-section,
+    .data-center-page .danger-zone
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    .earnings-account-tabs button:not(.active),
+    .earnings-detail-tabs button:not(.active),
+    .daily-metric-toggle button:not(.active),
+    .earnings-share-button.account,
+    .account-switch a:not(.active),
+    .pet-row:not(.selected) .pet-row-content,
+    .gem-account-row:not(.selected),
+    .resource-table > div,
+    .readonly-task-list > article,
+    .timeline-ledger > a,
+    .recommendation-board article,
+    .species-table article,
+    .matrix-table th,
+    .matrix-table td:not(.empty),
+    .inventory-current-account,
+    .data-maintenance-table > label,
+    .gem-history-table > div,
+    .source-layers article,
+    .data-ledger > div
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    .earnings-account-tabs button.active,
+    .earnings-detail-tabs button.active,
+    .daily-metric-toggle button.active,
+    .account-switch a.active
+  ) {
+    color: var(--ios-tint);
+    border-color: color-mix(in srgb, var(--ios-tint) 52%, var(--ios-separator));
+    background: color-mix(in srgb, var(--ios-tint) 14%, var(--ios-elevated-background)) !important;
+    box-shadow: none;
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    .earnings-account-tabs button.active span,
+    .earnings-detail-tabs button.active span
+  ) {
+    color: inherit;
+  }
+
+  html[data-theme="dark"] body .orbit-main .earnings-share-button.combined {
+    color: #000000;
+    border-color: var(--ios-tint);
+    background: var(--ios-tint) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    .pet-row.selected .pet-row-content,
+    .pet-row .pet-row-action:hover,
+    .pet-row .pet-row-action:focus-visible,
+    .gem-account-row.selected,
+    .gem-account-row:hover,
+    .inventory-workspace-nav button:hover,
+    .inventory-workspace-nav button:focus-visible
+  ) {
+    color: var(--ios-primary-label);
+    border-color: color-mix(in srgb, var(--ios-tint) 44%, var(--ios-separator));
+    background: color-mix(in srgb, var(--ios-tint) 12%, var(--ios-elevated-background)) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .inventory-workspace-nav button.active {
+    color: var(--ios-tint);
+    border-color: color-mix(in srgb, var(--ios-tint) 44%, var(--ios-separator));
+    background: var(--ios-elevated-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .matrix-table td.empty {
+    color: #ff9f0a;
+    border-color: var(--ios-separator);
+    background: color-mix(in srgb, #ff9f0a 10%, var(--ios-elevated-background)) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    .table-head,
+    .equipment-table .table-head,
+    .species-table .table-head,
+    .timeline-ledger .table-head,
+    .resource-table .table-head,
+    .data-maintenance-table .table-head,
+    .gem-history-table .table-head,
+    .matrix-table th
+  ) {
+    color: var(--ios-secondary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background) !important;
+  }
+
+  html[data-theme="dark"] body .week-page .week-inventory-details :is(
+    table,
+    thead,
+    tbody,
+    tr,
+    th,
+    td
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background) !important;
+  }
+
+  html[data-theme="dark"] body .week-page .week-inventory-details :is(
+    thead th,
+    tbody th
+  ) {
+    color: var(--ios-secondary-label);
+    background: var(--ios-tertiary-system-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    input,
+    select,
+    textarea
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background) !important;
+  }
+
+  html[data-theme="dark"] body .record-page .record-card-icon.market {
+    color: #64d2ff;
+    background: rgba(100, 210, 255, 0.16);
+  }
+
+  html[data-theme="dark"] body .data-center-page .danger-zone {
+    border-color: rgba(255, 69, 58, 0.3);
+    background: color-mix(in srgb, #ff453a 12%, var(--ios-elevated-background)) !important;
+  }
+
+  html[data-theme="dark"] body .data-center-page .source-manual {
+    color: #30d158;
+    background: rgba(48, 209, 88, 0.14);
+  }
+
+  html[data-theme="dark"] body .orbit-main .daily-earnings-table :is(
+    table,
+    thead,
+    tbody,
+    tr,
+    th,
+    td
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-elevated-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .daily-earnings-table :is(
+    thead th,
+    td.unknown
+  ) {
+    color: var(--ios-secondary-label);
+    background: var(--ios-tertiary-system-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .segmented {
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .link-button {
+    color: var(--ios-tint);
+    background: transparent !important;
+  }
+
+  html[data-theme="dark"] body .data-center-page .text-button.danger-text {
+    color: #ff453a;
+    background: transparent !important;
+  }
+
+  html[data-theme="dark"] body .earnings-page .movement-toggle {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background) !important;
+  }
+
+  html[data-theme="dark"] body .earnings-page .daily-earnings-table > header {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background) !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .positive {
+    color: #30d158 !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .negative {
+    color: #ff453a !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main :is(
+    .status-ready,
+    .status-buyable
+  ) small {
+    color: #30d158 !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .status-caution small {
+    color: #ff9f0a !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .status-blocked small {
+    color: #ff453a !important;
+  }
+
+  html[data-theme="dark"] body .orbit-main .status-stale small {
+    color: var(--ios-secondary-label) !important;
+  }
+}

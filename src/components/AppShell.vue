@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { mobileNavigation, primaryNavigation } from "../app/navigation";
 import { appName } from "../app/brand";
@@ -18,12 +18,6 @@ const inventory = useInventoryStore();
 const ui = useUiStore();
 const auth = useAuthStore();
 const cloudSync = useSyncStore();
-const mobileDockMedia = window.matchMedia("(max-width: 980px)");
-const mobileDockMinimized = ref(false);
-let dockLastScrollY = 0;
-let dockScrollTravel = 0;
-let dockScrollFrame = 0;
-
 const links = primaryNavigation;
 const mobileDockLinks = mobileNavigation;
 const mobileSection = computed(() => String(route.meta.mobileSection || route.meta.section || "home"));
@@ -74,79 +68,11 @@ function keydown(event: KeyboardEvent) {
   }
 }
 
-function boundedWindowScrollY() {
-  const scrollRoot = document.scrollingElement || document.documentElement;
-  const maxScrollY = Math.max(0, scrollRoot.scrollHeight - scrollRoot.clientHeight);
-  const currentScrollY = window.scrollY || document.documentElement.scrollTop;
-  return Math.min(maxScrollY, Math.max(0, currentScrollY));
-}
-
-function updateMobileDockForScroll() {
-  dockScrollFrame = 0;
-  const nextScrollY = boundedWindowScrollY();
-
-  if (!mobileDockMedia.matches) {
-    mobileDockMinimized.value = false;
-    dockLastScrollY = nextScrollY;
-    dockScrollTravel = 0;
-    return;
-  }
-
-  const delta = nextScrollY - dockLastScrollY;
-  dockLastScrollY = nextScrollY;
-
-  if (nextScrollY <= 16) {
-    mobileDockMinimized.value = false;
-    dockScrollTravel = 0;
-    return;
-  }
-
-  if (Math.abs(delta) < 0.5) return;
-  if (Math.sign(delta) !== Math.sign(dockScrollTravel)) {
-    dockScrollTravel = delta;
-  } else {
-    dockScrollTravel += delta;
-  }
-
-  if (!mobileDockMinimized.value && dockScrollTravel >= 24) {
-    mobileDockMinimized.value = true;
-    dockScrollTravel = 0;
-  } else if (mobileDockMinimized.value && dockScrollTravel <= -14) {
-    mobileDockMinimized.value = false;
-    dockScrollTravel = 0;
-  }
-}
-
-function handleMobileScroll() {
-  if (dockScrollFrame) return;
-  dockScrollFrame = window.requestAnimationFrame(updateMobileDockForScroll);
-}
-
-function expandMobileDock() {
-  mobileDockMinimized.value = false;
-  dockLastScrollY = boundedWindowScrollY();
-  dockScrollTravel = 0;
-}
-
-function handleMobileDockMediaChange() {
-  expandMobileDock();
-}
-
-watch(() => route.fullPath, () => {
-  expandMobileDock();
-});
-
 onMounted(() => {
-  dockLastScrollY = boundedWindowScrollY();
   window.addEventListener("keydown", keydown);
-  window.addEventListener("scroll", handleMobileScroll, { passive: true });
-  mobileDockMedia.addEventListener("change", handleMobileDockMediaChange);
 });
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", keydown);
-  window.removeEventListener("scroll", handleMobileScroll);
-  mobileDockMedia.removeEventListener("change", handleMobileDockMediaChange);
-  if (dockScrollFrame) window.cancelAnimationFrame(dockScrollFrame);
 });
 </script>
 
@@ -218,14 +144,10 @@ onBeforeUnmount(() => {
       <RouterView />
     </main>
 
-    <div
-      class="ios26-mobile-dock-shell"
-      :class="{ 'is-minimized': mobileDockMinimized }"
-      @click.self="expandMobileDock"
-    >
+    <div class="ios26-mobile-dock-shell">
       <nav
         class="orbit-mobile-dock ios26-mobile-dock"
-        :data-state="mobileDockMinimized ? 'compact' : 'expanded'"
+        data-state="expanded"
         aria-label="手机快捷导航"
       >
         <RouterLink
@@ -234,7 +156,6 @@ onBeforeUnmount(() => {
           :to="link.to"
           :class="{ active: mobileSection === link.section }"
           :aria-current="mobileAriaCurrent(link)"
-          @click="expandMobileDock"
         >
           <span class="ios26-mobile-dock-icon"><AppIcon :name="link.icon" /></span>
           <span>{{ link.text }}</span>

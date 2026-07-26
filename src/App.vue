@@ -14,8 +14,17 @@ import { useAccountingStore } from "./stores/accounting";
 const settings = useSettingsStore();
 const auth = useAuthStore();
 const sync = useSyncStore();
+const systemDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
 let planningDayTimer: number | undefined;
 let stopAuthWatch: WatchStopHandle | undefined;
+
+function applySystemTheme() {
+  const resolved = systemDarkTheme.matches ? "dark" : "light";
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.style.colorScheme = resolved;
+}
+
+applySystemTheme();
 
 function refreshPlanningDay() {
   settings.refreshPlanningAsOfDate();
@@ -33,6 +42,7 @@ onMounted(() => {
   useAccountingStore().hydrate();
   usePublishStore().hydrate();
   useUiStore().hydrate();
+  systemDarkTheme.addEventListener("change", applySystemTheme);
   stopAuthWatch = watch(
     () => [auth.isUnlocked, auth.credentialKey] as const,
     ([unlocked, credentialKey]) => {
@@ -53,6 +63,7 @@ onUnmounted(() => {
   if (planningDayTimer !== undefined) window.clearTimeout(planningDayTimer);
   window.removeEventListener("focus", refreshPlanningDay);
   document.removeEventListener("visibilitychange", refreshPlanningDayWhenVisible);
+  systemDarkTheme.removeEventListener("change", applySystemTheme);
 });
 </script>
 

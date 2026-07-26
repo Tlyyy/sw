@@ -28,6 +28,9 @@ export default defineConfig({
       name: "mobile",
       use: {
         ...devices["iPhone 16 Pro Max"],
+        // Primary full-screen/PWA canvas. Individual pressure tests also cover
+        // the shorter Safari visual viewport produced by browser chrome.
+        viewport: { width: 440, height: 956 },
       },
     },
   ],

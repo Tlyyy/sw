@@ -13,6 +13,7 @@ import { useCatalogStore } from "../stores/catalog";
 import { useInventoryStore } from "../stores/inventory";
 import { useSettingsStore } from "../stores/settings";
 import { useUiStore, type RecordSheetMode } from "../stores/ui";
+import { useVisualViewport } from "../composables/useVisualViewport";
 import AppIcon from "./AppIcon.vue";
 
 const route = useRoute();
@@ -20,6 +21,7 @@ const catalog = useCatalogStore();
 const inventory = useInventoryStore();
 const settings = useSettingsStore();
 const ui = useUiStore();
+const { keyboardOpen, visualViewportStyle } = useVisualViewport("record-sheet");
 
 const sheet = ref<HTMLFormElement>();
 const closeButton = ref<HTMLButtonElement>();
@@ -242,7 +244,13 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <Transition name="ios26-sheet">
-      <div v-if="parentSheetOpen" class="ios26-record-backdrop" @click.self="closeSheet">
+      <div
+        v-if="parentSheetOpen"
+        class="ios26-record-backdrop"
+        :class="{ 'is-keyboard-open': keyboardOpen }"
+        :style="visualViewportStyle"
+        @click.self="closeSheet"
+      >
         <form
           ref="sheet"
           class="ios26-record-sheet"
@@ -362,8 +370,11 @@ onBeforeUnmount(() => {
 <style scoped>
 .ios26-record-backdrop {
   position: fixed;
-  inset: 0;
+  top: var(--record-sheet-top, 0);
+  left: var(--record-sheet-left, 0);
   z-index: 410;
+  width: var(--record-sheet-width, 100vw);
+  height: var(--record-sheet-height, 100dvh);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -830,7 +841,7 @@ onBeforeUnmount(() => {
   .ios26-record-sheet {
     width: 100%;
     height: min(83dvh, 780px);
-    max-height: 100dvh;
+    max-height: var(--record-sheet-height, 100dvh);
     display: flex;
     flex-direction: column;
     overflow: hidden;

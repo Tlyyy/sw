@@ -51,6 +51,8 @@ npx instant-cli@latest push perms --app 80a03c7e-5599-470a-bafa-497807bda457 --y
 
 手机端提供底部快捷导航、至少 44px 的主要触控区域，以及适配窄屏的库存卡片、七日日报和录入弹窗。
 
+手机端 UI 与交互以 Apple 当前最新公开设计规范为强制基准，首先适配并验收 iPhone 16 Pro Max（440 × 956 pt 全屏/PWA，并以 440 × 763 验证 Safari 矮视口压力）。详细约束见 [手机端 iOS 设计开发规则](docs/ui-development-rules.md)。
+
 ## 技术栈
 
 Vue 3、Vite、TypeScript、Vue Router、Pinia、Chart.js、Vitest 和 Playwright。

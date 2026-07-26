@@ -383,7 +383,7 @@ function resetCompletion() {
           aria-controls="task-mobile-filters"
           @click="secondaryFiltersOpen = !secondaryFiltersOpen"
         >
-          <AppIcon name="settings" />
+          <AppIcon name="filter" />
         </button>
       </header>
       <p v-if="actionFeedback" class="task-mobile-feedback" role="status">{{ actionFeedback }}</p>

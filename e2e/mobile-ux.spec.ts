@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const iphone16ProMaxViewport = { width: 440, height: 956 } as const;
+const iphone16ProMaxSafariViewport = { width: 440, height: 763 } as const;
+
 const mobileRoutes = [
   "/#/",
   "/#/record",
@@ -420,8 +423,8 @@ test.describe("mobile UX release gate", () => {
     }
   });
 
-  test("iOS 26 Liquid Glass 底栏与独立搜索入口保持可触控", async ({ page }) => {
-    await page.setViewportSize({ width: 393, height: 852 });
+  test("最新 iOS Regular Liquid Glass 底栏与独立搜索入口保持可触控", async ({ page }) => {
+    await page.setViewportSize(iphone16ProMaxViewport);
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
@@ -461,16 +464,16 @@ test.describe("mobile UX release gate", () => {
     });
     expect(dockScale.activePlateWidth, "选中按钮应接近参考图的 105px 宽度").toBeCloseTo(105, 0);
     expect(dockScale.activePlateHeight, "选中按钮应保持 48px 高度").toBeCloseTo(48, 0);
-    expect(dockScale.dockLabelSize, "底栏文字应采用参考图的 10.5px 视觉字号").toBeCloseTo(10.5, 1);
+    expect(dockScale.dockLabelSize, "底栏文字应采用 iOS Caption 2 的 11pt 基线").toBe(11);
     expect(dockScale.dockIconWidth, "主导航图标应为 26px").toBeCloseTo(26, 0);
     expect(dockScale.searchIconWidth, "搜索图标应为 28px").toBeCloseTo(28, 0);
     expect(dockScale.dockBackgroundAlpha, "Regular Liquid Glass 必须允许内容透过").toBeLessThanOrEqual(0.5);
     expect(dockScale.dockBackgroundAlpha, "Regular Liquid Glass 仍需保持控件可读性").toBeGreaterThanOrEqual(0.28);
-    expect(dockScale.dockBackdrop, "Liquid Glass 应同时模糊、提饱和并调整明暗").toContain("blur(18px)");
-    expect(dockScale.dockBackdrop).toContain("saturate(1.85)");
-    expect(dockScale.dockBackdrop).toContain("contrast(1.1)");
-    expect(dockScale.dockBackdrop).toContain("brightness(1.02)");
-    expect(dockScale.dockGlossOpacity, "Liquid Glass 应保留迎光高光层").toBeGreaterThanOrEqual(0.65);
+    expect(dockScale.dockBackdrop, "Liquid Glass 应同时模糊、提饱和并调整明暗").toContain("blur(22px)");
+    expect(dockScale.dockBackdrop).toContain("saturate(1.75)");
+    expect(dockScale.dockBackdrop).toContain("contrast(1.08)");
+    expect(dockScale.dockBackdrop).toContain("brightness(1.01)");
+    expect(dockScale.dockGlossOpacity, "Liquid Glass 应保留克制的迎光高光层").toBeGreaterThanOrEqual(0.5);
     expect(dockScale.dockRimShadow, "Liquid Glass 应保留折射边缘").toContain("inset");
     expect(dockScale.activeTintAlpha, "选中态应是低浓度 tint 而非实色底板").toBeLessThanOrEqual(0.1);
     expect(await undersizedPrimaryTargets(page), "移动主导航存在不足 44px 的主要触控目标").toEqual([]);
@@ -501,7 +504,7 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("移动搜索从底栏展开、即时分组并适配软键盘视口", async ({ page }) => {
-    await page.setViewportSize({ width: 393, height: 852 });
+    await page.setViewportSize(iphone16ProMaxViewport);
     await page.goto("/#/week");
     await waitForApplicationPage(page);
 
@@ -559,11 +562,12 @@ test.describe("mobile UX release gate", () => {
         resultToolbarGap: toolbarRect.top - resultsRect.bottom,
         documentWidth: document.documentElement.clientWidth,
         documentScrollWidth: document.documentElement.scrollWidth,
+        visualViewportHeight: window.visualViewport!.height,
       };
     });
 
     expect(emptyLayout.backdropWidth).toBeCloseTo(emptyLayout.documentWidth, 0);
-    expect(emptyLayout.dialogHeight).toBeCloseTo(852, 0);
+    expect(emptyLayout.dialogHeight).toBeCloseTo(emptyLayout.visualViewportHeight, 0);
     expect(emptyLayout.toolbarHeight, "展开后的底部搜索控件应保持 64px").toBeCloseTo(64, 0);
     expect(emptyLayout.toolbarBottomGap, "底部搜索控件应保留 10px 安全间距").toBeGreaterThanOrEqual(9);
     expect(emptyLayout.toolbarBackdrop, "只有底部搜索控制层使用 Regular Liquid Glass").toContain("blur(20px)");
@@ -615,6 +619,7 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("iPhone 16 Pro Max 的 Liquid Glass 底栏安全悬浮且账号操作保持单行", async ({ page }) => {
+    await page.setViewportSize(iphone16ProMaxViewport);
     await page.goto("/#/accounts/FC");
     await waitForApplicationPage(page);
 
@@ -630,9 +635,10 @@ test.describe("mobile UX release gate", () => {
       const topbar = document.querySelector<HTMLElement>(".ios26-mobile-header");
       const brand = document.querySelector<HTMLElement>(".ios26-mobile-brand");
       const syncState = document.querySelector<HTMLElement>(".ios26-mobile-sync");
+      const quickRecord = document.querySelector<HTMLElement>(".ios26-mobile-tools > button");
       const link = [...document.querySelectorAll<HTMLElement>(".account-page .section-head > a")]
         .find((element) => element.textContent?.includes("更新库存"));
-      if (!dock || !dockShell || !search || !main || !topbar || !brand || !syncState || !link) throw new Error("iPhone 安全区审查缺少目标元素");
+      if (!dock || !dockShell || !search || !main || !topbar || !brand || !syncState || !quickRecord || !link) throw new Error("iPhone 安全区审查缺少目标元素");
       const dockRect = dock.getBoundingClientRect();
       const topbarRect = topbar.getBoundingClientRect();
       const buttonBottom = Math.max(...[...dock.querySelectorAll<HTMLElement>("a, button")]
@@ -641,9 +647,15 @@ test.describe("mobile UX release gate", () => {
       const dockStyle = getComputedStyle(dock);
       return {
         viewportHeight: window.innerHeight,
+        viewportWidth: window.innerWidth,
         topbarHeight: topbar.getBoundingClientRect().height,
+        brandFontSize: Number.parseFloat(getComputedStyle(brand.querySelector("strong")!).fontSize),
+        brandLineHeight: Number.parseFloat(getComputedStyle(brand.querySelector("strong")!).lineHeight),
         brandTop: brand.getBoundingClientRect().top,
         syncTop: syncState.getBoundingClientRect().top,
+        syncHeight: syncState.getBoundingClientRect().height,
+        quickRecordWidth: quickRecord.getBoundingClientRect().width,
+        quickRecordHeight: quickRecord.getBoundingClientRect().height,
         headerTop: topbarRect.top,
         headerBottom: topbarRect.bottom,
         dockHeight: dockRect.height,
@@ -665,9 +677,16 @@ test.describe("mobile UX release gate", () => {
       };
     });
 
-    expect(layout.topbarHeight, "手机顶部工具栏应保持紧凑").toBeGreaterThanOrEqual(64);
+    expect([layout.viewportWidth, layout.viewportHeight], "主验收必须使用 iPhone 16 Pro Max 全屏画布")
+      .toEqual([440, 956]);
+    expect(layout.topbarHeight, "手机顶部工具栏应保持紧凑").toBeGreaterThanOrEqual(68);
+    expect([layout.brandFontSize, layout.brandLineHeight], "一级标题应采用 iOS Large Title 34/41")
+      .toEqual([34, 41]);
     expect(layout.brandTop, "品牌文字应位于手机工具栏内").toBeGreaterThanOrEqual(layout.headerTop);
     expect(layout.syncTop, "同步入口应位于手机工具栏内").toBeGreaterThanOrEqual(layout.headerTop);
+    expect(layout.syncHeight, "同步入口应达到 44pt 交互基线").toBeGreaterThanOrEqual(44);
+    expect([layout.quickRecordWidth, layout.quickRecordHeight], "快速录入应采用 44×44pt 点击区")
+      .toEqual([44, 44]);
     expect(layout.headerBottom).toBeLessThanOrEqual(layout.dockTop);
     expect(layout.dockPosition).toBe("fixed");
     expect(layout.dockColumns, "Liquid Glass 底栏应固定为三列").toBe(3);
@@ -684,6 +703,96 @@ test.describe("mobile UX release gate", () => {
     expect(layout.linkHeight, "更新库存应保持可触控高度").toBeGreaterThanOrEqual(44);
     expect(layout.linkWhiteSpace).toBe("nowrap");
     expect(layout.linkFits, "更新库存不能被挤成两行").toBe(true);
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" }),
+      "最新 iOS Tab Bar 在滚动时应保持稳定可识别").toHaveAttribute("data-state", "expanded");
+    await expect(page.locator(".ios26-mobile-dock-shell")).toHaveCSS("transform", "none");
+  });
+
+  test("数据中心与设置页采用单行分段导航和 iOS 分组表单", async ({ page }) => {
+    await page.setViewportSize(iphone16ProMaxViewport);
+    await page.goto("/#/settings");
+    await waitForApplicationPage(page);
+
+    const nav = page.getByRole("navigation", { name: "数据中心分区" });
+    const links = nav.getByRole("link");
+    await expect(links).toHaveCount(4);
+    await expect(links.locator(".subnav-label-short")).toHaveText(["库存", "宝石价", "来源", "设置"]);
+
+    const layout = await page.evaluate(() => {
+      const navigation = document.querySelector<HTMLElement>(".data-center-nav");
+      const entries = [...document.querySelectorAll<HTMLElement>(".data-center-nav a")];
+      const sections = [...document.querySelectorAll<HTMLElement>(".settings-page > .settings-section")];
+      const firstInput = document.querySelector<HTMLElement>(".settings-page input");
+      const firstButton = document.querySelector<HTMLElement>(".settings-page .button");
+      if (!navigation || entries.length !== 4 || !sections.length || !firstInput || !firstButton) {
+        throw new Error("设置页 iOS 分组审查缺少目标元素");
+      }
+      const rects = entries.map((entry) => entry.getBoundingClientRect());
+      const active = entries.find((entry) => entry.classList.contains("router-link-active"))!;
+      return {
+        navColumns: getComputedStyle(navigation).gridTemplateColumns.split(" ").length,
+        navHeight: navigation.getBoundingClientRect().height,
+        entryTops: rects.map((rect) => Math.round(rect.top)),
+        entryHeights: rects.map((rect) => rect.height),
+        activeRadius: Number.parseFloat(getComputedStyle(active).borderRadius),
+        sectionRadius: Number.parseFloat(getComputedStyle(sections[0]).borderRadius),
+        sectionBackground: getComputedStyle(sections[0]).backgroundColor,
+        inputHeight: firstInput.getBoundingClientRect().height,
+        inputFontSize: Number.parseFloat(getComputedStyle(firstInput).fontSize),
+        buttonHeight: firstButton.getBoundingClientRect().height,
+        horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+
+    expect(layout.navColumns).toBe(4);
+    expect(new Set(layout.entryTops).size, "四个数据分区必须保持在同一行").toBe(1);
+    expect(layout.entryHeights.every((height) => height >= 44)).toBe(true);
+    expect(layout.navHeight).toBeGreaterThanOrEqual(50);
+    expect(layout.activeRadius).toBeGreaterThanOrEqual(10);
+    expect(layout.sectionRadius).toBeGreaterThanOrEqual(20);
+    expect(layout.sectionBackground).not.toBe("rgba(0, 0, 0, 0)");
+    expect(layout.inputHeight).toBeGreaterThanOrEqual(50);
+    expect(layout.inputFontSize).toBe(17);
+    expect(layout.buttonHeight).toBeGreaterThanOrEqual(44);
+    expect(layout.horizontalOverflow).toBeLessThanOrEqual(1);
+  });
+
+  test("系统深色外观即时切换且不丢失录入 Sheet 上下文", async ({ page }) => {
+    await page.setViewportSize(iphone16ProMaxViewport);
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.goto("/#/");
+    await waitForApplicationPage(page);
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+
+    await page.getByRole("button", { name: "快速录入", exact: true }).tap();
+    const dialog = page.getByRole("dialog", { name: "记录今日信息" });
+    const input = dialog.getByLabel("FC 专用蛋");
+    await expect(dialog).toBeVisible();
+    await input.fill("19");
+
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect.poll(() => page.locator("html").evaluate((element) => (
+      (element as HTMLElement).style.colorScheme
+    ))).toBe("dark");
+    await expect(dialog).toBeVisible();
+    await expect(input).toHaveValue("19");
+    await expect(page).toHaveURL(/#\/$/);
+
+    const darkSurfaces = await page.evaluate(() => {
+      const shell = getComputedStyle(document.querySelector<HTMLElement>(".orbit-main")!).backgroundColor;
+      const sheet = getComputedStyle(document.querySelector<HTMLElement>(".ios26-record-sheet")!).backgroundColor;
+      return { shell, sheet };
+    });
+    expect(darkSurfaces.shell).not.toMatch(/rgb\(24[5-9],|rgb\(25[0-5],/);
+    expect(darkSurfaces.sheet).not.toMatch(/rgb\(24[5-9],|rgb\(25[0-5],/);
+
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(input).toHaveValue("19");
+    await dialog.getByRole("button", { name: "取消", exact: true }).tap();
   });
 
   test("首页首屏呈现今日进度、两个优先账号与周报入口", async ({ page }) => {
@@ -737,8 +846,8 @@ test.describe("mobile UX release gate", () => {
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
-  test("393×852 首页一次点击打开完整的全局库存工作表", async ({ page }, testInfo) => {
-    await page.setViewportSize({ width: 393, height: 852 });
+  test("iPhone 16 Pro Max 首页一次点击打开完整的全局库存工作表", async ({ page }, testInfo) => {
+    await page.setViewportSize(iphone16ProMaxViewport);
     await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
     await page.goto("/#/");
     await waitForApplicationPage(page);
@@ -777,7 +886,7 @@ test.describe("mobile UX release gate", () => {
       };
     });
     expect(inventoryLayout.bodyScrollHeight,
-      "393×852 首屏应完整容纳库存主体，无需滚动才能看到第五个账号")
+      "440×956 首屏应完整容纳库存主体，无需滚动才能看到第五个账号")
       .toBeLessThanOrEqual(inventoryLayout.bodyClientHeight + 1);
     expect(inventoryLayout.lastRowBottom,
       "MYT 最后一行应完整显示在库存主体内")
@@ -795,7 +904,7 @@ test.describe("mobile UX release gate", () => {
   });
 
   test("全局录入工作表切换模式时保持统一高度、字号与内部滚动", async ({ page }) => {
-    await page.setViewportSize({ width: 440, height: 700 });
+    await page.setViewportSize(iphone16ProMaxSafariViewport);
     await page.addInitScript(() => localStorage.removeItem("sw.app.inventory.v2"));
     await page.goto("/#/");
     await waitForApplicationPage(page);
@@ -1394,6 +1503,7 @@ test.describe("mobile UX release gate", () => {
     let auditedHeadings = 0;
     let auditedFields = 0;
     for (const viewport of [
+      iphone16ProMaxViewport,
       { width: 393, height: 852 },
       { width: 430, height: 932 },
     ] as const) {

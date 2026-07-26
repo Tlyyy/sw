@@ -1,0 +1,428 @@
+:root {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  color: #ffffff;
+  background: #000000;
+  --nav: #000000;
+  --nav-2: #1c1c1e;
+  --ink: #ffffff;
+  --muted: rgba(235, 235, 245, 0.6);
+  --soft: #1c1c1e;
+  --line: rgba(84, 84, 88, 0.65);
+  --line-strong: #38383a;
+  --teal: #ff9f0a;
+  --teal-dark: #ffb340;
+  --teal-soft: rgba(255, 159, 10, 0.16);
+  --blue-soft: rgba(10, 132, 255, 0.16);
+  --amber: #ff9f0a;
+  --amber-soft: rgba(255, 159, 10, 0.16);
+  --red: #ff453a;
+  --red-soft: rgba(255, 69, 58, 0.16);
+  --brand-orange: #ff9f0a;
+  --brand-orange-dark: #ffb340;
+  --brand-orange-soft: rgba(255, 159, 10, 0.16);
+  --paper: #000000;
+  --panel: #1c1c1e;
+  --shadow: 0 18px 46px rgba(0, 0, 0, 0.46);
+
+  --radar-canvas: #000000;
+  --radar-surface: #1c1c1e;
+  --radar-surface-2: #2c2c2e;
+  --radar-surface-3: #3a3a3c;
+  --radar-ink: #ffffff;
+  --radar-muted: rgba(235, 235, 245, 0.6);
+  --radar-faint: rgba(235, 235, 245, 0.3);
+  --radar-line: rgba(84, 84, 88, 0.65);
+  --radar-line-strong: #48484a;
+  --radar-cyan: #64d2ff;
+  --radar-cyan-strong: #70d7ff;
+  --radar-cyan-soft: rgba(100, 210, 255, 0.16);
+  --radar-amber: #ff9f0a;
+  --radar-amber-strong: #ffb340;
+  --radar-amber-soft: rgba(255, 159, 10, 0.16);
+  --radar-success: #30d158;
+  --radar-danger: #ff453a;
+  --radar-neutral-chip: #2c2c2e;
+  --radar-neutral-border: #48484a;
+  --radar-pending: rgba(235, 235, 245, 0.6);
+  --radar-account-fc: #63b6df;
+  --radar-account-lg1: #a78bfa;
+  --radar-account-lg2: #e2ad4f;
+  --radar-account-pt: #f08383;
+  --radar-account-myt: #69c995;
+
+  --ios26-page: #000000;
+  --ios26-surface: rgba(44, 44, 46, 0.78);
+  --ios26-line: rgba(84, 84, 88, 0.65);
+}
+
+html,
+body,
+#app,
+.orbit-shell,
+.orbit-main {
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+html[data-theme="dark"] #app,
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .orbit-shell,
+html[data-theme="dark"] .orbit-main {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+html[data-theme="dark"] body :is(input, select, textarea) {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background-color: #2c2c2e;
+}
+
+html[data-theme="dark"] body :is(
+  .settings-section input,
+  .settings-section select,
+  .settings-section textarea
+) {
+  color: var(--ink);
+  border-color: var(--radar-line-strong);
+  background: var(--radar-surface-2) !important;
+}
+
+html[data-theme="dark"] body :is(input, textarea)::placeholder {
+  color: rgba(235, 235, 245, 0.3);
+}
+
+html[data-theme="dark"] body :is(.button, .segmented button, .preset-row button):not(.primary, .active) {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: #2c2c2e;
+}
+
+html[data-theme="dark"] body :is(.button, button, a):focus-visible {
+  outline-color: rgba(255, 159, 10, 0.5);
+}
+
+html[data-theme="dark"] .ios26-mobile-header {
+  border-color: rgba(84, 84, 88, 0.65);
+  background: rgba(28, 28, 30, 0.72);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .ios26-mobile-brand {
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .ios26-mobile-sync {
+  color: #ffffff;
+  border-color: rgba(84, 84, 88, 0.65);
+  background: rgba(44, 44, 46, 0.62);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+html[data-theme="dark"] :is(
+  .next-step-card,
+  .today-progress-card,
+  .week-pulse-card,
+  .record-account-status,
+  .record-account-status-list > article,
+  .week-mobile-switcher,
+  .week-day-strip,
+  .week-summary-card,
+  .week-account-table,
+  .week-account-card,
+  .week-supplement-card,
+  .week-mobile-full-report,
+  .weekly-activity-panel,
+  .weekly-account-breakdown,
+  .week-action-card,
+  .week-inventory-details,
+  .resource-group,
+  .task-mobile-segments,
+  .task-account-overview,
+  .task-account-overview button,
+  .task-worklist,
+  .inventory-current-card,
+  .inventory-record-card,
+  .inventory-workspace-nav,
+  .earnings-mobile-card,
+  .earnings-summary-card,
+  .earnings-ledger-card,
+  .password-rotation-section
+) {
+  color: var(--ink);
+  border-color: var(--radar-line);
+  background: var(--radar-surface);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+html[data-theme="dark"] :is(
+  .task-maintenance-page,
+  .task-mobile-controller,
+  .task-mobile-list,
+  .task-mobile-summary-main,
+  .record-primary-card,
+  .record-option-card
+) {
+  color: var(--ink);
+  border-color: var(--radar-line);
+  background: var(--radar-surface);
+}
+
+html[data-theme="dark"] :is(.task-mobile-controller, .task-mobile-list) {
+  background: var(--radar-canvas);
+}
+
+html[data-theme="dark"] :is(.task-mobile-summary-main:hover, .task-mobile-summary-main:focus-visible) {
+  background: var(--radar-surface-2);
+}
+
+html[data-theme="dark"] .record-card-icon.expense {
+  color: var(--brand-orange-dark);
+  background: var(--brand-orange-soft);
+}
+
+html[data-theme="dark"] :is(
+  .progress-grid,
+  .today-progress-grid,
+  .week-metrics,
+  .week-summary-metrics,
+  .record-account-status-list,
+  .week-account-head,
+  .table-head,
+  .task-progress-overview,
+  .task-bulk-action-bar,
+  .data-ledger
+) {
+  border-color: var(--radar-line);
+  background: var(--radar-surface-2);
+}
+
+html[data-theme="dark"] .week-day-strip li.is-current {
+  color: var(--brand-orange-dark);
+  border-color: rgba(255, 159, 10, 0.36);
+  background: rgba(255, 159, 10, 0.14);
+}
+
+html[data-theme="dark"] :is(
+  .week-account-card,
+  .week-supplement-card,
+  .week-mobile-full-report,
+  .weekly-activity-panel,
+  .weekly-account-breakdown
+) :is(header, table, thead, tbody, tr, th, td) {
+  color: var(--ink);
+  border-color: var(--radar-line);
+  background: var(--radar-surface) !important;
+}
+
+html[data-theme="dark"] :is(
+  .week-account-card,
+  .week-supplement-card,
+  .week-mobile-full-report,
+  .weekly-activity-panel,
+  .weekly-account-breakdown
+) :is(h2, h3, strong, summary) {
+  color: var(--ink);
+}
+
+html[data-theme="dark"] :is(
+  .week-account-card,
+  .week-supplement-card,
+  .week-mobile-full-report,
+  .weekly-activity-panel,
+  .weekly-account-breakdown
+) :is(p, small, span, dt) {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] :is(.week-supplement-card > button, .account-pill) {
+  color: var(--ink);
+  border-color: var(--radar-line-strong);
+  background: var(--radar-surface-2);
+}
+
+html[data-theme="dark"] :is(.account-badge, .week-account-badge, .task-account-badge) {
+  background: #2c2c2e;
+}
+
+html[data-theme="dark"] :is(
+  .pet-row,
+  .pet-tags span,
+  .skill-list span,
+  .equipment-table article,
+  .species-table article,
+  .resource-table > div,
+  .timeline-ledger > a,
+  .compact-list article,
+  .task-row-action,
+  .editable-resource-table input,
+  .planning-parameter-grid input,
+  .parameter-task-list input,
+  .gem-plan-controls,
+  .gem-plan-card,
+  .gem-ocr-panel,
+  .dropzone-mark
+) {
+  color: var(--ink);
+  border-color: var(--line);
+  background: var(--radar-surface);
+}
+
+html[data-theme="dark"] :is(.pet-row:hover, .pet-row.selected, .orbit-action-row:hover, .orbit-account-table > a:hover) {
+  background: var(--radar-surface-2);
+}
+
+html[data-theme="dark"] :is(
+  .command-dialog,
+  .command-results,
+  .command-mobile-head,
+  .command-result-card > button,
+  .command-search-toolbar,
+  .ios26-record-sheet,
+  .ios26-record-head,
+  .ios26-record-body,
+  .ios26-record-footer,
+  .ios26-record-segment,
+  .ios26-record-segment button,
+  .snapshot-dialog-card,
+  .snapshot-entry-scroll,
+  .snapshot-account-panel,
+  .snapshot-account-field,
+  .snapshot-dialog-card footer,
+  .task-settlement-sheet,
+  .task-settlement-body,
+  .task-settlement-footer
+) {
+  color: var(--ink);
+  border-color: var(--line);
+  background: var(--radar-surface);
+}
+
+html[data-theme="dark"] .ios26-record-head {
+  background: rgba(44, 44, 46, 0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+
+html[data-theme="dark"] :is(.ios26-inventory-table, .ios26-inventory-table > *) {
+  color: var(--ink);
+  border-color: var(--radar-line);
+  background: var(--radar-surface-2);
+}
+
+html[data-theme="dark"] .ios26-inventory-table strong {
+  color: var(--ink);
+}
+
+html[data-theme="dark"] body :is(
+  .ios26-record-sheet input,
+  .ios26-record-sheet select,
+  .ios26-record-sheet textarea,
+  .ios26-inventory-table input
+) {
+  color: var(--ink);
+  border-color: var(--radar-line-strong);
+  background: var(--radar-surface-3) !important;
+}
+
+html[data-theme="dark"] :is(.command-backdrop, .ios26-record-backdrop, .snapshot-dialog-backdrop, .task-settlement-backdrop) {
+  background: rgba(0, 0, 0, 0.66);
+}
+
+html[data-theme="dark"] :is(.command-result-card > button:hover, .command-result-card > button.is-active) {
+  background: var(--radar-surface-2);
+}
+
+html[data-theme="dark"] body :is(
+  .command-recent > div > button,
+  .command-result-card > button,
+  .command-results.is-suggestions .command-result-card > button
+) {
+  color: var(--ink);
+  border-color: var(--radar-line);
+  background: rgba(44, 44, 46, 0.78);
+}
+
+html[data-theme="dark"] body :is(
+  .command-recent > div > button,
+  .command-result-card > button,
+  .command-results.is-suggestions .command-result-card > button
+):is(:hover, :focus-visible, .is-active) {
+  background: var(--radar-surface-3);
+}
+
+html[data-theme="dark"] .command-mobile-head :is(strong, b) {
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .command-result-card :is(strong, b) {
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .command-result-card :is(small, .command-result-meta) {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] .command-mobile-head :is(span, small) {
+  color: var(--muted);
+}
+
+html[data-theme="dark"] :is(.ios26-record-segment button.active, .snapshot-account-tab[aria-selected="true"]) {
+  color: #fff;
+  background: var(--brand-orange);
+}
+
+html[data-theme="dark"] :is(.orbit-mobile-dock.ios26-mobile-dock, .ios26-mobile-search) {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(44, 44, 46, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.38),
+    0 12px 32px rgba(0, 0, 0, 0.38);
+  -webkit-backdrop-filter: blur(18px) saturate(1.65) contrast(1.08);
+  backdrop-filter: blur(18px) saturate(1.65) contrast(1.08);
+}
+
+html[data-theme="dark"] :is(.orbit-mobile-dock.ios26-mobile-dock, .ios26-mobile-search)::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02) 42%, rgba(0, 0, 0, 0.1));
+}
+
+html[data-theme="dark"] .orbit-mobile-dock a:not(.active) {
+  color: rgba(235, 235, 245, 0.6);
+}
+
+html[data-theme="dark"] .orbit-mobile-dock a.active {
+  color: #ff9f0a;
+}
+
+html[data-theme="dark"] .orbit-mobile-dock a.active::before {
+  border-color: rgba(255, 159, 10, 0.24);
+  background: rgba(255, 159, 10, 0.16);
+}
+
+html[data-theme="dark"] :is(.cloud-sync-section, .workspace-state-section) {
+  color: var(--ink);
+  border-color: var(--line);
+  background: var(--radar-surface);
+}
+
+html[data-theme="dark"] .danger-zone {
+  border-color: rgba(255, 69, 58, 0.3);
+  background: var(--red-soft);
+}
+
+html[data-theme="dark"] :is(.pending-ledger, .task-state-label.warning, .publish-draft-warning) {
+  color: #ffb340;
+  border-color: rgba(255, 159, 10, 0.32);
+  background: var(--amber-soft);
+}
+
+html[data-theme="dark"] :is(.movement-message.error, .task-state-label.blocked, .form-error) {
+  color: #ff6961;
+  background: var(--red-soft);
+}
