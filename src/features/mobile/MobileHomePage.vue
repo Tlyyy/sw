@@ -1,33 +1,23 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 import AppIcon from "../../components/AppIcon.vue";
 import type { AccountOverview } from "../../domain/mobileOverview";
-import { useUiStore } from "../../stores/ui";
 import {
   accountTaskLabel,
   shortDay,
   useHomeOverview,
-  wanLabel,
 } from "../home/useHomeOverview";
 
-const router = useRouter();
-const ui = useUiStore();
 const {
   accountRows,
   today,
-  todayDescription,
   todayOverview,
-  weeklyActivity,
 } = useHomeOverview();
 
 const pendingTaskCount = computed(() => accountRows.value.reduce(
   (total, row) => total + row.pendingTaskCount,
   0,
 ));
-const pendingAccountCount = computed(() => accountRows.value.filter(
-  (row) => row.pendingTaskCount > 0,
-).length);
 const todayActivityCount = computed(() => (
   (todayOverview.value?.taskCompletionCount || 0)
   + (todayOverview.value?.expenseCount || 0)
@@ -42,99 +32,38 @@ const projectionPriority = {
 } as const;
 
 const priorityAccounts = computed(() => [...accountRows.value]
-  .filter((row) => row.pendingTaskCount > 0)
   .sort((left, right) => {
-    if (todayOverview.value?.hasInventory) {
-      const leftPriority = left.projection ? projectionPriority[left.projection.status] : 5;
-      const rightPriority = right.projection ? projectionPriority[right.projection.status] : 5;
-      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
-    }
-    return right.pendingTaskCount - left.pendingTaskCount;
-  })
-  .slice(0, 2));
+    const leftComplete = left.pendingTaskCount === 0;
+    const rightComplete = right.pendingTaskCount === 0;
+    if (leftComplete !== rightComplete) return Number(leftComplete) - Number(rightComplete);
 
-const weekBalance = computed(() => {
-  if (weeklyActivity.value.harvestedSilverWan === null) return null;
-  return weeklyActivity.value.harvestedSilverWan
-    - weeklyActivity.value.totalSilverExpenseWan;
-});
+    const leftPriority = left.projection ? projectionPriority[left.projection.status] : 5;
+    const rightPriority = right.projection ? projectionPriority[right.projection.status] : 5;
+    if (leftPriority !== rightPriority) return leftPriority - rightPriority;
 
-const inventoryProgressDetail = computed(() => {
-  if (!todayOverview.value?.hasInventory) return "五个账号一次补齐";
-  if (weeklyActivity.value.inventoryNetChangeWan === null) return "库存基线已更新";
-  return `较上次 ${wanLabel(weeklyActivity.value.inventoryNetChangeWan, true)}`;
-});
+    const leftDueDate = left.projection?.currentTask?.dueDate || "9999-12-31";
+    const rightDueDate = right.projection?.currentTask?.dueDate || "9999-12-31";
+    return leftDueDate.localeCompare(rightDueDate);
+  }));
 
-const todayActivityDetail = computed(() => (
-  `任务 ${todayOverview.value?.taskCompletionCount || 0} · 支出 ${todayOverview.value?.expenseCount || 0}`
-));
+function priorityStatusLabel(row: AccountOverview) {
+  if (!row.pendingTaskCount) return "已完成";
+  if (!row.projection) return "待同步";
 
-const nextAction = computed(() => {
-  if (!todayOverview.value?.hasInventory) {
-    return {
-      kind: "inventory" as const,
-      eyebrow: "下一步：补库存",
-      heading: "今天还没有记录库存",
-      description: todayOverview.value?.taskCompletionCount || todayOverview.value?.expenseCount
-        ? "已有其他动态，再补一份库存就完整了"
-        : "先记录今日库存，再处理任务",
-      label: "记录今日库存",
-      icon: "plus",
-    };
+  const silverShortage = Number(row.projection.allocation.silverShortageWan.toFixed(2));
+  if (silverShortage > 0) {
+    return `缺 ${silverShortage.toLocaleString("zh-CN", { maximumFractionDigits: 2 })} 万`;
   }
-
-  if (pendingTaskCount.value > 0) {
-    return {
-      kind: "tasks" as const,
-      eyebrow: "下一步：处理任务",
-      heading: "今天库存已经记录",
-      description: `库存已完整，还有 ${pendingTaskCount.value} 项任务待处理`,
-      label: "查看待处理任务",
-      icon: "plan",
-    };
-  }
-
-  return {
-    kind: "week" as const,
-    eyebrow: "下一步：看周报",
-    heading: "今天的记录已完成",
-    description: todayDescription.value,
-    label: "查看本周小结",
-    icon: "report",
-  };
-});
-
-function runNextAction() {
-  if (nextAction.value.kind === "inventory") {
-    ui.openRecordSheet("inventory");
-    return;
-  }
-  void router.push(nextAction.value.kind === "tasks" ? "/plans/tasks" : "/week");
+  return row.projection.statusLabel;
 }
 
-function priorityHint(row: AccountOverview) {
-  if (!row.projection) return "任务状态待同步";
-  if (!todayOverview.value?.hasInventory) return "补库存后确认资源是否齐全";
-  return row.projection.actionHint;
-}
 </script>
 
 <template>
   <main class="today-workbench" data-testid="mobile-week-home">
-    <section class="next-step-card" aria-labelledby="today-next-step">
-      <p class="section-kicker">{{ nextAction.eyebrow }}</p>
-      <h1 id="today-next-step">{{ nextAction.heading }}</h1>
-      <p class="next-step-description">{{ nextAction.description }}</p>
-      <button class="next-step-action" type="button" @click="runNextAction">
-        <AppIcon :name="nextAction.icon" />
-        <span>{{ nextAction.label }}</span>
-      </button>
-    </section>
-
     <section class="today-progress-card" aria-labelledby="today-progress">
       <header class="card-heading">
         <div>
-          <p>今日状态</p>
           <h2 id="today-progress">今日进度</h2>
         </div>
         <span>{{ shortDay(today) }}</span>
@@ -146,17 +75,14 @@ function priorityHint(row: AccountOverview) {
           <strong :class="{ complete: todayOverview?.hasInventory }">
             {{ todayOverview?.hasInventory ? "已记录" : "待记录" }}
           </strong>
-          <small>{{ inventoryProgressDetail }}</small>
         </article>
         <article class="progress-metric">
           <span>今日动态</span>
           <strong>{{ todayActivityCount }} 条</strong>
-          <small>{{ todayActivityDetail }}</small>
         </article>
         <article class="progress-metric">
           <span>待处理</span>
           <strong>{{ pendingTaskCount }} 项</strong>
-          <small>{{ pendingAccountCount }} 个账号</small>
         </article>
       </div>
 
@@ -164,15 +90,14 @@ function priorityHint(row: AccountOverview) {
         <header class="priority-heading">
           <div>
             <h3>优先处理账号</h3>
-            <p>{{ todayOverview?.hasInventory ? "按当前资源可执行性排序" : "先看任务最多的账号" }}</p>
           </div>
           <RouterLink to="/plans/tasks">
-            查看全部
+            任务列表
             <AppIcon name="chevron-right" />
           </RouterLink>
         </header>
 
-        <div v-if="priorityAccounts.length" class="priority-list">
+        <div class="priority-list">
           <RouterLink
             v-for="row in priorityAccounts"
             :key="row.accountId"
@@ -188,62 +113,19 @@ function priorityHint(row: AccountOverview) {
             </span>
             <span class="priority-copy">
               <strong>{{ accountTaskLabel(row) }}</strong>
-              <small>{{ priorityHint(row) }}</small>
             </span>
             <span
               class="priority-meta"
-              :class="row.projection ? `status-${row.projection.status}` : ''"
+              :class="row.projection ? `priority-status-${row.projection.status}` : ''"
             >
-              <strong>{{ row.pendingTaskCount }} 项</strong>
-              <small>{{ row.projection?.statusLabel || "待同步" }}</small>
+              <strong>{{ priorityStatusLabel(row) }}</strong>
             </span>
             <AppIcon name="chevron-right" />
           </RouterLink>
         </div>
-
-        <div v-else class="priority-empty">
-          <span class="complete-mark">✓</span>
-          <div>
-            <strong>五个账号主线都已完成</strong>
-            <small>今天没有需要推进的主线任务</small>
-          </div>
-        </div>
       </div>
     </section>
 
-    <RouterLink class="week-pulse-card" to="/week" aria-labelledby="week-pulse">
-      <header>
-        <div>
-          <p>截至今天</p>
-          <h2 id="week-pulse">本周脉搏</h2>
-        </div>
-        <span>
-          查看周报
-          <AppIcon name="chevron-right" />
-        </span>
-      </header>
-      <div class="week-metrics">
-        <span>
-          <small>收入</small>
-          <strong>{{ wanLabel(weeklyActivity.harvestedSilverWan) }}</strong>
-        </span>
-        <span>
-          <small>支出</small>
-          <strong>{{ wanLabel(weeklyActivity.totalSilverExpenseWan) }}</strong>
-        </span>
-        <span>
-          <small>结余</small>
-          <strong
-            :class="{
-              negative: (weekBalance ?? 0) < 0,
-              positive: (weekBalance ?? 0) > 0,
-            }"
-          >
-            {{ wanLabel(weekBalance, true) }}
-          </strong>
-        </span>
-      </div>
-    </RouterLink>
   </main>
 </template>
 
@@ -257,71 +139,12 @@ function priorityHint(row: AccountOverview) {
   color: #1c1c1e;
 }
 
-.next-step-card,
-.today-progress-card,
-.week-pulse-card {
+.today-progress-card {
   overflow: hidden;
   border: 1px solid rgba(60, 60, 67, 0.15);
   border-radius: 17px;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(28, 28, 30, 0.055);
-}
-
-.next-step-card {
-  padding: 17px 16px 16px;
-}
-
-.section-kicker {
-  margin: 0;
-  color: #5f636d;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-}
-
-.next-step-card h1 {
-  margin: 13px 0 0;
-  font-size: 22px;
-  line-height: 1.18;
-  letter-spacing: -0.035em;
-}
-
-.next-step-description {
-  margin: 5px 0 0;
-  color: #6e6e73;
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.next-step-action {
-  width: 100%;
-  min-height: 50px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  margin-top: 17px;
-  border: 0;
-  border-radius: 11px;
-  color: #ffffff;
-  background: #d45c00;
-  box-shadow: 0 8px 18px rgba(179, 74, 0, 0.2);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 760;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.next-step-action:active {
-  transform: scale(0.985);
-  background: #bd5000;
-}
-
-.next-step-action :deep(svg) {
-  width: 21px;
-  height: 21px;
-  stroke-width: 2;
 }
 
 .card-heading {
@@ -333,17 +156,7 @@ function priorityHint(row: AccountOverview) {
   padding: 12px 15px 9px;
 }
 
-.card-heading p,
-.week-pulse-card header p {
-  margin: 0 0 2px;
-  color: #8a8a91;
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1.2;
-}
-
-.card-heading h2,
-.week-pulse-card h2 {
+.card-heading h2 {
   margin: 0;
   font-size: 17px;
   line-height: 1.2;
@@ -406,54 +219,51 @@ function priorityHint(row: AccountOverview) {
   color: #08735c;
 }
 
-.progress-metric > small {
-  max-width: 100%;
-  margin-top: 4px;
-  overflow: hidden;
-  color: #8a8a91;
-  font-size: 9px;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .priority-section {
-  margin-top: 13px;
+  margin-top: 14px;
+  padding-bottom: 12px;
   border-top: 1px solid rgba(60, 60, 67, 0.11);
 }
 
 .priority-heading {
-  min-height: 55px;
+  min-height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 9px 14px 7px;
+  padding: 8px 14px 6px;
 }
 
 .priority-heading h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 720;
   line-height: 1.2;
-  letter-spacing: -0.015em;
-}
-
-.priority-heading p {
-  margin: 3px 0 0;
-  color: #8a8a91;
-  font-size: 9px;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .priority-heading > a {
   min-height: 34px;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  color: #c65300;
+  gap: 3px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--ios-tint) 16%, transparent);
+  border-radius: 999px;
+  color: var(--ios-tint);
+  background: var(--ios-tint-soft);
   font-size: 11px;
   font-weight: 650;
   white-space: nowrap;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 180ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.priority-heading > a:active {
+  transform: scale(0.96);
+  background: color-mix(in srgb, var(--ios-tint) 15%, transparent);
 }
 
 .priority-heading > a :deep(svg) {
@@ -462,36 +272,52 @@ function priorityHint(row: AccountOverview) {
 }
 
 .priority-list {
-  padding: 0 10px 7px;
+  margin: 0 12px;
+  overflow: hidden;
+  border: 1px solid var(--ios-separator);
+  border-radius: 14px;
+  background: var(--ios-secondary-system-background);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 60%, transparent),
+    0 5px 14px rgba(28, 28, 30, 0.035);
 }
 
 .priority-account-row {
-  min-height: 61px;
+  min-height: 58px;
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto 14px;
+  grid-template-columns: 40px minmax(0, 1fr) auto 12px;
   align-items: center;
-  column-gap: 9px;
-  padding: 7px 4px;
-  border-top: 1px solid rgba(60, 60, 67, 0.09);
-  color: #1c1c1e;
+  column-gap: 10px;
+  padding: 8px 10px;
+  color: var(--ios-primary-label);
+  background: var(--ios-secondary-system-background);
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 180ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 
+.priority-account-row + .priority-account-row {
+  border-top: 1px solid var(--ios-separator);
+}
+
 .priority-account-row:active {
-  border-radius: 9px;
-  background: rgba(60, 60, 67, 0.055);
+  z-index: 1;
+  transform: scale(0.992);
+  background: var(--ios-tertiary-system-background);
 }
 
 .account-badge {
-  width: 42px;
-  min-height: 37px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border: 1px solid currentColor;
-  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, currentColor 38%, transparent);
+  border-radius: 10px;
   color: #2b67a1;
-  background: #ffffff;
-  font-size: 15px;
+  background: color-mix(in srgb, currentColor 8%, var(--ios-secondary-system-background));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+  font-size: 14px;
   font-weight: 760;
   line-height: 1;
 }
@@ -527,146 +353,53 @@ function priorityHint(row: AccountOverview) {
 }
 
 .priority-meta {
-  display: grid;
-  gap: 3px;
+  display: inline-flex;
+  align-items: center;
   text-align: right;
   white-space: nowrap;
 }
 
 .priority-meta strong {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--ios-secondary-label) 14%, transparent);
+  border-radius: 999px;
+  color: var(--ios-secondary-label);
+  background: var(--ios-tertiary-system-background);
   font-size: 11px;
-  line-height: 1;
-}
-
-.priority-meta small {
-  color: #7c7c83;
-  font-size: 10px;
   font-weight: 650;
   line-height: 1;
 }
 
-.priority-meta.status-ready small { color: #08735c; }
-.priority-meta.status-buyable small { color: #14734d; }
-.priority-meta.status-caution small { color: #b84f00; }
-.priority-meta.status-blocked small { color: #a7272e; }
-.priority-meta.status-stale small { color: #6e6e73; }
+.priority-meta.priority-status-ready strong,
+.priority-meta.priority-status-buyable strong {
+  border-color: color-mix(in srgb, #08735c 18%, transparent);
+  color: #08735c;
+  background: color-mix(in srgb, #08735c 9%, var(--ios-secondary-system-background));
+}
+
+.priority-meta.priority-status-caution strong {
+  border-color: color-mix(in srgb, #b84f00 20%, transparent);
+  color: #b84f00;
+  background: color-mix(in srgb, #b84f00 9%, var(--ios-secondary-system-background));
+}
+
+.priority-meta.priority-status-blocked strong {
+  border-color: color-mix(in srgb, #c53030 20%, transparent);
+  color: #b4232b;
+  background: color-mix(in srgb, #ff3b30 8%, var(--ios-secondary-system-background));
+}
+
+.priority-meta.priority-status-stale strong {
+  color: var(--ios-secondary-label);
+}
 
 .priority-account-row > :deep(svg) {
-  width: 14px;
-  height: 14px;
-  color: #a2a2a8;
-}
-
-.priority-empty {
-  min-height: 70px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 10px 8px;
-  padding: 10px 6px;
-  border-top: 1px solid rgba(60, 60, 67, 0.09);
-}
-
-.complete-mark {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  color: #08735c;
-  background: rgba(8, 115, 92, 0.1);
-  font-size: 15px;
-  font-weight: 760;
-}
-
-.priority-empty div {
-  display: grid;
-  gap: 3px;
-}
-
-.priority-empty strong {
-  font-size: 12px;
-}
-
-.priority-empty small {
-  color: #7c7c83;
-  font-size: 10px;
-}
-
-.week-pulse-card {
-  display: block;
-  color: #1c1c1e;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.week-pulse-card:active {
-  transform: scale(0.993);
-}
-
-.week-pulse-card > header {
-  min-height: 53px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px 8px;
-  border-bottom: 1px solid rgba(60, 60, 67, 0.09);
-}
-
-.week-pulse-card header > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  color: #6e6e73;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.week-pulse-card header :deep(svg) {
-  width: 13px;
-  height: 13px;
-}
-
-.week-metrics {
-  min-height: 57px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: center;
-  padding: 6px 0 9px;
-}
-
-.week-metrics > span {
-  min-width: 0;
-  display: grid;
-  gap: 3px;
-  padding: 0 14px;
-}
-
-.week-metrics > span + span {
-  border-left: 1px solid rgba(60, 60, 67, 0.1);
-}
-
-.week-metrics small {
-  color: #6e6e73;
-  font-size: 9px;
-}
-
-.week-metrics strong {
-  overflow: hidden;
-  font-size: 13px;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.week-metrics strong.negative {
-  color: #c65300;
-}
-
-.week-metrics strong.positive {
-  color: #08735c;
+  width: 12px;
+  height: 12px;
+  color: var(--ios-tertiary-label);
 }
 
 @media (max-width: 380px) {
@@ -686,8 +419,5 @@ function priorityHint(row: AccountOverview) {
     font-size: 15px;
   }
 
-  .week-metrics > span {
-    padding-inline: 10px;
-  }
 }
 </style>

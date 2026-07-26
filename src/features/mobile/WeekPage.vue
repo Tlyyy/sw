@@ -205,7 +205,6 @@ function openSupplementSheet() {
       <section class="week-supplement-card">
         <div>
           <h2>补充本周记录</h2>
-          <p>补库存、写支出、记行情，数据更完整</p>
         </div>
         <button type="button" @click="openSupplementSheet">
           补充记录
@@ -214,7 +213,7 @@ function openSupplementSheet() {
 
       <details class="week-mobile-full-report">
         <summary>
-          <span><strong>完整周核算</strong><small>核对任务、支出与实际所得</small></span>
+          <span><strong>完整周核算</strong></span>
           <b>查看</b>
         </summary>
         <WeeklyActivityPanel :report="report" :current-date="currentDate" />
@@ -228,7 +227,7 @@ function openSupplementSheet() {
 
     <details class="week-inventory-details">
       <summary>
-        <span><strong>按账号查看库存变化</strong><small>逐号净变化、按日矩阵与库存专用图片</small></span>
+        <span><strong>按账号查看库存变化</strong></span>
         <b>{{ report.recordedDays }} / 7 天库存记录</b>
       </summary>
       <InventoryWeeklyAnalysis :report="report" :current-date="currentDate" :show-activity="false" initial-view="matrix" />

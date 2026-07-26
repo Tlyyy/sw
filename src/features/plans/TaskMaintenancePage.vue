@@ -413,7 +413,6 @@ function resetCompletion() {
       <div class="task-mobile-selection">
         <div v-if="mobileAccount === 'ALL'">
           <strong>{{ mobileStatus === "pending" ? "按账号处理" : mobileStatus === "done" ? "已完成账号" : "全部账号任务" }}</strong>
-          <span>先看每个账号的下一项，进入账号后再处理完整队列</span>
         </div>
         <div v-else class="task-mobile-drilldown-head">
           <button type="button" @click="closeMobileAccount">

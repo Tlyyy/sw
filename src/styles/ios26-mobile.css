@@ -254,11 +254,6 @@
     letter-spacing: -0.03em;
   }
 
-  .orbit-main .next-step-card h1 {
-    font-size: var(--ios26-type-title-2) !important;
-    line-height: var(--ios26-leading-title-2) !important;
-  }
-
   .orbit-main .page-intro p {
     font-size: var(--ios26-type-body) !important;
     font-weight: 400;
@@ -291,7 +286,6 @@
 
   .orbit-main :is(
     .button,
-    .next-step-action,
     .record-primary-action,
     .inventory-primary-action
   ) {
@@ -315,11 +309,6 @@
     font-size: var(--ios26-type-caption-1) !important;
     font-weight: 600;
     line-height: var(--ios26-leading-caption-1) !important;
-  }
-
-  .orbit-main .next-step-description {
-    font-size: var(--ios26-type-subheadline) !important;
-    line-height: var(--ios26-leading-subheadline) !important;
   }
 
   .orbit-main .card-heading > span {

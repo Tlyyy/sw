@@ -121,15 +121,14 @@ const taskRequirementLabel = computed(() => {
   return `${amountLabel(props.task.priceWan)} 万`;
 });
 const guidance = computed(() => {
-  if (reuseExisting.value) return "这次只恢复任务完成状态，沿用已有实际流水；不会新增支出，也不会修改库存。";
-  if (isProgress.value) return "洗护符可以分多天记录；本次保存后，库存仍以你手工录入的快照为准。";
-  if (isVariable.value) return "填写这次打书真实花掉的银子；系统只记录用途，不会自动修改库存。";
+  if (reuseExisting.value) return "沿用已有流水，不新增支出。";
+  if (isProgress.value) return "填写本次实际银子，可分多次记录。";
+  if (isVariable.value) return "填写本次实际银子。";
   if (isFixedEgg.value && eggPurchase.value.shortageEggs > 0) {
-    return `固定需 ${props.task.eggCount} 个；本次实际用 ${eggPurchase.value.usedEggs} 个，缺 ${eggPurchase.value.shortageEggs} 个`
-      + `，按 ${eggUnitPriceLabel.value} 万/个由系统自动计 ${eggSilverLabel.value} 万。即使当前余额为 0，也请填今天真实用掉的蛋；只记流水，不改库存。`;
+    return `还需补购 ${eggPurchase.value.shortageEggs} 个，自动记 ${eggSilverLabel.value} 万支出。`;
   }
-  if (isFixedEgg.value) return "最近库存只用于给出初始建议；请确认本次真实用掉的蛋，哪怕它今天获得后已经花掉。只记流水，不会自动扣库存。";
-  return "固定消耗已带入，确认只记录流水，不会自动修改库存。";
+  if (isFixedEgg.value) return "确认本次实际用蛋数量。";
+  return "确认本次消耗。";
 });
 
 function numericValue(value: unknown) {
@@ -330,7 +329,6 @@ onBeforeUnmount(() => deactivateDialog());
         </header>
 
         <div class="task-settlement-body">
-          <p class="task-mobile-settlement-rule">先确认消耗，再完成任务</p>
           <section class="task-mobile-settlement-summary" aria-label="当前结算任务">
             <span>{{ task.accountId }}</span>
             <div>
@@ -362,7 +360,7 @@ onBeforeUnmount(() => deactivateDialog());
 
           <section v-if="!reuseExisting" class="task-settlement-section" aria-labelledby="task-cost-title">
             <header>
-              <div><p>本次消耗</p><h3 id="task-cost-title">{{ task.actionLabel }}</h3></div>
+              <h3 id="task-cost-title">{{ task.actionLabel }}</h3>
               <strong>{{ settlementSummary }}</strong>
             </header>
 
@@ -392,7 +390,6 @@ onBeforeUnmount(() => deactivateDialog());
                   :aria-invalid="fieldHasIssue('dedicatedEggs')"
                   aria-describedby="task-egg-total"
                 />
-                <small>填本次真实用掉的数量，不受当前库存余额限制。</small>
               </label>
               <label class="task-settlement-field">
                 <span>本次实际使用普通蛋 / 个</span>
@@ -405,7 +402,6 @@ onBeforeUnmount(() => deactivateDialog());
                   :aria-invalid="fieldHasIssue('regularEggs')"
                   aria-describedby="task-egg-total"
                 />
-                <small>今天先获得、后用掉的蛋也要记在这里。</small>
               </label>
               <p id="task-egg-total" :class="['task-egg-total', { invalid: submitted && eggTotal > task.eggCount }]">
                 实际使用 <b>{{ eggTotal }}</b> + 自动补购 <b>{{ eggPurchase.shortageEggs }}</b>
@@ -422,7 +418,7 @@ onBeforeUnmount(() => deactivateDialog());
                 />
                 <small>
                   缺 {{ eggPurchase.shortageEggs }} 个 × {{ eggUnitPriceLabel }} 万/个
-                  = {{ eggSilverLabel }} 万，由系统自动计算；只记银子支出，不修改库存。
+                  = {{ eggSilverLabel }} 万，自动计算。
                 </small>
               </label>
             </div>
@@ -468,7 +464,7 @@ onBeforeUnmount(() => deactivateDialog());
           </section>
 
           <section v-if="!reuseExisting" class="task-settlement-section task-settlement-meta" aria-labelledby="task-record-title">
-            <header><div><p>记录信息</p><h3 id="task-record-title">发生时间与备注</h3></div></header>
+            <header><h3 id="task-record-title">发生时间与备注</h3></header>
             <label class="task-settlement-field">
               <span>发生时间</span>
               <input
@@ -479,7 +475,7 @@ onBeforeUnmount(() => deactivateDialog());
                 aria-describedby="task-time-help"
               />
               <small id="task-time-help">
-                填真实发生时间：若任务发生在当天库存录入前，请填购买或消耗时的时间，才能正确归入当日实际所得。
+                用于归入正确的库存日期。
               </small>
             </label>
             <label class="task-settlement-field">
