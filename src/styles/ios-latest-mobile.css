@@ -242,9 +242,9 @@
   }
 
   .settings-page > .page-intro h2 {
-    font-size: var(--ios26-type-title-2) !important;
+    font-size: var(--ios26-type-title-1) !important;
     font-weight: 700;
-    line-height: var(--ios26-leading-title-2) !important;
+    line-height: var(--ios26-leading-title-1) !important;
     letter-spacing: normal;
   }
 

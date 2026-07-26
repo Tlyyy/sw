@@ -450,6 +450,7 @@ test.describe("mobile UX release gate", () => {
       };
       const dockStyle = getComputedStyle(dock);
       return {
+        activeLinkWidth: activeDockLink.getBoundingClientRect().width,
         activePlateWidth: Number.parseFloat(getComputedStyle(activeDockLink, "::before").width),
         activePlateHeight: Number.parseFloat(getComputedStyle(activeDockLink, "::before").height),
         activeTintAlpha: colorAlpha(getComputedStyle(activeDockLink, "::before").backgroundColor),
@@ -462,7 +463,10 @@ test.describe("mobile UX release gate", () => {
         searchIconWidth: search.querySelector("svg")?.getBoundingClientRect().width || 0,
       };
     });
-    expect(dockScale.activePlateWidth, "选中按钮应接近参考图的 105px 宽度").toBeCloseTo(105, 0);
+    expect(
+      dockScale.activePlateWidth,
+      "选中按钮应随三等分导航列自适应，并向两侧各延展 4px",
+    ).toBeCloseTo(dockScale.activeLinkWidth + 8, 0);
     expect(dockScale.activePlateHeight, "选中按钮应保持 48px 高度").toBeCloseTo(48, 0);
     expect(dockScale.dockLabelSize, "底栏文字应采用 iOS Caption 2 的 11pt 基线").toBe(11);
     expect(dockScale.dockIconWidth, "主导航图标应为 26px").toBeCloseTo(26, 0);

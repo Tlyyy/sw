@@ -363,7 +363,7 @@ test("移动端使用三项悬浮底栏完成核心页面导航", async ({ page 
 
   expect(dockGeometry.position).toBe("fixed");
   expect(dockGeometry.zIndex).toBeGreaterThan(0);
-  expect(dockGeometry.transition).toContain("transform");
+  expect(dockGeometry.transition, "稳定底栏不应再通过整栏 transform 缩放").toBe("none");
   expect(dockGeometry.backdropFilter).not.toBe("none");
   expect(dockGeometry.dockLeft).toBeGreaterThanOrEqual(0);
   expect(dockGeometry.dockRight).toBeLessThanOrEqual(dockGeometry.viewportWidth);
