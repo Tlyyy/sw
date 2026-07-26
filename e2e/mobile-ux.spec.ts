@@ -56,9 +56,9 @@ const primaryTargetSelector = [
   "main .priority-account-row",
   "main .week-pulse-card",
   "main .task-mobile-summary-main",
-  "main .task-mobile-summary-action",
   "main .task-mobile-row-main",
-  "main .task-mobile-row-action",
+  "main .task-mobile-later-toggle",
+  "main .task-mobile-select-all",
   "main .week-mobile-full-report > summary",
   "main .earnings-intro .movement-toggle",
   "main .earnings-account-tabs button",
@@ -494,13 +494,16 @@ test.describe("mobile UX release gate", () => {
         await expect(dock.getByRole("link")).toHaveCount(3);
         if (url === "/#/plans/tasks") {
           const segments = page.locator(".task-mobile-segments");
-          await expect(segments.getByRole("button")).toHaveText([/待处理/, /已完成/, /全部/]);
+          await expect(segments.getByRole("button")).toHaveText([/可处理/, /后续/, /已完成/]);
+          const later = segments.getByRole("button", { name: /后续/ });
+          await later.tap();
+          await expect(later).toHaveAttribute("aria-pressed", "true");
           const completed = segments.getByRole("button", { name: /已完成/ });
           await completed.tap();
           await expect(completed).toHaveAttribute("aria-pressed", "true");
-          const pending = segments.getByRole("button", { name: /待处理/ });
-          await pending.tap();
-          await expect(pending).toHaveAttribute("aria-pressed", "true");
+          const ready = segments.getByRole("button", { name: /可处理/ });
+          await ready.tap();
+          await expect(ready).toHaveAttribute("aria-pressed", "true");
         }
         expect(await undersizedPrimaryTargets(page), `${url} 存在不足 44px 的主要触控目标`).toEqual([]);
       });
@@ -1077,27 +1080,44 @@ test.describe("mobile UX release gate", () => {
     await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link", { name: "任务", exact: true })).toHaveAttribute("aria-current", "page");
   });
 
-  test("任务勾选、完成与批量操作避开固定底栏", async ({ page }) => {
+  test("任务单入口、路由返回与批量操作避开固定底栏", async ({ page }) => {
     await page.goto("/#/plans/tasks");
     await waitForApplicationPage(page);
 
     const accountSummary = page.locator(".task-mobile-summary-row").first();
     const accountEntry = accountSummary.locator(".task-mobile-summary-main");
-    const accountAction = accountSummary.locator(".task-mobile-summary-action");
     await expect(accountSummary).toBeVisible();
     expect((await accountEntry.boundingBox())?.height, "账号任务入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
-    expect((await accountAction.boundingBox())?.height, "账号首项处理入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await expect(accountSummary.locator(".task-mobile-summary-action")).toHaveCount(0);
+    await accountEntry.tap();
+    await expect(page).toHaveURL(/#\/plans\/tasks\?account=[A-Z0-9]+$/);
+    await expect(page.locator(".task-mobile-drilldown-head")).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/#\/plans\/tasks$/);
+    await expect(page.locator(".task-mobile-account-summary-list")).toBeVisible();
     await accountEntry.tap();
 
-    const taskRow = page.locator(".task-mobile-account-group article")
-      .filter({ has: page.locator("input[type='checkbox']:not(:disabled)") }).first();
-    const selectTarget = taskRow.locator(".task-mobile-check");
-    const completionAction = taskRow.locator(".task-mobile-row-action");
+    const laterToggle = page.getByRole("button", { name: /后续任务/ });
+    await expect(laterToggle).toHaveAttribute("aria-expanded", "false");
+    await laterToggle.tap();
+    await expect(laterToggle).toHaveAttribute("aria-expanded", "true");
+    const taskRows = page.locator(".task-mobile-account-group article");
+    expect(await taskRows.count()).toBeGreaterThan(1);
+    const taskRow = taskRows.first();
     await expect(taskRow).toBeVisible();
-    expect((await selectTarget.boundingBox())?.height, "任务勾选区域应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
     expect((await taskRow.locator(".task-mobile-row-main").boundingBox())?.height, "任务详情入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
-    expect((await completionAction.boundingBox())?.height, "任务处理入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    await expect(taskRow.locator("input[type='checkbox']")).toHaveCount(0);
+    await expect(taskRow.locator(".task-mobile-row-action")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "批量", exact: true }).tap();
+    const selectTarget = taskRow.locator(".task-mobile-check");
+    await expect(selectTarget).toBeVisible();
+    expect((await selectTarget.boundingBox())?.height, "任务勾选区域应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
     await taskRow.locator("input[type='checkbox']").check();
+    const selectAll = page.getByLabel("选择当前可见的全部未完成任务");
+    await expect(selectAll).toHaveAttribute("aria-checked", "mixed");
+    await expect(selectAll).toHaveJSProperty("indeterminate", true);
+    await taskRows.nth(1).locator("input[type='checkbox']").check();
 
     const bulk = page.getByRole("complementary", { name: "批量任务操作" });
     await expect(bulk).toBeVisible();
@@ -1112,6 +1132,14 @@ test.describe("mobile UX release gate", () => {
       };
     });
     expect(layout.bulkBottom, "批量操作栏不能被固定底栏覆盖").toBeLessThanOrEqual(layout.dockTop - 6);
+
+    await bulk.getByRole("button", { name: "逐项确认并完成", exact: true }).tap();
+    const dialog = page.locator(".task-settlement-dialog");
+    const queueProgress = dialog.getByRole("status", { name: "批量结算进度" });
+    await expect(queueProgress).toHaveText("第 1/2 项");
+    await dialog.locator(".task-settlement-mobile-footer").getByRole("button", { name: /完成任务/ }).tap();
+    await expect(queueProgress).toHaveText("第 2/2 项");
+    await dialog.getByRole("button", { name: "取消", exact: true }).tap();
   });
 
   test("固定蛋任务在 iPhone 16 Pro Max 自动计算缺口且不修改库存", async ({ page }, testInfo) => {
@@ -1145,22 +1173,26 @@ test.describe("mobile UX release gate", () => {
     await page.locator(".task-mobile-filters").getByPlaceholder("搜索账号、神兽或任务").fill("剑气蛇 皮肤");
     const row = page.locator(".task-mobile-account-group article").filter({ hasText: "剑气蛇" });
     await expect(row).toHaveCount(1);
-    await row.locator(".task-mobile-row-action").tap();
+    await row.locator(".task-mobile-row-main").tap();
 
     const dialog = page.locator(".task-settlement-dialog");
-    const automaticSilver = dialog.getByLabel(/^自动补购银子 \/ 万/);
+    const automaticSilver = dialog.getByLabel("自动补购记账金额");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "取消", exact: true })).toBeFocused();
     await expect(dialog.getByLabel(/^本次实际使用专用蛋 \/ 个/)).not.toBeFocused();
-    await expect(automaticSilver).toHaveValue("110");
-    await expect(automaticSilver).toHaveAttribute("readonly", "");
+    await expect(automaticSilver).toHaveText("110 万");
+    await expect(dialog.getByLabel("本次用蛋与自动补购回执"))
+      .toContainText("本次将记账 110 万，库存快照不会自动扣减");
+    await dialog.getByText("调整用蛋", { exact: true }).tap();
     await dialog.getByLabel(/^本次实际使用专用蛋 \/ 个/).fill("0");
     await dialog.getByLabel(/^本次实际使用普通蛋 \/ 个/).fill("1");
-    await expect(automaticSilver).toHaveValue("214.5");
-    await expect(dialog).toContainText("实际使用 1 + 自动补购 39");
+    await expect(automaticSilver).toHaveText("214.5 万");
+    await expect(dialog.locator(".task-egg-total")).toContainText("库存使用 1 + 自动补购 39");
+    await expect(dialog.locator(".task-egg-total")).toContainText("本次记账 214.5 万");
     await expect(dialog).toContainText("还需补购 39 个");
+    await expect(dialog.getByRole("button", { name: "完成任务并记账 214.5 万", exact: true })).toBeVisible();
 
-    const eggFieldLayout = await dialog.locator(".task-egg-fields > .task-settlement-field").evaluateAll((elements) => (
+    const eggFieldLayout = await dialog.locator(".task-egg-adjustment-fields > .task-settlement-field").evaluateAll((elements) => (
       elements.slice(0, 2).map((element) => {
         const rect = element.getBoundingClientRect();
         return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
@@ -1193,7 +1225,9 @@ test.describe("mobile UX release gate", () => {
     const layout = await dialog.evaluate((element) => {
       const rect = element.getBoundingClientRect();
       const mobileHeader = element.querySelector<HTMLElement>(".task-settlement-mobile-header");
-      const buttons = Array.from(element.querySelectorAll<HTMLElement>(".task-settlement-mobile-header button"));
+      const buttons = Array.from(element.querySelectorAll<HTMLElement>(
+        ".task-settlement-mobile-header button, .task-settlement-mobile-footer button",
+      ));
       return {
         viewportWidth: document.documentElement.clientWidth,
         viewportHeight: document.documentElement.clientHeight,

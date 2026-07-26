@@ -472,18 +472,19 @@ test.describe("desktop application", () => {
     await completionRow.getByRole("button", { name: /标记完成/ }).click();
     const completionDialog = page.getByRole("dialog", { name: "确认任务消耗" });
     await expect(completionDialog).toBeVisible();
-    const automaticEggSilver = completionDialog.getByLabel(/^自动补购银子 \/ 万/);
-    await expect(automaticEggSilver).toHaveValue("110");
-    await expect(automaticEggSilver).toHaveAttribute("readonly", "");
-    await expect(completionDialog).toContainText("缺 20 个");
-    await expect(completionDialog).toContainText("5.5 万/个");
-    await expect(completionDialog).toContainText("110 万");
-    await expect(completionDialog).toContainText("自动计算");
+    const eggReceipt = completionDialog.getByLabel("本次用蛋与自动补购回执");
+    const automaticEggSilver = completionDialog.getByLabel("自动补购记账金额");
+    await expect(eggReceipt).toBeVisible();
+    await expect(automaticEggSilver).toHaveText("110 万");
+    await expect(eggReceipt).toContainText("20 个 × 5.5 万/个");
+    await expect(eggReceipt).toContainText("本次将记账 110 万，库存快照不会自动扣减");
+    await completionDialog.getByText("调整用蛋", { exact: true }).click();
     await completionDialog.getByLabel(/^本次实际使用专用蛋 \/ 个/).fill("0");
     await completionDialog.getByLabel(/^本次实际使用普通蛋 \/ 个/).fill("1");
-    await expect(automaticEggSilver).toHaveValue("214.5");
-    await expect(completionDialog).toContainText("缺 39 个");
+    await expect(automaticEggSilver).toHaveText("214.5 万");
     await expect(completionDialog).toContainText("还需补购 39 个");
+    await expect(completionDialog.locator(".task-egg-total")).toContainText("库存使用 1 + 自动补购 39");
+    await expect(completionDialog.locator(".task-egg-total")).toContainText("本次记账 214.5 万");
     await completionDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
     await expect(completionDialog).toHaveCount(0);
     await expect(page.locator(".task-work-row")).toHaveCount(0);
@@ -639,6 +640,10 @@ test.describe("desktop application", () => {
     for (let index = 0; index < selectedTasks.length; index += 1) {
       const dialog = page.getByRole("dialog", { name: "确认任务消耗" });
       await expect(dialog).toBeVisible();
+      await expect(dialog).toHaveAccessibleName(`确认任务消耗，第 ${index + 1}/${selectedTasks.length} 项`);
+      await expect(dialog.getByLabel("当前结算任务")).toContainText(
+        index === 0 ? "法蛇 · 皮肤" : "隐攻蛇 · 进阶1",
+      );
       await dialog.getByRole("button", { name: "完成并记账", exact: true }).click();
     }
     await expect(page.getByRole("status")).toContainText("库存未被修改");
@@ -971,18 +976,22 @@ test.describe("week-to-date activity report", () => {
     let taskExpense = 0;
     let taskAccountId = "";
     if (usesMobileTaskWorkspace) {
+      await mobileTaskWorkspace.getByRole("button", { name: /后续/ }).click();
       const lg2Summary = mobileTaskWorkspace.locator(".task-mobile-summary-main").filter({ hasText: "LG2" });
       await expect(lg2Summary).toHaveCount(1);
       await lg2Summary.click();
       await expect(mobileTaskWorkspace.locator(".task-mobile-drilldown-head")).toContainText("LG2");
+      const laterToggle = mobileTaskWorkspace.getByRole("button", { name: /后续任务/ });
+      await expect(laterToggle).toHaveAttribute("aria-expanded", "false");
+      await laterToggle.click();
       const silverTasks = mobileTaskWorkspace.locator(".task-mobile-account-group article").filter({ hasText: /[\d,.]+\s*万/ });
       expect(await silverTasks.count()).toBeGreaterThan(0);
       const silverTask = silverTasks.first();
       await expect(silverTask).toBeVisible();
-      const resourceText = (await silverTask.locator(".task-mobile-row-main small").innerText()).replaceAll(",", "");
+      const resourceText = (await silverTask.locator(".task-mobile-row-main > span").first().locator("small").innerText()).replaceAll(",", "");
       taskExpense = Number(resourceText.match(/([\d.]+)\s*万/)?.[1]);
-      taskAccountId = await silverTask.locator(".task-mobile-row-account").innerText();
-      await silverTask.getByRole("button", { name: "处理", exact: true }).click();
+      taskAccountId = "LG2";
+      await silverTask.locator(".task-mobile-row-main").click();
     } else {
       await expect(page.locator(".orbit-brand strong")).toHaveText("万象册");
       const silverTask = page.locator(".task-work-row").filter({ hasText: /万/ }).first();
@@ -1000,7 +1009,8 @@ test.describe("week-to-date activity report", () => {
     const actualSilverInput = settlementDialog.getByLabel("实际银子 / 万", { exact: true });
     if (await actualSilverInput.count()) await actualSilverInput.fill(String(taskExpense));
     if (usesMobileTaskWorkspace) {
-      await settlementDialog.locator(".task-settlement-mobile-header").getByRole("button", { name: "确认并完成", exact: true }).click();
+      await settlementDialog.locator(".task-settlement-mobile-footer")
+        .getByRole("button", { name: /完成任务并记账/ }).click();
     } else {
       await settlementDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
     }
