@@ -1083,6 +1083,7 @@ test.describe("mobile UX release gate", () => {
   test("任务单入口、路由返回与批量操作避开固定底栏", async ({ page }) => {
     await page.goto("/#/plans/tasks");
     await waitForApplicationPage(page);
+    await page.locator(".task-mobile-segments").getByRole("button", { name: /后续/ }).tap();
 
     const accountSummary = page.locator(".task-mobile-summary-row").first();
     const accountEntry = accountSummary.locator(".task-mobile-summary-main");
@@ -1169,8 +1170,12 @@ test.describe("mobile UX release gate", () => {
     await waitForApplicationPage(page);
 
     await expect(page.locator(".task-mobile-drilldown-head")).toContainText("LG1 ·");
+    await page.locator(".task-mobile-segments").getByRole("button", { name: /后续/ }).tap();
     await page.getByRole("button", { name: "打开任务筛选", exact: true }).tap();
     await page.locator(".task-mobile-filters").getByPlaceholder("搜索账号、神兽或任务").fill("剑气蛇 皮肤");
+    const laterToggle = page.getByRole("button", { name: /后续任务/ });
+    await expect(laterToggle).toHaveAttribute("aria-expanded", "false");
+    await laterToggle.tap();
     const row = page.locator(".task-mobile-account-group article").filter({ hasText: "剑气蛇" });
     await expect(row).toHaveCount(1);
     await row.locator(".task-mobile-row-main").tap();
