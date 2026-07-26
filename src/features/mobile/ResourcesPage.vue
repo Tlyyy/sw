@@ -93,54 +93,54 @@ const managementLinks = [
 
 <style scoped>
 .resources-page { width: min(100%, 1180px); padding-top: 14px; padding-bottom: 48px; }
-.resources-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; padding: 0 4px 10px; border-bottom: 1px solid var(--radar-line); }
+.resources-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; padding: 0 4px 10px; border-bottom: 1px solid var(--color-border); }
 .resources-intro > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-.resources-intro p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.resources-intro p { color: var(--color-accent-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
 .resources-intro h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.04em; white-space: nowrap; }
-.resources-intro > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.resources-intro > span { color: var(--color-text-muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
 
-.resource-group { overflow: hidden; margin-top: 12px; border: 1px solid var(--radar-line); border-radius: 14px; background: #ffffff; box-shadow: 0 7px 20px rgba(17, 24, 39, .05); }
-.resource-group > header { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 16px; border-bottom: 1px solid var(--radar-line); }
-.resource-group > header p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .08em; }
+.resource-group { overflow: hidden; margin-top: 12px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); box-shadow: 0 7px 20px rgba(17, 24, 39, .05); }
+.resource-group > header { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); }
+.resource-group > header p { color: var(--color-accent-strong); font-size: 11px; font-weight: 850; letter-spacing: .08em; }
 .resource-group > header h2 { font-size: 19px; }
-.resource-group > header > span { color: var(--radar-muted); font-size: 12px; }
+.resource-group > header > span { color: var(--color-text-muted); font-size: 12px; }
 
 .resource-account-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.resource-account-grid > a { min-width: 0; min-height: 72px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; gap: 1px 8px; padding: 11px 14px; border-right: 1px solid var(--radar-line); }
+.resource-account-grid > a { min-width: 0; min-height: 72px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; gap: 1px 8px; padding: 11px 14px; border-right: 1px solid var(--color-border); }
 .resource-account-grid > a:last-child { border-right: 0; }
-.resource-account-grid > a.current { background: color-mix(in srgb, var(--radar-cyan-soft) 65%, #ffffff); box-shadow: inset 0 -3px var(--radar-cyan); }
+.resource-account-grid > a.current { background: color-mix(in srgb, var(--color-accent-soft) 65%, #ffffff); box-shadow: inset 0 -3px var(--color-accent); }
 .resource-account-grid strong { font-size: 17px; }
-.resource-account-grid span { overflow: hidden; color: var(--radar-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.resource-account-grid :deep(svg) { grid-column: 2; grid-row: 1 / 3; align-self: center; width: 17px; height: 17px; color: var(--radar-muted); }
+.resource-account-grid span { overflow: hidden; color: var(--color-text-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.resource-account-grid :deep(svg) { grid-column: 2; grid-row: 1 / 3; align-self: center; width: 17px; height: 17px; color: var(--color-text-muted); }
 
 .resource-link-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.resource-link-grid > a { min-width: 0; min-height: 96px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 14px; border-right: 1px solid var(--radar-line); }
+.resource-link-grid > a { min-width: 0; min-height: 96px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 14px; border-right: 1px solid var(--color-border); }
 .resource-link-grid > a:last-child { border-right: 0; }
-.resource-link-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); }
+.resource-link-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .resource-link-icon :deep(svg) { width: 19px; height: 19px; }
-.resource-link-grid > a > :deep(svg) { width: 16px; height: 16px; color: var(--radar-muted); }
+.resource-link-grid > a > :deep(svg) { width: 16px; height: 16px; color: var(--color-text-muted); }
 .resource-link-grid div, .resource-tool-columns a > span, .resource-source-links a > span { min-width: 0; display: grid; gap: 2px; }
 .resource-link-grid strong, .resource-tool-columns strong, .resource-source-links strong { font-size: 14px; }
-.resource-link-grid small, .resource-tool-columns small, .resource-source-links small { color: var(--radar-muted); font-size: 11px; line-height: 1.4; }
+.resource-link-grid small, .resource-tool-columns small, .resource-source-links small { color: var(--color-text-muted); font-size: 11px; line-height: 1.4; }
 
 .resource-tool-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.resource-tool-columns > div + div { border-left: 1px solid var(--radar-line); }
-.resource-tool-columns h3 { padding: 11px 15px; border-bottom: 1px solid var(--radar-line); color: var(--radar-muted); font-size: 12px; }
-.resource-tool-columns a { min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 15px; border-bottom: 1px solid var(--radar-line); }
+.resource-tool-columns > div + div { border-left: 1px solid var(--color-border); }
+.resource-tool-columns h3 { padding: 11px 15px; border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 12px; }
+.resource-tool-columns a { min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 15px; border-bottom: 1px solid var(--color-border); }
 .resource-tool-columns a:last-child { border-bottom: 0; }
-.resource-tool-columns a > :deep(svg) { width: 16px; height: 16px; color: var(--radar-muted); }
+.resource-tool-columns a > :deep(svg) { width: 16px; height: 16px; color: var(--color-text-muted); }
 
 .resource-source-links > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.resource-source-links a { min-width: 0; min-height: 78px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 15px; border-right: 1px solid var(--radar-line); }
+.resource-source-links a { min-width: 0; min-height: 78px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 15px; border-right: 1px solid var(--color-border); }
 .resource-source-links a:last-child { border-right: 0; }
-.resource-source-links a > :deep(svg) { width: 18px; height: 18px; color: var(--radar-cyan-strong); }
-.resource-source-links a > :deep(svg:last-child) { width: 15px; height: 15px; color: var(--radar-muted); }
+.resource-source-links a > :deep(svg) { width: 18px; height: 18px; color: var(--color-accent-strong); }
+.resource-source-links a > :deep(svg:last-child) { width: 15px; height: 15px; color: var(--color-text-muted); }
 
 .resource-management-links > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.resource-management-links a { min-width: 0; min-height: 82px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 13px 15px; border-right: 1px solid var(--radar-line); }
+.resource-management-links a { min-width: 0; min-height: 82px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 13px 15px; border-right: 1px solid var(--color-border); }
 .resource-management-links a:last-child { border-right: 0; }
 .resource-management-links a > span:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
-.resource-management-links a > :deep(svg:last-child) { width: 16px; height: 16px; color: var(--radar-muted); }
+.resource-management-links a > :deep(svg:last-child) { width: 16px; height: 16px; color: var(--color-text-muted); }
 
 @media (max-width: 720px) {
   .resources-page { padding: 10px 10px 28px; }
@@ -150,15 +150,15 @@ const managementLinks = [
   .resource-account-grid > a { min-height: 68px; display: grid; place-items: center; padding: 8px 3px; text-align: center; }
   .resource-account-grid :deep(svg), .resource-account-grid span { display: none; }
   .resource-link-grid { grid-template-columns: 1fr; }
-  .resource-link-grid > a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--radar-line); }
+  .resource-link-grid > a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--color-border); }
   .resource-link-grid > a:last-child { border-bottom: 0; }
   .resource-tool-columns { grid-template-columns: 1fr; }
-  .resource-tool-columns > div + div { border-top: 1px solid var(--radar-line); border-left: 0; }
+  .resource-tool-columns > div + div { border-top: 1px solid var(--color-border); border-left: 0; }
   .resource-source-links > div { grid-template-columns: 1fr; }
-  .resource-source-links a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--radar-line); }
+  .resource-source-links a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--color-border); }
   .resource-source-links a:last-child { border-bottom: 0; }
   .resource-management-links > div { grid-template-columns: 1fr; }
-  .resource-management-links a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--radar-line); }
+  .resource-management-links a { min-height: 70px; border-right: 0; border-bottom: 1px solid var(--color-border); }
   .resource-management-links a:last-child { border-bottom: 0; }
 }
 </style>

@@ -7,18 +7,18 @@ html,
 body,
 #app {
   min-height: 100%;
-  background: var(--radar-canvas);
+  background: var(--color-canvas);
 }
 
 body {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .orbit-shell {
   --header-height: 58px;
   min-height: 100dvh;
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
   font-family: var(--font-ui);
   font-size: 15px;
   line-height: 1.5;
@@ -33,8 +33,8 @@ body {
   height: var(--header-height);
   gap: 22px;
   padding-inline: clamp(14px, 1.4vw, 24px);
-  border-bottom: 1px solid var(--radar-line-strong);
-  color: var(--radar-ink);
+  border-bottom: 1px solid var(--color-border-strong);
+  color: var(--color-text);
   background: #020706;
   box-shadow: 0 12px 30px rgba(0, 0, 0, .2);
 }
@@ -45,7 +45,7 @@ body {
 }
 
 .orbit-brand strong {
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
   font-family: inherit;
   font-size: 22px;
   font-weight: 800;
@@ -56,7 +56,7 @@ body {
 
 .orbit-brand span {
   display: block;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.35;
   letter-spacing: .08em;
@@ -78,8 +78,8 @@ body {
 
 .orbit-nav > a:hover,
 .orbit-nav > a.active {
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-nav > a::after,
@@ -88,7 +88,7 @@ body {
   bottom: 0;
   left: 11px;
   height: 2px;
-  background: var(--radar-cyan);
+  background: var(--color-accent);
   box-shadow: 0 0 12px rgba(43, 220, 203, .55);
 }
 
@@ -100,16 +100,16 @@ body {
   width: 238px;
   height: 38px;
   padding: 0 12px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 5px;
-  color: var(--radar-cyan);
+  color: var(--color-accent);
   background: #06100e;
 }
 
 .orbit-header-tools .orbit-command-trigger:hover {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-border-strong);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-command-trigger .orbit-command-label {
@@ -132,7 +132,7 @@ body {
   align-items: center;
   gap: 7px;
   padding: 0 10px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 5px;
   color: #9aaca7;
   background: rgba(7, 20, 17, .72);
@@ -141,9 +141,9 @@ body {
 }
 
 .orbit-sync-state:hover {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-border-strong);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-sync-state > span {
@@ -161,7 +161,7 @@ body {
 
 .orbit-logout {
   min-height: 38px;
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
   color: #81948f;
   background: transparent;
   font-size: 14px;
@@ -170,26 +170,26 @@ body {
 .orbit-main,
 .orbit-route-context {
   min-width: 0;
-  background: var(--radar-canvas);
+  background: var(--color-canvas);
 }
 
 .orbit-route-context {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .orbit-route-context > div {
-  border-bottom-color: var(--radar-line);
+  border-bottom-color: var(--color-border);
 }
 
 .orbit-route-context p {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .radar-workbench {
   min-width: 0;
   padding: 15px clamp(10px, 1.1vw, 18px) 28px;
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
   font-size: 15px;
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
@@ -207,7 +207,7 @@ body {
 }
 
 .radar-workbench .workbench-titlebar h1 {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 30px;
   font-weight: 760;
   line-height: 1.2;
@@ -217,7 +217,7 @@ body {
 .radar-workbench .workbench-titlebar p {
   max-width: 720px;
   margin-top: 5px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 15px;
   line-height: 1.6;
 }
@@ -250,21 +250,21 @@ body {
   margin: 0 0 10px;
   padding: 0 12px;
   overflow-x: auto;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: var(--radar-radius);
   color: #7f948e;
   background: #04100d;
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.45;
-  scrollbar-color: var(--radar-line-strong) #04100d;
+  scrollbar-color: var(--color-border-strong) #04100d;
   scrollbar-width: thin;
 }
 
 .radar-status-strip > * {
   flex: 0 0 auto;
   padding: 0 14px;
-  border-right: 1px solid var(--radar-line);
+  border-right: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
@@ -273,7 +273,7 @@ body {
   align-items: center;
   gap: 8px;
   padding-left: 0;
-  color: var(--radar-success);
+  color: var(--color-success);
 }
 
 .radar-status-strip > :last-child {
@@ -281,14 +281,14 @@ body {
 }
 
 .radar-status-strip .warning {
-  color: var(--radar-amber-strong);
+  color: var(--color-warning-strong);
 }
 
 .radar-live-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--radar-success);
+  background: var(--color-success);
   box-shadow: 0 0 10px rgba(75, 211, 140, .75);
 }
 
@@ -306,9 +306,9 @@ body {
 .radar-timeline-panel,
 .radar-lower-grid > .workbench-panel {
   min-width: 0;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: var(--radar-radius);
-  background: var(--radar-surface);
+  background: var(--color-surface);
   box-shadow: inset 0 0 26px rgba(43, 220, 203, .018);
 }
 
@@ -317,7 +317,7 @@ body {
   display: grid;
   align-content: start;
   overflow: hidden;
-  scrollbar-color: var(--radar-line-strong) #04100d;
+  scrollbar-color: var(--color-border-strong) #04100d;
   scrollbar-width: thin;
 }
 
@@ -335,7 +335,7 @@ body {
 .radar-status-strip::-webkit-scrollbar-thumb,
 .radar-account-rail::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: var(--radar-line-strong);
+  background: var(--color-border-strong);
 }
 
 .radar-status-strip::-webkit-scrollbar-button,
@@ -350,7 +350,7 @@ body {
   gap: 10px;
   min-height: 66px;
   padding: 14px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .radar-account-rail > header div {
@@ -359,28 +359,28 @@ body {
 }
 
 .radar-account-rail > header span {
-  color: var(--radar-cyan);
+  color: var(--color-accent);
   font-size: 14px;
   font-weight: 800;
   line-height: 1.35;
 }
 
 .radar-account-rail > header strong {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.45;
 }
 
 .radar-account-rail > header small {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.4;
 }
 
 .radar-account-item {
-  --account-tone: var(--radar-cyan);
+  --account-tone: var(--color-accent);
   position: relative;
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 72px 8px;
@@ -391,8 +391,8 @@ body {
   padding: 10px 12px;
   overflow: hidden;
   border: 0;
-  border-bottom: 1px solid var(--radar-line);
-  color: var(--radar-ink);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
   background: transparent;
   text-align: left;
 }
@@ -410,16 +410,16 @@ body {
 }
 
 .radar-account-item:hover {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .radar-account-item.active {
-  background: var(--radar-amber-soft);
+  background: var(--color-warning-soft);
   box-shadow: inset 0 0 18px rgba(243, 160, 0, .045);
 }
 
 .radar-account-item.active::before {
-  background: var(--radar-amber);
+  background: var(--color-warning);
   box-shadow: 0 0 12px rgba(243, 160, 0, .55);
 }
 
@@ -455,7 +455,7 @@ body {
 
 .radar-account-copy small,
 .radar-account-gap small {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -467,14 +467,14 @@ body {
 }
 
 .radar-account-gap strong {
-  color: var(--radar-danger);
+  color: var(--color-danger);
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.2;
 }
 
 .radar-account-gap em {
-  color: var(--radar-amber);
+  color: var(--color-warning);
   font-family: var(--font-mono);
   font-size: 11px;
   font-style: normal;
@@ -508,7 +508,7 @@ body {
   justify-content: space-between;
   gap: 16px;
   min-height: 70px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .radar-focus-header > div {
@@ -518,7 +518,7 @@ body {
 
 .radar-focus-header > div > span,
 .radar-decision-hero > div > span {
-  color: var(--radar-cyan);
+  color: var(--color-accent);
   font-size: 12px;
   font-weight: 800;
   line-height: 1.35;
@@ -547,7 +547,7 @@ body {
 }
 
 .radar-focus-date {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.4;
@@ -560,7 +560,7 @@ body {
   gap: 24px;
   min-height: 150px;
   padding: 22px 0;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .radar-decision-copy {
@@ -576,18 +576,18 @@ body {
   border: 1px solid rgba(255, 76, 82, .55);
   border-radius: 5px;
   background: rgba(255, 76, 82, .07);
-  box-shadow: inset 3px 0 0 var(--radar-danger);
+  box-shadow: inset 3px 0 0 var(--color-danger);
 }
 
 .radar-funding-gap small,
 .radar-funding-gap span {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 11px;
   line-height: 1.4;
 }
 
 .radar-funding-gap strong {
-  color: var(--radar-danger);
+  color: var(--color-danger);
   font-family: var(--font-mono);
   font-size: 28px;
   line-height: 1.1;
@@ -595,27 +595,27 @@ body {
 }
 
 .radar-funding-gap.clear {
-  border-color: var(--radar-line-strong);
+  border-color: var(--color-border-strong);
   background: rgba(75, 211, 140, .04);
-  box-shadow: inset 3px 0 0 var(--radar-success);
+  box-shadow: inset 3px 0 0 var(--color-success);
 }
 
 .radar-funding-gap.clear strong {
-  color: var(--radar-success);
+  color: var(--color-success);
 }
 
 .radar-funding-gap.pending {
   border-color: rgba(243, 160, 0, .55);
   background: rgba(243, 160, 0, .06);
-  box-shadow: inset 3px 0 0 var(--radar-amber);
+  box-shadow: inset 3px 0 0 var(--color-warning);
 }
 
 .radar-funding-gap.pending strong {
-  color: var(--radar-amber);
+  color: var(--color-warning);
 }
 
 .radar-decision-hero h3 {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 28px;
   font-weight: 720;
   line-height: 1.2;
@@ -623,7 +623,7 @@ body {
 
 .radar-decision-hero p {
   max-width: 650px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -635,18 +635,18 @@ body {
   gap: 12px;
   min-height: 48px;
   padding: 0 16px;
-  border: 1px solid var(--radar-amber);
+  border: 1px solid var(--color-warning);
   border-radius: 5px;
   color: #191005;
-  background: var(--radar-amber);
+  background: var(--color-warning);
   box-shadow: 0 0 18px rgba(243, 160, 0, .2);
   font-size: 15px;
   font-weight: 850;
 }
 
 .radar-workbench .workbench-primary:hover {
-  border-color: var(--radar-amber-strong);
-  background: var(--radar-amber-strong);
+  border-color: var(--color-warning-strong);
+  background: var(--color-warning-strong);
   transform: translateY(-1px);
 }
 
@@ -657,7 +657,7 @@ body {
 
 .radar-resource-overview {
   padding: 18px 0 15px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .radar-resource-overview > header,
@@ -682,7 +682,7 @@ body {
 .radar-resource-overview > header span,
 .radar-focus-track > header span,
 .radar-focus-track > header > small {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -698,7 +698,7 @@ body {
   gap: 4px;
   min-width: 0;
   padding: 0 14px;
-  border-right: 1px solid var(--radar-line);
+  border-right: 1px solid var(--color-border);
 }
 
 .radar-resource-overview > div > span:first-child {
@@ -711,7 +711,7 @@ body {
 }
 
 .radar-resource-overview small {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -725,7 +725,7 @@ body {
 }
 
 .radar-resource-overview .gap b {
-  color: var(--radar-danger);
+  color: var(--color-danger);
 }
 
 .radar-focus-track {
@@ -756,7 +756,7 @@ body {
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .radar-action-rail > header div {
@@ -765,13 +765,13 @@ body {
 }
 
 .radar-action-rail > header span {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 11px;
   line-height: 1.45;
 }
 
 .radar-action-rail > header > b {
-  color: var(--radar-amber-strong);
+  color: var(--color-warning-strong);
   font-family: var(--font-mono);
   font-size: 13px;
 }
@@ -783,21 +783,21 @@ body {
   gap: 10px;
   min-height: 86px;
   padding: 12px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 5px;
-  color: var(--radar-ink);
+  color: var(--color-text);
   background: #071612;
   text-align: left;
 }
 
 .radar-action-card:hover {
-  border-color: var(--radar-line-strong);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-border-strong);
+  background: var(--color-accent-soft);
 }
 
 .radar-action-card.primary {
   border-color: rgba(243, 160, 0, .38);
-  background: var(--radar-amber-soft);
+  background: var(--color-warning-soft);
 }
 
 .radar-action-index {
@@ -805,9 +805,9 @@ body {
   place-items: center;
   width: 27px;
   height: 24px;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 4px;
-  color: var(--radar-cyan);
+  color: var(--color-accent);
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 800;
@@ -816,7 +816,7 @@ body {
 
 .radar-action-card.primary .radar-action-index {
   border-color: rgba(243, 160, 0, .46);
-  color: var(--radar-amber-strong);
+  color: var(--color-warning-strong);
 }
 
 .radar-action-card > span:nth-child(2) {
@@ -831,11 +831,11 @@ body {
 }
 
 .radar-action-card.primary strong {
-  color: var(--radar-amber-strong);
+  color: var(--color-warning-strong);
 }
 
 .radar-action-card small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -844,7 +844,7 @@ body {
   align-self: center;
   width: 16px;
   height: 16px;
-  color: var(--radar-cyan);
+  color: var(--color-accent);
 }
 
 .radar-action-rail .ready-now-banner {
@@ -892,7 +892,7 @@ body {
 
 .radar-timeline-panel > header {
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .radar-timeline-panel > header > div {
@@ -902,7 +902,7 @@ body {
 
 .radar-timeline-panel > header p,
 .mainline-overview-actions > span {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -922,22 +922,22 @@ body {
   justify-content: center;
   gap: 6px;
   padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--radar-cyan) 42%, var(--radar-line));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
   border-radius: 7px;
-  color: var(--radar-cyan-strong);
-  background: var(--radar-surface);
+  color: var(--color-accent-strong);
+  background: var(--color-surface);
   font-size: 13px;
   font-weight: 800;
 }
 
 .mainline-overview-share-button:hover,
 .mainline-overview-share-button:focus-visible {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
   outline: 0;
 }
 
 .mainline-overview-share-button:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--radar-cyan);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
 }
 
 .mainline-overview-share-button:disabled {
@@ -961,7 +961,7 @@ body {
   border: 0;
   background: #020b09;
   box-shadow: none;
-  scrollbar-color: var(--radar-line-strong) #04100d;
+  scrollbar-color: var(--color-border-strong) #04100d;
 }
 
 .radar-timeline-panel .mainline-table {
@@ -983,10 +983,10 @@ body {
   max-width: calc(100vw - 40px);
   margin: 0;
   padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--radar-cyan) 36%, var(--radar-line));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 36%, var(--color-border));
   border-radius: 8px;
-  color: var(--radar-ink);
-  background: color-mix(in srgb, var(--radar-surface) 94%, var(--radar-cyan-soft));
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-accent-soft));
   box-shadow: 0 8px 24px rgba(20, 37, 34, .16);
   font-size: 13px;
   font-weight: 720;
@@ -1003,7 +1003,7 @@ body {
 
 .radar-timeline-panel .mainline-grid > * {
   min-width: 0;
-  border-right: 1px solid var(--radar-line);
+  border-right: 1px solid var(--color-border);
 }
 
 .radar-timeline-panel .mainline-grid > :last-child {
@@ -1014,7 +1014,7 @@ body {
   min-height: 42px;
   color: #69807a;
   background: #04100d;
-  box-shadow: inset 0 -1px var(--radar-line);
+  box-shadow: inset 0 -1px var(--color-border);
 }
 
 .radar-timeline-panel .mainline-head > span {
@@ -1028,18 +1028,18 @@ body {
 
 .radar-timeline-panel .mainline-head > span:first-child {
   background: #04100d;
-  box-shadow: 1px 0 var(--radar-line);
+  box-shadow: 1px 0 var(--color-border);
 }
 
 .radar-timeline-panel .mainline-row {
   min-height: 108px;
-  border-bottom: 1px solid var(--radar-line);
-  color: var(--radar-ink);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
   background: transparent;
 }
 
 .radar-timeline-panel .mainline-row:hover {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .radar-timeline-panel .mainline-row.active,
@@ -1065,7 +1065,7 @@ body {
 .radar-timeline-panel .mainline-row.ready-now-row > .mainline-cell:first-child,
 .radar-timeline-panel .mainline-row.ready-now-row:hover > .mainline-cell:first-child {
   background: transparent;
-  box-shadow: 1px 0 var(--radar-line), inset 2px 0 var(--account-tone, var(--radar-amber));
+  box-shadow: 1px 0 var(--color-border), inset 2px 0 var(--account-tone, var(--color-warning));
 }
 
 .radar-row-account {
@@ -1088,7 +1088,7 @@ body {
 }
 
 .radar-row-account small {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 12px;
   line-height: 1.35;
   white-space: nowrap;
@@ -1140,7 +1140,7 @@ body {
 
 .radar-workbench .task-track-labels small {
   overflow: hidden;
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 12px;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -1149,7 +1149,7 @@ body {
 
 .radar-workbench .task-track-labels .ready-now-task b,
 .radar-workbench .task-track-labels .ready-now-task small {
-  color: var(--radar-success);
+  color: var(--color-success);
 }
 
 .radar-workbench .task-track-labels .ready-now-task {
@@ -1164,7 +1164,7 @@ body {
   padding: 0 4px;
   border: 1px solid rgba(75, 211, 140, .3);
   border-radius: 3px;
-  color: var(--radar-success);
+  color: var(--color-success);
   background: rgba(75, 211, 140, .08);
   font-size: 10px;
   font-style: normal;
@@ -1197,18 +1197,18 @@ body {
   height: 8px;
   border: 1px solid #466058;
   border-radius: 50%;
-  background: var(--radar-surface);
+  background: var(--color-surface);
 }
 
 .radar-workbench .task-track-line i:first-child {
-  border-color: var(--account-tone, var(--radar-amber));
-  background: var(--account-tone, var(--radar-amber));
-  box-shadow: 0 0 8px color-mix(in srgb, var(--account-tone, var(--radar-amber)) 50%, transparent);
+  border-color: var(--account-tone, var(--color-warning));
+  background: var(--account-tone, var(--color-warning));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--account-tone, var(--color-warning)) 50%, transparent);
 }
 
 .radar-workbench .task-track-finish {
   overflow: hidden;
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 12px;
   line-height: 1.4;
   text-overflow: ellipsis;
@@ -1234,7 +1234,7 @@ body {
 }
 
 .radar-row-resource small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -1242,7 +1242,7 @@ body {
 .radar-row-resource em {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   font-size: 12px;
   font-style: normal;
   line-height: 1.5;
@@ -1260,10 +1260,10 @@ body {
 .radar-workbench .status-chip {
   min-height: 27px;
   padding: 0 8px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 3px;
-  color: var(--radar-cyan);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
   font-size: 12px;
   font-weight: 800;
   line-height: 1.25;
@@ -1272,25 +1272,25 @@ body {
 .radar-workbench .status-chip.ready,
 .radar-workbench .status-chip.buyable {
   border-color: rgba(75, 211, 140, .27);
-  color: var(--radar-success);
+  color: var(--color-success);
   background: rgba(75, 211, 140, .07);
 }
 
 .radar-workbench .status-chip.caution {
   border-color: rgba(243, 160, 0, .28);
-  color: var(--radar-amber-strong);
-  background: var(--radar-amber-soft);
+  color: var(--color-warning-strong);
+  background: var(--color-warning-soft);
 }
 
 .radar-workbench .status-chip.blocked,
 .radar-workbench .status-chip.stale {
   border-color: rgba(255, 97, 88, .25);
-  color: var(--radar-danger);
+  color: var(--color-danger);
   background: rgba(255, 97, 88, .06);
 }
 
 .radar-timeline-panel .status-cell > small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -1304,7 +1304,7 @@ body {
   display: flex;
   align-items: center;
   gap: 2px;
-  color: var(--radar-cyan);
+  color: var(--color-accent);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -1323,12 +1323,12 @@ body {
 
 .radar-lower-grid > .workbench-panel {
   overflow: hidden;
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .radar-lower-grid > .workbench-panel > header {
-  border-bottom-color: var(--radar-line);
+  border-bottom-color: var(--color-border);
   background: #04100d;
 }
 
@@ -1340,7 +1340,7 @@ body {
 
 .radar-lower-grid .workbench-panel header span,
 .radar-lower-grid .workbench-rules {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .radar-ledger-scroll {
@@ -1350,27 +1350,27 @@ body {
 
 .radar-lower-grid .changes-ledger {
   min-width: 690px;
-  color: var(--radar-ink);
+  color: var(--color-text);
   background: transparent;
 }
 
 .radar-lower-grid .changes-ledger th,
 .radar-lower-grid .changes-ledger td {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
   color: #93a9a3;
   background: transparent;
 }
 
 .radar-lower-grid .changes-ledger th {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
 }
 
 .radar-lower-grid .changes-ledger td.positive {
-  color: var(--radar-success);
+  color: var(--color-success);
 }
 
 .radar-lower-grid .changes-ledger td.negative {
-  color: var(--radar-danger);
+  color: var(--color-danger);
 }
 
 .radar-lower-grid .workbench-rules strong {
@@ -1385,8 +1385,8 @@ body {
 
 .command-dialog,
 .snapshot-dialog {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
   background: #061310;
   box-shadow: 0 30px 90px rgba(0, 0, 0, .55);
 }
@@ -1395,19 +1395,19 @@ body {
 .command-dialog footer,
 .snapshot-dialog > header,
 .snapshot-dialog > footer {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
   background: #04100d;
 }
 
 .command-input svg {
   width: 19px;
   height: 19px;
-  color: var(--radar-cyan);
+  color: var(--color-accent);
 }
 
 .command-input input,
 .snapshot-dialog input {
-  color: var(--radar-ink);
+  color: var(--color-text);
   background: #071814;
 }
 
@@ -1416,14 +1416,14 @@ body {
 }
 
 .command-results button {
-  color: var(--radar-ink);
+  color: var(--color-text);
   background: transparent;
 }
 
 .command-results button:hover,
 .command-results button:focus-visible {
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .command-results small,
@@ -1431,14 +1431,14 @@ body {
 .snapshot-dialog header p,
 .snapshot-date-field small,
 .snapshot-seed-note {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .command-close,
 .snapshot-dialog-close,
 .snapshot-dialog .button.secondary {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
+  border-color: var(--color-border);
+  color: var(--color-text);
   background: #071814;
 }
 
@@ -1453,121 +1453,121 @@ body {
 }
 
 .snapshot-entry-head {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: #04100d;
 }
 
 .snapshot-entry-head,
 .snapshot-entry-row,
 .snapshot-entry-row > * {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
 }
 
 .snapshot-dialog .button.primary {
-  border-color: var(--radar-amber);
+  border-color: var(--color-warning);
   color: #1d1204;
-  background: var(--radar-amber);
+  background: var(--color-warning);
 }
 
 .auth-screen {
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
 }
 
 .auth-dialog {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
   box-shadow: 0 32px 90px rgba(0, 0, 0, .48);
 }
 
 .auth-brand > span {
-  border: 1px solid var(--radar-cyan);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
   box-shadow: 0 0 22px rgba(43, 220, 203, .11);
 }
 
 .auth-brand p,
 .auth-dialog .field > span,
 .auth-dialog .check {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .auth-dialog input[type="password"] {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
+  border-color: var(--color-border);
+  color: var(--color-text);
   background: #071814;
 }
 
 .auth-dialog .button.primary {
-  border-color: var(--radar-amber);
+  border-color: var(--color-warning);
   color: #1d1204;
-  background: var(--radar-amber);
+  background: var(--color-warning);
 }
 
 .auth-restoring .auth-brand { margin-bottom: 0; }
-.form-warning { margin: 10px 0; color: var(--radar-amber-strong); font-size: var(--font-caption); line-height: 1.55; }
-.auth-network-note { margin: 8px 0; color: var(--radar-muted); font-size: var(--font-caption); font-weight: 500; line-height: 1.55; }
-.auth-dialog .form-error { color: var(--radar-danger); }
+.form-warning { margin: 10px 0; color: var(--color-warning-strong); font-size: var(--font-caption); line-height: 1.55; }
+.auth-network-note { margin: 8px 0; color: var(--color-text-muted); font-size: var(--font-caption); font-weight: 500; line-height: 1.55; }
+.auth-dialog .form-error { color: var(--color-danger); }
 .orbit-auth-warning { margin: 12px 0; padding: 10px 12px; border: 1px solid #d7a64a; background: #fff7df; color: #7b4f00; font-size: 13px; line-height: 1.5; }
 
-/* Shared dark theme for every route outside the command workbench. */
+/* Compatibility bridge for legacy route and Workbench token APIs. */
 .orbit-shell {
-  --paper: var(--radar-canvas);
-  --ink: var(--radar-ink);
-  --muted: var(--radar-muted);
-  --soft: var(--radar-surface-2);
-  --line: var(--radar-line);
-  --line-strong: var(--radar-line-strong);
-  --teal: var(--radar-cyan);
-  --teal-dark: var(--radar-cyan-strong);
-  --teal-soft: var(--radar-cyan-soft);
-  --blue-soft: rgba(75, 142, 203, .12);
-  --amber: var(--radar-amber);
-  --amber-soft: var(--radar-amber-soft);
-  --red: var(--radar-danger);
-  --red-soft: rgba(255, 97, 88, .1);
-  --gold: var(--radar-amber-strong);
-  --workbench-orange: var(--radar-amber);
-  --workbench-orange-dark: var(--radar-amber-strong);
-  --workbench-orange-soft: var(--radar-amber-soft);
-  --workbench-navy: #020706;
-  --workbench-ink: var(--radar-ink);
-  --workbench-muted: var(--radar-muted);
-  --workbench-line: var(--radar-line);
-  --workbench-soft: var(--radar-surface-2);
-  --workbench-success: var(--radar-success);
-  --workbench-success-soft: rgba(75, 211, 140, .1);
-  --workbench-info: #67b8ff;
-  --workbench-info-soft: rgba(75, 142, 203, .12);
-  --workbench-warning: var(--radar-amber-strong);
-  --workbench-warning-soft: var(--radar-amber-soft);
-  --workbench-danger: var(--radar-danger);
-  --workbench-danger-soft: rgba(255, 97, 88, .1);
+  --paper: var(--color-canvas);
+  --ink: var(--color-text);
+  --muted: var(--color-text-muted);
+  --soft: var(--color-surface-subtle);
+  --line: var(--color-border);
+  --line-strong: var(--color-border-strong);
+  --teal: var(--color-accent);
+  --teal-dark: var(--color-accent-strong);
+  --teal-soft: var(--color-accent-soft);
+  --blue-soft: var(--color-info-surface);
+  --amber: var(--color-warning);
+  --amber-soft: var(--color-warning-soft);
+  --red: var(--color-danger);
+  --red-soft: var(--color-danger-soft);
+  --gold: var(--color-warning-strong);
+  --workbench-orange: var(--color-warning);
+  --workbench-orange-dark: var(--color-warning-strong);
+  --workbench-orange-soft: var(--color-warning-soft);
+  --workbench-navy: var(--color-surface);
+  --workbench-ink: var(--color-text);
+  --workbench-muted: var(--color-text-muted);
+  --workbench-line: var(--color-border);
+  --workbench-soft: var(--color-surface-subtle);
+  --workbench-success: var(--color-success);
+  --workbench-success-soft: var(--color-success-translucent);
+  --workbench-info: var(--color-info-emphasis);
+  --workbench-info-soft: var(--color-info-translucent);
+  --workbench-warning: var(--color-warning-strong);
+  --workbench-warning-soft: var(--color-warning-soft);
+  --workbench-danger: var(--color-danger);
+  --workbench-danger-soft: var(--color-danger-translucent);
 }
 
 .orbit-main .page-wrap {
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
 }
 
 .orbit-main :where(.page-intro, .section-head, .matrix-intro) :where(h1, h2, h3),
 .orbit-main :where(.detail-panel, .settings-section, .output-panel) :where(h2, h3) {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .orbit-main :where(.page-intro, .section-head, .matrix-intro) :where(p, small),
 .orbit-main :where(.detail-panel, .settings-section, .output-panel) p {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .orbit-main :where(.page-intro, .section-head, .resource-section, .timeline-section, .gem-trend-section) {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
 }
 
 .orbit-main .subnav {
-  border-color: var(--radar-line-strong);
+  border-color: var(--color-border-strong);
   background: transparent;
 }
 
@@ -1577,41 +1577,41 @@ body {
 }
 
 .orbit-main .subnav a:hover {
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main .subnav a.router-link-active {
   color: #08110f;
-  background: var(--radar-cyan);
-  box-shadow: inset 0 -2px var(--radar-cyan-strong);
+  background: var(--color-accent);
+  box-shadow: inset 0 -2px var(--color-accent-strong);
 }
 
 .orbit-main :where(.button, .link-button, .text-button) {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-cyan);
+  border-color: var(--color-border-strong);
+  color: var(--color-accent);
   background: #071612;
 }
 
 .orbit-main :where(.button, .link-button, .text-button):hover {
-  border-color: var(--radar-cyan);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main :where(.button.primary, .segmented button.active) {
-  border-color: var(--radar-amber);
+  border-color: var(--color-warning);
   color: #171005;
-  background: var(--radar-amber);
+  background: var(--color-warning);
 }
 
 .orbit-main :where(.button.danger, .danger-text) {
-  color: var(--radar-danger);
+  color: var(--color-danger);
 }
 
 .orbit-main :where(input, select, textarea) {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
   background: #061310;
   color-scheme: dark;
 }
@@ -1621,26 +1621,26 @@ body {
 }
 
 .orbit-main :where(input, select, textarea):focus {
-  border-color: var(--radar-cyan);
+  border-color: var(--color-accent);
   box-shadow: 0 0 0 2px rgba(43, 220, 203, .1);
 }
 
 .orbit-main :where(.segmented, .account-switch) {
-  border-color: var(--radar-line-strong);
+  border-color: var(--color-border-strong);
   background: #061310;
 }
 
 .orbit-main :where(.segmented, .account-switch) button,
 .orbit-main .account-switch a {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
   color: #8da39d;
   background: #061310;
 }
 
 .orbit-main .account-switch a.active {
-  border-color: var(--radar-cyan);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main :where(
@@ -1676,60 +1676,60 @@ body {
   .task-filter-bar,
   .task-bulk-action-bar
 ) {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
   box-shadow: none;
 }
 
 .orbit-main :where(.table-head, .task-worklist-head, .snapshot-history-head, .gem-result-head) {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
   color: #8ea49e;
   background: #04100d;
 }
 
 .orbit-main :where(.pet-row, .pet-row-content) {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-main :where(.pet-row:hover, .pet-row.selected, .pet-row-action:hover, .pet-row-action:focus-visible, .pet-row.selected .pet-row-content) {
-  color: var(--radar-ink);
-  background: var(--radar-cyan-soft);
+  color: var(--color-text);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main :where(.pet-identity strong, .metric b, .detail-panel strong, .detail-panel b) {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .orbit-main :where(.pet-identity span, .metric span, .row-status, .detail-panel span, .detail-panel p) {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .orbit-main .detail-panel {
-  border-left-color: var(--radar-line-strong);
+  border-left-color: var(--color-border-strong);
 }
 
 .orbit-main :where(.detail-panel section, .detail-numbers > div, .detail-numbers p, .detail-shots a) {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
   background: transparent;
 }
 
 .orbit-main :where(.skill-list span, .pet-tags span) {
-  border-color: var(--radar-line-strong);
+  border-color: var(--color-border-strong);
   color: #a9c1bb;
   background: #0a211c;
 }
 
 .orbit-main :where(.resource-line, .stat-strip, .matrix-summary) {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-main :where(.resource-line, .stat-strip, .matrix-summary) > * {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
 }
 
 .orbit-main :where(
@@ -1744,8 +1744,8 @@ body {
   .evidence-list article,
   .skill-grid article
 ) {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
+  border-color: var(--color-border);
+  color: var(--color-text);
   background: transparent;
 }
 
@@ -1757,27 +1757,27 @@ body {
   .data-maintenance-table > label,
   .gem-history-row
 ):hover {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main :where(.filter-bar, .inline-filters, .skill-toolbar, .publish-filters, .preset-row) {
-  border-color: var(--radar-line);
-  color: var(--radar-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
   background: #04100d;
 }
 
 .orbit-main .task-operation-guide {
   border-color: rgba(43, 220, 203, .3);
   color: #9edbd3;
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main :where(.task-operation-guide strong, .task-progress-primary > strong, .task-progress-stats dd) {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .orbit-main :where(.task-progress-primary, .task-progress-stats > div, .task-account-group, .task-work-row, .task-account-header) {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
 }
 
 .orbit-main :where(.task-account-header, .task-worklist-head) {
@@ -1785,20 +1785,20 @@ body {
 }
 
 .orbit-main :where(.task-work-row, .task-work-row.done, .task-row-action, .task-status-segments button) {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-main .task-work-row:hover {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main .task-status-segments button.active {
-  border-color: var(--radar-cyan);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
-  box-shadow: inset 0 0 0 1px var(--radar-cyan);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
 .orbit-main :where(.task-progress-track, .ocr-progress) {
@@ -1806,11 +1806,11 @@ body {
 }
 
 .orbit-main :where(.task-progress-track > i, .ocr-progress i) {
-  background: var(--radar-cyan);
+  background: var(--color-accent);
 }
 
 .orbit-main :where(.task-state-label, .parameter-source, .gem-history-row em) {
-  border-color: var(--radar-line-strong);
+  border-color: var(--color-border-strong);
   color: #9eb4ae;
   background: #0a211c;
 }
@@ -1823,26 +1823,26 @@ body {
 
 .orbit-main :where(.task-state-label.warning, .parameter-source.overridden, .gem-history-row em.source-screenshot) {
   border-color: rgba(243, 160, 0, .38);
-  color: var(--radar-amber-strong);
-  background: var(--radar-amber-soft);
+  color: var(--color-warning-strong);
+  background: var(--color-warning-soft);
 }
 
 .orbit-main .task-state-label.blocked {
   border-color: rgba(255, 97, 88, .4);
-  color: var(--radar-danger);
+  color: var(--color-danger);
   background: rgba(255, 97, 88, .1);
 }
 
 .orbit-main .matrix-page .matrix-table {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-main .matrix-page .matrix-table :where(th, td) {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-main .matrix-page .matrix-table :where(thead th, tbody th) {
@@ -1852,19 +1852,19 @@ body {
 
 .orbit-main .matrix-page .matrix-table tbody tr:hover > th,
 .orbit-main .matrix-page .matrix-table tbody tr:hover > td:not(.empty) {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main :where(.matrix-pet-head, .matrix-stat-grid > div, .matrix-skills > span) {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
+  border-color: var(--color-border);
+  color: var(--color-text);
   background: #0a211c;
 }
 
 .orbit-main :where(.inventory-account-cell, .data-ledger > div, .source-layers article) {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
-  background: var(--radar-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-main .gem-trend-chart {
@@ -1872,18 +1872,18 @@ body {
 }
 
 .orbit-main :where(.gem-ocr-head, .gem-ocr-results, .gem-result-row, .gem-ocr-results footer, .gem-dropzone) {
-  border-color: var(--radar-line);
+  border-color: var(--color-border);
 }
 
 .orbit-main :where(.gem-dropzone, .dropzone-mark) {
-  color: var(--radar-ink);
+  color: var(--color-text);
   background: #04100d;
 }
 
 .orbit-main .gem-dropzone:hover,
 .orbit-main .gem-dropzone.dragging {
-  background: var(--radar-amber-soft);
-  box-shadow: inset 0 0 0 2px var(--radar-amber);
+  background: var(--color-warning-soft);
+  box-shadow: inset 0 0 0 2px var(--color-warning);
 }
 
 .orbit-main .confidence-low {
@@ -1892,20 +1892,20 @@ body {
 
 .orbit-main .danger-zone {
   border-color: rgba(255, 97, 88, .38);
-  color: var(--radar-ink);
+  color: var(--color-text);
   background: rgba(255, 97, 88, .06);
 }
 
 .orbit-main .empty-state {
-  border-color: var(--radar-line);
-  color: var(--radar-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
   background: #04100d;
 }
 
 .orbit-main :where(.publish-draft-warning, .parameter-impact-note, .task-action-feedback, .local-processing) {
   border-color: rgba(43, 220, 203, .3);
   color: #9edbd3;
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main .output-panel textarea {
@@ -1936,8 +1936,8 @@ body {
 .orbit-main .snapshot-entry-row input,
 .orbit-main .matrix-density-field select,
 .orbit-main .ui-settings-grid select {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
   background: #061310;
   color-scheme: dark;
 }
@@ -1946,8 +1946,8 @@ body {
 .orbit-main .pet-row.selected .pet-row-content,
 .orbit-main .pet-row .pet-row-action:hover,
 .orbit-main .pet-row .pet-row-action:focus-visible {
-  color: var(--radar-ink);
-  background: var(--radar-cyan-soft);
+  color: var(--color-text);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main .readonly-resource-table > div > span,
@@ -1967,14 +1967,14 @@ body {
 .orbit-main .species-table > div,
 .orbit-main .timeline-ledger > div,
 .orbit-main .resource-table > div {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
+  border-color: var(--color-border);
+  color: var(--color-text);
   background: transparent;
 }
 
 .orbit-main .equipment-table > div:hover,
 .orbit-main .species-table > div:hover {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main .task-status-segments button,
@@ -1983,29 +1983,29 @@ body {
 .orbit-main .matrix-page .matrix-options > label:not(.matrix-density-field),
 .orbit-main .matrix-page .matrix-stat-grid > div,
 .orbit-main .matrix-page .matrix-skills > span {
-  border-color: var(--radar-line-strong);
+  border-color: var(--color-border-strong);
   color: #a9bfba;
   background: #0a211c;
 }
 
 .orbit-main .task-status-segments button.active,
 .orbit-main .matrix-page .matrix-group-tabs button.active {
-  border-color: var(--radar-cyan);
+  border-color: var(--color-accent);
   color: #07110f;
-  background: var(--radar-cyan);
+  background: var(--color-accent);
 }
 
 .orbit-main .matrix-page .matrix-stat-grid > div.best {
-  border-left-color: var(--radar-amber);
-  color: var(--radar-amber-strong);
-  background: var(--radar-amber-soft);
+  border-left-color: var(--color-warning);
+  color: var(--color-warning-strong);
+  background: var(--color-warning-soft);
 }
 
 .orbit-main .preset-row button:hover,
 .orbit-main .preset-row button:focus-visible {
-  border-color: var(--radar-cyan);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 @media (max-width: 1320px) {
@@ -2064,9 +2064,9 @@ body {
     place-items: center;
     width: 40px;
     height: 40px;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: var(--radar-cyan);
+    color: var(--color-accent);
     background: #06100e;
   }
 
@@ -2081,7 +2081,7 @@ body {
 
   .orbit-nav {
     top: var(--header-height);
-    border-right: 1px solid var(--radar-line-strong);
+    border-right: 1px solid var(--color-border-strong);
     background: #04100d;
     box-shadow: 18px 0 45px rgba(0, 0, 0, .45);
   }
@@ -2096,9 +2096,9 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border-color: var(--radar-line);
-    color: var(--radar-cyan);
-    background: var(--radar-cyan-soft);
+    border-color: var(--color-border);
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
   }
 
   .orbit-mobile-nav-close svg {
@@ -2107,8 +2107,8 @@ body {
   }
 
   .orbit-mobile-logout {
-    border-color: var(--radar-line);
-    color: var(--radar-muted);
+    border-color: var(--color-border);
+    color: var(--color-text-muted);
   }
 
   .orbit-nav-scrim {
@@ -2156,12 +2156,12 @@ body {
     left: 0;
     grid-column: 1 / -1;
     min-height: 56px;
-    background: var(--radar-surface);
+    background: var(--color-surface);
   }
 
   .radar-account-item {
     min-height: 76px;
-    border-right: 1px solid var(--radar-line);
+    border-right: 1px solid var(--color-border);
     border-bottom: 0;
     scroll-snap-align: start;
   }
@@ -2203,7 +2203,7 @@ body {
   .orbit-main .evidence-list article > span:nth-of-type(2) {
     grid-column: 2;
     grid-row: 2;
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
   }
 
   .orbit-main .evidence-list article > a {
@@ -2260,7 +2260,7 @@ body {
   .radar-resource-overview > div > span:first-child,
   .radar-resource-overview > div > span:last-child {
     padding: 0 12px;
-    border-right: 1px solid var(--radar-line);
+    border-right: 1px solid var(--color-border);
   }
 
   .radar-resource-overview > div > span:nth-child(2n) {
@@ -2307,7 +2307,7 @@ body {
     grid-template-columns: 84px minmax(0, 1fr) 48px;
     min-height: 0;
     overflow: hidden;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 5px;
   }
 
@@ -2318,7 +2318,7 @@ body {
   .radar-timeline-panel .radar-row-account {
     grid-column: 1;
     grid-row: 1;
-    border-right: 1px solid var(--radar-line);
+    border-right: 1px solid var(--color-border);
   }
 
   .radar-timeline-panel .radar-row-account > span:last-child {
@@ -2333,7 +2333,7 @@ body {
   .radar-timeline-panel .radar-row-resource {
     grid-column: 1 / 4;
     grid-row: 2;
-    border-top: 1px solid var(--radar-line);
+    border-top: 1px solid var(--color-border);
   }
 
   .radar-timeline-panel .status-cell {
@@ -2341,14 +2341,14 @@ body {
     grid-row: 3;
     display: flex;
     align-items: center;
-    border-top: 1px solid var(--radar-line);
+    border-top: 1px solid var(--color-border);
   }
 
   .radar-timeline-panel .mainline-detail-cell {
     grid-column: 3;
     grid-row: 3;
-    border-top: 1px solid var(--radar-line);
-    border-left: 1px solid var(--radar-line);
+    border-top: 1px solid var(--color-border);
+    border-left: 1px solid var(--color-border);
   }
 
   .radar-timeline-panel .task-track-labels b,
@@ -2433,52 +2433,52 @@ body {
    Cyan = navigation/selection, amber = primary/attention,
    red = risk, green = success. Account hues are identity markers only. */
 .orbit-shell {
-  --account-fc: var(--radar-account-fc);
-  --account-lg1: var(--radar-account-lg1);
-  --account-lg2: var(--radar-account-lg2);
-  --account-pt: var(--radar-account-pt);
-  --account-myt: var(--radar-account-myt);
+  --account-fc: var(--color-account-fc);
+  --account-lg1: var(--color-account-lg1);
+  --account-lg2: var(--color-account-lg2);
+  --account-pt: var(--color-account-pt);
+  --account-myt: var(--color-account-myt);
 }
 
 .radar-account-item.active {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
   box-shadow: inset 0 0 18px rgba(43, 220, 203, .035);
 }
 
 .radar-account-item.active::before {
-  background: var(--radar-cyan);
+  background: var(--color-accent);
   box-shadow: 0 0 12px rgba(43, 220, 203, .48);
 }
 
 .radar-account-item > i {
-  border-color: var(--radar-success);
-  background: var(--radar-success);
+  border-color: var(--color-success);
+  background: var(--color-success);
   box-shadow: 0 0 8px rgba(75, 211, 140, .42);
 }
 
 .radar-account-item.stale > i {
-  border-color: var(--radar-pending);
+  border-color: var(--color-pending);
   background: transparent;
   box-shadow: none;
 }
 
 .radar-focus-header h2 b {
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
 }
 
 .radar-timeline-panel .mainline-row,
 .radar-timeline-panel .mainline-row:hover,
 .radar-timeline-panel .mainline-row.active {
-  box-shadow: inset 2px 0 var(--account-tone, var(--radar-cyan));
+  box-shadow: inset 2px 0 var(--account-tone, var(--color-accent));
 }
 
 .radar-workbench .task-track-labels span:first-child b {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .radar-workbench .task-track-line i:first-child {
-  border-color: var(--radar-cyan);
-  background: var(--radar-cyan);
+  border-color: var(--color-accent);
+  background: var(--color-accent);
   box-shadow: 0 0 8px rgba(43, 220, 203, .36);
 }
 
@@ -2489,18 +2489,18 @@ body {
   .account-pt,
   .account-myt
 ) {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .orbit-main :where(.account-pill, .radar-account-code, .radar-row-account > b) {
-  color: var(--account-tone, var(--radar-cyan));
+  color: var(--account-tone, var(--color-accent));
 }
 
-.orbit-main :where(.account-pill.account-fc) { --account-tone: var(--radar-account-fc); }
-.orbit-main :where(.account-pill.account-lg1) { --account-tone: var(--radar-account-lg1); }
-.orbit-main :where(.account-pill.account-lg2) { --account-tone: var(--radar-account-lg2); }
-.orbit-main :where(.account-pill.account-pt) { --account-tone: var(--radar-account-pt); }
-.orbit-main :where(.account-pill.account-myt) { --account-tone: var(--radar-account-myt); }
+.orbit-main :where(.account-pill.account-fc) { --account-tone: var(--color-account-fc); }
+.orbit-main :where(.account-pill.account-lg1) { --account-tone: var(--color-account-lg1); }
+.orbit-main :where(.account-pill.account-lg2) { --account-tone: var(--color-account-lg2); }
+.orbit-main :where(.account-pill.account-pt) { --account-tone: var(--color-account-pt); }
+.orbit-main :where(.account-pill.account-myt) { --account-tone: var(--color-account-myt); }
 
 .orbit-main .account-pill {
   border: 1px solid currentColor;
@@ -2508,97 +2508,97 @@ body {
 }
 
 .orbit-main :where(.pet-tags span, .skill-list span, .matrix-skills > span) {
-  border-color: var(--radar-neutral-border);
+  border-color: var(--color-neutral-border);
   color: #adc2bd;
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main .pet-tags span,
 .orbit-main .skill-list span,
 .orbit-main .matrix-skills > span {
-  border-color: var(--radar-neutral-border);
+  border-color: var(--color-neutral-border);
   color: #adc2bd;
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main :where(.pet-tags .magic, .pet-tags .physical, .pet-tags .speed) {
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main .pet-tags .magic {
   border-color: rgba(43, 220, 203, .32);
   color: #8bded5;
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main .pet-tags .physical {
   border-color: rgba(243, 160, 0, .34);
   color: #d9b267;
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main .pet-tags .speed {
   border-color: rgba(75, 211, 140, .32);
   color: #83caa2;
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main :where(.segmented button.active, .account-switch a.active) {
-  border-color: var(--radar-cyan);
+  border-color: var(--color-accent);
   color: #061310;
-  background: var(--radar-cyan);
+  background: var(--color-accent);
 }
 
 .orbit-main .button.primary {
-  border-color: var(--radar-amber);
+  border-color: var(--color-warning);
   color: #1b1205;
-  background: var(--radar-amber);
+  background: var(--color-warning);
 }
 
 .orbit-main :where(.task-state-label, .row-status) {
-  border-color: var(--radar-neutral-border);
-  color: var(--radar-pending);
-  background: var(--radar-neutral-chip);
+  border-color: var(--color-neutral-border);
+  color: var(--color-pending);
+  background: var(--color-neutral);
 }
 
 .orbit-main :where(.task-state-label.ready, .row-status.ready, .status-done) {
   border-color: rgba(75, 211, 140, .38);
-  color: var(--radar-success);
+  color: var(--color-success);
   background: rgba(75, 211, 140, .08);
 }
 
 .orbit-main :where(.task-state-label.warning, .row-status.pending, .status-warning) {
   border-color: rgba(243, 160, 0, .4);
-  color: var(--radar-amber-strong);
-  background: var(--radar-amber-soft);
+  color: var(--color-warning-strong);
+  background: var(--color-warning-soft);
 }
 
 .orbit-main :where(.task-state-label.blocked, .status-blocked, .status-danger) {
   border-color: rgba(255, 97, 88, .42);
-  color: var(--radar-danger);
+  color: var(--color-danger);
   background: rgba(255, 97, 88, .08);
 }
 
 .orbit-main .task-progress-track > i {
-  background: var(--radar-cyan);
+  background: var(--color-accent);
 }
 
 .orbit-main .task-progress-stats dt i {
-  background: var(--radar-pending);
+  background: var(--color-pending);
 }
 
 .orbit-main .task-progress-stats dt i.done {
-  background: var(--radar-success);
+  background: var(--color-success);
 }
 
 .orbit-main .task-progress-stats dt i.edited {
-  background: var(--radar-amber);
+  background: var(--color-warning);
 }
 
 .orbit-main .task-account-mark {
-  border: 1px solid var(--radar-cyan);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-main .matrix-pet-head em,
@@ -2606,17 +2606,17 @@ body {
 .orbit-main .matrix-pet-head em.tone-magic,
 .orbit-main .matrix-pet-head em.tone-speed,
 .orbit-main .matrix-pet-head em.tone-pending {
-  border: 1px solid var(--radar-neutral-border);
+  border: 1px solid var(--color-neutral-border);
   color: #adc2bd;
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main .matrix-pet-head strong {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .orbit-main .matrix-pet-head > small {
-  color: var(--radar-cyan);
+  color: var(--color-accent);
 }
 
 /* Eye-comfort calibration ------------------------------------------------
@@ -2696,7 +2696,7 @@ body {
 .orbit-main :where(.task-state-label, .parameter-source, .gem-history-row em),
 .orbit-main :where(.matrix-pet-head, .matrix-stat-grid > div, .matrix-skills > span),
 .orbit-main .matrix-page .matrix-skills > span {
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
 .orbit-main :where(.task-progress-track, .ocr-progress) {
@@ -2725,7 +2725,7 @@ body {
 .orbit-logout,
 .radar-workbench .workbench-date,
 .radar-status-strip {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .radar-workbench :where(p, small, dt),
@@ -2752,8 +2752,8 @@ html {
 .orbit-shell .orbit-main select,
 .orbit-shell .orbit-main textarea,
 .auth-screen .auth-dialog input[type="password"] {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
   background: #1e2b2e;
   font-weight: 550;
   color-scheme: dark;
@@ -2762,7 +2762,7 @@ html {
 .orbit-shell .orbit-main input::placeholder,
 .orbit-shell .orbit-main textarea::placeholder,
 .auth-screen .auth-dialog input[type="password"]::placeholder {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   opacity: 1;
 }
 
@@ -2770,7 +2770,7 @@ html {
 .orbit-shell .orbit-main select:focus,
 .orbit-shell .orbit-main textarea:focus,
 .auth-screen .auth-dialog input[type="password"]:focus {
-  border-color: var(--radar-cyan);
+  border-color: var(--color-accent);
   outline: 0;
   box-shadow: 0 0 0 3px rgba(127, 210, 201, .18);
 }
@@ -2778,8 +2778,8 @@ html {
 .orbit-shell .orbit-main input:disabled,
 .orbit-shell .orbit-main select:disabled,
 .orbit-shell .orbit-main textarea:disabled {
-  color: var(--radar-muted);
-  background: var(--radar-surface-2);
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
   opacity: .8;
 }
 
@@ -2802,7 +2802,7 @@ html {
 .orbit-main .subnav a,
 .orbit-main :where(.table-head, .task-worklist-head, .snapshot-history-head, .gem-result-head),
 .orbit-main :where(.pet-identity span, .metric span, .row-status, .detail-panel span, .detail-panel p) {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-weight: 600;
 }
 
@@ -2937,7 +2937,7 @@ html {
     align-items: center;
     padding: 8px 10px;
     border-right: 0;
-    border-bottom: 1px solid var(--radar-line);
+    border-bottom: 1px solid var(--color-border);
     white-space: normal;
   }
 
@@ -2946,7 +2946,7 @@ html {
   }
 
   .radar-status-strip > :nth-child(2n) {
-    border-right: 1px solid var(--radar-line);
+    border-right: 1px solid var(--color-border);
   }
 
   .radar-status-strip > :nth-last-child(-n + 2) {
@@ -2972,7 +2972,7 @@ html {
     place-items: center;
     gap: 0;
     padding: 4px;
-    border-right: 1px solid var(--radar-line);
+    border-right: 1px solid var(--color-border);
     border-bottom: 0;
     text-align: center;
   }
@@ -3065,10 +3065,10 @@ html {
     align-items: start;
     gap: 10px 12px;
     padding: 14px;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
-    color: var(--radar-ink);
-    background: var(--radar-surface);
+    color: var(--color-text);
+    background: var(--color-surface);
   }
 
   .orbit-main .equipment-table article,
@@ -3082,10 +3082,10 @@ html {
     align-items: start;
     gap: 10px 12px;
     padding: 14px;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
-    color: var(--radar-ink);
-    background: var(--radar-surface);
+    color: var(--color-text);
+    background: var(--color-surface);
   }
 
   .orbit-main :where(.equipment-table article, .species-table article, .timeline-ledger > a, .snapshot-history-row) > * {
@@ -3102,7 +3102,7 @@ html {
   )::before {
     display: block;
     margin-bottom: 3px;
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     font-size: 13px;
     font-weight: 650;
     line-height: 1.35;
@@ -3121,7 +3121,7 @@ html {
     align-items: center;
     justify-content: space-between;
     padding: 0 10px;
-    border: 1px solid var(--radar-line-strong);
+    border: 1px solid var(--color-border-strong);
     border-radius: 4px;
     background: #1a2628;
   }
@@ -3148,7 +3148,7 @@ html {
     display: grid;
     align-content: center;
     padding: 7px 9px;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
     background: #1a2628;
   }
@@ -3201,13 +3201,13 @@ html {
   }
 
   .snapshot-date-field {
-    border-bottom-color: var(--radar-line);
-    color: var(--radar-ink);
+    border-bottom-color: var(--color-border);
+    color: var(--color-text);
     background: #141d1f;
   }
 
   .snapshot-date-field > label {
-    color: var(--radar-ink);
+    color: var(--color-text);
   }
 
   .snapshot-date-field input {
@@ -3215,18 +3215,18 @@ html {
   }
 
   .snapshot-date-field small {
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
   }
 
   .snapshot-seed-note {
-    border-bottom-color: var(--radar-line);
+    border-bottom-color: var(--color-border);
     color: #a8c9df;
     background: rgba(103, 184, 255, .09);
   }
 
   .snapshot-seed-note.warning {
-    color: var(--radar-amber-strong);
-    background: var(--radar-amber-soft);
+    color: var(--color-warning-strong);
+    background: var(--color-warning-soft);
   }
 
   .snapshot-entry-scroll {
@@ -3251,9 +3251,9 @@ html {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px 10px;
     padding: 12px;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
-    background: var(--radar-surface);
+    background: var(--color-surface);
   }
 
   .snapshot-entry-row > strong {
@@ -3269,7 +3269,7 @@ html {
 
   .snapshot-entry-row > span::before {
     content: attr(data-label);
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     font-size: 13px;
     font-weight: 700;
     line-height: 1.35;
@@ -3339,7 +3339,7 @@ html {
     grid-auto-rows: 56px;
     align-content: start;
     padding: 6px 8px max(8px, var(--orbit-safe-area-bottom));
-    border-top: 1px solid var(--radar-line-strong);
+    border-top: 1px solid var(--color-border-strong);
     background: rgba(12, 20, 22, .96);
     box-shadow: 0 -10px 28px rgba(0, 0, 0, .24);
     backdrop-filter: blur(16px);
@@ -3355,7 +3355,7 @@ html {
     padding: 3px 2px;
     border: 0;
     border-radius: 9px;
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     background: transparent;
     font-family: var(--font-ui);
     font-size: 12px;
@@ -3369,8 +3369,8 @@ html {
   }
 
   .orbit-mobile-dock :where(a, button).active {
-    color: var(--radar-cyan);
-    background: var(--radar-cyan-soft);
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
   }
 
   .orbit-main .section-head > div:first-child {
@@ -3450,7 +3450,7 @@ html {
 
   .inventory-account-cell {
     flex: 0 0 min(78vw, 292px);
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     scroll-snap-align: start;
   }
 }
@@ -3463,32 +3463,13 @@ html,
 body,
 #app {
   color-scheme: light;
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
 }
 
 .orbit-shell {
-  --paper: var(--radar-canvas);
-  --ink: var(--radar-ink);
-  --muted: var(--radar-muted);
-  --soft: var(--radar-surface-2);
-  --line: var(--radar-line);
-  --line-strong: var(--radar-line-strong);
-  --teal: var(--radar-cyan);
-  --teal-dark: var(--radar-cyan-strong);
-  --teal-soft: var(--radar-cyan-soft);
-  --blue-soft: #eaf3fb;
-  --amber: var(--radar-amber);
-  --amber-soft: var(--radar-amber-soft);
-  --red: var(--radar-danger);
-  --red-soft: #fff0ee;
-  --workbench-navy: #ffffff;
-  --workbench-ink: var(--radar-ink);
-  --workbench-muted: var(--radar-muted);
-  --workbench-line: var(--radar-line);
-  --workbench-soft: var(--radar-surface-2);
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
   font-size: 18px;
   font-weight: 550;
   line-height: 1.6;
@@ -3498,19 +3479,19 @@ body,
 .orbit-route-context,
 .radar-workbench,
 .orbit-main .page-wrap {
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
 }
 
 .orbit-topbar {
-  border-bottom-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-bottom-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
   box-shadow: 0 4px 16px rgba(17, 24, 39, .1);
 }
 
 .orbit-brand strong {
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
 }
 
 .orbit-brand span,
@@ -3524,8 +3505,8 @@ body,
 
 .orbit-nav > a:hover,
 .orbit-nav > a.active {
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-nav {
@@ -3536,18 +3517,18 @@ body,
 .orbit-sync-state,
 .orbit-logout,
 .orbit-menu-button {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-header-tools .orbit-command-trigger:hover,
 .orbit-sync-state:hover,
 .orbit-logout:hover,
 .orbit-menu-button:hover {
-  border-color: var(--radar-cyan);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .orbit-auth-warning {
@@ -3567,10 +3548,10 @@ body,
 .radar-timeline-panel .mainline-table,
 .radar-status-strip::-webkit-scrollbar-track,
 .radar-account-rail::-webkit-scrollbar-track {
-  color: var(--radar-ink);
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-surface);
   box-shadow: none;
-  scrollbar-color: var(--radar-line-strong) var(--radar-surface-2);
+  scrollbar-color: var(--color-border-strong) var(--color-surface-subtle);
 }
 
 .radar-status-strip,
@@ -3579,14 +3560,14 @@ body,
 .radar-lower-grid > .workbench-panel > header,
 .radar-account-rail > header,
 .snapshot-entry-head {
-  color: var(--radar-muted);
-  background: var(--radar-surface-2);
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
 }
 
 .radar-account-code,
 .radar-timeline-panel .account-pill,
 .orbit-main .account-pill {
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .radar-account-item:hover,
@@ -3595,13 +3576,13 @@ body,
 .radar-timeline-panel .mainline-row.active,
 .radar-timeline-panel .mainline-row.ready-now-row.active,
 .orbit-main :where(.pet-row:hover, .pet-row.selected, .pet-row-action:hover, .pet-row-action:focus-visible, .pet-row.selected .pet-row-content) {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .radar-account-item.active,
 .radar-timeline-panel .mainline-row.active,
 .radar-timeline-panel .mainline-row.ready-now-row.active {
-  outline-color: var(--radar-cyan);
+  outline-color: var(--color-accent);
 }
 
 .radar-action-card,
@@ -3610,34 +3591,34 @@ body,
 .orbit-main :where(.segmented, .account-switch),
 .orbit-main :where(.segmented, .account-switch) button,
 .orbit-main .account-switch a {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .radar-workbench .workbench-primary,
 .orbit-main :where(.button.primary, .segmented button.active),
 .orbit-main .button.primary {
-  border-color: var(--radar-amber);
-  color: #ffffff;
-  background: var(--radar-amber);
+  border-color: var(--color-warning);
+  color: var(--color-text-on-strong);
+  background: var(--color-warning);
   box-shadow: none;
 }
 
 .radar-workbench .workbench-primary:hover,
 .orbit-main :where(.button.primary, .segmented button.active):hover,
 .orbit-main .button.primary:hover {
-  border-color: var(--radar-amber-strong);
-  color: #ffffff;
-  background: var(--radar-amber-strong);
+  border-color: var(--color-warning-strong);
+  color: var(--color-text-on-strong);
+  background: var(--color-warning-strong);
 }
 
 .orbit-main .subnav a.router-link-active,
 .orbit-main :where(.task-status-segments button.active, .matrix-page .matrix-group-tabs button.active),
 .orbit-main :where(.segmented button.active, .account-switch a.active) {
-  border-color: var(--radar-cyan);
-  color: #ffffff;
-  background: var(--radar-cyan);
+  border-color: var(--color-accent);
+  color: var(--color-text-on-strong);
+  background: var(--color-accent);
   box-shadow: none;
 }
 
@@ -3653,7 +3634,7 @@ body,
 .radar-row-resource b,
 .radar-lower-grid .workbench-panel h2,
 .radar-lower-grid .workbench-rules strong {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .radar-focus-header h2 small,
@@ -3661,13 +3642,13 @@ body,
 .radar-row-resource small,
 .radar-row-resource em,
 .radar-lower-grid .changes-ledger :where(th, td) {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .radar-action-card.primary strong,
 .radar-action-card.primary .radar-action-index,
 .radar-status-strip .warning {
-  color: var(--radar-amber-strong);
+  color: var(--color-warning-strong);
 }
 
 .radar-action-rail .ready-now-banner,
@@ -3675,7 +3656,7 @@ body,
 .radar-action-rail .ready-now-banner span,
 .radar-action-rail .ready-now-banner > a,
 .radar-workbench .action-notice {
-  color: var(--radar-success);
+  color: var(--color-success);
 }
 
 .radar-workbench :where(small, .radar-status-strip, .workbench-date, .radar-focus-date, .radar-action-index, .task-ready-badge),
@@ -3732,12 +3713,12 @@ body,
 }
 
 .radar-workbench .task-track-line::before {
-  background: var(--radar-line-strong);
+  background: var(--color-border-strong);
 }
 
 .radar-workbench .task-track-line i {
-  border-color: var(--radar-line-strong);
-  background: #ffffff;
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
 }
 
 .orbit-main :where(
@@ -3775,9 +3756,9 @@ body,
   .password-rotation-section,
   .cloud-sync-section
 ) {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
   box-shadow: none;
 }
 
@@ -3787,9 +3768,9 @@ body,
 .orbit-main .matrix-page .matrix-table :where(thead th, tbody th),
 .orbit-main :where(.gem-dropzone, .dropzone-mark),
 .orbit-main .empty-state {
-  border-color: var(--radar-line);
-  color: var(--radar-muted);
-  background: var(--radar-surface-2);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
 }
 
 .orbit-main :where(.pet-row, .pet-row-content),
@@ -3800,21 +3781,21 @@ body,
 .orbit-main :where(.task-state-label, .parameter-source, .gem-history-row em),
 .orbit-main :where(.matrix-pet-head, .matrix-stat-grid > div, .matrix-skills > span),
 .orbit-main .matrix-page .matrix-skills > span {
-  border-color: var(--radar-line);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .orbit-main :where(.skill-list span, .pet-tags span),
 .orbit-main :where(.task-state-label, .parameter-source, .gem-history-row em),
 .orbit-main :where(.matrix-pet-head, .matrix-stat-grid > div, .matrix-skills > span),
 .orbit-main .matrix-page .matrix-skills > span {
-  background: var(--radar-neutral-chip);
+  background: var(--color-neutral);
 }
 
-.orbit-main .pet-tags .magic { color: var(--radar-cyan-strong); }
-.orbit-main .pet-tags .physical { color: var(--radar-amber-strong); }
-.orbit-main .pet-tags .speed { color: var(--radar-success); }
+.orbit-main .pet-tags .magic { color: var(--color-accent-strong); }
+.orbit-main .pet-tags .physical { color: var(--color-warning-strong); }
+.orbit-main .pet-tags .speed { color: var(--color-success); }
 
 .orbit-shell .orbit-main input:not([type="checkbox"]):not([type="radio"]),
 .orbit-shell .orbit-main select,
@@ -3822,9 +3803,9 @@ body,
 .auth-screen .auth-dialog input[type="password"],
 .command-input input,
 .snapshot-dialog input {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
   font-size: 17px;
   font-weight: 600;
   color-scheme: light;
@@ -3834,15 +3815,15 @@ body,
 .orbit-shell .orbit-main textarea::placeholder,
 .auth-screen .auth-dialog input[type="password"]::placeholder,
 .command-input input::placeholder {
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   opacity: 1;
 }
 
 .orbit-shell .orbit-main input:disabled,
 .orbit-shell .orbit-main select:disabled,
 .orbit-shell .orbit-main textarea:disabled {
-  color: var(--radar-muted);
-  background: var(--radar-surface-2);
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
   opacity: 1;
 }
 
@@ -3854,9 +3835,9 @@ body,
 .command-dialog,
 .snapshot-dialog,
 .auth-dialog {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
   box-shadow: 0 24px 70px rgba(17, 24, 39, .22);
 }
 
@@ -3865,54 +3846,54 @@ body,
 .snapshot-dialog > header,
 .snapshot-dialog > footer,
 .snapshot-entry-head {
-  border-color: var(--radar-line);
-  background: var(--radar-surface-2);
+  border-color: var(--color-border);
+  background: var(--color-surface-subtle);
 }
 
 .command-close,
 .snapshot-dialog-close,
 .snapshot-dialog .button.secondary {
-  border-color: var(--radar-line-strong);
-  color: var(--radar-ink);
-  background: #ffffff;
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .auth-screen {
-  color: var(--radar-ink);
-  background: var(--radar-canvas);
+  color: var(--color-text);
+  background: var(--color-canvas);
 }
 
 .auth-brand h1 {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .auth-brand p,
 .auth-dialog .field > span,
 .auth-dialog .check,
 .auth-network-note {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .auth-dialog .button.primary,
 .snapshot-dialog .button.primary {
-  border-color: var(--radar-amber);
-  color: #ffffff;
-  background: var(--radar-amber);
+  border-color: var(--color-warning);
+  color: var(--color-text-on-strong);
+  background: var(--color-warning);
 }
 
 .orbit-mobile-dock {
-  border-top-color: var(--radar-line-strong);
+  border-top-color: var(--color-border-strong);
   background: rgba(255, 255, 255, .98);
   box-shadow: 0 -8px 24px rgba(17, 24, 39, .12);
 }
 
 .orbit-mobile-dock :where(a, button) {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .orbit-mobile-dock :where(a, button).active {
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 @media (max-width: 980px) {
@@ -3931,10 +3912,10 @@ body,
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: max(18px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
-    border-right-color: var(--radar-line-strong);
+    border-right-color: var(--color-border-strong);
     border-radius: 0 18px 18px 0;
-    color: var(--radar-ink);
-    background: #ffffff;
+    color: var(--color-text);
+    background: var(--color-surface);
     box-shadow: 20px 0 48px rgba(17, 24, 39, .22);
     scrollbar-width: none;
     transform: translate3d(-104%, 0, 0);
@@ -3968,7 +3949,7 @@ body,
     gap: 12px;
     margin-bottom: 13px;
     padding: 0 2px 14px 4px;
-    border-bottom: 1px solid var(--radar-line);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .orbit-mobile-nav-identity {
@@ -3978,7 +3959,7 @@ body,
   }
 
   .orbit-mobile-nav-identity strong {
-    color: var(--radar-cyan-strong);
+    color: var(--color-accent-strong);
     font-size: 20px;
     font-weight: 850;
     line-height: 1.25;
@@ -3986,7 +3967,7 @@ body,
   }
 
   .orbit-mobile-nav-identity span {
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     font-size: 13px;
     font-weight: 650;
     line-height: 1.35;
@@ -3996,7 +3977,7 @@ body,
     display: block;
     margin: 0 0 3px;
     padding: 0 11px;
-    color: var(--radar-faint);
+    color: var(--color-text-faint);
     font-size: 12px;
     font-weight: 750;
     line-height: 1.5;
@@ -4011,15 +3992,15 @@ body,
     place-items: center;
     margin: 0;
     padding: 0;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
-    color: var(--radar-cyan-strong);
-    background: var(--radar-surface-2);
+    color: var(--color-accent-strong);
+    background: var(--color-surface-subtle);
   }
 
   .orbit-mobile-nav-close:hover {
-    border-color: var(--radar-cyan);
-    background: var(--radar-cyan-soft);
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
   }
 
   .orbit-mobile-nav-close svg {
@@ -4035,7 +4016,7 @@ body,
     padding: 7px 11px;
     border: 1px solid transparent;
     border-radius: 10px;
-    color: var(--radar-ink);
+    color: var(--color-text);
     background: transparent;
     font-size: 15px;
     font-weight: 700;
@@ -4051,25 +4032,25 @@ body,
     height: 36px;
     padding: 8px;
     border-radius: 9px;
-    color: var(--radar-muted);
-    background: var(--radar-surface-2);
+    color: var(--color-text-muted);
+    background: var(--color-surface-subtle);
   }
 
   .orbit-nav > a:hover {
-    border-color: var(--radar-line);
-    color: var(--radar-cyan-strong);
-    background: var(--radar-surface-2);
+    border-color: var(--color-border);
+    color: var(--color-accent-strong);
+    background: var(--color-surface-subtle);
   }
 
   .orbit-nav > a.active {
     border-color: rgba(0, 107, 99, .2);
-    color: var(--radar-cyan-strong);
-    background: var(--radar-cyan-soft);
-    box-shadow: inset 3px 0 0 var(--radar-cyan);
+    color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
+    box-shadow: inset 3px 0 0 var(--color-accent);
   }
 
   .orbit-nav > a.active svg {
-    color: var(--radar-cyan-strong);
+    color: var(--color-accent-strong);
     background: rgba(255, 255, 255, .74);
   }
 
@@ -4084,7 +4065,7 @@ body,
     padding: 9px 14px;
     border: 1px solid rgba(180, 35, 24, .22);
     border-radius: 10px;
-    color: var(--radar-danger);
+    color: var(--color-danger);
     background: #fff8f7;
     text-align: left;
   }
@@ -4096,7 +4077,7 @@ body,
   }
 
   .orbit-mobile-logout small {
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     font-size: 12px;
     font-weight: 550;
     line-height: 1.35;
@@ -4151,7 +4132,7 @@ body,
 
 /* Keep a covered funding state visually distinct from the resource shortage it resolves. */
 .radar-account-gap strong.clear {
-  color: var(--radar-success);
+  color: var(--color-success);
 }
 
 .radar-account-gap em.covered {
@@ -4160,10 +4141,10 @@ body,
   justify-self: end;
   min-height: 24px;
   padding: 1px 7px;
-  border: 1px solid color-mix(in srgb, var(--radar-success) 42%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 42%, transparent);
   border-radius: 999px;
-  color: var(--radar-success);
-  background: color-mix(in srgb, var(--radar-success) 10%, #ffffff);
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 10%, #ffffff);
   font-size: 12px !important;
   font-weight: 850;
   line-height: 1.2 !important;
@@ -4176,30 +4157,30 @@ body,
 }
 
 .radar-decision-copy.covered h3 {
-  color: var(--radar-success);
+  color: var(--color-success);
 }
 
 .radar-funding-gap.clear {
-  border-color: color-mix(in srgb, var(--radar-success) 58%, transparent);
-  background: color-mix(in srgb, var(--radar-success) 10%, #ffffff);
+  border-color: color-mix(in srgb, var(--color-success) 58%, transparent);
+  background: color-mix(in srgb, var(--color-success) 10%, #ffffff);
   box-shadow:
-    inset 4px 0 0 var(--radar-success),
-    0 0 0 1px color-mix(in srgb, var(--radar-success) 8%, transparent);
+    inset 4px 0 0 var(--color-success),
+    0 0 0 1px color-mix(in srgb, var(--color-success) 8%, transparent);
 }
 
 .radar-funding-gap.clear :where(small, span) {
-  color: color-mix(in srgb, var(--radar-success) 78%, var(--radar-ink));
+  color: color-mix(in srgb, var(--color-success) 78%, var(--color-text));
   font-weight: 700;
 }
 
 .radar-funding-gap.clear strong {
-  color: var(--radar-success);
+  color: var(--color-success);
   font-size: 32px;
   font-weight: 850;
 }
 
 .radar-resource-overview .gap.covered .funding-covered-note {
-  color: var(--radar-success);
+  color: var(--color-success);
   font-size: 12px !important;
   font-style: normal;
   font-weight: 850;
@@ -4208,14 +4189,14 @@ body,
 }
 
 .radar-workbench .status-chip.buyable {
-  border-color: color-mix(in srgb, var(--radar-success) 48%, transparent);
-  color: var(--radar-success);
-  background: color-mix(in srgb, var(--radar-success) 11%, #ffffff);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--radar-success) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-success) 48%, transparent);
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 11%, #ffffff);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-success) 8%, transparent);
 }
 
 .radar-timeline-panel .status-cell.covered > small {
-  color: var(--radar-success);
+  color: var(--color-success);
   font-weight: 750;
 }
 
@@ -4273,10 +4254,10 @@ body,
     align-items: center;
     min-height: 30px;
     padding: 3px 8px;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 999px;
-    color: var(--radar-muted);
-    background: var(--radar-surface);
+    color: var(--color-text-muted);
+    background: var(--color-surface);
     font-family: var(--font-ui);
     font-size: 13px;
     font-weight: 700;
@@ -4313,11 +4294,11 @@ body,
 
   .radar-status-ready,
   .radar-status-completeness {
-    border-left: 1px solid var(--radar-line);
+    border-left: 1px solid var(--color-border);
   }
 
   .radar-status-completeness {
-    color: var(--radar-success);
+    color: var(--color-success);
     font-weight: 750;
   }
 
@@ -4473,7 +4454,7 @@ body,
   .radar-resource-overview > header span {
     overflow: hidden;
     min-width: 0;
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     font-size: 12px;
     line-height: 1.35;
     text-overflow: ellipsis;
@@ -4494,7 +4475,7 @@ body,
     gap: 1px;
     min-height: 50px;
     padding: 0 5px;
-    border-right: 1px solid var(--radar-line);
+    border-right: 1px solid var(--color-border);
   }
 
   .radar-resource-overview > div > span:first-child {
@@ -4606,17 +4587,17 @@ body,
     display: block;
     min-height: 0;
     overflow: hidden;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     outline: 0;
-    background: var(--radar-surface);
+    background: var(--color-surface);
     box-shadow: inset 3px 0 0 transparent;
   }
 
   .radar-timeline-panel .mainline-row.active,
   .radar-timeline-panel .mainline-row.ready-now-row.active {
-    border-color: color-mix(in srgb, var(--account-tone) 72%, var(--radar-line));
-    background: color-mix(in srgb, var(--account-tone) 7%, var(--radar-surface));
+    border-color: color-mix(in srgb, var(--account-tone) 72%, var(--color-border));
+    background: color-mix(in srgb, var(--account-tone) 7%, var(--color-surface));
     box-shadow: inset 3px 0 0 var(--account-tone);
   }
 
@@ -4636,7 +4617,7 @@ body,
     gap: 8px;
     min-height: 54px;
     padding: 7px 8px 7px 10px;
-    border-bottom: 1px solid var(--radar-line);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .mainline-mobile-identity {
@@ -4661,14 +4642,14 @@ body,
 
   .mainline-mobile-identity b {
     overflow-wrap: anywhere;
-    color: var(--radar-ink);
+    color: var(--color-text);
     font-size: 13px;
     font-weight: 780;
     line-height: 1.3;
   }
 
   .mainline-mobile-identity small {
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     font-size: 11px;
     line-height: 1.3;
   }
@@ -4717,7 +4698,7 @@ body,
     min-width: 44px;
     min-height: 44px;
     justify-content: center;
-    color: var(--radar-cyan-strong);
+    color: var(--color-accent-strong);
     font-size: 12px;
     font-weight: 750;
   }
@@ -4735,10 +4716,10 @@ body,
     max-width: calc(100vw - 32px);
     margin: 0;
     padding: 10px 14px;
-    border: 1px solid color-mix(in srgb, var(--radar-cyan) 36%, var(--radar-line));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 36%, var(--color-border));
     border-radius: 8px;
-    color: var(--radar-ink);
-    background: color-mix(in srgb, var(--radar-surface) 94%, var(--radar-cyan-soft));
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-surface) 94%, var(--color-accent-soft));
     box-shadow: 0 8px 24px rgba(20, 37, 34, .16);
     font-size: 13px;
     font-weight: 720;
@@ -4761,12 +4742,12 @@ body,
 
   .mainline-mobile-next > span + span {
     padding-left: 10px;
-    border-left: 1px solid var(--radar-line);
+    border-left: 1px solid var(--color-border);
   }
 
   .mainline-mobile-next small,
   .mainline-mobile-next em {
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     font-size: 10px;
     font-style: normal;
     line-height: 1.3;
@@ -4774,22 +4755,22 @@ body,
 
   .mainline-mobile-next b {
     overflow-wrap: anywhere;
-    color: var(--radar-ink);
+    color: var(--color-text);
     font-size: 12px;
     font-weight: 720;
     line-height: 1.35;
   }
 
   .mainline-mobile-next .empty b {
-    color: var(--radar-faint);
+    color: var(--color-text-faint);
     font-weight: 650;
   }
 
   .mainline-mobile-next .mainline-mobile-finish {
     grid-column: 1 / -1;
     padding-top: 5px;
-    border-top: 1px solid var(--radar-line);
-    color: var(--radar-faint);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-faint);
     font-size: 11px;
     line-height: 1.3;
   }
@@ -4799,7 +4780,7 @@ body,
     grid-template-columns: repeat(4, minmax(0, .7fr)) minmax(86px, 1.35fr);
     min-height: 43px;
     padding: 6px 8px 7px 10px;
-    border-top: 1px solid var(--radar-line);
+    border-top: 1px solid var(--color-border);
   }
 
   .mainline-mobile-resources > span {
@@ -4808,7 +4789,7 @@ body,
     gap: 1px;
     min-width: 0;
     padding: 0 6px;
-    border-right: 1px solid var(--radar-line);
+    border-right: 1px solid var(--color-border);
   }
 
   .mainline-mobile-resources > span:first-child {
@@ -4821,7 +4802,7 @@ body,
   }
 
   .mainline-mobile-resources small {
-    color: var(--radar-faint);
+    color: var(--color-text-faint);
     font-size: 10px;
     line-height: 1.2;
     white-space: nowrap;
@@ -4829,7 +4810,7 @@ body,
 
   .mainline-mobile-resources b {
     overflow-wrap: anywhere;
-    color: var(--radar-ink);
+    color: var(--color-text);
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 750;
@@ -4837,7 +4818,7 @@ body,
   }
 
   .mainline-mobile-resources .mainline-mobile-gap b {
-    color: var(--radar-success);
+    color: var(--color-success);
     font-family: var(--font-ui);
     font-size: 11px;
   }

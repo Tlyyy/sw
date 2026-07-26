@@ -3,6 +3,7 @@ import type {
   WeeklyActivitySummary,
 } from "../domain/weeklyActivity";
 import { appName, weeklyReportTitle } from "../app/brand";
+import { shareImagePalette as palette } from "../utils/shareImagePalette";
 
 export interface WeeklyActivityReportImageData extends WeeklyActivitySummary {
   generatedAt: string;
@@ -111,45 +112,45 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
   if (!context) throw new Error("当前浏览器无法生成图片");
 
   context.textBaseline = "top";
-  context.fillStyle = "#eef3f2";
+  context.fillStyle = palette.canvas.background;
   context.fillRect(0, 0, WIDTH, height);
   const backdrop = context.createLinearGradient(0, 0, WIDTH, height);
-  backdrop.addColorStop(0, "rgba(0, 121, 111, .13)");
-  backdrop.addColorStop(.55, "rgba(255, 255, 255, 0)");
-  backdrop.addColorStop(1, "rgba(18, 103, 143, .08)");
+  backdrop.addColorStop(0, palette.gradient.tealGlow);
+  backdrop.addColorStop(.55, palette.gradient.transparent);
+  backdrop.addColorStop(1, palette.gradient.blueGlow);
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, height);
 
-  context.fillStyle = "#006b63";
+  context.fillStyle = palette.brand.primary;
   setFont(context, 34, 850);
   context.fillText(appName, 64, 48);
-  context.fillStyle = "#60736f";
+  context.fillStyle = palette.text.caption;
   setFont(context, 20, 750);
   context.textAlign = "right";
   context.fillText("WEEKLY REPORT", WIDTH - 64, 58);
   context.textAlign = "left";
 
-  fillRoundedRect(context, 48, 116, 984, height - 176, 30, "#ffffff");
-  strokeRoundedRect(context, 48, 116, 984, height - 176, 30, "#d4dfdd", 2);
-  fillRoundedRect(context, 48, 116, 984, 10, 5, "#00796f");
+  fillRoundedRect(context, 48, 116, 984, height - 176, 30, palette.surface.default);
+  strokeRoundedRect(context, 48, 116, 984, height - 176, 30, palette.border.strong, 2);
+  fillRoundedRect(context, 48, 116, 984, 10, 5, palette.brand.accent);
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 38, 850);
   context.fillText(`${weeklyReportTitle} · 逐账号`, 80, 164);
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 22, 650);
   context.fillText(`${data.weekStart} 至 ${data.reportEnd}`, 80, 218);
-  fillRoundedRect(context, 780, 172, 220, 52, 15, "#e7f3f0");
-  context.fillStyle = "#08765a";
+  fillRoundedRect(context, 780, 172, 220, 52, 15, palette.status.positive.background);
+  context.fillStyle = palette.status.positive.foreground;
   setFont(context, 19, 800);
   context.textAlign = "center";
   context.fillText(`${data.accountSummaries.length} 个账号`, 890, 187);
   context.textAlign = "left";
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 24, 850);
   context.fillText("各账号本周情况", 80, 282);
-  context.fillStyle = "#71817e";
+  context.fillStyle = palette.text.muted;
   setFont(context, 16, 650);
   context.textAlign = "right";
   context.fillText(data.latestInventoryDate ? `库存截至 ${data.latestInventoryDate}` : "库存待建立比较基线", 1000, 290);
@@ -157,78 +158,96 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
 
   data.accountSummaries.forEach((account, index) => {
     const y = accountRowsY + index * accountRowStep;
-    fillRoundedRect(context, 80, y, 920, 126, 14, index % 2 ? "#fbfcfc" : "#f5f8f7");
-    strokeRoundedRect(context, 80, y, 920, 126, 14, "#e1e8e6", 1);
-    fillRoundedRect(context, 96, y + 22, 72, 42, 11, "#e3f2ef");
-    context.fillStyle = "#08765a";
+    fillRoundedRect(
+      context,
+      80,
+      y,
+      920,
+      126,
+      14,
+      index % 2 ? palette.surface.nearWhite : palette.surface.subtle,
+    );
+    strokeRoundedRect(context, 80, y, 920, 126, 14, palette.border.subtle, 1);
+    fillRoundedRect(context, 96, y + 22, 72, 42, 11, palette.status.positive.background);
+    context.fillStyle = palette.status.positive.foreground;
     setFont(context, 18, 850);
     context.textAlign = "center";
     context.fillText(account.accountId, 132, y + 31);
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 13, 750);
     context.fillText(`${account.taskCompletions.length} 项任务`, 132, y + 76);
     context.textAlign = "left";
 
     const accountMetrics = [
-      { x: 190, label: "本周收获", value: wanLabel(account.harvestedSilverWan), note: `净变化 ${wanLabel(account.inventoryNetChangeWan, true)}`, color: "#067068" },
-      { x: 390, label: "本周支出", value: wanLabel(account.totalSilverExpenseWan), note: account.pendingReconciliationSilverExpenseWan > 0 ? `${wanLabel(account.pendingReconciliationSilverExpenseWan)} 待结算` : `任务 ${numberLabel(account.taskSilverExpenseWan)} · 其他 ${numberLabel(account.manualSilverExpenseWan)}`, color: account.totalSilverExpenseWan > 0 ? "#9a5a00" : "#20312e" },
-      { x: 590, label: "完成任务", value: `${account.taskCompletions.length} 项`, note: accountTaskNames(account), color: "#20312e" },
-      { x: 790, label: "当前库存", value: wanLabel(account.currentSilverWan), note: data.latestInventoryDate ? `截至 ${data.latestInventoryDate}` : "尚无库存记录", color: "#20312e" },
+      { x: 190, label: "本周收获", value: wanLabel(account.harvestedSilverWan), note: `净变化 ${wanLabel(account.inventoryNetChangeWan, true)}`, color: palette.status.positive.foreground },
+      { x: 390, label: "本周支出", value: wanLabel(account.totalSilverExpenseWan), note: account.pendingReconciliationSilverExpenseWan > 0 ? `${wanLabel(account.pendingReconciliationSilverExpenseWan)} 待结算` : `任务 ${numberLabel(account.taskSilverExpenseWan)} · 其他 ${numberLabel(account.manualSilverExpenseWan)}`, color: account.totalSilverExpenseWan > 0 ? palette.status.warning.foreground : palette.text.strong },
+      { x: 590, label: "完成任务", value: `${account.taskCompletions.length} 项`, note: accountTaskNames(account), color: palette.text.strong },
+      { x: 790, label: "当前库存", value: wanLabel(account.currentSilverWan), note: data.latestInventoryDate ? `截至 ${data.latestInventoryDate}` : "尚无库存记录", color: palette.text.strong },
     ];
     accountMetrics.forEach((metric) => {
-      context.fillStyle = "#71817e";
+      context.fillStyle = palette.text.muted;
       setFont(context, 13, 750);
       context.fillText(metric.label, metric.x, y + 15);
       context.fillStyle = metric.color;
       setFont(context, 20, 850);
       context.fillText(fitText(context, metric.value, 174), metric.x, y + 40);
-      context.fillStyle = "#71817e";
+      context.fillStyle = palette.text.muted;
       setFont(context, 12, 650);
       context.fillText(fitText(context, metric.note, 174), metric.x, y + 76);
     });
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 12, 650);
     context.fillText(fitText(context, accountTaskResources(account), 780), 190, y + 102);
   });
 
   if (hasUnassignedExpenses) {
-    fillRoundedRect(context, 80, unassignedBannerY, 920, 54, 12, "#fff6e6");
-    context.fillStyle = "#9a5a00";
+    fillRoundedRect(context, 80, unassignedBannerY, 920, 54, 12, palette.status.warning.background);
+    context.fillStyle = palette.status.warning.foreground;
     setFont(context, 16, 800);
     context.fillText(`有 ${numberLabel(data.unassignedManualSilverExpenseWan)} 万旧支出未分账号`, 102, unassignedBannerY + 16);
-    context.fillStyle = "#75664e";
+    context.fillStyle = palette.status.warning.textMuted;
     setFont(context, 14, 650);
     context.textAlign = "right";
     context.fillText("保留在明细中，不计入任何账号", 978, unassignedBannerY + 18);
     context.textAlign = "left";
   }
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 24, 850);
   context.fillText(`按账号补记的其他银子支出 · ${data.manualExpenses.length} 笔`, 80, expenseSectionY);
   if (!displayedExpenses.length) {
-    fillRoundedRect(context, 80, expenseSectionY + 44, 920, 72, 12, "#f7f9f8");
-    context.fillStyle = "#81908d";
+    fillRoundedRect(context, 80, expenseSectionY + 44, 920, 72, 12, palette.surface.subtle);
+    context.fillStyle = palette.text.faint;
     setFont(context, 18, 700);
     context.fillText("本周没有补记其他支出", 104, expenseSectionY + 68);
   } else {
     displayedExpenses.forEach((expense, index) => {
       const y = expenseSectionY + 44 + index * 58;
-      context.fillStyle = index % 2 ? "#fbfcfc" : "#f7f9f8";
+      context.fillStyle = index % 2 ? palette.surface.nearWhite : palette.surface.subtle;
       context.fillRect(80, y, 920, 50);
-      context.fillStyle = "#71817e";
+      context.fillStyle = palette.text.muted;
       setFont(context, 16, 700);
       context.fillText(shortDate(expense.effectiveDate), 100, y + 15);
-      fillRoundedRect(context, 176, y + 10, expense.accountId ? 68 : 96, 30, 9, expense.accountId ? "#e7f3f0" : "#fff1d8");
-      context.fillStyle = expense.accountId ? "#08765a" : "#9a5a00";
+      fillRoundedRect(
+        context,
+        176,
+        y + 10,
+        expense.accountId ? 68 : 96,
+        30,
+        9,
+        expense.accountId ? palette.status.positive.background : palette.status.warning.background,
+      );
+      context.fillStyle = expense.accountId
+        ? palette.status.positive.foreground
+        : palette.status.warning.foreground;
       setFont(context, 14, 850);
       context.textAlign = "center";
       context.fillText(expense.accountId || "未分账号", expense.accountId ? 210 : 224, y + 16);
       context.textAlign = "left";
-      context.fillStyle = "#20312e";
+      context.fillStyle = palette.text.strong;
       setFont(context, 17, 750);
       context.fillText(fitText(context, expense.note, expense.accountId ? 510 : 482), expense.accountId ? 262 : 290, y + 14);
-      context.fillStyle = "#a45c00";
+      context.fillStyle = palette.status.warning.foreground;
       setFont(context, 17, 850);
       context.textAlign = "right";
       context.fillText(`${numberLabel(expense.amountWan)} 万`, 980, y + 14);
@@ -236,7 +255,7 @@ export function createWeeklyActivityReportImage(data: WeeklyActivityReportImageD
     });
   }
 
-  context.fillStyle = "#899793";
+  context.fillStyle = palette.text.faint;
   setFont(context, 15, 650);
   context.fillText(`生成时间 ${data.generatedAt}`, 80, height - 104);
   context.textAlign = "right";

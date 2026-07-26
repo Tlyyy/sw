@@ -15,7 +15,7 @@
   .orbit-mobile-feature-label {
     margin-top: 2px;
     padding-top: 13px;
-    border-top: 1px solid var(--radar-line);
+    border-top: 1px solid var(--color-border);
   }
 
   .orbit-mobile-account-links {
@@ -28,18 +28,18 @@
     min-height: 44px;
     display: grid;
     place-items: center;
-    border: 1px solid var(--radar-line);
+    border: 1px solid var(--color-border);
     border-radius: 9px;
-    color: var(--radar-ink);
-    background: #ffffff;
+    color: var(--color-text);
+    background: var(--color-surface);
     font-size: 12px;
     font-weight: 850;
   }
 
   .orbit-mobile-account-links > a.active {
-    border-color: color-mix(in srgb, var(--radar-cyan) 44%, var(--radar-line));
-    color: var(--radar-cyan-strong);
-    background: var(--radar-cyan-soft);
+    border-color: color-mix(in srgb, var(--color-accent) 44%, var(--color-border));
+    color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
   }
 
   .orbit-mobile-hub-links > a,
@@ -52,7 +52,7 @@
     padding: 7px 10px;
     border: 1px solid transparent;
     border-radius: 10px;
-    color: var(--radar-ink);
+    color: var(--color-text);
     background: transparent;
     font-size: 14px;
     font-weight: 750;
@@ -64,7 +64,7 @@
     flex-direction: column;
     justify-content: center;
     gap: 5px;
-    background: var(--radar-surface-2);
+    background: var(--color-surface-subtle);
   }
 
   .orbit-mobile-hub-links > a svg,
@@ -72,18 +72,18 @@
     flex: 0 0 auto;
     width: 20px;
     height: 20px;
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
   }
 
   .orbit-mobile-hub-links > a.active,
   .orbit-mobile-feature-links > a.active {
-    border-color: color-mix(in srgb, var(--radar-cyan) 32%, var(--radar-line));
-    color: var(--radar-cyan-strong);
-    background: var(--radar-cyan-soft);
+    border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-border));
+    color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
   }
 
   .orbit-mobile-hub-links > a:nth-child(2) svg {
-    color: var(--brand-orange);
+    color: var(--color-brand);
   }
 }
 
@@ -98,7 +98,7 @@
     padding-right: 10px;
     padding-left: 14px;
     border-bottom-color: rgba(226, 184, 93, .25);
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     background: #07131f;
     box-shadow: 0 6px 18px rgba(7, 19, 31, .16);
   }
@@ -140,19 +140,19 @@
     padding: 0 9px;
     border-color: rgba(255, 255, 255, .42);
     border-radius: 999px;
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     background: rgba(255, 255, 255, .04);
   }
 
   .orbit-header-tools .orbit-sync-state b {
     display: block;
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     font-size: 12px;
   }
 
   .orbit-header-tools .orbit-sync-state:hover {
     border-color: rgba(239, 200, 108, .7);
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     background: rgba(255, 255, 255, .08);
   }
 
@@ -169,7 +169,7 @@
     min-height: calc(72px + var(--orbit-safe-area-bottom));
     grid-auto-rows: 58px;
     padding: 6px 7px max(8px, var(--orbit-safe-area-bottom));
-    border-top-color: var(--radar-line);
+    border-top-color: var(--color-border);
     background: rgba(255, 255, 255, .98);
     box-shadow: 0 -8px 24px rgba(17, 24, 39, .12);
   }
@@ -179,7 +179,7 @@
     min-height: 58px;
     gap: 3px;
     border-radius: 10px;
-    color: var(--radar-muted);
+    color: var(--color-text-muted);
     background: transparent;
     font-size: 11px;
     font-weight: 750;
@@ -207,7 +207,7 @@
   }
 
   .orbit-mobile-dock > a:nth-child(2) {
-    color: var(--brand-orange);
+    color: var(--color-brand);
   }
 
   .orbit-mobile-dock > a:nth-child(2) svg {
@@ -215,12 +215,12 @@
     height: 30px;
     padding: 5px;
     border-radius: 50%;
-    color: var(--brand-orange);
-    background: var(--brand-orange-soft);
+    color: var(--color-brand);
+    background: var(--color-brand-soft);
   }
 
   .orbit-mobile-dock > a:nth-child(2).active::after {
-    background: var(--brand-orange);
+    background: var(--color-brand);
   }
 
   .orbit-auth-warning {

@@ -39,8 +39,8 @@ defineEmits<{
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-bottom: 1px solid var(--radar-line);
-  background: var(--radar-surface);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .inventory-week-button {
@@ -48,20 +48,20 @@ defineEmits<{
   height: 44px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 7px;
-  color: var(--radar-cyan-strong);
-  background: #ffffff;
+  color: var(--color-accent-strong);
+  background: var(--color-surface);
 }
 
 .inventory-week-button:hover,
 .inventory-week-button:focus-visible {
-  border-color: var(--radar-cyan);
-  background: var(--radar-cyan-soft);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .inventory-week-button:disabled {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   opacity: .38;
   cursor: not-allowed;
 }
@@ -81,14 +81,14 @@ defineEmits<{
 .inventory-week-range strong {
   overflow: hidden;
   max-width: 100%;
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .inventory-week-range small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -96,10 +96,10 @@ defineEmits<{
 .inventory-week-current {
   min-height: 44px;
   padding: 0 12px;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 7px;
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
   font-size: 13px;
   font-weight: 800;
   white-space: nowrap;

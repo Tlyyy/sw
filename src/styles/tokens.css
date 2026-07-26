@@ -6,28 +6,29 @@
   background: #fafaf7;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --nav: #07131f;
-  --nav-2: #0d1d2c;
-  --ink: #102039;
-  --muted: #687384;
-  --soft: #f4f3ee;
-  --line: #d9d9d3;
-  --line-strong: #c8c8c0;
-  --teal: #c75d05;
-  --teal-dark: #9c4300;
-  --teal-soft: #fff1e4;
-  --blue-soft: #edf4fb;
-  --amber: #b66a15;
-  --amber-soft: #fff4dc;
-  --red: #b63d34;
-  --red-soft: #fff0ee;
-  --gold: #e2b85d;
-  --brand-orange: #bd5500;
-  --brand-orange-dark: #9c4300;
-  --brand-orange-soft: #fff1e4;
-  --paper: #fafaf7;
+  /* Compatibility aliases for the original application token API. */
+  --nav: var(--color-nav);
+  --nav-2: var(--color-nav-elevated);
+  --ink: var(--color-text);
+  --muted: var(--color-text-muted);
+  --soft: var(--color-surface-subtle);
+  --line: var(--color-border);
+  --line-strong: var(--color-control-border-strong);
+  --teal: var(--color-brand);
+  --teal-dark: var(--color-brand-strong);
+  --teal-soft: var(--color-brand-soft);
+  --blue-soft: var(--color-info-soft);
+  --amber: var(--color-warning);
+  --amber-soft: var(--color-warning-soft);
+  --red: var(--color-danger);
+  --red-soft: var(--color-danger-soft);
+  --gold: var(--color-gold);
+  --brand-orange: var(--color-brand);
+  --brand-orange-dark: var(--color-brand-strong);
+  --brand-orange-soft: var(--color-brand-soft);
+  --paper: var(--color-canvas);
   --radius: 5px;
-  --shadow: 0 14px 38px rgba(7, 19, 31, .09);
+  --shadow: 0 14px 38px var(--color-shadow);
   --header-height: 68px;
   --content-max: 1920px;
   --page-gutter: clamp(14px, 1vw, 24px);
@@ -46,37 +47,38 @@
   --text-large: var(--font-section);
 
   /* Radar workbench visual system */
-  --radar-canvas: #f3f5f7;
-  --radar-surface: #ffffff;
-  --radar-surface-2: #edf1f4;
-  --radar-surface-3: #e2e8ec;
-  --radar-ink: #111827;
-  --radar-muted: #475467;
-  --radar-faint: #667085;
-  --radar-line: rgba(17, 24, 39, .18);
-  --radar-line-strong: rgba(17, 24, 39, .36);
-  --radar-cyan: #006b63;
-  --radar-cyan-strong: #004f49;
-  --radar-cyan-soft: rgba(0, 107, 99, .11);
-  --radar-amber: #ad5c00;
-  --radar-amber-strong: #7a3f00;
-  --radar-amber-soft: #fff0d5;
-  --radar-success: #18794e;
-  --radar-danger: #b42318;
-  --radar-neutral-chip: #edf1f4;
-  --radar-neutral-border: rgba(17, 24, 39, .24);
-  --radar-pending: #526174;
-  --radar-account-fc: #12678f;
-  --radar-account-lg1: #6446a6;
-  --radar-account-lg2: #8a5a00;
-  --radar-account-pt: #a33838;
-  --radar-account-myt: #28764a;
+  /* Compatibility aliases for the former Radar palette. */
+  --radar-canvas: var(--color-canvas);
+  --radar-surface: var(--color-surface);
+  --radar-surface-2: var(--color-surface-subtle);
+  --radar-surface-3: var(--color-surface-muted);
+  --radar-ink: var(--color-text);
+  --radar-muted: var(--color-text-muted);
+  --radar-faint: var(--color-text-faint);
+  --radar-line: var(--color-border);
+  --radar-line-strong: var(--color-border-strong);
+  --radar-cyan: var(--color-accent);
+  --radar-cyan-strong: var(--color-accent-strong);
+  --radar-cyan-soft: var(--color-accent-soft);
+  --radar-amber: var(--color-warning);
+  --radar-amber-strong: var(--color-warning-strong);
+  --radar-amber-soft: var(--color-warning-soft);
+  --radar-success: var(--color-success);
+  --radar-danger: var(--color-danger);
+  --radar-neutral-chip: var(--color-neutral);
+  --radar-neutral-border: var(--color-neutral-border);
+  --radar-pending: var(--color-pending);
+  --radar-account-fc: var(--color-account-fc);
+  --radar-account-lg1: var(--color-account-lg1);
+  --radar-account-lg2: var(--color-account-lg2);
+  --radar-account-pt: var(--color-account-pt);
+  --radar-account-myt: var(--color-account-myt);
   --radar-radius: 7px;
 }
 
 * { box-sizing: border-box; }
-html { overflow-x: clip; background: var(--paper); }
-body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.5; }
+html { overflow-x: clip; background: var(--color-canvas); }
+body { margin: 0; min-width: 320px; background: var(--color-canvas); color: var(--color-text); font-size: 16px; line-height: 1.5; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button, a { touch-action: manipulation; }
 button { cursor: pointer; }
@@ -85,6 +87,6 @@ img { max-width: 100%; }
 h1, h2, h3, p { margin: 0; }
 ::selection { background: #f4c58d; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 3px solid rgba(199, 93, 5, .24);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }

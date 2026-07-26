@@ -399,7 +399,7 @@ onBeforeUnmount(() => {
   border-radius: 28px;
   background: rgba(248, 249, 252, 0.94);
   box-shadow: 0 22px 70px rgba(14, 25, 48, 0.24);
-  color: #111827;
+  color: var(--color-text);
 }
 
 .ios26-record-sheet button:focus {
@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
   height: 5px;
   margin: 8px auto 2px;
   border-radius: 999px;
-  background: rgba(17, 24, 39, 0.18);
+  background: var(--color-border);
 }
 
 .ios26-record-head {
@@ -490,7 +490,7 @@ onBeforeUnmount(() => {
   gap: 6px;
   border: 0;
   border-radius: 11px;
-  color: #667085;
+  color: var(--ios-secondary-label);
   background: transparent;
   font: inherit;
   font-size: 13px;
@@ -498,7 +498,7 @@ onBeforeUnmount(() => {
 }
 
 .ios26-record-segments button.active {
-  color: #ffffff;
+  color: var(--color-text-on-strong);
   background: var(--ios26-accent, #d35c00);
   box-shadow: 0 4px 12px rgba(160, 66, 0, 0.17);
 }
@@ -526,7 +526,7 @@ onBeforeUnmount(() => {
   gap: 12px;
   padding: 12px 14px;
   border: 0;
-  color: #111827;
+  color: var(--color-text);
   background: rgba(255, 255, 255, 0.92);
   text-align: left;
 }
@@ -542,7 +542,7 @@ onBeforeUnmount(() => {
 }
 
 .ios26-record-picker small {
-  color: #667085;
+  color: var(--ios-secondary-label);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -623,8 +623,8 @@ onBeforeUnmount(() => {
   padding: 0 5px;
   border: 1px solid rgba(17, 24, 39, 0.1);
   border-radius: 10px;
-  color: #111827;
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-surface);
   font: inherit;
   font-size: var(--ios26-record-input-size);
   font-weight: var(--ios26-record-input-weight);
@@ -671,7 +671,7 @@ onBeforeUnmount(() => {
 .ios26-sheet-field input {
   display: block;
   padding: 0 14px;
-  color: #111827;
+  color: var(--color-text);
   font: inherit;
   font-size: var(--ios26-record-input-size);
   font-weight: var(--ios26-record-input-weight);
@@ -704,7 +704,7 @@ onBeforeUnmount(() => {
 
 .ios26-sheet-intro {
   margin: 0;
-  color: #667085;
+  color: var(--ios-secondary-label);
   font-size: var(--ios26-record-meta-size);
   line-height: 1.5;
 }
@@ -733,7 +733,7 @@ onBeforeUnmount(() => {
   flex: 1;
   border: 0;
   outline: 0;
-  color: #111827;
+  color: var(--color-text);
   background: transparent;
   font: inherit;
   font-size: var(--ios26-record-input-size);
@@ -749,7 +749,7 @@ onBeforeUnmount(() => {
   margin: 0 16px 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  color: #b42318;
+  color: var(--color-danger);
   background: #fff1f0;
   font-size: 13px;
 }
@@ -768,7 +768,7 @@ onBeforeUnmount(() => {
   min-height: 50px;
   border: 0;
   border-radius: 15px;
-  color: #fff;
+  color: var(--color-text-on-strong);
   background: var(--ios26-accent, #d35c00);
   font: inherit;
   font-size: 16px;
@@ -786,7 +786,7 @@ onBeforeUnmount(() => {
   padding: 11px 16px;
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 999px;
-  color: #fff;
+  color: var(--color-text-on-strong);
   background: rgba(20, 27, 39, 0.88);
   box-shadow: 0 12px 30px rgba(8, 12, 20, 0.2);
   backdrop-filter: blur(18px);

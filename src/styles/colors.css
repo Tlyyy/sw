@@ -1,0 +1,152 @@
+/*
+ * Canonical application color system.
+ *
+ * Components should consume these semantic tokens instead of literal colors.
+ * Legacy Radar, Workbench and iOS variables are mapped to this layer in their
+ * existing stylesheets while those APIs are migrated gradually.
+ */
+:root {
+  color-scheme: light;
+
+  --color-canvas: #f3f5f7;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #edf1f4;
+  --color-surface-muted: #e2e8ec;
+  --color-surface-elevated: #ffffff;
+  --color-surface-translucent: rgba(255, 255, 255, 0.9);
+  --color-glass-fill: rgba(247, 249, 253, 0.46);
+  --color-glass-border: rgba(255, 255, 255, 0.58);
+  --color-glass-highlight: #ffffff;
+
+  --color-text: #111827;
+  --color-text-muted: #475467;
+  --color-text-faint: #667085;
+  --color-text-tertiary: #8c95a3;
+  --color-text-on-strong: #ffffff;
+
+  --color-border: rgba(17, 24, 39, 0.18);
+  --color-border-subtle: rgba(17, 24, 39, 0.09);
+  --color-border-strong: rgba(17, 24, 39, 0.36);
+  --color-control-border-strong: #c8c8c0;
+  --color-separator: rgba(60, 60, 67, 0.16);
+  --color-separator-opaque: #d7dbe2;
+
+  --color-accent: #006b63;
+  --color-accent-strong: #004f49;
+  --color-accent-soft: rgba(0, 107, 99, 0.11);
+
+  --color-brand: #bd5500;
+  --color-brand-strong: #9c4300;
+  --color-brand-soft: #fff1e4;
+  --color-brand-translucent: rgba(189, 85, 0, 0.1);
+  --color-system-blue: #007aff;
+  --color-mobile-canvas: #f4f6f9;
+  --color-mobile-surface-subtle: #eef1f5;
+  --color-mobile-muted: #667085;
+  --color-mobile-tint-soft: rgba(211, 92, 0, 0.1);
+
+  --color-success: #18794e;
+  --color-success-soft: #edf7ef;
+  --color-success-translucent: rgba(75, 211, 140, 0.1);
+  --color-warning: #ad5c00;
+  --color-warning-strong: #7a3f00;
+  --color-warning-soft: #fff0d5;
+  --color-danger: #b42318;
+  --color-danger-soft: #fff0ee;
+  --color-danger-translucent: rgba(255, 97, 88, 0.1);
+  --color-info: #276ea6;
+  --color-info-soft: #edf4fb;
+  --color-info-surface: #eaf3fb;
+  --color-info-emphasis: #67b8ff;
+  --color-info-translucent: rgba(75, 142, 203, 0.12);
+  --color-gold: #e2b85d;
+
+  --color-neutral: #edf1f4;
+  --color-neutral-border: rgba(17, 24, 39, 0.24);
+  --color-pending: #526174;
+
+  --color-nav: #07131f;
+  --color-nav-elevated: #0d1d2c;
+  --color-overlay: rgba(4, 13, 22, 0.62);
+  --color-focus: rgba(199, 93, 5, 0.24);
+  --color-shadow: rgba(7, 19, 31, 0.09);
+
+  --color-account-fc: #12678f;
+  --color-account-lg1: #6446a6;
+  --color-account-lg2: #8a5a00;
+  --color-account-pt: #a33838;
+  --color-account-myt: #28764a;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #000000;
+  --color-surface: #1c1c1e;
+  --color-surface-subtle: #2c2c2e;
+  --color-surface-muted: #3a3a3c;
+  --color-surface-elevated: #1c1c1e;
+  --color-surface-translucent: rgba(44, 44, 46, 0.78);
+  --color-glass-fill: rgba(44, 44, 46, 0.52);
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+  --color-glass-highlight: #ffffff;
+
+  --color-text: #ffffff;
+  --color-text-muted: rgba(235, 235, 245, 0.6);
+  --color-text-faint: rgba(235, 235, 245, 0.3);
+  --color-text-tertiary: rgba(235, 235, 245, 0.3);
+  --color-text-on-strong: #ffffff;
+
+  --color-border: rgba(84, 84, 88, 0.65);
+  --color-border-subtle: rgba(84, 84, 88, 0.36);
+  --color-border-strong: #48484a;
+  --color-control-border-strong: #38383a;
+  --color-separator: rgba(84, 84, 88, 0.65);
+  --color-separator-opaque: #38383a;
+
+  --color-accent: #64d2ff;
+  --color-accent-strong: #70d7ff;
+  --color-accent-soft: rgba(100, 210, 255, 0.16);
+
+  --color-brand: #ff9f0a;
+  --color-brand-strong: #ffb340;
+  --color-brand-soft: rgba(255, 159, 10, 0.16);
+  --color-brand-translucent: rgba(255, 159, 10, 0.12);
+  --color-system-blue: #007aff;
+  --color-mobile-canvas: #000000;
+  --color-mobile-surface-subtle: #2c2c2e;
+  --color-mobile-muted: #667085;
+  --color-mobile-tint-soft: rgba(255, 159, 10, 0.12);
+
+  --color-success: #30d158;
+  --color-success-soft: rgba(48, 209, 88, 0.16);
+  --color-success-translucent: rgba(75, 211, 140, 0.1);
+  --color-warning: #ff9f0a;
+  --color-warning-strong: #ffb340;
+  --color-warning-soft: rgba(255, 159, 10, 0.16);
+  --color-danger: #ff453a;
+  --color-danger-soft: rgba(255, 69, 58, 0.16);
+  --color-danger-translucent: rgba(255, 97, 88, 0.1);
+  --color-info: #64d2ff;
+  --color-info-soft: rgba(10, 132, 255, 0.16);
+  --color-info-surface: rgba(75, 142, 203, 0.12);
+  --color-info-emphasis: #67b8ff;
+  --color-info-translucent: rgba(75, 142, 203, 0.12);
+  --color-gold: #ffd28a;
+
+  --color-neutral: #2c2c2e;
+  --color-neutral-border: #48484a;
+  --color-pending: rgba(235, 235, 245, 0.6);
+
+  --color-nav: #000000;
+  --color-nav-elevated: #1c1c1e;
+  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-focus: rgba(255, 159, 10, 0.5);
+  --color-shadow: rgba(0, 0, 0, 0.46);
+
+  --color-account-fc: #63b6df;
+  --color-account-lg1: #a78bfa;
+  --color-account-lg2: #e2ad4f;
+  --color-account-pt: #f08383;
+  --color-account-myt: #69c995;
+}

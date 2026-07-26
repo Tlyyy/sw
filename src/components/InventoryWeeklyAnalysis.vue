@@ -442,8 +442,8 @@ async function shareInventoryReport() {
   justify-content: space-between;
   gap: 16px;
   padding: 9px 14px;
-  border-bottom: 1px solid var(--radar-line);
-  background: var(--radar-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
 }
 
 .inventory-analysis-actions {
@@ -455,7 +455,7 @@ async function shareInventoryReport() {
 }
 
 .inventory-analysis-actions p {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px !important;
   line-height: 1.4;
 }
@@ -467,9 +467,9 @@ async function shareInventoryReport() {
   grid-auto-columns: minmax(max-content, 1fr);
   overflow: hidden;
   padding: 3px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 7px;
-  background: var(--radar-surface);
+  background: var(--color-surface);
 }
 
 .weekly-view-switch button,
@@ -478,7 +478,7 @@ async function shareInventoryReport() {
   padding: 0 13px;
   border: 0;
   border-radius: 5px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: transparent;
   font-size: 13px;
   font-weight: 800;
@@ -487,14 +487,14 @@ async function shareInventoryReport() {
 
 .weekly-view-switch button:hover,
 .matrix-metric-switch button:hover {
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
 }
 
 .weekly-view-switch button.active,
 .matrix-metric-switch button.active {
-  color: #ffffff;
-  background: var(--radar-cyan);
+  color: var(--color-text-on-strong);
+  background: var(--color-accent);
 }
 
 .inventory-report-share-button {
@@ -505,17 +505,17 @@ async function shareInventoryReport() {
   justify-content: center;
   gap: 6px;
   padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--radar-cyan) 42%, var(--radar-line));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
   border-radius: 7px;
-  color: var(--radar-cyan-strong);
-  background: var(--radar-surface);
+  color: var(--color-accent-strong);
+  background: var(--color-surface);
   font-size: 13px;
   font-weight: 800;
 }
 
 .inventory-report-share-button:hover,
 .inventory-report-share-button:focus-visible {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .inventory-report-share-button:disabled {
@@ -540,10 +540,10 @@ async function shareInventoryReport() {
   max-width: calc(100vw - 40px);
   margin: 0;
   padding: 10px 14px;
-  border: 1px solid color-mix(in srgb, var(--radar-cyan) 36%, var(--radar-line));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 36%, var(--color-border));
   border-radius: 8px;
-  color: var(--radar-ink);
-  background: color-mix(in srgb, var(--radar-surface) 94%, var(--radar-cyan-soft));
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-accent-soft));
   box-shadow: 0 8px 24px rgba(20, 37, 34, .16);
   font-size: 13px;
   font-weight: 750;
@@ -553,21 +553,21 @@ async function shareInventoryReport() {
 .inventory-daily-matrix {
   overflow: hidden;
   margin: 12px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 7px;
-  background: var(--radar-surface);
+  background: var(--color-surface);
 }
 
 .weekly-change-panel > header,
 .inventory-matrix-head {
   padding: 11px 14px 10px;
-  border-bottom: 1px solid var(--radar-line);
-  background: var(--radar-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
 }
 
 .weekly-change-panel h3,
 .inventory-matrix-head h3 {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 18px;
   line-height: 1.3;
 }
@@ -575,13 +575,13 @@ async function shareInventoryReport() {
 .weekly-change-panel p,
 .inventory-matrix-head p {
   margin-top: 3px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 13px !important;
   line-height: 1.45;
 }
 
 .weekly-change-panel .weekly-change-valuation-note {
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
   font-weight: 700;
 }
 
@@ -593,13 +593,13 @@ async function shareInventoryReport() {
   gap: 8px;
   min-height: 44px;
   padding: 6px 14px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
   font-size: 15px;
 }
 
 .weekly-change-head {
   min-height: 40px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: #f6f8f7;
   font-size: 13px;
   font-weight: 800;
@@ -626,18 +626,18 @@ async function shareInventoryReport() {
 
 .weekly-change-total {
   min-height: 48px;
-  border-top: 1px solid var(--radar-cyan);
-  color: var(--radar-ink);
-  background: var(--radar-cyan-soft);
+  border-top: 1px solid var(--color-accent);
+  color: var(--color-text);
+  background: var(--color-accent-soft);
 }
 
 .weekly-money-header small {
   font: inherit;
 }
 
-.positive { color: var(--radar-success); }
-.negative { color: var(--radar-danger); }
-.neutral { color: var(--radar-muted); }
+.positive { color: var(--color-success); }
+.negative { color: var(--color-danger); }
+.neutral { color: var(--color-text-muted); }
 
 .inventory-matrix-head {
   min-height: 72px;
@@ -654,15 +654,15 @@ async function shareInventoryReport() {
   align-items: center;
   gap: 18px;
   padding: 7px 14px;
-  border-bottom: 1px solid var(--radar-line);
-  color: var(--radar-muted);
-  background: color-mix(in srgb, var(--radar-cyan) 5%, #ffffff);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-accent) 5%, #ffffff);
   font-size: 13px;
 }
 
 .inventory-matrix-context strong,
 .matrix-conversion-note {
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
   font-weight: 750;
 }
 
@@ -675,7 +675,7 @@ async function shareInventoryReport() {
 }
 
 .inventory-matrix-scroll:focus-visible {
-  outline: 2px solid var(--radar-cyan);
+  outline: 2px solid var(--color-accent);
   outline-offset: -2px;
 }
 
@@ -685,7 +685,7 @@ async function shareInventoryReport() {
   border-spacing: 0;
   border-collapse: separate;
   table-layout: fixed;
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
@@ -706,8 +706,8 @@ async function shareInventoryReport() {
 .inventory-matrix-table td {
   height: 48px;
   padding: 7px 12px;
-  border-right: 1px solid var(--radar-line);
-  border-bottom: 1px solid var(--radar-line);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   text-align: right;
   vertical-align: middle;
 }
@@ -718,7 +718,7 @@ async function shareInventoryReport() {
 
 .inventory-matrix-table thead th {
   height: 42px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: #f6f8f7;
   font-size: 12px;
   font-weight: 800;
@@ -737,7 +737,7 @@ async function shareInventoryReport() {
 
 .inventory-matrix-table tbody th,
 .inventory-matrix-table tbody td {
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .inventory-matrix-table tbody th strong,
@@ -748,7 +748,7 @@ async function shareInventoryReport() {
 
 .inventory-matrix-table tbody th strong span {
   margin-left: 4px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-weight: 650;
 }
 
@@ -756,7 +756,7 @@ async function shareInventoryReport() {
 .inventory-matrix-table tfoot th small {
   display: block;
   margin-top: 2px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 650;
   white-space: nowrap;
@@ -771,33 +771,33 @@ async function shareInventoryReport() {
 
 .inventory-matrix-table tbody tr.today th,
 .inventory-matrix-table tbody tr.today td {
-  background: var(--radar-cyan-soft);
+  background: var(--color-accent-soft);
 }
 
 .inventory-matrix-table tbody tr.today th {
-  box-shadow: inset 3px 0 var(--radar-cyan);
+  box-shadow: inset 3px 0 var(--color-accent);
 }
 
 .inventory-matrix-table tbody tr.missing td b {
-  color: color-mix(in srgb, var(--radar-muted) 72%, transparent);
+  color: color-mix(in srgb, var(--color-text-muted) 72%, transparent);
 }
 
 .inventory-matrix-table .matrix-total-column {
-  background: color-mix(in srgb, var(--radar-cyan) 4%, #ffffff);
+  background: color-mix(in srgb, var(--color-accent) 4%, #ffffff);
   font-weight: 850;
 }
 
 .inventory-matrix-table tfoot th,
 .inventory-matrix-table tfoot td {
-  background: color-mix(in srgb, var(--radar-cyan) 8%, #ffffff);
+  background: color-mix(in srgb, var(--color-accent) 8%, #ffffff);
 }
 
 .inventory-matrix-table tfoot .matrix-week-total > * {
-  border-top: 2px solid var(--radar-cyan);
+  border-top: 2px solid var(--color-accent);
 }
 
 .inventory-matrix-table tfoot .matrix-week-average > * {
-  background: color-mix(in srgb, var(--radar-cyan) 4%, #ffffff);
+  background: color-mix(in srgb, var(--color-accent) 4%, #ffffff);
 }
 
 @keyframes inventory-share-spin {

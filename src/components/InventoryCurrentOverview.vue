@@ -92,9 +92,9 @@ function deltaTone(value: number | null) {
 <style scoped>
 .inventory-current-panel {
   overflow: hidden;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 9px;
-  background: var(--radar-surface);
+  background: var(--color-surface);
 }
 
 .inventory-current-head {
@@ -104,26 +104,26 @@ function deltaTone(value: number | null) {
   justify-content: space-between;
   gap: 20px;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .inventory-current-eyebrow {
   margin-bottom: 2px;
-  color: var(--radar-cyan-strong) !important;
+  color: var(--color-accent-strong) !important;
   font-size: 12px !important;
   font-weight: 850;
   letter-spacing: .08em;
 }
 
 .inventory-current-head h2 {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 21px;
   line-height: 1.25;
 }
 
 .inventory-current-head p:last-child {
   margin-top: 3px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 13px !important;
   line-height: 1.45;
 }
@@ -133,19 +133,19 @@ function deltaTone(value: number | null) {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border: 1px solid color-mix(in srgb, var(--radar-success) 36%, var(--radar-line));
+  border: 1px solid color-mix(in srgb, var(--color-success) 36%, var(--color-border));
   border-radius: 999px;
-  color: var(--radar-success);
-  background: color-mix(in srgb, var(--radar-success) 8%, #ffffff);
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 8%, #ffffff);
   font-size: 13px;
   font-weight: 850;
   white-space: nowrap;
 }
 
 .inventory-current-badge.incomplete {
-  border-color: color-mix(in srgb, var(--radar-amber) 42%, var(--radar-line));
-  color: var(--radar-amber-strong);
-  background: var(--radar-amber-soft);
+  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border));
+  color: var(--color-warning-strong);
+  background: var(--color-warning-soft);
 }
 
 .inventory-current-list {
@@ -156,8 +156,8 @@ function deltaTone(value: number | null) {
 .inventory-current-account {
   min-width: 0;
   padding: 13px 14px 0;
-  border-right: 1px solid var(--radar-line);
-  background: #ffffff;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .inventory-current-account:last-child {
@@ -175,7 +175,7 @@ function deltaTone(value: number | null) {
 .inventory-current-account-head small,
 .inventory-current-values small,
 .inventory-current-delta small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 11px !important;
   font-weight: 700;
   line-height: 1.25;
@@ -195,7 +195,7 @@ function deltaTone(value: number | null) {
 }
 
 .inventory-current-values strong {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 18px;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
@@ -206,8 +206,8 @@ function deltaTone(value: number | null) {
   min-height: 46px;
   margin: 12px -14px 0;
   padding: 8px 14px;
-  border-top: 1px solid var(--radar-line);
-  background: var(--radar-surface-2);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
 }
 
 .inventory-current-delta {
@@ -223,20 +223,20 @@ function deltaTone(value: number | null) {
 }
 
 .inventory-current-baseline {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px !important;
 }
 
-.positive { color: var(--radar-success); }
-.negative { color: var(--radar-danger); }
-.neutral { color: var(--radar-muted); }
+.positive { color: var(--color-success); }
+.negative { color: var(--color-danger); }
+.neutral { color: var(--color-text-muted); }
 
 .inventory-current-note {
   margin: 0;
   padding: 9px 16px;
-  border-top: 1px solid var(--radar-line);
-  color: var(--radar-muted);
-  background: var(--radar-surface-2);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
   font-size: 12px !important;
   line-height: 1.45;
 }
@@ -247,7 +247,7 @@ function deltaTone(value: number | null) {
   }
 
   .inventory-current-account {
-    border-bottom: 1px solid var(--radar-line);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .inventory-current-account:nth-child(2n) {
@@ -292,7 +292,7 @@ function deltaTone(value: number | null) {
     gap: 6px 10px;
     padding: 10px 12px;
     border-right: 0;
-    border-bottom: 1px solid var(--radar-line);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .inventory-current-account:last-child {
@@ -331,7 +331,7 @@ function deltaTone(value: number | null) {
     min-height: 0;
     margin: 0;
     padding: 6px 0 0;
-    border-top: 1px solid var(--radar-line);
+    border-top: 1px solid var(--color-border);
     background: transparent;
   }
 

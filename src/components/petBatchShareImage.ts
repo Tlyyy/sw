@@ -1,5 +1,6 @@
 import type { PetDetailShareData, PetDetailShareMetric } from "./petDetailShareImage";
 import { appName } from "../app/brand";
+import { shareImagePalette as palette } from "../utils/shareImagePalette";
 
 export interface PetBatchShareImageOptions {
   dataDate: string;
@@ -118,20 +119,20 @@ function drawHeader(
 ) {
   context.textBaseline = "top";
   context.textAlign = "left";
-  context.fillStyle = "#006b63";
+  context.fillStyle = palette.brand.primary;
   setFont(context, 28, 850);
   context.fillText(appName, 52, 36);
 
-  context.fillStyle = "#132522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 42, 880);
   context.fillText("宠物合集", 52, 78);
 
   context.textAlign = "right";
-  context.fillStyle = "#6f817d";
+  context.fillStyle = palette.text.muted;
   setFont(context, 17, 700);
   context.fillText(`数据 · ${dataDate}`, 1028, 39);
 
-  context.strokeStyle = "#cfddda";
+  context.strokeStyle = palette.border.media;
   context.lineWidth = 2;
   context.beginPath();
   context.moveTo(52, 145);
@@ -151,13 +152,13 @@ function drawDataBand(
 ) {
   const titleWidth = 58;
   const cellWidth = (width - titleWidth) / Math.max(metrics.length, 1);
-  fillRoundedRect(context, x, y, width, 60, 10, "#f4f8f7");
+  fillRoundedRect(context, x, y, width, 60, 10, palette.surface.muted);
   context.fillStyle = accountTone;
   context.textAlign = "center";
   context.textBaseline = "middle";
   setFont(context, 13, 850);
   context.fillText(title, x + titleWidth / 2, y + 30);
-  context.strokeStyle = "#dce6e3";
+  context.strokeStyle = palette.border.default;
   context.lineWidth = 1;
   context.beginPath();
   context.moveTo(x + titleWidth, y + 10);
@@ -168,15 +169,15 @@ function drawDataBand(
     const centerX = x + titleWidth + cellWidth * index + cellWidth / 2;
     context.textAlign = "center";
     context.textBaseline = "top";
-    context.fillStyle = "#7a8986";
+    context.fillStyle = palette.text.muted;
     setFont(context, 11, 750);
     context.fillText(fitText(context, metric.label, cellWidth - 8), centerX, y + 9);
-    context.fillStyle = "#152724";
+    context.fillStyle = palette.text.primary;
     setFont(context, valueSize, 850);
     context.fillText(fitText(context, metric.value || "—", cellWidth - 8), centerX, y + 29);
 
     if (index < metrics.length - 1) {
-      context.strokeStyle = "#e0e8e6";
+      context.strokeStyle = palette.border.subtle;
       context.lineWidth = 1;
       context.beginPath();
       context.moveTo(x + titleWidth + cellWidth * (index + 1), y + 10);
@@ -192,12 +193,20 @@ function isStrengtheningSkill(skill: string) {
 
 function skillChipColors(skill: string, accountTone: string, charm: boolean) {
   if (charm) {
-    return { fill: "#fff6e6", stroke: "#ead3a8", text: "#755006" };
+    return {
+      fill: palette.status.warning.background,
+      stroke: palette.status.warning.borderSoft,
+      text: palette.status.warning.text,
+    };
   }
   if (isStrengtheningSkill(skill)) {
-    return { fill: "#e8f4ef", stroke: "#b9dcca", text: "#08765a" };
+    return {
+      fill: palette.status.positive.backgroundStrong,
+      stroke: palette.status.positive.borderSoft,
+      text: palette.status.positive.foreground,
+    };
   }
-  return { fill: `${accountTone}0d`, stroke: `${accountTone}2e`, text: "#314641" };
+  return { fill: `${accountTone}0d`, stroke: `${accountTone}2e`, text: palette.text.strong };
 }
 
 function displaySkillLabel(skill: string, charm: boolean) {
@@ -266,7 +275,7 @@ function drawSkillGroups(
   const charms = skills.filter((skill) => skill.includes("(符)"));
   const baseSkills = skills.filter((skill) => !skill.includes("(符)"));
   if (!baseSkills.length && !charms.length) {
-    context.fillStyle = "#7a8986";
+    context.fillStyle = palette.text.muted;
     context.textAlign = "left";
     context.textBaseline = "middle";
     setFont(context, 12, 700);
@@ -298,12 +307,12 @@ function drawPetCard(
   height: number,
 ) {
   context.save();
-  context.shadowColor = "rgba(10, 41, 35, .08)";
+  context.shadowColor = palette.shadow.card;
   context.shadowBlur = 20;
   context.shadowOffsetY = 6;
-  fillRoundedRect(context, x, y, width, height, 18, "rgba(255, 255, 255, .96)");
+  fillRoundedRect(context, x, y, width, height, 18, palette.surface.glassStrong);
   context.restore();
-  strokeRoundedRect(context, x, y, width, height, 18, "#cedbd8", 2);
+  strokeRoundedRect(context, x, y, width, height, 18, palette.border.media, 2);
   fillRoundedRect(context, x, y, 7, height, 4, data.accountTone);
 
   fillRoundedRect(context, x + 20, y + 17, 70, 42, 11, `${data.accountTone}12`);
@@ -316,10 +325,10 @@ function drawPetCard(
 
   context.textAlign = "left";
   context.textBaseline = "top";
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 23, 850);
   context.fillText(fitText(context, data.petName, width - 130), x + 106, y + 13);
-  context.fillStyle = "#6f7f7c";
+  context.fillStyle = palette.text.muted;
   setFont(context, 13, 700);
   context.fillText(fitText(context, data.role, width - 132), x + 106, y + 44);
 
@@ -335,7 +344,7 @@ function drawPetCard(
     12,
   );
 
-  context.strokeStyle = "#dce6e3";
+  context.strokeStyle = palette.border.default;
   context.lineWidth = 1;
   context.beginPath();
   context.moveTo(x + 20, y + 222);
@@ -370,12 +379,12 @@ export async function createPetBatchShareImage(
 
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
-  context.fillStyle = "#edf3f1";
+  context.fillStyle = palette.canvas.background;
   context.fillRect(0, 0, WIDTH, height);
   const backdrop = context.createLinearGradient(0, 0, WIDTH, height);
-  backdrop.addColorStop(0, "rgba(0, 121, 111, .12)");
-  backdrop.addColorStop(.52, "rgba(255, 255, 255, 0)");
-  backdrop.addColorStop(1, "rgba(24, 90, 76, .08)");
+  backdrop.addColorStop(0, palette.gradient.tealGlow);
+  backdrop.addColorStop(.52, palette.gradient.transparent);
+  backdrop.addColorStop(1, palette.gradient.forestGlow);
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, height);
 

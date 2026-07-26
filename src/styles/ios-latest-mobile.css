@@ -20,19 +20,19 @@
     --ios26-type-tab-label: 11px;
     --ios26-leading-tab-label: 13px;
 
-    --ios-system-background: #f4f6f9;
-    --ios-secondary-system-background: #ffffff;
-    --ios-tertiary-system-background: #eef1f5;
-    --ios-elevated-background: #ffffff;
-    --ios-primary-label: #111827;
-    --ios-secondary-label: #667085;
-    --ios-tertiary-label: #8c95a3;
-    --ios-separator: rgba(60, 60, 67, 0.16);
-    --ios-opaque-separator: #d7dbe2;
-    --ios-tint: var(--ios26-accent, #d35c00);
-    --ios-tint-soft: rgba(211, 92, 0, 0.1);
-    --ios-regular-glass-fill: rgba(247, 249, 253, 0.46);
-    --ios-regular-glass-border: rgba(255, 255, 255, 0.58);
+    --ios-system-background: var(--color-mobile-canvas);
+    --ios-secondary-system-background: var(--color-surface);
+    --ios-tertiary-system-background: var(--color-mobile-surface-subtle);
+    --ios-elevated-background: var(--color-surface-elevated);
+    --ios-primary-label: var(--color-text);
+    --ios-secondary-label: var(--color-text-faint);
+    --ios-tertiary-label: var(--color-text-tertiary);
+    --ios-separator: var(--color-separator);
+    --ios-opaque-separator: var(--color-separator-opaque);
+    --ios-tint: var(--color-brand);
+    --ios-tint-soft: var(--color-mobile-tint-soft);
+    --ios-regular-glass-fill: var(--color-glass-fill);
+    --ios-regular-glass-border: var(--color-glass-border);
     --ios-regular-glass-filter: blur(22px) saturate(175%) contrast(108%) brightness(101%);
     --ios-regular-glass-shadow:
       0 12px 30px rgba(28, 39, 57, 0.13),
@@ -380,9 +380,9 @@
     gap: 3px;
     margin-top: 14px;
     padding: 3px;
-    border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
     border-radius: 12px;
-    background: color-mix(in srgb, var(--soft) 82%, transparent);
+    background: color-mix(in srgb, var(--color-surface-subtle) 82%, transparent);
   }
 
   .settings-page .appearance-picker button {
@@ -391,7 +391,7 @@
     padding: 0 12px;
     border: 0;
     border-radius: 9px;
-    color: var(--muted);
+    color: var(--color-text-muted);
     background: transparent;
     font-family: inherit;
     font-size: 15px;
@@ -401,14 +401,14 @@
   }
 
   .settings-page .appearance-picker button.active {
-    color: var(--ink);
+    color: var(--color-text);
     background: var(--panel);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.06);
   }
 
   .settings-page .appearance-note {
     margin-top: 9px;
-    color: var(--muted);
+    color: var(--color-text-muted);
     font-size: 13px;
     line-height: 18px;
   }
@@ -580,19 +580,19 @@
 }
 
 html[data-theme="dark"] {
-  --ios-system-background: #000000;
-  --ios-secondary-system-background: #1c1c1e;
-  --ios-tertiary-system-background: #2c2c2e;
-  --ios-elevated-background: #1c1c1e;
-  --ios-primary-label: #ffffff;
-  --ios-secondary-label: rgba(235, 235, 245, 0.6);
-  --ios-tertiary-label: rgba(235, 235, 245, 0.3);
-  --ios-separator: rgba(84, 84, 88, 0.65);
-  --ios-opaque-separator: #38383a;
-  --ios-tint: #ff9f0a;
-  --ios-tint-soft: rgba(255, 159, 10, 0.12);
-  --ios-regular-glass-fill: rgba(44, 44, 46, 0.52);
-  --ios-regular-glass-border: rgba(255, 255, 255, 0.12);
+  --ios-system-background: var(--color-mobile-canvas);
+  --ios-secondary-system-background: var(--color-surface);
+  --ios-tertiary-system-background: var(--color-mobile-surface-subtle);
+  --ios-elevated-background: var(--color-surface-elevated);
+  --ios-primary-label: var(--color-text);
+  --ios-secondary-label: var(--color-text-muted);
+  --ios-tertiary-label: var(--color-text-faint);
+  --ios-separator: var(--color-separator);
+  --ios-opaque-separator: var(--color-separator-opaque);
+  --ios-tint: var(--color-brand);
+  --ios-tint-soft: var(--color-mobile-tint-soft);
+  --ios-regular-glass-fill: var(--color-glass-fill);
+  --ios-regular-glass-border: var(--color-glass-border);
   --ios-regular-glass-filter: blur(22px) saturate(155%) contrast(108%) brightness(96%);
   --ios-regular-glass-shadow:
     0 14px 34px rgba(0, 0, 0, 0.42),

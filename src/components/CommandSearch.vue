@@ -540,8 +540,8 @@ function keyboard(event: KeyboardEvent) {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  color: var(--muted);
-  background: var(--soft);
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
 }
 
 .command-clear :deep(svg) {

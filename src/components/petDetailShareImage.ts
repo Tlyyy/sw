@@ -1,4 +1,5 @@
 import { appName } from "../app/brand";
+import { shareImagePalette as palette } from "../utils/shareImagePalette";
 
 export interface PetDetailShareMetric {
   label: string;
@@ -136,15 +137,15 @@ function drawMetricRow(
     const centerX = x + cellWidth * index + cellWidth / 2;
     context.textAlign = "center";
     context.textBaseline = "top";
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 15, 700);
     context.fillText(fitText(context, metric.label, cellWidth - 20), centerX, y);
-    context.fillStyle = "#142522";
+    context.fillStyle = palette.text.primary;
     setFont(context, valueSize, 850);
     context.fillText(fitText(context, metric.value || "—", cellWidth - 20), centerX, y + 28);
 
     if (index < metrics.length - 1) {
-      context.strokeStyle = "#dce6e3";
+      context.strokeStyle = palette.border.default;
       context.lineWidth = 1;
       context.beginPath();
       context.moveTo(x + cellWidth * (index + 1), y + 2);
@@ -164,29 +165,29 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
 
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
-  context.fillStyle = "#edf3f1";
+  context.fillStyle = palette.canvas.background;
   context.fillRect(0, 0, WIDTH, HEIGHT);
   const backdrop = context.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  backdrop.addColorStop(0, "rgba(0, 121, 111, .12)");
-  backdrop.addColorStop(.56, "rgba(255, 255, 255, 0)");
+  backdrop.addColorStop(0, palette.gradient.tealGlow);
+  backdrop.addColorStop(.56, palette.gradient.transparent);
   backdrop.addColorStop(1, `${data.accountTone}16`);
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, HEIGHT);
 
   context.textBaseline = "top";
   context.textAlign = "left";
-  context.fillStyle = "#006b63";
+  context.fillStyle = palette.brand.primary;
   setFont(context, 30, 850);
   context.fillText(appName, 56, 38);
-  context.fillStyle = "#6c7d79";
+  context.fillStyle = palette.text.muted;
   setFont(context, 18, 700);
   context.fillText("宠物档案", 56, 80);
   context.textAlign = "right";
   context.fillText(`数据 · ${data.capturedAt || "待确认"}`, 1024, 51);
 
   const summaryY = 124;
-  fillRoundedRect(context, 48, summaryY, 984, 184, 20, "rgba(255, 255, 255, .94)");
-  strokeRoundedRect(context, 48, summaryY, 984, 184, 20, "#d2dfdc", 2);
+  fillRoundedRect(context, 48, summaryY, 984, 184, 20, palette.surface.glass);
+  strokeRoundedRect(context, 48, summaryY, 984, 184, 20, palette.border.strong, 2);
   fillRoundedRect(context, 48, summaryY, 8, 184, 4, data.accountTone);
 
   fillRoundedRect(context, 76, 151, 104, 62, 14, `${data.accountTone}14`);
@@ -199,48 +200,48 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
 
   context.textAlign = "left";
   context.textBaseline = "top";
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 36, 850);
   context.fillText(fitText(context, data.petName, 390), 202, 145);
-  context.fillStyle = "#6a7c78";
+  context.fillStyle = palette.text.muted;
   setFont(context, 17, 650);
   context.fillText(fitText(context, `${data.levelLabel} · ${data.meta}`, 548), 202, 197);
 
-  fillRoundedRect(context, 806, 148, 194, 46, 13, "#e4f2ee");
-  context.fillStyle = "#08765a";
+  fillRoundedRect(context, 806, 148, 194, 46, 13, palette.status.positive.background);
+  context.fillStyle = palette.status.positive.foreground;
   setFont(context, 18, 850);
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(fitText(context, data.role, 162), 903, 171);
-  context.fillStyle = "#71817e";
+  context.fillStyle = palette.text.muted;
   setFont(context, 15, 700);
   context.textBaseline = "top";
   context.fillText(`${data.skills.length} 技能`, 903, 205);
 
-  context.strokeStyle = "#e0e8e6";
+  context.strokeStyle = palette.border.subtle;
   context.lineWidth = 1;
   context.beginPath();
   context.moveTo(76, 235);
   context.lineTo(1002, 235);
   context.stroke();
   context.textAlign = "left";
-  context.fillStyle = "#40534f";
+  context.fillStyle = palette.text.body;
   setFont(context, 17, 700);
   const summaryLine = [data.advice, data.tags.slice(0, 3).join(" · ")].filter(Boolean).join("　");
   context.fillText(fitText(context, summaryLine || "资料已确认", 926), 76, 257);
 
   const imageY = 330;
-  fillRoundedRect(context, 48, imageY, 984, 650, 20, "#10211f");
-  strokeRoundedRect(context, 48, imageY, 984, 650, 20, "#cddbd8", 2);
+  fillRoundedRect(context, 48, imageY, 984, 650, 20, palette.media.frame);
+  strokeRoundedRect(context, 48, imageY, 984, 650, 20, palette.border.media, 2);
   context.save();
   roundedRect(context, 62, imageY + 14, 956, 622, 13);
   context.clip();
-  context.fillStyle = "#071411";
+  context.fillStyle = palette.media.background;
   context.fillRect(62, imageY + 14, 956, 622);
   if (screenshot) {
     drawContainedImage(context, screenshot, 62, imageY + 14, 956, 622);
   } else {
-    context.fillStyle = "#9fb0ac";
+    context.fillStyle = palette.text.disabled;
     setFont(context, 22, 700);
     context.textAlign = "center";
     context.textBaseline = "middle";
@@ -249,11 +250,11 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
   context.restore();
 
   const detailY = 1004;
-  fillRoundedRect(context, 48, detailY, 984, 288, 20, "rgba(255, 255, 255, .94)");
-  strokeRoundedRect(context, 48, detailY, 984, 288, 20, "#d2dfdc", 2);
+  fillRoundedRect(context, 48, detailY, 984, 288, 20, palette.surface.glass);
+  strokeRoundedRect(context, 48, detailY, 984, 288, 20, palette.border.strong, 2);
   drawMetricRow(context, data.stats.slice(0, 5), 72, 1035, 936, 25);
 
-  context.strokeStyle = "#dce6e3";
+  context.strokeStyle = palette.border.default;
   context.beginPath();
   context.moveTo(72, 1124);
   context.lineTo(1008, 1124);
@@ -261,17 +262,17 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
 
   drawMetricRow(context, data.aptitudes.slice(0, 6), 72, 1144, 936, 21);
 
-  context.strokeStyle = "#dce6e3";
+  context.strokeStyle = palette.border.default;
   context.beginPath();
   context.moveTo(72, 1231);
   context.lineTo(1008, 1231);
   context.stroke();
   context.textAlign = "left";
   context.textBaseline = "top";
-  context.fillStyle = "#60736f";
+  context.fillStyle = palette.text.caption;
   setFont(context, 15, 750);
   context.fillText("技能", 72, 1251);
-  context.fillStyle = "#233733";
+  context.fillStyle = palette.text.strong;
   setFont(context, 16, 700);
   const highlightedSkills = data.skills
     .slice(0, 5)
@@ -281,7 +282,7 @@ export async function createPetDetailShareImage(data: PetDetailShareData) {
     : highlightedSkills;
   context.fillText(fitText(context, skillSummary || "待确认", 866), 132, 1250);
 
-  context.fillStyle = "#899793";
+  context.fillStyle = palette.text.faint;
   setFont(context, 16, 650);
   context.textAlign = "left";
   context.fillText(`${data.accountId} · ${data.petName}`, 56, 1318);

@@ -1,4 +1,5 @@
 import { appName } from "../../app/brand";
+import { shareImagePalette as palette } from "../../utils/shareImagePalette";
 
 export interface MainlineOverviewShareTask {
   stage: string;
@@ -110,13 +111,13 @@ function drawTask(
 ) {
   context.textAlign = "left";
   context.textBaseline = "top";
-  context.fillStyle = "#71817e";
+  context.fillStyle = palette.text.muted;
   setFont(context, 15, 750);
   context.fillText(task?.stage || fallback, x, y);
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 20, 800);
   context.fillText(fitText(context, task?.title || "—", width), x, y + 25);
-  context.fillStyle = "#697c78";
+  context.fillStyle = palette.text.muted;
   setFont(context, 15, 650);
   context.fillText(fitText(context, task?.due || "", width), x, y + 54);
 }
@@ -125,14 +126,14 @@ function drawAccountCard(context: CanvasRenderingContext2D, account: MainlineOve
   const x = 48;
   const width = 984;
   const height = 202;
-  const palette = {
-    positive: { foreground: "#08765a", background: "#e5f3ef", border: "#0a8a68" },
-    warning: { foreground: "#8a5a00", background: "#fff3dc", border: "#c47a00" },
-    danger: { foreground: "#a33838", background: "#faeaea", border: "#bf4b45" },
+  const statusPalette = {
+    positive: palette.status.positive,
+    warning: palette.status.warning,
+    danger: palette.status.danger,
   }[account.statusTone];
 
-  fillRoundedRect(context, x, y, width, height, 20, "#ffffff");
-  strokeRoundedRect(context, x, y, width, height, 20, "#d5e0de", 2);
+  fillRoundedRect(context, x, y, width, height, 20, palette.surface.default);
+  strokeRoundedRect(context, x, y, width, height, 20, palette.border.strong, 2);
   fillRoundedRect(context, x, y, 8, height, 4, account.accountTone);
 
   fillRoundedRect(context, 76, y + 18, 98, 54, 13, `${account.accountTone}16`);
@@ -146,29 +147,29 @@ function drawAccountCard(context: CanvasRenderingContext2D, account: MainlineOve
   const currentTask = account.tasks[0];
   context.textAlign = "left";
   context.textBaseline = "top";
-  context.fillStyle = "#71817e";
+  context.fillStyle = palette.text.muted;
   setFont(context, 15, 750);
   context.fillText("当前", 196, y + 14);
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 24, 850);
   context.fillText(fitText(context, currentTask?.title || "主线已完成", 520), 196, y + 37);
-  context.fillStyle = "#697c78";
+  context.fillStyle = palette.text.muted;
   setFont(context, 16, 650);
   context.fillText(fitText(context, currentTask?.due || "全部完成", 520), 196, y + 67);
 
-  fillRoundedRect(context, 782, y + 16, 220, 44, 13, palette.background);
-  context.fillStyle = palette.foreground;
+  fillRoundedRect(context, 782, y + 16, 220, 44, 13, statusPalette.background);
+  context.fillStyle = statusPalette.foreground;
   setFont(context, 18, 850);
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(fitText(context, account.resourceStatus, 188), 892, y + 38);
-  context.fillStyle = "#71817e";
+  context.fillStyle = palette.text.muted;
   setFont(context, 14, 650);
   context.textAlign = "right";
   context.textBaseline = "top";
   context.fillText(fitText(context, `整线 ${account.finish}`, 300), 1002, y + 67);
 
-  context.strokeStyle = "#dfe7e5";
+  context.strokeStyle = palette.border.subtle;
   context.lineWidth = 1;
   context.beginPath();
   context.moveTo(76, y + 92);
@@ -178,18 +179,18 @@ function drawAccountCard(context: CanvasRenderingContext2D, account: MainlineOve
   drawTask(context, account.tasks[1], 76, y + 108, 230, "下一步");
   drawTask(context, account.tasks[2], 332, y + 108, 230, "再下一步");
 
-  context.strokeStyle = "#dfe7e5";
+  context.strokeStyle = palette.border.subtle;
   context.beginPath();
   context.moveTo(586, y + 106);
   context.lineTo(586, y + 184);
   context.stroke();
 
-  context.fillStyle = "#71817e";
+  context.fillStyle = palette.text.muted;
   setFont(context, 15, 750);
   context.textAlign = "left";
   context.textBaseline = "top";
   context.fillText("当前库存", 614, y + 109);
-  context.fillStyle = "#40534f";
+  context.fillStyle = palette.text.body;
   setFont(context, 16, 700);
   const resourceLine = `专 ${account.resources.dedicatedEggs}　普 ${account.resources.regularEggs}　银 ${account.resources.silverWan}万　碎 ${account.resources.innerShards}`;
   context.fillText(fitText(context, resourceLine, 388), 614, y + 139);
@@ -202,33 +203,33 @@ export function createMainlineOverviewShareImage(data: MainlineOverviewShareData
   const context = canvas.getContext("2d");
   if (!context) throw new Error("当前浏览器无法生成图片");
 
-  context.fillStyle = "#edf3f1";
+  context.fillStyle = palette.canvas.background;
   context.fillRect(0, 0, WIDTH, HEIGHT);
   const backdrop = context.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  backdrop.addColorStop(0, "rgba(0, 121, 111, .11)");
-  backdrop.addColorStop(.55, "rgba(255, 255, 255, 0)");
-  backdrop.addColorStop(1, "rgba(18, 103, 143, .08)");
+  backdrop.addColorStop(0, palette.gradient.tealGlow);
+  backdrop.addColorStop(.55, palette.gradient.transparent);
+  backdrop.addColorStop(1, palette.gradient.blueGlow);
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, HEIGHT);
 
   context.textBaseline = "top";
   context.textAlign = "left";
-  context.fillStyle = "#006b63";
+  context.fillStyle = palette.brand.primary;
   setFont(context, 32, 850);
   context.fillText(appName, 56, 38);
-  context.fillStyle = "#60736f";
+  context.fillStyle = palette.text.caption;
   setFont(context, 21, 650);
   context.textAlign = "right";
   context.fillText(`库存 ${data.inventoryDate}`, 1024, 48);
 
   context.textAlign = "left";
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 38, 850);
   context.fillText("五号主线推进轨道", 56, 96);
 
   data.accounts.slice(0, 5).forEach((account, index) => drawAccountCard(context, account, 166 + index * 214));
 
-  context.fillStyle = "#899793";
+  context.fillStyle = palette.text.faint;
   setFont(context, 17, 650);
   context.textAlign = "center";
   context.textBaseline = "top";

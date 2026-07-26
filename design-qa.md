@@ -500,3 +500,50 @@ final result: passed
 - [P3] Web `backdrop-filter` 无法实现原生 Liquid Glass 的实时物理位移贴图；当前以背景透传、明暗调整、几何高光、折射边和触摸形变做稳定近似。
 
 final result: passed
+
+## 语义色系统重构（2026-07-26）
+
+**Source check**
+
+- Apple Design Resources（iOS / iPadOS 27）：https://developer.apple.com/design/resources/
+- Apple Dark Mode：采用语义色并让颜色随外观动态切换，避免在组件中硬编码浅色/暗色值：https://developer.apple.com/design/human-interface-guidelines/dark-mode
+- Apple Materials：玻璃高光、材质填充和内容色分层处理，不把材质色当普通背景色复用：https://developer.apple.com/design/human-interface-guidelines/materials
+
+**Implementation**
+
+- 新增 `src/styles/colors.css` 作为唯一应用级语义色入口，定义 60 个 token，并为浅色/暗色提供同名映射。
+- `tokens.css`、`theme.css`、`workbench.css`、Radar 与 iOS 样式继续保留兼容变量，但颜色值统一映射到语义层；组件优先消费 `--color-*`。
+- 共享图生成器统一改用 `src/utils/shareImagePalette.ts`；9 个 Canvas 生成模块不再包含内联 hex / rgb(a) 颜色。
+- 账号色统一为 FC / LG1 / LG2 / PT / MYT 五个语义映射；成功、警告、危险、信息、品牌与中性色不再互相借用。
+- 对具有局部视觉含义的 Radar、Orbit、iOS Liquid Glass 渐变和高光保留精确值，避免用全局替换破坏现有明暗层级。
+
+**Color inventory**
+
+- 重构前：1,315 个 hex（567 种）、495 个 rgb(a)（348 种）。
+- 重构后：826 个 hex（505 种）、475 个 rgb(a)（355 种）。
+- 排除中央 `colors.css` 与分享图 palette 后，直接颜色为 1,132 处；按重构前同口径约减少 31%。
+- 60 个应用语义 token 中有 58 个已被消费，未解析的 `--color-*` 引用为 0。
+- 仍较集中的局部视觉文件：`radar.css`、`orbit.css`、`TaskSettlementDialog.vue`、`ios26-mobile.css`、`workbench.css`。这些主要是渐变、透明叠层、图表/状态组合与 Liquid Glass 细节，不作为跨组件品牌色来源。
+
+**Rendered and interaction evidence**
+
+- Desktop light：首页与本周小结均完成真实浏览器检查；主导航可从首页进入 `#/week`。
+- Mobile 440px light/dark：本周小结布局、账号色、成功/警告状态、玻璃表面均完成检查；底部“任务”导航可进入 `#/plans/tasks`。
+- 页面标题、有效内容、无框架错误覆盖层均通过；浏览器控制台只有 Vite 连接 debug 日志，无 warning/error。
+- 截图：`C:\Users\T\AppData\Local\Temp\color-refactor-desktop-light.png`、`C:\Users\T\AppData\Local\Temp\color-refactor-desktop-week-light.png`、`C:\Users\T\AppData\Local\Temp\color-refactor-mobile-week-light.png`、`C:\Users\T\AppData\Local\Temp\color-refactor-mobile-week-dark.png`。
+
+**Verification**
+
+- `npx vue-tsc -b --pretty false`：通过。
+- `npm test`：32 files / 149 tests，通过。
+- `npm run build`：通过；保留既有主包 500 kB 提示，体积与基线基本一致。
+- Desktop E2E：25 passed / 23 expected skipped / 0 failed。
+- Mobile E2E：28 passed / 20 expected skipped / 0 failed。
+- `git diff --check`：通过。
+
+**Residual**
+
+- [P3] 仍有组件级装饰色与半透明组合尚未提升为跨组件语义 token；后续新增界面不得直接复用这些字面量，应优先使用 `--color-*`，确有局部含义时在组件根节点定义本地 token。
+- [P3] 分享图采用固定浅色导出 palette，与实时 UI 的明暗主题刻意分离；如未来支持暗色分享图，应新增命名 palette，而不是读取页面 CSS。
+
+final result: passed

@@ -594,29 +594,29 @@ function resetCompletion() {
 
 <style scoped>
 .task-maintenance-page { width: min(100%, 1320px); padding-top: 14px; padding-bottom: 56px; }
-.task-page-intro { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 4px 13px; border-bottom: 1px solid var(--radar-line); }
+.task-page-intro { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 4px 13px; border-bottom: 1px solid var(--color-border); }
 .task-page-intro > div { min-width: 0; }
-.task-page-intro p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.task-page-intro p { color: var(--color-accent-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
 .task-page-intro h1 { margin-top: 1px; font-size: 27px; line-height: 1.2; letter-spacing: -.04em; }
-.task-page-intro span { display: block; margin-top: 3px; color: var(--radar-muted); font-size: 12px; line-height: 1.45; }
+.task-page-intro span { display: block; margin-top: 3px; color: var(--color-text-muted); font-size: 12px; line-height: 1.45; }
 .task-page-intro .button { min-height: 44px; white-space: nowrap; }
-.task-account-overview { overflow: hidden; margin: 16px 0; border: 1px solid var(--radar-line); border-radius: 12px; background: #ffffff; }
-.task-account-overview > header { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 14px; border-bottom: 1px solid var(--radar-line); background: var(--radar-surface-2); }
-.task-account-overview > header p { color: var(--radar-cyan-strong); font-size: 10px; font-weight: 850; letter-spacing: .08em; }
+.task-account-overview { overflow: hidden; margin: 16px 0; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface); }
+.task-account-overview > header { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 14px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-subtle); }
+.task-account-overview > header p { color: var(--color-accent-strong); font-size: 10px; font-weight: 850; letter-spacing: .08em; }
 .task-account-overview > header h2 { margin-top: 1px; font-size: 17px; }
-.task-account-overview > header > span { color: var(--radar-muted); font-size: 11px; font-weight: 750; }
+.task-account-overview > header > span { color: var(--color-text-muted); font-size: 11px; font-weight: 750; }
 .task-account-overview > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.task-account-overview button { min-width: 0; min-height: 94px; display: grid; place-items: center; align-content: center; gap: 2px; padding: 9px 7px; border: 0; border-right: 1px solid var(--radar-line); color: var(--radar-ink); background: #ffffff; font: inherit; }
+.task-account-overview button { min-width: 0; min-height: 94px; display: grid; place-items: center; align-content: center; gap: 2px; padding: 9px 7px; border: 0; border-right: 1px solid var(--color-border); color: var(--color-text); background: var(--color-surface); font: inherit; }
 .task-account-overview button:last-child { border-right: 0; }
-.task-account-overview button.active { color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); }
+.task-account-overview button.active { color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .task-account-overview button strong { font-size: 14px; }
 .task-account-overview button > span { font-size: 12px; font-weight: 850; }
-.task-account-overview button > i { width: 100%; height: 4px; overflow: hidden; margin: 3px 0; border-radius: 999px; background: var(--radar-line); }
-.task-account-overview button > i > b { height: 100%; display: block; border-radius: inherit; background: var(--radar-cyan); }
-.task-account-overview button small { color: var(--radar-muted); font-size: 10px; white-space: nowrap; }
+.task-account-overview button > i { width: 100%; height: 4px; overflow: hidden; margin: 3px 0; border-radius: 999px; background: var(--color-border); }
+.task-account-overview button > i > b { height: 100%; display: block; border-radius: inherit; background: var(--color-accent); }
+.task-account-overview button small { color: var(--color-text-muted); font-size: 10px; white-space: nowrap; }
 .task-ledger-summary {
   overflow: hidden;
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
   font-size: 10px;
   font-weight: 800;
   line-height: 1.35;
@@ -689,7 +689,7 @@ function resetCompletion() {
     font-weight: 700;
   }
   .task-mobile-segments button.active {
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     background: #c95000;
     box-shadow: 0 2px 7px rgba(126, 53, 0, .2);
   }
@@ -705,7 +705,7 @@ function resetCompletion() {
     background: #e9e9ec;
   }
   .task-mobile-filter-button[aria-expanded="true"] {
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     background: #c95000;
   }
   .task-mobile-filter-button :deep(svg) { width: 18px; height: 18px; }
@@ -749,7 +749,7 @@ function resetCompletion() {
     border: 1px solid #d7d7dc;
     border-radius: 10px;
     color: #1d1d1f;
-    background: #ffffff;
+    background: var(--color-surface);
     font: inherit;
     font-size: 14px;
   }
@@ -822,7 +822,7 @@ function resetCompletion() {
     overflow: hidden;
     border: 1px solid #dedee3;
     border-radius: 16px;
-    background: #ffffff;
+    background: var(--color-surface);
     box-shadow: 0 8px 24px rgba(30, 30, 35, .045);
   }
   .task-mobile-drilldown-head {
@@ -883,7 +883,7 @@ function resetCompletion() {
     padding: 8px 11px;
     border: 0;
     color: #1d1d1f;
-    background: #ffffff;
+    background: var(--color-surface);
     font: inherit;
     text-align: left;
     scroll-snap-align: start;
@@ -920,7 +920,7 @@ function resetCompletion() {
   }
   .task-mobile-summary-action {
     border: 0;
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     background: #c95000;
     font: inherit;
     font-size: 12px;
@@ -971,7 +971,7 @@ function resetCompletion() {
     gap: 7px;
     padding-left: 10px;
     border-bottom: 1px solid #e8e8ec;
-    background: #ffffff;
+    background: var(--color-surface);
   }
   .task-mobile-account-group article:last-child { border-bottom: 0; }
   .task-mobile-account-group article.done { opacity: .72; }
@@ -1029,7 +1029,7 @@ function resetCompletion() {
   }
   .task-mobile-row-action {
     border: 0;
-    color: #ffffff;
+    color: var(--color-text-on-strong);
     background: #c95000;
     font: inherit;
     font-size: 12px;
@@ -1045,7 +1045,7 @@ function resetCompletion() {
     border: 1px solid #dedee3;
     border-radius: 16px;
     color: #77777f;
-    background: #ffffff;
+    background: var(--color-surface);
     font-size: 13px;
     text-align: center;
   }

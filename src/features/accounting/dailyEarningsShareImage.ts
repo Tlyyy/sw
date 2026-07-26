@@ -5,6 +5,10 @@ import {
   inventorySilverWithRegularEggsWan,
 } from "../../domain/inventory";
 import { accountIds, type AccountId } from "../../domain/types";
+import {
+  shareImageAccountColors as accountColors,
+  shareImagePalette as palette,
+} from "../../utils/shareImagePalette";
 
 type AccountValueMap = Record<AccountId, number | null>;
 export type DailyEarningsShareMetric = "silverWan" | "silverWithRegularEggsWan";
@@ -40,13 +44,6 @@ const WIDTH = 1080;
 const HEIGHT = 1350;
 const FONT_FAMILY = '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif';
 const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
-const accountColors: Record<AccountId, string> = {
-  FC: "#12678f",
-  LG1: "#6446a6",
-  PT: "#a33838",
-  LG2: "#8a5a00",
-  MYT: "#28764a",
-};
 
 function roundedRect(
   context: CanvasRenderingContext2D,
@@ -134,9 +131,9 @@ function formatValue(value: number | null) {
 }
 
 function valueColor(value: number | null) {
-  if (value === null) return "#8a9996";
-  if (value === 0) return "#40534f";
-  return value > 0 ? "#08765a" : "#b42318";
+  if (value === null) return palette.text.faint;
+  if (value === 0) return palette.text.body;
+  return value > 0 ? palette.status.positive.foreground : palette.status.negative.foreground;
 }
 
 function drawCellText(
@@ -264,14 +261,14 @@ function drawMatrixTable(
   const allRows = [...data.rows, data.weeklyTotal, data.dailyAverage];
   const tableHeight = headerHeight + allRows.length * rowHeight;
 
-  fillRoundedRect(context, x, y, 920, tableHeight, 14, "#ffffff");
-  strokeRoundedRect(context, x, y, 920, tableHeight, 14, "#d7e1df", 2);
-  context.fillStyle = "#f2f6f5";
+  fillRoundedRect(context, x, y, 920, tableHeight, 14, palette.surface.default);
+  strokeRoundedRect(context, x, y, 920, tableHeight, 14, palette.border.strong, 2);
+  context.fillStyle = palette.surface.muted;
   context.fillRect(x + 1, y + 1, 918, headerHeight - 1);
 
-  drawCellText(context, headers[0], x, y + headerHeight / 2, dateWidth, "#617571", 750, 18);
+  drawCellText(context, headers[0], x, y + headerHeight / 2, dateWidth, palette.text.caption, 750, 18);
   headers.slice(1).forEach((header, index) => {
-    const color = accountColors[header as AccountId] || "#617571";
+    const color = accountColors[header as AccountId] || palette.text.caption;
     drawCellText(
       context,
       header,
@@ -288,14 +285,16 @@ function drawMatrixTable(
     const rowY = y + headerHeight + rowIndex * rowHeight;
     const isSummary = rowIndex >= data.rows.length;
     if (isSummary) {
-      context.fillStyle = rowIndex === data.rows.length ? "#e8f3f1" : "#f1f7f5";
+      context.fillStyle = rowIndex === data.rows.length
+        ? palette.status.positive.backgroundStrong
+        : palette.surface.muted;
       context.fillRect(x + 1, rowY, 918, rowHeight - 1);
       if (rowIndex === data.rows.length) {
-        context.fillStyle = "#00796f";
+        context.fillStyle = palette.brand.accent;
         context.fillRect(x + 1, rowY, 918, 3);
       }
     }
-    context.strokeStyle = "#dce5e3";
+    context.strokeStyle = palette.border.default;
     context.lineWidth = 1;
     context.beginPath();
     context.moveTo(x, rowY);
@@ -304,10 +303,10 @@ function drawMatrixTable(
 
     context.textAlign = "left";
     context.textBaseline = "top";
-    context.fillStyle = isSummary ? "#006b63" : "#142522";
+    context.fillStyle = isSummary ? palette.brand.primary : palette.text.primary;
     setFont(context, 20, 850);
     context.fillText(row.label, x + 14, rowY + 13);
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 15, 650);
     context.fillText(row.basis, x + 14, rowY + 41);
 
@@ -328,7 +327,7 @@ function drawMatrixTable(
 
   let columnX = x + dateWidth;
   for (let index = 0; index < 6; index += 1) {
-    context.strokeStyle = "#e0e8e6";
+    context.strokeStyle = palette.border.subtle;
     context.beginPath();
     context.moveTo(columnX, y);
     context.lineTo(columnX, y + tableHeight);
@@ -346,42 +345,42 @@ export function createDailyEarningsShareImage(data: DailyEarningsShareImageData)
 
   context.textBaseline = "top";
   context.textAlign = "left";
-  context.fillStyle = "#eef3f2";
+  context.fillStyle = palette.canvas.background;
   context.fillRect(0, 0, WIDTH, HEIGHT);
   const backdrop = context.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  backdrop.addColorStop(0, "rgba(0, 121, 111, .11)");
-  backdrop.addColorStop(.58, "rgba(255, 255, 255, 0)");
-  backdrop.addColorStop(1, "rgba(18, 103, 143, .07)");
+  backdrop.addColorStop(0, palette.gradient.tealGlow);
+  backdrop.addColorStop(.58, palette.gradient.transparent);
+  backdrop.addColorStop(1, palette.gradient.blueGlow);
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, HEIGHT);
 
-  context.fillStyle = "#006b63";
+  context.fillStyle = palette.brand.primary;
   setFont(context, 34, 800);
   context.fillText(appName, 64, 48);
-  context.fillStyle = "#60736f";
+  context.fillStyle = palette.text.caption;
   setFont(context, 23, 650);
   context.textAlign = "right";
   context.fillText("实际所得周报", WIDTH - 64, 58);
   context.textAlign = "left";
 
-  fillRoundedRect(context, 48, 116, 984, 1182, 30, "#ffffff");
-  strokeRoundedRect(context, 48, 116, 984, 1182, 30, "#d4dfdd", 2);
-  fillRoundedRect(context, 48, 116, 984, 10, 5, "#00796f");
+  fillRoundedRect(context, 48, 116, 984, 1182, 30, palette.surface.default);
+  strokeRoundedRect(context, 48, 116, 984, 1182, 30, palette.border.strong, 2);
+  fillRoundedRect(context, 48, 116, 984, 10, 5, palette.brand.accent);
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 36, 850);
   context.fillText(`五号每日实际所得 · ${data.metricLabel}`, 80, 166);
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 22, 650);
   context.fillText(`${data.weekStart} 至 ${data.weekEnd}`, 80, 216);
-  fillRoundedRect(context, 790, 166, 210, 54, 15, "#e7f3f0");
-  context.fillStyle = "#08765a";
+  fillRoundedRect(context, 790, 166, 210, 54, 15, palette.status.positive.background);
+  context.fillStyle = palette.status.positive.foreground;
   setFont(context, 21, 800);
   context.textAlign = "center";
   context.fillText(`${data.recordedDays} / 7 天已结算`, 895, 181);
   context.textAlign = "left";
 
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 19, 650);
   context.fillText(
     data.conversionNote
@@ -395,11 +394,11 @@ export function createDailyEarningsShareImage(data: DailyEarningsShareImageData)
 
   context.textAlign = "left";
   context.textBaseline = "top";
-  fillRoundedRect(context, 80, 1056, 920, 150, 16, "#f3f7f6");
-  context.fillStyle = "#142522";
+  fillRoundedRect(context, 80, 1056, 920, 150, 16, palette.surface.muted);
+  context.fillStyle = palette.text.primary;
   setFont(context, 20, 850);
   context.fillText("每日结算口径", 106, 1082);
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 17, 650);
   context.fillText("只有连续两天都录入库存，才显示当天所得；缺天或跨天区间不会伪装成单日。", 106, 1122);
   context.fillText(
@@ -410,7 +409,7 @@ export function createDailyEarningsShareImage(data: DailyEarningsShareImageData)
     1155,
   );
 
-  context.fillStyle = "#899793";
+  context.fillStyle = palette.text.faint;
   setFont(context, 17, 650);
   context.textAlign = "left";
   context.fillText(`${data.recordedDays} 天有完整五账号每日结算`, 80, 1260);

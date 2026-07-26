@@ -1,4 +1,8 @@
 import { appName } from "../app/brand";
+import {
+  shareImageAccountColors as accountColors,
+  shareImagePalette as palette,
+} from "../utils/shareImagePalette";
 
 export interface InventoryShareRow {
   label: string;
@@ -52,13 +56,6 @@ export type InventoryReportShareData = InventorySummaryShareData | InventoryMatr
 const WIDTH = 1080;
 const HEIGHT = 1350;
 const FONT_FAMILY = '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif';
-const accountColors: Record<string, string> = {
-  FC: "#12678f",
-  LG1: "#6446a6",
-  LG2: "#8a5a00",
-  PT: "#a33838",
-  MYT: "#28764a",
-};
 
 function roundedRect(
   context: CanvasRenderingContext2D,
@@ -121,8 +118,10 @@ function formatValue(value: number | null, signed = false) {
 }
 
 function valueColor(value: number | null, signed: boolean) {
-  if (!signed || value === null || value === 0) return value === null ? "#8a9996" : "#142522";
-  return value > 0 ? "#08765a" : "#b42318";
+  if (!signed || value === null || value === 0) {
+    return value === null ? palette.text.faint : palette.text.primary;
+  }
+  return value > 0 ? palette.status.positive.foreground : palette.status.negative.foreground;
 }
 
 function drawCellText(
@@ -157,14 +156,14 @@ function drawSummaryTable(
   const totalHeight = 62;
   const tableHeight = headerHeight + rows.length * rowHeight + totalHeight;
 
-  fillRoundedRect(context, x, y, 920, tableHeight, 14, "#ffffff");
-  strokeRoundedRect(context, x, y, 920, tableHeight, 14, "#d7e1df", 2);
+  fillRoundedRect(context, x, y, 920, tableHeight, 14, palette.surface.default);
+  strokeRoundedRect(context, x, y, 920, tableHeight, 14, palette.border.strong, 2);
 
-  context.fillStyle = "#f2f6f5";
+  context.fillStyle = palette.surface.muted;
   context.fillRect(x + 1, y + 1, 918, headerHeight - 1);
   let columnX = x;
   headers.forEach((header, index) => {
-    drawCellText(context, header, columnX, y + headerHeight / 2, widths[index], "#617571", 750, 18);
+    drawCellText(context, header, columnX, y + headerHeight / 2, widths[index], palette.text.caption, 750, 18);
     columnX += widths[index];
   });
 
@@ -174,12 +173,12 @@ function drawSummaryTable(
     const rowY = y + headerHeight + rowIndex * rowHeight;
     const height = isTotal ? totalHeight : rowHeight;
     if (isTotal) {
-      context.fillStyle = "#e8f3f1";
+      context.fillStyle = palette.status.positive.backgroundStrong;
       context.fillRect(x + 1, rowY, 918, height - 1);
-      context.fillStyle = "#00796f";
+      context.fillStyle = palette.brand.accent;
       context.fillRect(x + 1, rowY, 918, 3);
     }
-    context.strokeStyle = "#dce5e3";
+    context.strokeStyle = palette.border.default;
     context.lineWidth = 1;
     context.beginPath();
     context.moveTo(x, rowY);
@@ -192,7 +191,9 @@ function drawSummaryTable(
       x,
       rowY + height / 2,
       widths[0],
-      isTotal ? "#006b63" : (accountColors[row.label] || "#142522"),
+      isTotal
+        ? palette.brand.primary
+        : (accountColors[row.label as keyof typeof accountColors] || palette.text.primary),
       850,
       isTotal ? 22 : 21,
     );
@@ -215,7 +216,7 @@ function drawSummaryTable(
   columnX = x;
   widths.slice(0, -1).forEach((width) => {
     columnX += width;
-    context.strokeStyle = "#e0e8e6";
+    context.strokeStyle = palette.border.subtle;
     context.beginPath();
     context.moveTo(columnX, y);
     context.lineTo(columnX, y + tableHeight);
@@ -237,14 +238,14 @@ function drawMatrixTable(context: CanvasRenderingContext2D, data: InventoryMatri
   ];
   const tableHeight = headerHeight + allRows.length * rowHeight;
 
-  fillRoundedRect(context, x, y, 920, tableHeight, 14, "#ffffff");
-  strokeRoundedRect(context, x, y, 920, tableHeight, 14, "#d7e1df", 2);
-  context.fillStyle = "#f2f6f5";
+  fillRoundedRect(context, x, y, 920, tableHeight, 14, palette.surface.default);
+  strokeRoundedRect(context, x, y, 920, tableHeight, 14, palette.border.strong, 2);
+  context.fillStyle = palette.surface.muted;
   context.fillRect(x + 1, y + 1, 918, headerHeight - 1);
 
-  drawCellText(context, headers[0], x, y + headerHeight / 2, dateWidth, "#617571", 750, 18);
+  drawCellText(context, headers[0], x, y + headerHeight / 2, dateWidth, palette.text.caption, 750, 18);
   headers.slice(1).forEach((header, index) => {
-    const color = accountColors[header] || "#617571";
+    const color = accountColors[header as keyof typeof accountColors] || palette.text.caption;
     drawCellText(context, header, x + dateWidth + index * valueWidth, y + headerHeight / 2, valueWidth, color, 800, 18);
   });
 
@@ -252,14 +253,16 @@ function drawMatrixTable(context: CanvasRenderingContext2D, data: InventoryMatri
     const rowY = y + headerHeight + rowIndex * rowHeight;
     const isSummary = rowIndex >= data.rows.length;
     if (isSummary) {
-      context.fillStyle = rowIndex === data.rows.length ? "#e8f3f1" : "#f1f7f5";
+      context.fillStyle = rowIndex === data.rows.length
+        ? palette.status.positive.backgroundStrong
+        : palette.surface.muted;
       context.fillRect(x + 1, rowY, 918, rowHeight - 1);
       if (rowIndex === data.rows.length) {
-        context.fillStyle = "#00796f";
+        context.fillStyle = palette.brand.accent;
         context.fillRect(x + 1, rowY, 918, 3);
       }
     }
-    context.strokeStyle = "#dce5e3";
+    context.strokeStyle = palette.border.default;
     context.beginPath();
     context.moveTo(x, rowY);
     context.lineTo(x + 920, rowY);
@@ -267,10 +270,10 @@ function drawMatrixTable(context: CanvasRenderingContext2D, data: InventoryMatri
 
     context.textAlign = "left";
     context.textBaseline = "top";
-    context.fillStyle = isSummary ? "#006b63" : "#142522";
+    context.fillStyle = isSummary ? palette.brand.primary : palette.text.primary;
     setFont(context, 20, 850);
     context.fillText(row.label, x + 14, rowY + 13);
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 15, 650);
     context.fillText(row.basis, x + 14, rowY + 41);
 
@@ -290,7 +293,7 @@ function drawMatrixTable(context: CanvasRenderingContext2D, data: InventoryMatri
 
   let columnX = x + dateWidth;
   for (let index = 0; index < 6; index += 1) {
-    context.strokeStyle = "#e0e8e6";
+    context.strokeStyle = palette.border.subtle;
     context.beginPath();
     context.moveTo(columnX, y);
     context.lineTo(columnX, y + tableHeight);
@@ -316,60 +319,60 @@ export function createInventoryReportShareImage(data: InventoryReportShareData) 
   if (!context) throw new Error("当前浏览器无法生成图片");
 
   context.textBaseline = "top";
-  context.fillStyle = "#eef3f2";
+  context.fillStyle = palette.canvas.background;
   context.fillRect(0, 0, WIDTH, HEIGHT);
   const backdrop = context.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  backdrop.addColorStop(0, "rgba(0, 121, 111, .11)");
-  backdrop.addColorStop(.58, "rgba(255, 255, 255, 0)");
-  backdrop.addColorStop(1, "rgba(18, 103, 143, .07)");
+  backdrop.addColorStop(0, palette.gradient.tealGlow);
+  backdrop.addColorStop(.58, palette.gradient.transparent);
+  backdrop.addColorStop(1, palette.gradient.blueGlow);
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, HEIGHT);
 
-  context.fillStyle = "#006b63";
+  context.fillStyle = palette.brand.primary;
   setFont(context, 34, 800);
   context.fillText(appName, 64, 48);
-  context.fillStyle = "#60736f";
+  context.fillStyle = palette.text.caption;
   setFont(context, 23, 650);
   context.textAlign = "right";
   context.fillText("库存周报", WIDTH - 64, 58);
   context.textAlign = "left";
 
-  fillRoundedRect(context, 48, 116, 984, 1182, 30, "#ffffff");
-  strokeRoundedRect(context, 48, 116, 984, 1182, 30, "#d4dfdd", 2);
-  fillRoundedRect(context, 48, 116, 984, 10, 5, "#00796f");
+  fillRoundedRect(context, 48, 116, 984, 1182, 30, palette.surface.default);
+  strokeRoundedRect(context, 48, 116, 984, 1182, 30, palette.border.strong, 2);
+  fillRoundedRect(context, 48, 116, 984, 10, 5, palette.brand.accent);
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 36, 850);
   context.fillText(data.view === "summary" ? "五号库存汇总" : `按日净变化 · ${data.metricLabel}`, 80, 166);
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 22, 650);
   context.fillText(`${data.weekStart} 至 ${data.weekEnd}`, 80, 216);
-  fillRoundedRect(context, 790, 166, 210, 54, 15, "#e7f3f0");
-  context.fillStyle = "#08765a";
+  fillRoundedRect(context, 790, 166, 210, 54, 15, palette.status.positive.background);
+  context.fillStyle = palette.status.positive.foreground;
   setFont(context, 21, 800);
   context.textAlign = "center";
   context.fillText(`${data.recordedDays} / 7 天有记录`, 895, 181);
   context.textAlign = "left";
 
   if (data.view === "summary") {
-    context.fillStyle = "#142522";
+    context.fillStyle = palette.text.primary;
     setFont(context, 23, 850);
     context.fillText(data.snapshot ? `最新库存 · ${data.snapshot.date}` : "最新库存", 80, 286);
     if (data.snapshot) {
       drawSummaryTable(context, 326, data.snapshot.rows, data.snapshot.total, false);
     } else {
-      fillRoundedRect(context, 80, 326, 920, 188, 14, "#f4f7f6");
-      context.fillStyle = "#71817e";
+      fillRoundedRect(context, 80, 326, 920, 188, 14, palette.surface.muted);
+      context.fillStyle = palette.text.muted;
       setFont(context, 26, 700);
       context.textAlign = "center";
       context.fillText("本周暂无库存记录", 540, 400);
       context.textAlign = "left";
     }
 
-    context.fillStyle = "#142522";
+    context.fillStyle = palette.text.primary;
     setFont(context, 23, 850);
     context.fillText("本周净变化", 80, 800);
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 17, 650);
     context.textAlign = "right";
     context.fillText(data.change?.caption || "暂无变化基线", 1000, 804);
@@ -377,31 +380,31 @@ export function createInventoryReportShareImage(data: InventoryReportShareData) 
     if (data.change) {
       drawSummaryTable(context, 840, data.change.rows, data.change.total, true);
     } else {
-      fillRoundedRect(context, 80, 840, 920, 188, 14, "#f4f7f6");
-      context.fillStyle = "#71817e";
+      fillRoundedRect(context, 80, 840, 920, 188, 14, palette.surface.muted);
+      context.fillStyle = palette.text.muted;
       setFont(context, 26, 700);
       context.textAlign = "center";
       context.fillText("暂无可计算的周变化", 540, 914);
       context.textAlign = "left";
     }
 
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 17, 650);
     context.fillText(data.valuationNote, 80, 1260);
   } else {
-    context.fillStyle = "#657975";
+    context.fillStyle = palette.text.secondary;
     setFont(context, 19, 650);
     const matrixContext = data.conversionNote
       ? `单位：${data.unit}　${data.conversionNote}`
       : `单位：${data.unit}　${data.intervalLabel}`;
     context.fillText(matrixContext, 80, 274);
     drawMatrixTable(context, data, 320);
-    context.fillStyle = "#71817e";
+    context.fillStyle = palette.text.muted;
     setFont(context, 17, 650);
     context.fillText(data.conversionNote || data.intervalLabel, 80, 1260);
   }
 
-  context.fillStyle = "#899793";
+  context.fillStyle = palette.text.faint;
   setFont(context, 17, 650);
   context.textAlign = "right";
   context.fillText(`${data.weekStart} — ${data.weekEnd}`, 1000, 1260);

@@ -323,9 +323,9 @@ async function sharePreview() {
 .weekly-activity-panel {
   margin: 12px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--radar-cyan) 28%, var(--radar-line));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .weekly-activity-head {
@@ -335,20 +335,20 @@ async function sharePreview() {
   justify-content: space-between;
   gap: 20px;
   padding: 13px 14px;
-  border-bottom: 1px solid var(--radar-line);
-  background: linear-gradient(105deg, color-mix(in srgb, var(--radar-cyan) 9%, #ffffff), #ffffff 64%);
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(105deg, color-mix(in srgb, var(--color-accent) 9%, #ffffff), #ffffff 64%);
 }
 
 .weekly-activity-head p {
   margin: 0 0 2px;
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
   font-size: 11px !important;
   font-weight: 850;
   letter-spacing: .06em;
 }
 
 .weekly-activity-head h3 {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 19px;
   line-height: 1.3;
 }
@@ -356,12 +356,12 @@ async function sharePreview() {
 .weekly-activity-head > div:first-child > span {
   display: block;
   margin-top: 3px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.4;
 }
 
-.weekly-activity-head > div:first-child > span b { color: var(--radar-ink); }
+.weekly-activity-head > div:first-child > span b { color: var(--color-text); }
 
 .weekly-activity-actions {
   display: flex;
@@ -391,8 +391,8 @@ async function sharePreview() {
 }
 
 .weekly-account-breakdown {
-  border-bottom: 1px solid var(--radar-line);
-  background: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .weekly-account-table-head,
@@ -406,26 +406,26 @@ async function sharePreview() {
 
 .weekly-account-table-head {
   min-height: 34px;
-  border-bottom: 1px solid var(--radar-line);
-  color: var(--radar-muted);
-  background: var(--radar-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-surface-subtle);
   font-size: 10px;
   font-weight: 800;
 }
 
 .weekly-account-row {
   min-height: 68px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .weekly-account-row:last-child { border-bottom: 0; }
 .weekly-account-row > strong { justify-self: start; }
 .weekly-account-row > span { min-width: 0; display: grid; gap: 2px; }
 .weekly-account-row > span::before { display: none; content: attr(data-label); }
-.weekly-account-row b { overflow: hidden; color: var(--radar-ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.weekly-account-row .account-harvest b { color: var(--radar-success); }
+.weekly-account-row b { overflow: hidden; color: var(--color-text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-account-row .account-harvest b { color: var(--color-success); }
 .weekly-account-row .account-expense b { color: #9a5a00; }
-.weekly-account-row small { overflow: hidden; color: var(--radar-muted); font-size: 10px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-account-row small { overflow: hidden; color: var(--color-text-muted); font-size: 10px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 
 .weekly-account-warning {
   margin: 0;
@@ -443,34 +443,34 @@ async function sharePreview() {
   align-items: end;
   gap: 10px;
   padding: 12px 14px;
-  border-bottom: 1px solid color-mix(in srgb, #d59224 32%, var(--radar-line));
+  border-bottom: 1px solid color-mix(in srgb, #d59224 32%, var(--color-border));
   background: #fffaf1;
 }
 
 .weekly-expense-form label { display: grid; gap: 5px; }
-.weekly-expense-form label > span { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
+.weekly-expense-form label > span { color: var(--color-text-muted); font-size: 11px; font-weight: 800; }
 .weekly-expense-form :is(input, select) {
   width: 100%;
   height: 40px;
   padding: 0 10px;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
-  color: var(--radar-ink);
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-surface);
   font: inherit;
 }
 
-.weekly-expense-form :is(input, select):focus { border-color: var(--radar-cyan); outline: 2px solid color-mix(in srgb, var(--radar-cyan) 18%, transparent); }
+.weekly-expense-form :is(input, select):focus { border-color: var(--color-accent); outline: 2px solid color-mix(in srgb, var(--color-accent) 18%, transparent); }
 .weekly-expense-form-actions { display: flex; gap: 7px; }
 .weekly-expense-form-actions .button { min-height: 40px; }
-.weekly-expense-form > p { grid-column: 1 / -1; margin: 0; color: var(--radar-danger); font-size: 12px; font-weight: 750; }
+.weekly-expense-form > p { grid-column: 1 / -1; margin: 0; color: var(--color-danger); font-size: 12px; font-weight: 750; }
 
 .weekly-activity-notice {
   margin: 0;
   padding: 9px 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--radar-success) 28%, var(--radar-line));
-  color: var(--radar-success);
-  background: color-mix(in srgb, var(--radar-success) 7%, #ffffff);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-success) 28%, var(--color-border));
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 7%, #ffffff);
   font-size: 12px !important;
   font-weight: 750;
 }
@@ -481,7 +481,7 @@ async function sharePreview() {
 }
 
 .weekly-activity-ledgers > section { min-width: 0; }
-.weekly-activity-ledgers > section + section { border-left: 1px solid var(--radar-line); }
+.weekly-activity-ledgers > section + section { border-left: 1px solid var(--color-border); }
 .weekly-activity-ledgers section > header {
   min-height: 42px;
   display: flex;
@@ -489,12 +489,12 @@ async function sharePreview() {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 14px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
   background: #f7f9f8;
 }
 
-.weekly-activity-ledgers h4 { color: var(--radar-ink); font-size: 14px; }
-.weekly-activity-ledgers header span { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
+.weekly-activity-ledgers h4 { color: var(--color-text); font-size: 14px; }
+.weekly-activity-ledgers header span { color: var(--color-text-muted); font-size: 11px; font-weight: 800; }
 .weekly-activity-ledgers ul { max-height: 260px; overflow: auto; margin: 0; padding: 0; list-style: none; }
 .weekly-activity-ledgers li {
   min-height: 58px;
@@ -503,15 +503,15 @@ async function sharePreview() {
   align-items: center;
   gap: 9px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .weekly-activity-ledgers li:last-child { border-bottom: 0; }
-.weekly-activity-ledgers time { color: var(--radar-muted); font-size: 11px; font-weight: 750; white-space: nowrap; }
+.weekly-activity-ledgers time { color: var(--color-text-muted); font-size: 11px; font-weight: 750; white-space: nowrap; }
 .weekly-activity-ledgers li > span { min-width: 0; display: grid; gap: 2px; }
-.weekly-activity-ledgers li b { overflow: hidden; color: var(--radar-ink); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.weekly-activity-ledgers li small { color: var(--radar-muted); font-size: 10px; }
-.weekly-activity-ledgers li em { color: var(--radar-muted); font-size: 11px; font-style: normal; font-weight: 800; white-space: nowrap; }
+.weekly-activity-ledgers li b { overflow: hidden; color: var(--color-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-activity-ledgers li small { color: var(--color-text-muted); font-size: 10px; }
+.weekly-activity-ledgers li em { color: var(--color-text-muted); font-size: 11px; font-style: normal; font-weight: 800; white-space: nowrap; }
 .weekly-activity-ledgers li em.silver { color: #9a5a00; }
 .weekly-activity-ledgers li > button {
   width: 32px;
@@ -520,12 +520,12 @@ async function sharePreview() {
   place-items: center;
   border: 0;
   border-radius: 5px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: transparent;
 }
-.weekly-activity-ledgers li > button:hover { color: var(--radar-danger); background: color-mix(in srgb, var(--radar-danger) 8%, #ffffff); }
+.weekly-activity-ledgers li > button:hover { color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 8%, #ffffff); }
 .weekly-activity-ledgers li > button :deep(svg) { width: 16px; height: 16px; }
-.weekly-activity-ledgers section > p { min-height: 78px; display: grid; place-items: center; margin: 0; padding: 14px; color: var(--radar-muted); font-size: 12px !important; text-align: center; }
+.weekly-activity-ledgers section > p { min-height: 78px; display: grid; place-items: center; margin: 0; padding: 14px; color: var(--color-text-muted); font-size: 12px !important; text-align: center; }
 
 .weekly-report-preview-backdrop {
   position: fixed;
@@ -544,9 +544,9 @@ async function sharePreview() {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #ffffff;
+  background: var(--color-surface);
   box-shadow: 0 24px 70px rgba(0, 0, 0, .34);
 }
 
@@ -557,25 +557,25 @@ async function sharePreview() {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.weekly-report-preview > header h2 { color: var(--radar-ink); font-size: 20px; }
-.weekly-report-preview > header p { margin-top: 3px; color: var(--radar-muted); font-size: 12px; }
+.weekly-report-preview > header h2 { color: var(--color-text); font-size: 20px; }
+.weekly-report-preview > header p { margin-top: 3px; color: var(--color-text-muted); font-size: 12px; }
 .weekly-report-preview > header > button {
   width: 44px;
   height: 44px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 7px;
-  color: var(--radar-muted);
-  background: #ffffff;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
 }
 .weekly-report-preview > header > button :deep(svg) { width: 18px; height: 18px; }
 .weekly-report-preview-image { overflow: auto; padding: 18px; background: #e7edeb; }
 .weekly-report-preview-image img { display: block; width: min(540px, 100%); height: auto; margin: 0 auto; border-radius: 8px; box-shadow: 0 12px 32px rgba(20, 37, 34, .18); }
-.weekly-report-preview > footer { justify-content: flex-end; border-top: 1px solid var(--radar-line); border-bottom: 0; }
+.weekly-report-preview > footer { justify-content: flex-end; border-top: 1px solid var(--color-border); border-bottom: 0; }
 .weekly-report-preview > footer .button { min-height: 42px; display: inline-flex; align-items: center; gap: 7px; }
 
 @keyframes weekly-report-spin { to { transform: rotate(360deg); } }
@@ -602,7 +602,7 @@ async function sharePreview() {
     padding: 12px;
   }
   .weekly-account-row > strong { grid-row: 1 / 3; align-self: stretch; display: grid; place-items: center; }
-  .weekly-account-row > span::before { display: block; color: var(--radar-muted); font-size: 10px; font-weight: 800; }
+  .weekly-account-row > span::before { display: block; color: var(--color-text-muted); font-size: 10px; font-weight: 800; }
   .weekly-account-row b { font-size: 12px; }
   .weekly-account-row small { white-space: normal; }
   .weekly-expense-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; }
@@ -610,7 +610,7 @@ async function sharePreview() {
   .weekly-expense-form-actions { grid-column: 1 / -1; }
   .weekly-expense-form-actions .button { flex: 1; min-height: 44px; }
   .weekly-activity-ledgers { grid-template-columns: 1fr; }
-  .weekly-activity-ledgers > section + section { border-top: 1px solid var(--radar-line); border-left: 0; }
+  .weekly-activity-ledgers > section + section { border-top: 1px solid var(--color-border); border-left: 0; }
   .weekly-activity-ledgers li { grid-template-columns: 44px auto minmax(0, 1fr) auto; padding-inline: 10px; }
   .weekly-report-preview-backdrop { align-items: end; padding: 0; }
   .weekly-report-preview { width: 100%; max-height: 94vh; border-radius: 12px 12px 0 0; }

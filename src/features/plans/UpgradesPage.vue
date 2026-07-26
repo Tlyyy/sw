@@ -24,11 +24,11 @@ const shareNotice = ref("");
 let shareNoticeTimer: number | null = null;
 
 const accountTones: Record<AccountId, string> = {
-  FC: "var(--radar-account-fc)",
-  LG1: "var(--radar-account-lg1)",
-  LG2: "var(--radar-account-lg2)",
-  PT: "var(--radar-account-pt)",
-  MYT: "var(--radar-account-myt)",
+  FC: "var(--color-account-fc)",
+  LG1: "var(--color-account-lg1)",
+  LG2: "var(--color-account-lg2)",
+  PT: "var(--color-account-pt)",
+  MYT: "var(--color-account-myt)",
 };
 
 settings.hydrate();

@@ -143,7 +143,7 @@ function priorityStatusLabel(row: AccountOverview) {
   overflow: hidden;
   border: 1px solid rgba(60, 60, 67, 0.15);
   border-radius: 17px;
-  background: #ffffff;
+  background: var(--color-surface);
   box-shadow: 0 8px 24px rgba(28, 28, 30, 0.055);
 }
 
@@ -278,7 +278,7 @@ function priorityStatusLabel(row: AccountOverview) {
   border-radius: 14px;
   background: var(--ios-secondary-system-background);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 60%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--color-glass-highlight) 60%, transparent),
     0 5px 14px rgba(28, 28, 30, 0.035);
 }
 
@@ -316,7 +316,7 @@ function priorityStatusLabel(row: AccountOverview) {
   border-radius: 10px;
   color: #2b67a1;
   background: color-mix(in srgb, currentColor 8%, var(--ios-secondary-system-background));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-glass-highlight) 70%, transparent);
   font-size: 14px;
   font-weight: 760;
   line-height: 1;

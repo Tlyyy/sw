@@ -4,6 +4,7 @@ import type {
   AccountingResources,
 } from "../../domain/accounting";
 import type { AccountId } from "../../domain/types";
+import { shareImagePalette as palette } from "../../utils/shareImagePalette";
 
 export interface EarningsShareImageData {
   accountId: AccountId;
@@ -95,8 +96,8 @@ function compactResources(resources: AccountingResources) {
 }
 
 function valueTone(value: number | null) {
-  if (value === null || value === 0) return "#40534f";
-  return value > 0 ? "#08765a" : "#b5473c";
+  if (value === null || value === 0) return palette.text.body;
+  return value > 0 ? palette.status.positive.foreground : palette.status.negative.foreground;
 }
 
 function shortDate(value: string) {
@@ -122,9 +123,9 @@ function drawMetric(
   value: string,
   tone: string,
 ) {
-  fillRoundedRect(context, x, y, width, 152, 18, "#f6f9f8");
-  strokeRoundedRect(context, x, y, width, 152, 18, "#dce5e3", 2);
-  context.fillStyle = "#71817e";
+  fillRoundedRect(context, x, y, width, 152, 18, palette.surface.subtle);
+  strokeRoundedRect(context, x, y, width, 152, 18, palette.border.default, 2);
+  context.fillStyle = palette.text.muted;
   setFont(context, 18, 750);
   context.fillText(label, x + 24, y + 24);
   context.fillStyle = tone;
@@ -141,26 +142,26 @@ export function createEarningsShareImage(data: EarningsShareImageData) {
 
   context.textBaseline = "top";
   context.textAlign = "left";
-  context.fillStyle = "#edf3f1";
+  context.fillStyle = palette.canvas.background;
   context.fillRect(0, 0, WIDTH, HEIGHT);
   const backdrop = context.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  backdrop.addColorStop(0, "rgba(0, 121, 111, .13)");
-  backdrop.addColorStop(.58, "rgba(255, 255, 255, 0)");
-  backdrop.addColorStop(1, "rgba(196, 108, 0, .08)");
+  backdrop.addColorStop(0, palette.gradient.tealGlow);
+  backdrop.addColorStop(.58, palette.gradient.transparent);
+  backdrop.addColorStop(1, palette.gradient.warmGlow);
   context.fillStyle = backdrop;
   context.fillRect(0, 0, WIDTH, HEIGHT);
 
-  context.fillStyle = "#006b63";
+  context.fillStyle = palette.brand.primary;
   setFont(context, 34, 850);
   context.fillText(appName, 58, 42);
-  context.fillStyle = "#60736f";
+  context.fillStyle = palette.text.caption;
   setFont(context, 19, 750);
   context.textAlign = "right";
   context.fillText("ACTUAL INCOME", WIDTH - 58, 52);
   context.textAlign = "left";
 
-  fillRoundedRect(context, 44, 112, 992, 1178, 30, "#ffffff");
-  strokeRoundedRect(context, 44, 112, 992, 1178, 30, "#d5e0de", 2);
+  fillRoundedRect(context, 44, 112, 992, 1178, 30, palette.surface.default);
+  strokeRoundedRect(context, 44, 112, 992, 1178, 30, palette.border.strong, 2);
   fillRoundedRect(context, 44, 112, 992, 10, 5, data.accountTone);
 
   fillRoundedRect(context, 76, 158, 116, 66, 16, `${data.accountTone}18`);
@@ -171,30 +172,30 @@ export function createEarningsShareImage(data: EarningsShareImageData) {
   context.fillText(data.accountId, 134, 174);
   context.textAlign = "left";
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 38, 850);
   context.fillText(data.kind === "daily" ? "每日实际所得" : "区间实际所得", 220, 151);
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 20, 650);
   const range = data.kind === "daily"
     ? `${shortDate(data.toDate)} · 连续库存结算`
     : `${shortDate(data.fromDate)} → ${shortDate(data.toDate)} · ${data.intervalDays} 天`;
   context.fillText(range, 220, 202);
 
-  fillRoundedRect(context, 76, 264, 928, 208, 24, "#eaf5f2");
-  context.fillStyle = "#657975";
+  fillRoundedRect(context, 76, 264, 928, 208, 24, palette.status.positive.backgroundStrong);
+  context.fillStyle = palette.text.secondary;
   setFont(context, 19, 800);
   context.fillText("实际所得 · 银子", 108, 302);
   context.fillStyle = valueTone(data.actualIncome.silverWan);
   setFont(context, 64, 900);
   context.fillText(signedLabel(data.actualIncome.silverWan, "万"), 108, 342);
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 17, 650);
   context.textAlign = "right";
   context.fillText(`已核销 ${data.settledEntryCount} 笔流水`, 972, 408);
   context.textAlign = "left";
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 24, 850);
   context.fillText("这笔所得怎么计算", 76, 518);
   const calculation = [
@@ -216,16 +217,33 @@ export function createEarningsShareImage(data: EarningsShareImageData) {
   ];
   calculation.forEach((item, index) => {
     const x = 76 + index * 312;
-    fillRoundedRect(context, x, 562, 288, 128, 16, index === 2 ? "#edf7f4" : "#f7f9f8");
-    strokeRoundedRect(context, x, 562, 288, 128, 16, index === 2 ? "#a7d4c9" : "#dce5e3", 2);
-    context.fillStyle = "#71817e";
+    fillRoundedRect(
+      context,
+      x,
+      562,
+      288,
+      128,
+      16,
+      index === 2 ? palette.status.positive.backgroundStrong : palette.surface.subtle,
+    );
+    strokeRoundedRect(
+      context,
+      x,
+      562,
+      288,
+      128,
+      16,
+      index === 2 ? palette.status.positive.borderStrong : palette.border.default,
+      2,
+    );
+    context.fillStyle = palette.text.muted;
     setFont(context, 16, 750);
     context.fillText(item.label, x + 20, 582);
     context.fillStyle = item.tone;
     setFont(context, 28, 850);
     context.fillText(item.value, x + 20, 621);
     if (index < 2) {
-      context.fillStyle = "#8a9995";
+      context.fillStyle = palette.text.faint;
       setFont(context, 29, 700);
       context.textAlign = "center";
       context.fillText(index === 0 ? "+" : "=", x + 300, 610);
@@ -233,7 +251,7 @@ export function createEarningsShareImage(data: EarningsShareImageData) {
     }
   });
 
-  context.fillStyle = "#142522";
+  context.fillStyle = palette.text.primary;
   setFont(context, 24, 850);
   context.fillText("本次实际所得明细", 76, 742);
   const resources = [
@@ -254,21 +272,21 @@ export function createEarningsShareImage(data: EarningsShareImageData) {
     );
   });
 
-  fillRoundedRect(context, 76, 1148, 928, 82, 16, "#f3f6f5");
-  context.fillStyle = "#657975";
+  fillRoundedRect(context, 76, 1148, 928, 82, 16, palette.surface.muted);
+  context.fillStyle = palette.text.secondary;
   setFont(context, 15, 700);
   context.fillText("库存净变化", 100, 1167);
-  context.fillStyle = "#2e423e";
+  context.fillStyle = palette.text.strong;
   setFont(context, 16, 750);
   context.fillText(compactResources(data.inventoryNetChange), 224, 1165);
-  context.fillStyle = "#657975";
+  context.fillStyle = palette.text.secondary;
   setFont(context, 15, 700);
   context.fillText("流水修正", 100, 1198);
-  context.fillStyle = "#2e423e";
+  context.fillStyle = palette.text.strong;
   setFont(context, 16, 750);
   context.fillText(compactResources(data.ledgerImpact), 224, 1196);
 
-  context.fillStyle = "#81908d";
+  context.fillStyle = palette.text.faint;
   setFont(context, 16, 650);
   context.textAlign = "center";
   context.fillText("实际所得 = 结束库存 − 开始库存 + 已确认流水修正", WIDTH / 2, 1250);

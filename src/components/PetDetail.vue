@@ -103,14 +103,14 @@ onUnmounted(() => {
 .detail-header-copy { min-width: 0; }
 .detail-header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
 .detail-skill-count { white-space: nowrap; font-size: 14px; }
-.pet-detail-share-button { min-width: 76px; min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 11px; border: 1px solid color-mix(in srgb, var(--radar-cyan) 42%, var(--radar-line)); border-radius: 7px; color: var(--radar-cyan-strong); background: var(--radar-surface); font-size: 13px; font-weight: 800; }
+.pet-detail-share-button { min-width: 76px; min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 11px; border: 1px solid color-mix(in srgb, var(--color-accent) 42%, var(--color-border)); border-radius: 7px; color: var(--color-accent-strong); background: var(--color-surface); font-size: 13px; font-weight: 800; }
 .pet-detail-share-button:hover,
-.pet-detail-share-button:focus-visible { background: var(--radar-cyan-soft); outline: 0; }
-.pet-detail-share-button:focus-visible { box-shadow: inset 0 0 0 2px var(--radar-cyan); }
+.pet-detail-share-button:focus-visible { background: var(--color-accent-soft); outline: 0; }
+.pet-detail-share-button:focus-visible { box-shadow: inset 0 0 0 2px var(--color-accent); }
 .pet-detail-share-button:disabled { cursor: wait; opacity: .58; }
 .pet-detail-share-button :deep(svg) { width: 17px; height: 17px; }
 .pet-detail-share-button.loading :deep(svg) { animation: pet-share-spin .75s linear infinite; }
-.pet-share-notice { position: fixed; right: 20px; bottom: 24px; z-index: 70; max-width: calc(100vw - 40px); margin: 0; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--radar-cyan) 36%, var(--radar-line)); border-radius: 8px; color: var(--radar-ink); background: color-mix(in srgb, var(--radar-surface) 94%, var(--radar-cyan-soft)); box-shadow: 0 8px 24px rgba(20, 37, 34, .16); font-size: 13px; font-weight: 750; line-height: 1.35; }
+.pet-share-notice { position: fixed; right: 20px; bottom: 24px; z-index: 70; max-width: calc(100vw - 40px); margin: 0; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--color-accent) 36%, var(--color-border)); border-radius: 8px; color: var(--color-text); background: color-mix(in srgb, var(--color-surface) 94%, var(--color-accent-soft)); box-shadow: 0 8px 24px rgba(20, 37, 34, .16); font-size: 13px; font-weight: 750; line-height: 1.35; }
 
 @keyframes pet-share-spin { to { transform: rotate(360deg); } }
 

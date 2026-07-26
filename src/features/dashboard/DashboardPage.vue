@@ -9,6 +9,7 @@ import { useCatalogStore } from "../../stores/catalog";
 import { useInventoryStore } from "../../stores/inventory";
 import { useSettingsStore } from "../../stores/settings";
 import { useUiStore } from "../../stores/ui";
+import { shareImageAccountColors } from "../../utils/shareImagePalette";
 import { createMainlineOverviewShareImage } from "./mainlineOverviewShareImage";
 
 const catalog = useCatalogStore();
@@ -58,20 +59,12 @@ const selectedProjection = computed(() => (
   ?? projections.value[0]
 ));
 const accountTone: Record<AccountId, string> = {
-  FC: "var(--radar-account-fc)",
-  LG1: "var(--radar-account-lg1)",
-  LG2: "var(--radar-account-lg2)",
-  PT: "var(--radar-account-pt)",
-  MYT: "var(--radar-account-myt)",
+  FC: "var(--color-account-fc)",
+  LG1: "var(--color-account-lg1)",
+  LG2: "var(--color-account-lg2)",
+  PT: "var(--color-account-pt)",
+  MYT: "var(--color-account-myt)",
 };
-const accountImageTone: Record<AccountId, string> = {
-  FC: "#12678f",
-  LG1: "#6446a6",
-  LG2: "#8a5a00",
-  PT: "#a33838",
-  MYT: "#28764a",
-};
-
 function selectAccount(accountId: AccountId) {
   selectedAccount.value = accountId;
 }
@@ -300,7 +293,7 @@ async function shareMainlineOverview() {
       inventoryDate: latestDate.value || "待录入",
       accounts: projections.value.map((projection) => ({
         accountId: projection.accountId,
-        accountTone: accountImageTone[projection.accountId],
+        accountTone: shareImageAccountColors[projection.accountId],
         status: statusLabelFor(projection),
         statusTone: projection.status === "blocked" || projection.status === "stale"
           ? "danger"

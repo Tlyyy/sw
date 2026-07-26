@@ -170,20 +170,20 @@ onUnmounted(() => {
 
 <style scoped>
 .pet-page-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-.pet-selected-count { color: var(--radar-cyan-strong); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.pet-selected-count { color: var(--color-accent-strong); font-size: 13px; font-weight: 800; white-space: nowrap; }
 .pet-page-actions .button:disabled { cursor: not-allowed; opacity: .48; }
 .has-pet-batch-selection { padding-bottom: 138px; }
-.pet-batch-share-bar { position: fixed; z-index: 46; right: 24px; bottom: 24px; width: min(510px, calc(100vw - 48px)); min-height: 66px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--radar-cyan) 40%, var(--radar-line)); border-radius: 11px; color: var(--radar-ink); background: color-mix(in srgb, var(--radar-surface) 95%, var(--radar-cyan-soft)); box-shadow: 0 14px 40px rgba(3, 18, 31, .2); backdrop-filter: blur(14px); }
+.pet-batch-share-bar { position: fixed; z-index: 46; right: 24px; bottom: 24px; width: min(510px, calc(100vw - 48px)); min-height: 66px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--color-accent) 40%, var(--color-border)); border-radius: 11px; color: var(--color-text); background: color-mix(in srgb, var(--color-surface) 95%, var(--color-accent-soft)); box-shadow: 0 14px 40px rgba(3, 18, 31, .2); backdrop-filter: blur(14px); }
 .pet-batch-summary { min-width: 0; display: grid; gap: 3px; }
 .pet-batch-summary strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
-.pet-batch-summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--radar-muted); font-size: 12px; }
-.pet-batch-clear { min-width: 48px; min-height: 42px; padding: 0 9px; border: 0; border-radius: 7px; color: var(--radar-muted); background: transparent; font-size: 13px; font-weight: 800; }
+.pet-batch-summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: 12px; }
+.pet-batch-clear { min-width: 48px; min-height: 42px; padding: 0 9px; border: 0; border-radius: 7px; color: var(--color-text-muted); background: transparent; font-size: 13px; font-weight: 800; }
 .pet-batch-clear:hover,
-.pet-batch-clear:focus-visible { color: var(--radar-ink); background: var(--radar-cyan-soft); outline: 0; }
-.pet-batch-share-button { min-width: 122px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 13px; border: 1px solid var(--radar-cyan); border-radius: 8px; color: #ffffff; background: var(--radar-cyan); font-size: 13px; font-weight: 850; }
+.pet-batch-clear:focus-visible { color: var(--color-text); background: var(--color-accent-soft); outline: 0; }
+.pet-batch-share-button { min-width: 122px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 13px; border: 1px solid var(--color-accent); border-radius: 8px; color: var(--color-text-on-strong); background: var(--color-accent); font-size: 13px; font-weight: 850; }
 .pet-batch-share-button:hover,
-.pet-batch-share-button:focus-visible { background: var(--radar-cyan-strong); outline: 0; }
-.pet-batch-share-button:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--radar-cyan) 28%, transparent); }
+.pet-batch-share-button:focus-visible { background: var(--color-accent-strong); outline: 0; }
+.pet-batch-share-button:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 28%, transparent); }
 .pet-batch-share-button:disabled,
 .pet-batch-clear:disabled { cursor: wait; opacity: .62; }
 .pet-batch-share-button :deep(svg) { width: 17px; height: 17px; }

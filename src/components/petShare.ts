@@ -1,15 +1,8 @@
-import type { AccountId, EvidenceSource, PetView, StatValue } from "../domain/types";
+import type { EvidenceSource, PetView, StatValue } from "../domain/types";
 import { publicAsset } from "../utils/publicAsset";
+import { shareImageAccountColors as accountImageTone } from "../utils/shareImagePalette";
 import { createPetBatchShareImage } from "./petBatchShareImage";
 import { createPetDetailShareImage, type PetDetailShareData } from "./petDetailShareImage";
-
-const accountImageTone: Record<AccountId, string> = {
-  FC: "#12678f",
-  LG1: "#6446a6",
-  LG2: "#8a5a00",
-  PT: "#a33838",
-  MYT: "#28764a",
-};
 
 function valueFor(rows: StatValue[], label: string, fallback = "—") {
   return rows.find(([name]) => name === label)?.[1] || fallback;

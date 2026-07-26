@@ -213,67 +213,67 @@ function shortDateTime(value: string) {
 
 <style scoped>
 .mobile-purpose-page { width: min(100%, 980px); padding-top: 14px; }
-.mobile-purpose-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; padding: 0 4px 10px; border-bottom: 1px solid var(--radar-line); }
+.mobile-purpose-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; padding: 0 4px 10px; border-bottom: 1px solid var(--color-border); }
 .mobile-purpose-intro > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-.mobile-purpose-intro > p { color: var(--brand-orange); font-size: 12px; font-weight: 850; letter-spacing: .12em; }
-.mobile-purpose-intro > div > p { color: var(--brand-orange); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.mobile-purpose-intro > p { color: var(--color-brand); font-size: 12px; font-weight: 850; letter-spacing: .12em; }
+.mobile-purpose-intro > div > p { color: var(--color-brand); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
 .mobile-purpose-intro h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.04em; white-space: nowrap; }
-.mobile-purpose-intro > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
-.mobile-action-notice { margin: 0 0 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--radar-cyan) 35%, var(--radar-line)); border-radius: 9px; color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); font-size: 13px; font-weight: 750; }
+.mobile-purpose-intro > span { color: var(--color-text-muted); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.mobile-action-notice { margin: 0 0 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border)); border-radius: 9px; color: var(--color-accent-strong); background: var(--color-accent-soft); font-size: 13px; font-weight: 750; }
 
 .record-primary-card,
 .record-option-card,
 .quick-expense-form,
-.record-account-status { border: 1px solid var(--radar-line); border-radius: 15px; background: #ffffff; box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
+.record-account-status { border: 1px solid var(--color-border); border-radius: 15px; background: var(--color-surface); box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
 
 .record-primary-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-top: 12px; padding: 18px; }
-.record-card-icon { flex: 0 0 48px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: var(--brand-orange); background: var(--brand-orange-soft); }
+.record-card-icon { flex: 0 0 48px; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: var(--color-brand); background: var(--color-brand-soft); }
 .record-card-icon :deep(svg) { width: 23px; height: 23px; }
-.record-primary-card p, .record-option-card p, .quick-expense-form header p, .record-account-status > header p { color: var(--radar-muted); font-size: 11px; font-weight: 800; }
+.record-primary-card p, .record-option-card p, .quick-expense-form header p, .record-account-status > header p { color: var(--color-text-muted); font-size: 11px; font-weight: 800; }
 .record-primary-card h2, .record-option-card h2 { margin-top: 1px; font-size: 19px; line-height: 1.3; }
-.record-primary-card div > span, .record-option-card div > span { display: block; margin-top: 3px; color: var(--radar-muted); font-size: 12px; line-height: 1.45; }
-.record-primary-action { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 15px; border: 1px solid #a84600; border-radius: 10px; color: #ffffff; background: var(--brand-orange); font-size: 14px; font-weight: 850; }
+.record-primary-card div > span, .record-option-card div > span { display: block; margin-top: 3px; color: var(--color-text-muted); font-size: 12px; line-height: 1.45; }
+.record-primary-action { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 15px; border: 1px solid #a84600; border-radius: 10px; color: var(--color-text-on-strong); background: var(--color-brand); font-size: 14px; font-weight: 850; }
 .record-primary-action :deep(svg) { width: 19px; height: 19px; }
 
 .record-option-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
 .record-option-card { min-width: 0; min-height: 178px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; gap: 11px; padding: 15px; color: inherit; text-align: left; }
 button.record-option-card { width: 100%; font: inherit; }
 .record-option-card > div { min-width: 0; }
-.record-option-card > strong { grid-column: 1 / -1; align-self: end; min-height: 44px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--radar-cyan-strong); font-size: 13px; }
+.record-option-card > strong { grid-column: 1 / -1; align-self: end; min-height: 44px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--color-accent-strong); font-size: 13px; }
 .record-option-card > strong :deep(svg) { width: 16px; height: 16px; }
-.record-card-icon.task { color: var(--radar-cyan-strong); background: var(--radar-cyan-soft); }
+.record-card-icon.task { color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .record-card-icon.expense { color: #9a5a00; background: #fff4df; }
-.record-card-icon.market { color: #12678f; background: #edf4fb; }
+.record-card-icon.market { color: var(--color-info); background: var(--color-info-soft); }
 
 .quick-expense-form { display: grid; grid-template-columns: 140px 170px minmax(220px, 1fr) auto; align-items: end; gap: 12px; margin-top: 12px; padding: 16px; }
-.quick-expense-form header { grid-column: 1 / -1; display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 11px; border-bottom: 1px solid var(--radar-line); }
+.quick-expense-form header { grid-column: 1 / -1; display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 11px; border-bottom: 1px solid var(--color-border); }
 .quick-expense-form header h2, .record-account-status h2 { font-size: 18px; }
-.quick-expense-form header > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; }
+.quick-expense-form header > span { color: var(--color-text-muted); font-size: 12px; font-weight: 750; }
 .quick-expense-form label { display: grid; gap: 5px; }
-.quick-expense-form label > span { color: var(--radar-muted); font-size: 12px; font-weight: 750; }
-.quick-expense-form :is(input, select) { width: 100%; height: 44px; padding: 0 10px; border: 1px solid var(--radar-line-strong); border-radius: 8px; background: #ffffff; font-size: 16px; }
-.quick-expense-form > p { grid-column: 1 / -1; color: var(--radar-danger); font-size: 12px; font-weight: 750; }
+.quick-expense-form label > span { color: var(--color-text-muted); font-size: 12px; font-weight: 750; }
+.quick-expense-form :is(input, select) { width: 100%; height: 44px; padding: 0 10px; border: 1px solid var(--color-border-strong); border-radius: 8px; background: var(--color-surface); font-size: 16px; }
+.quick-expense-form > p { grid-column: 1 / -1; color: var(--color-danger); font-size: 12px; font-weight: 750; }
 .quick-expense-actions { display: flex; gap: 7px; }
 .quick-expense-actions .button { min-height: 44px; }
 
 .record-account-status { overflow: hidden; margin-top: 12px; }
-.record-account-status > header { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--radar-line); background: var(--radar-surface-2); }
+.record-account-status > header { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-subtle); }
 .record-account-status > header > div { display: grid; gap: 1px; }
-.record-account-status > header > span { color: var(--radar-muted); font-size: 10px; font-weight: 750; white-space: nowrap; }
+.record-account-status > header > span { color: var(--color-text-muted); font-size: 10px; font-weight: 750; white-space: nowrap; }
 .record-account-status-list { display: grid; }
-.record-account-status-list > article { min-height: 64px; display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--radar-line); background: #ffffff; }
+.record-account-status-list > article { min-height: 64px; display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
 .record-account-status-list > article:last-child { border-bottom: 0; }
 .record-account-status-list > article:hover,
-.record-account-status-list > article.active { background: color-mix(in srgb, var(--radar-cyan-soft) 58%, #ffffff); }
-.record-account-status-list > article.active { box-shadow: inset 3px 0 var(--radar-cyan); }
-.record-account-status-list > article:focus-visible { outline: 3px solid color-mix(in srgb, var(--radar-cyan) 40%, transparent); outline-offset: -3px; }
+.record-account-status-list > article.active { background: color-mix(in srgb, var(--color-accent-soft) 58%, #ffffff); }
+.record-account-status-list > article.active { box-shadow: inset 3px 0 var(--color-accent); }
+.record-account-status-list > article:focus-visible { outline: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent); outline-offset: -3px; }
 .record-account-status-list > article > strong { min-height: 36px; display: grid; place-items: center; }
 .record-account-status-list dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
-.record-account-status-list dl > div { min-width: 0; padding: 0 10px; border-left: 1px solid var(--radar-line); }
+.record-account-status-list dl > div { min-width: 0; padding: 0 10px; border-left: 1px solid var(--color-border); }
 .record-account-status-list dl > div:first-child { padding-left: 0; border-left: 0; }
-.record-account-status-list dt { color: var(--radar-muted); font-size: 10px; font-weight: 750; }
+.record-account-status-list dt { color: var(--color-text-muted); font-size: 10px; font-weight: 750; }
 .record-account-status-list dd { margin: 1px 0 0; color: #9a5a00; font-size: 13px; font-weight: 850; white-space: nowrap; }
-.record-account-status-list .complete dd { color: var(--radar-success); }
+.record-account-status-list .complete dd { color: var(--color-success); }
 
 @media (max-width: 720px) {
   .mobile-purpose-page { padding: 10px 14px 24px; }

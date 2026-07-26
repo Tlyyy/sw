@@ -175,9 +175,9 @@ function toggleDay(day: InventoryWeekDaySlot) {
 .inventory-record-table {
   overflow: hidden;
   margin: 12px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 7px;
-  background: var(--radar-surface);
+  background: var(--color-surface);
 }
 
 .inventory-record-head,
@@ -188,12 +188,12 @@ function toggleDay(day: InventoryWeekDaySlot) {
   gap: 12px;
   min-height: 52px;
   padding: 7px 14px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .inventory-record-head {
   min-height: 40px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: #f6f8f7;
   font-size: 13px;
   font-weight: 800;
@@ -205,15 +205,15 @@ function toggleDay(day: InventoryWeekDaySlot) {
 
 .inventory-record-entry.expanded > .inventory-record-row,
 .inventory-record-entry.today > .inventory-record-row {
-  background: color-mix(in srgb, var(--radar-cyan) 7%, #ffffff);
+  background: color-mix(in srgb, var(--color-accent) 7%, #ffffff);
 }
 
 .inventory-record-entry.today > .inventory-record-row {
-  box-shadow: inset 3px 0 var(--radar-cyan);
+  box-shadow: inset 3px 0 var(--color-accent);
 }
 
 .inventory-record-entry.upcoming > .inventory-record-row {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: #fafbfb;
 }
 
@@ -224,16 +224,16 @@ function toggleDay(day: InventoryWeekDaySlot) {
 }
 
 .inventory-record-identity strong {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 15px;
 }
 
 .inventory-record-entry.today .inventory-record-identity strong {
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
 }
 
 .inventory-record-identity span {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
@@ -243,24 +243,24 @@ function toggleDay(day: InventoryWeekDaySlot) {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 999px;
-  color: var(--radar-muted);
-  background: #ffffff;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .inventory-record-status.recorded {
-  border-color: color-mix(in srgb, var(--radar-success) 45%, var(--radar-line));
-  color: var(--radar-success);
-  background: color-mix(in srgb, var(--radar-success) 9%, #ffffff);
+  border-color: color-mix(in srgb, var(--color-success) 45%, var(--color-border));
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 9%, #ffffff);
 }
 
 .inventory-record-status.upcoming {
   border-style: dashed;
-  color: var(--radar-faint);
+  color: var(--color-text-faint);
   background: #f7f8f8;
 }
 
@@ -269,7 +269,7 @@ function toggleDay(day: InventoryWeekDaySlot) {
   display: grid;
   grid-template-columns: repeat(4, minmax(72px, 1fr));
   gap: 10px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
@@ -280,11 +280,11 @@ function toggleDay(day: InventoryWeekDaySlot) {
 }
 
 .inventory-record-totals b {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .inventory-record-empty {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 13px !important;
 }
 
@@ -301,10 +301,10 @@ function toggleDay(day: InventoryWeekDaySlot) {
   justify-content: center;
   gap: 3px;
   padding: 0 8px;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
   font-size: 14px;
   font-weight: 800;
 }
@@ -320,22 +320,22 @@ function toggleDay(day: InventoryWeekDaySlot) {
 }
 
 .inventory-record-action.record {
-  border-color: color-mix(in srgb, var(--radar-amber) 45%, var(--radar-line));
-  color: var(--radar-amber-strong);
-  background: var(--radar-amber-soft);
+  border-color: color-mix(in srgb, var(--color-warning) 45%, var(--color-border));
+  color: var(--color-warning-strong);
+  background: var(--color-warning-soft);
 }
 
 .inventory-record-action.unavailable {
   border-style: dashed;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: #f7f8f8;
   cursor: default;
 }
 
 .inventory-record-detail {
   padding: 13px 14px 14px;
-  border-bottom: 1px solid var(--radar-line-strong);
-  background: var(--radar-surface-2);
+  border-bottom: 1px solid var(--color-border-strong);
+  background: var(--color-surface-subtle);
 }
 
 .inventory-record-detail > header {
@@ -352,7 +352,7 @@ function toggleDay(day: InventoryWeekDaySlot) {
 }
 
 .inventory-record-detail > header p span {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 13px;
 }
 
@@ -362,7 +362,7 @@ function toggleDay(day: InventoryWeekDaySlot) {
 }
 
 .inventory-record-account-table {
-  border-top: 1px solid var(--radar-line);
+  border-top: 1px solid var(--color-border);
 }
 
 .inventory-record-account-row {
@@ -372,7 +372,7 @@ function toggleDay(day: InventoryWeekDaySlot) {
   gap: 8px;
   min-height: 56px;
   padding: 7px 10px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .inventory-record-account-row > span {
@@ -384,7 +384,7 @@ function toggleDay(day: InventoryWeekDaySlot) {
 
 .inventory-record-account-row small {
   grid-column: 1 / -1;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
 }
 
@@ -400,9 +400,9 @@ function toggleDay(day: InventoryWeekDaySlot) {
   font-weight: 750;
 }
 
-.positive { color: var(--radar-success); }
-.negative { color: var(--radar-danger); }
-.neutral { color: var(--radar-muted); }
+.positive { color: var(--color-success); }
+.negative { color: var(--color-danger); }
+.neutral { color: var(--color-text-muted); }
 
 @media (max-width: 720px) {
   .inventory-record-table {

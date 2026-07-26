@@ -529,7 +529,7 @@ onBeforeUnmount(() => {
 .snapshot-desktop-entry {
   flex: 1 1 auto;
   min-height: 0;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .snapshot-entry-table {
@@ -537,7 +537,7 @@ onBeforeUnmount(() => {
 }
 
 .snapshot-entry-head small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: inherit;
 }
 
@@ -551,45 +551,45 @@ onBeforeUnmount(() => {
 }
 
 .snapshot-entry-row input {
-  color: var(--radar-ink);
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-surface);
   font-size: 16px;
 }
 
 .snapshot-entry-row input:focus {
-  border-color: var(--radar-cyan-strong);
+  border-color: var(--color-accent-strong);
   outline: 3px solid rgba(10, 138, 133, .14);
   outline-offset: 1px;
 }
 
 .snapshot-entry-row input[aria-invalid="true"] {
-  border-color: var(--radar-danger);
+  border-color: var(--color-danger);
 }
 
 .snapshot-desktop-messages {
   min-height: 42px;
   padding: 10px 20px;
-  border-top: 1px solid var(--radar-line);
-  background: var(--radar-surface-2);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
 }
 
 .snapshot-date-field {
   min-width: 0;
-  color: var(--radar-ink);
-  background: var(--radar-surface-2);
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
 }
 
 .snapshot-date-field > label {
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .snapshot-date-field small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
 }
 
 .snapshot-date-field input {
-  color: var(--radar-ink);
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-surface);
   color-scheme: light;
 }
 
@@ -600,8 +600,8 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 7px;
   padding: 11px 14px;
-  border-bottom: 1px solid var(--radar-line);
-  background: var(--radar-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
 }
 
 .snapshot-account-tab {
@@ -611,16 +611,16 @@ onBeforeUnmount(() => {
   place-items: center;
   gap: 2px;
   padding: 5px 3px;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 7px;
-  color: var(--radar-muted);
-  background: #ffffff;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
 }
 
 .snapshot-account-tab strong {
   overflow: hidden;
   max-width: 100%;
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 15px;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -633,15 +633,15 @@ onBeforeUnmount(() => {
 }
 
 .snapshot-account-tab.active {
-  border-color: var(--radar-cyan-strong);
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
-  box-shadow: inset 0 -2px var(--radar-cyan-strong);
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 -2px var(--color-accent-strong);
 }
 
 .snapshot-account-tab.reviewed:not(.active) {
   border-color: rgba(24, 143, 98, .42);
-  color: var(--radar-success);
+  color: var(--color-success);
   background: rgba(24, 143, 98, .07);
 }
 
@@ -668,14 +668,14 @@ onBeforeUnmount(() => {
 }
 
 .snapshot-account-heading h3 {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 19px;
   line-height: 1.25;
 }
 
 .snapshot-account-heading p {
   margin-top: 3px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -691,7 +691,7 @@ onBeforeUnmount(() => {
   min-width: 0;
   display: grid;
   gap: 6px;
-  color: var(--radar-ink);
+  color: var(--color-text);
 }
 
 .snapshot-account-field > span {
@@ -707,7 +707,7 @@ onBeforeUnmount(() => {
 }
 
 .snapshot-account-field > span small {
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -718,10 +718,10 @@ onBeforeUnmount(() => {
   min-width: 0;
   height: 50px;
   padding: 0 12px;
-  border: 1px solid var(--radar-line-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: 7px;
-  color: var(--radar-ink);
-  background: #ffffff;
+  color: var(--color-text);
+  background: var(--color-surface);
   font-size: 18px !important;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -729,13 +729,13 @@ onBeforeUnmount(() => {
 }
 
 .snapshot-account-field input:focus {
-  border-color: var(--radar-cyan-strong);
+  border-color: var(--color-accent-strong);
   outline: 3px solid rgba(10, 138, 133, .16);
   outline-offset: 1px;
 }
 
 .snapshot-account-field input[aria-invalid="true"] {
-  border-color: var(--radar-danger);
+  border-color: var(--color-danger);
   outline-color: rgba(190, 52, 52, .14);
 }
 
@@ -743,19 +743,19 @@ onBeforeUnmount(() => {
 .snapshot-account-help,
 .snapshot-flow-message {
   margin: 0;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.45;
 }
 
 .snapshot-account-error {
-  color: var(--radar-danger);
+  color: var(--color-danger);
   font-weight: 800;
 }
 
 .snapshot-flow-message {
   min-height: 18px;
-  color: var(--radar-cyan-strong);
+  color: var(--color-accent-strong);
   font-weight: 800;
 }
 

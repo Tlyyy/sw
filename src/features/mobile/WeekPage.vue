@@ -237,30 +237,30 @@ function openSupplementSheet() {
 
 <style scoped>
 .week-page { width: min(100%, 1320px); padding-top: 14px; padding-bottom: 48px; }
-.week-page-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; padding: 0 4px 10px; border-bottom: 1px solid var(--radar-line); }
+.week-page-intro { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; padding: 0 4px 10px; border-bottom: 1px solid var(--color-border); }
 .week-page-intro > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-.week-page-intro p { color: var(--radar-cyan-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
+.week-page-intro p { color: var(--color-accent-strong); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
 .week-page-intro h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.04em; white-space: nowrap; }
 .week-page-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .week-page-intro .button { min-height: 44px; display: inline-flex; align-items: center; white-space: nowrap; }
 .week-page-intro .earnings-button {
-  border-color: color-mix(in srgb, var(--radar-cyan) 55%, var(--radar-line));
-  color: var(--radar-cyan-strong);
-  background: color-mix(in srgb, var(--radar-cyan-soft) 62%, #ffffff);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  color: var(--color-accent-strong);
+  background: color-mix(in srgb, var(--color-accent-soft) 62%, #ffffff);
 }
 
 .week-page :deep(.inventory-week-switcher) { margin-bottom: 12px; }
 .week-page :deep(.weekly-activity-panel) { margin: 0; border-radius: 14px; box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
 .week-mobile-report { display: none; }
 
-.week-inventory-details { margin-top: 14px; overflow: hidden; border: 1px solid var(--radar-line); border-radius: 14px; background: #ffffff; }
+.week-inventory-details { margin-top: 14px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
 .week-inventory-details > summary { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 16px; cursor: pointer; list-style: none; }
 .week-inventory-details > summary::-webkit-details-marker { display: none; }
 .week-inventory-details > summary > span { display: grid; gap: 2px; }
 .week-inventory-details > summary strong { font-size: 17px; }
-.week-inventory-details > summary small { color: var(--radar-muted); font-size: 12px; }
-.week-inventory-details > summary > b { color: var(--radar-cyan-strong); font-size: 12px; white-space: nowrap; }
-.week-inventory-details[open] > summary { border-bottom: 1px solid var(--radar-line); }
+.week-inventory-details > summary small { color: var(--color-text-muted); font-size: 12px; }
+.week-inventory-details > summary > b { color: var(--color-accent-strong); font-size: 12px; white-space: nowrap; }
+.week-inventory-details[open] > summary { border-bottom: 1px solid var(--color-border); }
 .week-inventory-details :deep(.inventory-weekly-analysis) { border: 0; border-radius: 0; }
 
 @media (max-width: 720px) {
@@ -309,7 +309,7 @@ function openSupplementSheet() {
     min-height: 0;
     padding: 0;
     border: 0;
-    color: #667085;
+    color: var(--ios-secondary-label);
     font-size: 11px;
     font-weight: 700;
     background: transparent;
@@ -344,7 +344,7 @@ function openSupplementSheet() {
     height: 8px;
     border: 1.5px solid #b0b8c5;
     border-radius: 50%;
-    background: #ffffff;
+    background: var(--color-surface);
   }
   .week-day-strip small { color: #8b95a5; font-size: 9px; font-weight: 700; white-space: nowrap; }
   .week-day-strip .is-recorded i { border-color: var(--week-positive); background: var(--week-positive); }
@@ -383,11 +383,11 @@ function openSupplementSheet() {
     margin-bottom: 13px;
   }
   .week-summary-card > header > div { min-width: 0; display: grid; gap: 5px; }
-  .week-summary-card p { margin: 0; color: #667085; font-size: 11px; }
+  .week-summary-card p { margin: 0; color: var(--ios-secondary-label); font-size: 11px; }
   .week-summary-card h2,
   .week-account-card h2,
   .week-supplement-card h2 { margin: 0; color: #1d2939; font-size: 15px; letter-spacing: -.02em; }
-  .week-summary-card > header > span { color: #667085; font-size: 10px; font-weight: 650; white-space: nowrap; }
+  .week-summary-card > header > span { color: var(--ios-secondary-label); font-size: 10px; font-weight: 650; white-space: nowrap; }
   .week-summary-metrics {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -395,11 +395,11 @@ function openSupplementSheet() {
     padding: 10px 0;
     border: 1px solid rgba(60, 60, 67, .12);
     border-radius: 10px;
-    background: #ffffff;
+    background: var(--color-surface);
   }
   .week-summary-metrics > div { min-width: 0; display: grid; gap: 6px; padding: 0 12px; border-right: 1px solid rgba(60, 60, 67, .12); }
   .week-summary-metrics > div:last-child { border-right: 0; }
-  .week-summary-metrics dt { color: #667085; font-size: 10px; font-weight: 650; }
+  .week-summary-metrics dt { color: var(--ios-secondary-label); font-size: 10px; font-weight: 650; }
   .week-summary-metrics dd { margin: 0; color: var(--week-accent); font-size: 17px; font-weight: 780; white-space: nowrap; }
   .week-summary-metrics dd.positive,
   .week-account-row .positive { color: var(--week-positive); }
@@ -418,7 +418,7 @@ function openSupplementSheet() {
     align-items: center;
     gap: 4px;
   }
-  .week-account-head { min-height: 31px; color: #667085; font-size: 9px; font-weight: 650; }
+  .week-account-head { min-height: 31px; color: var(--ios-secondary-label); font-size: 9px; font-weight: 650; }
   .week-account-row { min-height: 39px; border-top: 1px solid rgba(60, 60, 67, .1); color: #344054; font-size: 11px; }
   .week-account-row > span { text-align: center; white-space: nowrap; }
   .week-account-badge {
@@ -445,7 +445,7 @@ function openSupplementSheet() {
     padding: 11px 12px;
   }
   .week-supplement-card > div { min-width: 0; display: grid; gap: 3px; }
-  .week-supplement-card p { margin: 0; overflow: hidden; color: #667085; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  .week-supplement-card p { margin: 0; overflow: hidden; color: var(--ios-secondary-label); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
   .week-supplement-card > button {
     min-height: 42px;
     display: inline-flex;
@@ -457,7 +457,7 @@ function openSupplementSheet() {
     color: var(--week-accent);
     font-size: 12px;
     font-weight: 750;
-    background: #ffffff;
+    background: var(--color-surface);
     white-space: nowrap;
   }
   .week-supplement-card :deep(svg) { width: 16px; height: 16px; }
@@ -480,7 +480,7 @@ function openSupplementSheet() {
   .week-mobile-full-report > summary::-webkit-details-marker { display: none; }
   .week-mobile-full-report > summary > span { display: grid; gap: 2px; }
   .week-mobile-full-report strong { color: #1d2939; font-size: 14px; }
-  .week-mobile-full-report small { color: #667085; font-size: 10px; }
+  .week-mobile-full-report small { color: var(--ios-secondary-label); font-size: 10px; }
   .week-mobile-full-report b { color: var(--week-accent); font-size: 11px; }
   .week-mobile-full-report[open] > summary { border-bottom: 1px solid var(--week-border); }
   .week-mobile-full-report :deep(.weekly-activity-panel) { border: 0; border-radius: 0; box-shadow: none; }

@@ -179,7 +179,7 @@ function removeInventorySnapshot(effectiveDate: string) {
   align-items: center;
   min-height: 0;
   padding: 2px 0 14px;
-  border-bottom-color: var(--radar-line-strong);
+  border-bottom-color: var(--color-border-strong);
 }
 
 .inventory-page-head h2 {
@@ -207,9 +207,9 @@ function removeInventorySnapshot(effectiveDate: string) {
   gap: 8px;
   margin: 14px 0;
   padding: 5px;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 9px;
-  background: var(--radar-surface-2);
+  background: var(--color-surface-subtle);
 }
 
 .inventory-workspace-nav button {
@@ -221,21 +221,21 @@ function removeInventorySnapshot(effectiveDate: string) {
   padding: 7px 12px;
   border: 1px solid transparent;
   border-radius: 7px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   background: transparent;
   text-align: left;
 }
 
 .inventory-workspace-nav button:hover,
 .inventory-workspace-nav button:focus-visible {
-  color: var(--radar-cyan-strong);
-  background: color-mix(in srgb, var(--radar-cyan) 7%, #ffffff);
+  color: var(--color-accent-strong);
+  background: color-mix(in srgb, var(--color-accent) 7%, #ffffff);
 }
 
 .inventory-workspace-nav button.active {
-  border-color: color-mix(in srgb, var(--radar-cyan) 38%, var(--radar-line));
-  color: var(--radar-cyan-strong);
-  background: #ffffff;
+  border-color: color-mix(in srgb, var(--color-accent) 38%, var(--color-border));
+  color: var(--color-accent-strong);
+  background: var(--color-surface);
   box-shadow: 0 2px 8px rgba(17, 24, 39, .08);
 }
 
@@ -259,9 +259,9 @@ function removeInventorySnapshot(effectiveDate: string) {
 .inventory-task-panel,
 .inventory-empty-state {
   overflow: hidden;
-  border: 1px solid var(--radar-line);
+  border: 1px solid var(--color-border);
   border-radius: 9px;
-  background: var(--radar-surface);
+  background: var(--color-surface);
 }
 
 .inventory-task-head {
@@ -271,13 +271,13 @@ function removeInventorySnapshot(effectiveDate: string) {
   justify-content: space-between;
   gap: 20px;
   padding: 13px 16px;
-  border-bottom: 1px solid var(--radar-line);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .inventory-task-eyebrow,
 .inventory-empty-eyebrow {
   margin-bottom: 2px;
-  color: var(--radar-cyan-strong) !important;
+  color: var(--color-accent-strong) !important;
   font-size: 12px !important;
   font-weight: 850;
   letter-spacing: .08em;
@@ -285,7 +285,7 @@ function removeInventorySnapshot(effectiveDate: string) {
 
 .inventory-task-head h2,
 .inventory-empty-state h2 {
-  color: var(--radar-ink);
+  color: var(--color-text);
   font-size: 21px;
   line-height: 1.25;
 }
@@ -293,7 +293,7 @@ function removeInventorySnapshot(effectiveDate: string) {
 .inventory-task-head div > p:last-child,
 .inventory-empty-state div > p:last-child {
   margin-top: 3px;
-  color: var(--radar-muted);
+  color: var(--color-text-muted);
   font-size: 13px !important;
   line-height: 1.45;
 }
@@ -303,10 +303,10 @@ function removeInventorySnapshot(effectiveDate: string) {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border: 1px solid color-mix(in srgb, var(--radar-cyan) 34%, var(--radar-line));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 34%, var(--color-border));
   border-radius: 999px;
-  color: var(--radar-cyan-strong);
-  background: var(--radar-cyan-soft);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
   font-size: 12px;
   font-weight: 850;
   white-space: nowrap;
