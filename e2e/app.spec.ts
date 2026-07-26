@@ -478,12 +478,12 @@ test.describe("desktop application", () => {
     await expect(completionDialog).toContainText("缺 20 个");
     await expect(completionDialog).toContainText("5.5 万/个");
     await expect(completionDialog).toContainText("110 万");
-    await expect(completionDialog).toContainText("系统自动计算");
+    await expect(completionDialog).toContainText("自动计算");
     await completionDialog.getByLabel(/^本次实际使用专用蛋 \/ 个/).fill("0");
     await completionDialog.getByLabel(/^本次实际使用普通蛋 \/ 个/).fill("1");
     await expect(automaticEggSilver).toHaveValue("214.5");
     await expect(completionDialog).toContainText("缺 39 个");
-    await expect(completionDialog).toContainText("今天真实用掉的蛋");
+    await expect(completionDialog).toContainText("还需补购 39 个");
     await completionDialog.getByRole("button", { name: "完成并记账", exact: true }).click();
     await expect(completionDialog).toHaveCount(0);
     await expect(page.locator(".task-work-row")).toHaveCount(0);
@@ -869,10 +869,10 @@ test.describe("schedule completion dates", () => {
       const prioritySection = progressCard.locator(".priority-section");
       await expect(prioritySection.getByRole("heading", { name: "优先处理账号", exact: true })).toBeVisible();
       const priorityRows = prioritySection.locator("a.priority-account-row");
-      await expect(priorityRows).toHaveCount(2);
+      await expect(priorityRows).toHaveCount(5);
       const ptHomeRow = prioritySection.locator("a.priority-account-row[data-account-id='PT']");
       await expect(ptHomeRow.locator(".priority-copy strong")).toHaveText("剑气蛇 · 进阶2");
-      await expect(ptHomeRow.locator(".priority-meta small")).toHaveText("可以完成");
+      await expect(ptHomeRow.locator(".priority-meta strong")).toHaveText("可以完成");
       await expect(ptHomeRow).toHaveAttribute("href", "#/plans/tasks?account=PT");
       await prioritySection.screenshot({ path: testInfo.outputPath(`schedule-priority-${testInfo.project.name}.png`) });
     } else {

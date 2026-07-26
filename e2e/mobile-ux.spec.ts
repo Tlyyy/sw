@@ -799,19 +799,18 @@ test.describe("mobile UX release gate", () => {
     await dialog.getByRole("button", { name: "取消", exact: true }).tap();
   });
 
-  test("首页首屏呈现今日进度、两个优先账号与周报入口", async ({ page }) => {
+  test("首页首屏呈现今日进度与五个优先账号", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
     const home = page.getByTestId("mobile-week-home");
     const priorityRows = home.locator(".priority-account-row");
-    const weekPulse = home.locator(".week-pulse-card");
     await expect(home).toBeVisible();
     await expect(home.getByRole("heading", { name: "今日进度", exact: true })).toBeVisible();
     await expect(home.locator(".today-progress-grid > .progress-metric")).toHaveCount(3);
-    await expect(priorityRows).toHaveCount(2);
-    await expect(weekPulse).toHaveAttribute("href", "#/week");
-    await expect(weekPulse).toContainText("本周脉搏");
+    await expect(priorityRows).toHaveCount(5);
+    await expect(home.locator(".next-step-card")).toHaveCount(0);
+    await expect(home.locator(".week-pulse-card")).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link")).toHaveText([
       "今日",
       "任务",
@@ -820,14 +819,12 @@ test.describe("mobile UX release gate", () => {
 
     const layout = await page.evaluate(() => {
       const progress = document.querySelector<HTMLElement>(".today-progress-card");
-      const primaryAction = document.querySelector<HTMLElement>(".next-step-action");
       const priorityRows = [...document.querySelectorAll<HTMLElement>(".priority-account-row")];
       const mobileDock = document.querySelector<HTMLElement>(".orbit-mobile-dock");
-      if (!progress || !primaryAction || priorityRows.length !== 2 || !mobileDock) {
+      if (!progress || priorityRows.length !== 5 || !mobileDock) {
         throw new Error("首页移动首屏关键区域未完整渲染");
       }
       const progressRect = progress.getBoundingClientRect();
-      const primaryRect = primaryAction.getBoundingClientRect();
       const dockRect = mobileDock.getBoundingClientRect();
       return {
         progressLeft: progressRect.left,
@@ -836,7 +833,7 @@ test.describe("mobile UX release gate", () => {
           const rect = row.getBoundingClientRect();
           return rect.left >= -1 && rect.right <= document.documentElement.clientWidth + 1;
         }),
-        primaryBottom: primaryRect.bottom,
+        progressBottom: progressRect.bottom,
         dockTop: dockRect.top,
         documentWidth: document.documentElement.scrollWidth,
         viewportWidth: document.documentElement.clientWidth,
@@ -845,8 +842,8 @@ test.describe("mobile UX release gate", () => {
 
     expect(layout.progressLeft, "今日进度卡左侧不能超出视口").toBeGreaterThanOrEqual(0);
     expect(layout.progressRight, "今日进度卡右侧不能超出视口").toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.priorityRowsFit, "两个优先账号入口应完整位于手机视口内").toBe(true);
-    expect(layout.primaryBottom, "主操作不应被底部导航遮挡").toBeLessThanOrEqual(layout.dockTop - 6);
+    expect(layout.priorityRowsFit, "五个优先账号入口应完整位于手机视口内").toBe(true);
+    expect(layout.progressBottom, "今日进度卡不应被底部导航遮挡").toBeLessThanOrEqual(layout.dockTop - 6);
     expect(layout.documentWidth, "首页不应产生横向页面滚动").toBeLessThanOrEqual(layout.viewportWidth + 1);
   });
 
@@ -856,7 +853,7 @@ test.describe("mobile UX release gate", () => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    const recordToday = page.getByRole("button", { name: "记录今日库存", exact: true });
+    const recordToday = page.getByRole("button", { name: "快速录入", exact: true });
     await expect(recordToday).toBeVisible();
     await recordToday.tap();
 
@@ -913,7 +910,7 @@ test.describe("mobile UX release gate", () => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    await page.getByRole("button", { name: "记录今日库存", exact: true }).tap();
+    await page.getByRole("button", { name: "快速录入", exact: true }).tap();
 
     const sheet = page.locator(".ios26-record-sheet");
     await expect(sheet).toBeVisible();
@@ -1044,17 +1041,17 @@ test.describe("mobile UX release gate", () => {
     await expect(sheet).toHaveCount(0);
   });
 
-  test("首页展示两个优先账号并从账号行进入任务详情", async ({ page }) => {
+  test("首页展示五个优先账号并从账号行进入任务详情", async ({ page }) => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
     const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
     const priorityRows = page.locator(".priority-account-row");
-    await expect(priorityRows).toHaveCount(2);
+    await expect(priorityRows).toHaveCount(5);
     const priorityAccountIds = await priorityRows.evaluateAll((elements) => elements.map((element) => (
       (element as HTMLElement).dataset.accountId || ""
     )));
-    expect(new Set(priorityAccountIds).size, "首页两个优先账号不能重复").toBe(2);
+    expect(new Set(priorityAccountIds).size, "首页五个优先账号不能重复").toBe(5);
     expect(priorityAccountIds.every((accountId) => accountIds.includes(accountId as typeof accountIds[number])),
       "首页只能展示系统内的有效账号").toBe(true);
     expect(await priorityRows.evaluateAll((elements) => elements.map((element) => element.getAttribute("href"))))
@@ -1075,7 +1072,7 @@ test.describe("mobile UX release gate", () => {
     await page.goto("/#/");
     await waitForApplicationPage(page);
 
-    await page.locator(".priority-heading").getByRole("link", { name: "查看全部", exact: true }).tap();
+    await page.locator(".priority-heading").getByRole("link", { name: "任务列表", exact: true }).tap();
     await expect(page).toHaveURL(/#\/plans\/tasks$/);
     await expect(page.getByRole("navigation", { name: "手机快捷导航" }).getByRole("link", { name: "任务", exact: true })).toHaveAttribute("aria-current", "page");
   });
@@ -1161,7 +1158,7 @@ test.describe("mobile UX release gate", () => {
     await dialog.getByLabel(/^本次实际使用普通蛋 \/ 个/).fill("1");
     await expect(automaticSilver).toHaveValue("214.5");
     await expect(dialog).toContainText("实际使用 1 + 自动补购 39");
-    await expect(dialog).toContainText("今天真实用掉的蛋");
+    await expect(dialog).toContainText("还需补购 39 个");
 
     const eggFieldLayout = await dialog.locator(".task-egg-fields > .task-settlement-field").evaluateAll((elements) => (
       elements.slice(0, 2).map((element) => {
