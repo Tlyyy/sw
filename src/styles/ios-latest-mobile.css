@@ -17,8 +17,8 @@
     --ios-mobile-dock-inset: 18px;
     --ios-mobile-dock-bottom: 16px;
     --ios-mobile-content-bottom: 90px;
-    --ios26-type-tab-label: 11px;
-    --ios26-leading-tab-label: 13px;
+    --ios26-type-tab-label: 12px;
+    --ios26-leading-tab-label: 14px;
 
     --ios-system-background: var(--color-mobile-canvas);
     --ios-secondary-system-background: var(--color-surface);
@@ -554,6 +554,449 @@
     min-height: 44px;
     display: inline-flex;
     align-items: center;
+  }
+}
+
+/*
+ * Real-device readability pass for the task workflow.
+ *
+ * The base iOS layer keeps dense utility screens compact, but the task flow is
+ * read and acted on repeatedly at arm's length. Keep captions at 13px or above,
+ * promote task names to the native Body/Headline scale, and let rows grow
+ * instead of squeezing more items above the fold.
+ */
+@media (max-width: 720px) {
+  body .orbit-main .task-maintenance-page .task-mobile-segments button {
+    min-height: 44px;
+    font-size: 16px !important;
+    font-weight: 650;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-segments button span {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-feedback {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-filters > label > span,
+  body .orbit-main .task-maintenance-page .task-mobile-selection > div span,
+  body .orbit-main .task-maintenance-page .task-mobile-selection > label {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-selection strong {
+    font-size: 17px !important;
+    font-weight: 700;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-drilldown-head > div > button,
+  body .orbit-main .task-maintenance-page .task-mobile-batch-toggle {
+    min-height: 48px;
+    font-size: 15px !important;
+    font-weight: 650;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-drilldown-head > div > span {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-summary-main {
+    min-height: 96px;
+    grid-template-columns: 44px minmax(0, 1fr) 20px;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-summary-main .task-mobile-account-mark {
+    width: 42px;
+    height: 40px;
+    font-size: 15px;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-summary-main strong {
+    font-size: 17px !important;
+    font-weight: 700;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-summary-main small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-summary-main .task-mobile-next-label {
+    font-size: 13px !important;
+    font-weight: 700;
+    line-height: 18px !important;
+    letter-spacing: 0;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-account-group > header {
+    min-height: 48px;
+    gap: 9px;
+    padding: 8px 12px;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-account-group > header .task-mobile-account-mark {
+    width: 34px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-account-group > header strong {
+    font-size: 15px !important;
+    font-weight: 700;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-account-group > header small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .task-maintenance-page :is(
+    .task-mobile-section-title,
+    .task-mobile-later-toggle
+  ) {
+    min-height: 52px;
+    padding: 9px 14px;
+  }
+
+  body .orbit-main .task-maintenance-page :is(
+    .task-mobile-section-title strong,
+    .task-mobile-later-toggle strong
+  ) {
+    font-size: 15px !important;
+    font-weight: 700;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-section-title > span,
+  body .orbit-main .task-maintenance-page .task-mobile-later-toggle small,
+  body .orbit-main .task-maintenance-page .task-mobile-later-toggle > span:last-child {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-account-group article {
+    min-height: 96px;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-row-main {
+    gap: 12px;
+    padding: 13px 14px;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-row-main strong {
+    font-size: 17px !important;
+    font-weight: 700;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-row-main small,
+  body .orbit-main .task-maintenance-page .task-mobile-row-main em {
+    font-size: 14px !important;
+    font-weight: 500;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-mobile-row-tail small {
+    font-size: 14px !important;
+    font-weight: 650;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-bulk-action-bar > div strong {
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-bulk-action-bar > div span {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .task-maintenance-page .task-bulk-action-bar .button.primary {
+    min-height: 48px;
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  body .task-settlement-dialog {
+    max-height: min(
+      calc(var(--task-modal-height, 100dvh) - max(10px, env(safe-area-inset-top))),
+      88dvh
+    );
+  }
+
+  body .task-settlement-dialog .task-settlement-mobile-header {
+    min-height: 72px;
+    padding: 15px 14px 9px;
+  }
+
+  body .task-settlement-dialog .task-settlement-mobile-header h2 {
+    font-size: 18px !important;
+    font-weight: 700;
+    line-height: 24px !important;
+  }
+
+  body .task-settlement-dialog .task-settlement-mobile-header button {
+    min-height: 44px;
+    min-width: 44px;
+    justify-self: start;
+    padding-inline: 4px;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 22px;
+  }
+
+  body .task-settlement-dialog .task-settlement-queue {
+    min-height: 44px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-settlement-body {
+    padding: 12px 14px 16px;
+  }
+
+  body .task-settlement-dialog .task-mobile-settlement-rule {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-mobile-settlement-summary {
+    min-height: 84px;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 13px 14px;
+  }
+
+  body .task-settlement-dialog .task-mobile-settlement-summary > span {
+    width: 44px;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  body .task-settlement-dialog .task-mobile-settlement-summary strong {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 22px;
+  }
+
+  body .task-settlement-dialog .task-mobile-settlement-summary small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .task-settlement-dialog .task-mobile-settlement-summary > b {
+    max-width: 126px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-settlement-guidance {
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog :is(
+    .task-settlement-section,
+    .task-existing-settlement
+  ) > header {
+    min-height: 64px;
+    padding: 11px 14px;
+  }
+
+  body .task-settlement-dialog :is(
+    .task-settlement-section,
+    .task-existing-settlement
+  ) > header p {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  body .task-settlement-dialog :is(
+    .task-settlement-section,
+    .task-existing-settlement
+  ) > header h3 {
+    font-size: 18px !important;
+    line-height: 24px !important;
+  }
+
+  body .task-settlement-dialog :is(
+    .task-settlement-section,
+    .task-existing-settlement
+  ) > header > strong {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-egg-receipt dl > div {
+    grid-template-columns: 86px minmax(0, 1fr);
+    padding: 11px 12px;
+  }
+
+  body .task-settlement-dialog .task-egg-receipt dt {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  body .task-settlement-dialog .task-egg-receipt dd {
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-egg-receipt dd b,
+  body .task-settlement-dialog .task-egg-receipt output {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  body .task-settlement-dialog .task-egg-ledger-note {
+    padding: 11px 12px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog :is(
+    .task-egg-adjustment,
+    .task-settlement-optional
+  ) > summary {
+    min-height: 50px;
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog :is(
+    .task-egg-adjustment,
+    .task-settlement-optional
+  ) > summary small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .task-settlement-dialog .task-settlement-field {
+    gap: 8px;
+    padding: 14px;
+  }
+
+  body .task-settlement-dialog .task-settlement-field > span {
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-settlement-field small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .task-settlement-dialog .task-settlement-field :is(input, textarea) {
+    min-height: 52px;
+    padding-inline: 14px;
+    font-size: 17px !important;
+    line-height: 22px !important;
+  }
+
+  body .task-settlement-dialog :is(
+    .task-egg-total,
+    .task-progress-total
+  ) {
+    padding: 11px 14px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-egg-total b {
+    font-size: 17px;
+    line-height: 22px;
+  }
+
+  body .task-settlement-dialog .task-existing-settlement label b {
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-existing-settlement label small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .task-settlement-dialog .task-zero-confirm {
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-settlement-errors {
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  body .task-settlement-dialog .task-settlement-mobile-footer button {
+    min-height: 56px;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 22px;
+  }
+
+  body .task-settlement-dialog .task-settlement-mobile-footer button.secondary {
+    min-height: 48px;
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page :is(
+    .task-mobile-summary-main small,
+    .task-mobile-account-group > header small,
+    .task-mobile-row-main small,
+    .task-mobile-later-toggle small,
+    .task-mobile-later-toggle > span:last-child
+  ),
+  html[data-theme="dark"] body .task-settlement-dialog :is(
+    .task-mobile-settlement-summary small,
+    .task-settlement-guidance,
+    .task-settlement-field small,
+    .task-egg-receipt dt,
+    .task-egg-ledger-note
+  ) {
+    color: rgba(235, 235, 245, 0.72);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-segments button.active {
+    color: #1c1c1e;
+    background: #ff9f0a;
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-segments button.active span {
+    color: #1c1c1e;
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-row-main em {
+    color: #ffb340;
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page :is(
+    .task-mobile-row-tail,
+    .task-mobile-row-tail svg,
+    .task-mobile-later-toggle svg
+  ) {
+    color: var(--ios-secondary-label);
+  }
+
+  html[data-theme="dark"] body .task-settlement-dialog .task-settlement-mobile-footer button.primary {
+    color: #1c1c1e;
+    background: #ff9f0a;
   }
 }
 
