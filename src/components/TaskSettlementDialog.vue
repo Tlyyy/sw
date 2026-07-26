@@ -29,11 +29,15 @@ const props = withDefaults(defineProps<{
   progressTotalWan?: number;
   existingEntryCount?: number;
   existingSummary?: string;
+  queueIndex?: number;
+  queueTotal?: number;
 }>(), {
   inventory: null,
   progressTotalWan: 0,
   existingEntryCount: 0,
   existingSummary: "",
+  queueIndex: 0,
+  queueTotal: 0,
 });
 
 const emit = defineEmits<{
@@ -44,7 +48,7 @@ const emit = defineEmits<{
 const dialog = ref<HTMLFormElement>();
 const closeButton = ref<HTMLButtonElement>();
 const mobileCloseButton = ref<HTMLButtonElement>();
-const initialFocus = ref<HTMLInputElement>();
+const initialFocus = ref<HTMLElement>();
 const draft = ref<TaskSettlementDraft>(createTaskSettlementDraft(
   props.task,
   props.inventory,
@@ -107,10 +111,16 @@ const dialogTitle = computed(() => {
   if (isVariable.value) return "完成打书并记账";
   return "确认任务消耗";
 });
-const mobileConfirmLabel = computed(() => {
-  if (isProgress.value) return "记录并完成";
-  if (reuseExisting.value) return "确认完成";
-  return "确认并完成";
+const queuePositionLabel = computed(() => {
+  const total = Math.trunc(props.queueTotal);
+  const index = Math.trunc(props.queueIndex);
+  return total > 1 && index >= 1 && index <= total ? `第 ${index}/${total} 项` : "";
+});
+const mobilePrimaryLabel = computed(() => {
+  if (reuseExisting.value) return "沿用记录并完成";
+  if (isFixedShard.value) return "完成任务并记录消耗";
+  const amountWan = Math.max(0, finiteNumberOrNull(draft.value.silverWan) ?? 0);
+  return `完成任务并记账 ${amountLabel(amountWan)} 万`;
 });
 const taskRequirementLabel = computed(() => {
   if (reuseExisting.value) return "沿用已有流水";
@@ -221,7 +231,7 @@ function handleKeydown(event: KeyboardEvent) {
   }
   if (event.key !== "Tab" || !dialog.value) return;
   const focusable = [...dialog.value.querySelectorAll<HTMLElement>(
-    "button:not([disabled]), input:not([disabled]), textarea:not([disabled])",
+    "button:not([disabled]), input:not([disabled]), textarea:not([disabled]), summary",
   )].filter((item) => item.offsetParent !== null);
   if (!focusable.length) return;
   const first = focusable[0];
@@ -305,7 +315,7 @@ onBeforeUnmount(() => deactivateDialog());
         tabindex="-1"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="task-settlement-title"
+        :aria-label="queuePositionLabel ? `${dialogTitle}，${queuePositionLabel}` : dialogTitle"
         aria-describedby="task-settlement-guidance"
         novalidate
         @submit.prevent="submit(isProgress ? false : true)"
@@ -314,12 +324,20 @@ onBeforeUnmount(() => deactivateDialog());
         <header class="task-settlement-mobile-header">
           <button ref="mobileCloseButton" type="button" @click="requestCancel">取消</button>
           <h2>任务结算</h2>
-          <button class="primary" type="button" @click="submit(true)">{{ mobileConfirmLabel }}</button>
+          <span
+            v-if="queuePositionLabel"
+            class="task-settlement-queue"
+            role="status"
+            aria-label="批量结算进度"
+          >{{ queuePositionLabel }}</span>
         </header>
 
         <header class="task-settlement-header task-settlement-desktop-header">
           <div>
-            <p>{{ task.accountId }} · {{ task.typeLabel }}</p>
+            <p>
+              {{ task.accountId }} · {{ task.typeLabel }}
+              <span v-if="queuePositionLabel" class="task-settlement-desktop-queue">{{ queuePositionLabel }}</span>
+            </p>
             <h2 id="task-settlement-title">{{ dialogTitle }}</h2>
             <span>{{ task.actionLabel }} · {{ task.kind }}</span>
           </div>
@@ -378,49 +396,77 @@ onBeforeUnmount(() => deactivateDialog());
             </label>
 
             <div v-else-if="isFixedEgg" class="task-egg-fields">
-              <label class="task-settlement-field">
-                <span>本次实际使用专用蛋 / 个</span>
-                <input
-                  ref="initialFocus"
-                  v-model.number="draft.dedicatedEggs"
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputmode="numeric"
-                  :aria-invalid="fieldHasIssue('dedicatedEggs')"
-                  aria-describedby="task-egg-total"
-                />
-              </label>
-              <label class="task-settlement-field">
-                <span>本次实际使用普通蛋 / 个</span>
-                <input
-                  v-model.number="draft.regularEggs"
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputmode="numeric"
-                  :aria-invalid="fieldHasIssue('regularEggs')"
-                  aria-describedby="task-egg-total"
-                />
-              </label>
-              <p id="task-egg-total" :class="['task-egg-total', { invalid: submitted && eggTotal > task.eggCount }]">
-                实际使用 <b>{{ eggTotal }}</b> + 自动补购 <b>{{ eggPurchase.shortageEggs }}</b>
-                = {{ eggTotal + eggPurchase.shortageEggs }} / {{ task.eggCount }} 个
+              <div class="task-egg-receipt" aria-label="本次用蛋与自动补购回执">
+                <dl>
+                  <div>
+                    <dt>库存使用</dt>
+                    <dd>
+                      <span>专用蛋 <b>{{ numericValue(draft.dedicatedEggs) }}</b> 个</span>
+                      <span>普通蛋 <b>{{ numericValue(draft.regularEggs) }}</b> 个</span>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>自动补购</dt>
+                    <dd>
+                      <span>{{ eggPurchase.shortageEggs }} 个 × {{ eggUnitPriceLabel }} 万/个</span>
+                      <output
+                        for="task-dedicated-eggs task-regular-eggs"
+                        aria-label="自动补购记账金额"
+                      >{{ eggSilverLabel }} 万</output>
+                    </dd>
+                  </div>
+                </dl>
+                <p class="task-egg-ledger-note">
+                  本次将记账 <strong>{{ eggSilverLabel }} 万</strong>，库存快照不会自动扣减
+                </p>
+              </div>
+
+              <details class="task-egg-adjustment">
+                <summary ref="initialFocus">
+                  <span>调整用蛋</span>
+                  <small>专用 {{ numericValue(draft.dedicatedEggs) }} · 普通 {{ numericValue(draft.regularEggs) }}</small>
+                </summary>
+                <div class="task-egg-adjustment-fields">
+                  <label class="task-settlement-field">
+                    <span>本次实际使用专用蛋 / 个</span>
+                    <input
+                      id="task-dedicated-eggs"
+                      v-model.number="draft.dedicatedEggs"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputmode="numeric"
+                      :aria-invalid="fieldHasIssue('dedicatedEggs')"
+                      aria-describedby="task-egg-total"
+                    />
+                  </label>
+                  <label class="task-settlement-field">
+                    <span>本次实际使用普通蛋 / 个</span>
+                    <input
+                      id="task-regular-eggs"
+                      v-model.number="draft.regularEggs"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputmode="numeric"
+                      :aria-invalid="fieldHasIssue('regularEggs')"
+                      aria-describedby="task-egg-total"
+                    />
+                  </label>
+                </div>
+              </details>
+
+              <p
+                id="task-egg-total"
+                :class="['task-egg-total', { invalid: submitted && eggTotal > task.eggCount }]"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                库存使用 <b>{{ eggTotal }}</b> + 自动补购 <b>{{ eggPurchase.shortageEggs }}</b>
+                = {{ eggTotal + eggPurchase.shortageEggs }} / {{ task.eggCount }} 个；
+                本次记账 {{ eggSilverLabel }} 万
               </p>
-              <label class="task-settlement-field task-extra-silver">
-                <span>自动补购银子 / 万</span>
-                <input
-                  :value="draft.silverWan ?? 0"
-                  type="number"
-                  inputmode="decimal"
-                  readonly
-                  aria-readonly="true"
-                />
-                <small>
-                  缺 {{ eggPurchase.shortageEggs }} 个 × {{ eggUnitPriceLabel }} 万/个
-                  = {{ eggSilverLabel }} 万，自动计算。
-                </small>
-              </label>
             </div>
 
             <label v-else-if="isFixedShard" class="task-settlement-field">
@@ -464,8 +510,8 @@ onBeforeUnmount(() => deactivateDialog());
           </section>
 
           <section v-if="!reuseExisting" class="task-settlement-section task-settlement-meta" aria-labelledby="task-record-title">
-            <header><h3 id="task-record-title">发生时间与备注</h3></header>
-            <label class="task-settlement-field">
+            <header><h3 id="task-record-title">记录信息</h3></header>
+            <label class="task-settlement-field task-settlement-time">
               <span>发生时间</span>
               <input
                 v-model="occurredAtLocal"
@@ -478,11 +524,17 @@ onBeforeUnmount(() => deactivateDialog());
                 用于归入正确的库存日期。
               </small>
             </label>
-            <label class="task-settlement-field">
-              <span>备注（可选）</span>
-              <textarea v-model="note" rows="2" maxlength="80" placeholder="例如：第 2 次洗护符"></textarea>
-              <small>{{ note.length }} / 80</small>
-            </label>
+            <details class="task-settlement-optional">
+              <summary>
+                <span>备注（可选）</span>
+                <small>{{ note ? `已填写 ${note.length} 字` : "按需添加" }}</small>
+              </summary>
+              <label class="task-settlement-field">
+                <span class="visually-hidden">备注（可选）</span>
+                <textarea v-model="note" rows="2" maxlength="80" placeholder="例如：第 2 次洗护符"></textarea>
+                <small>{{ note.length }} / 80</small>
+              </label>
+            </details>
           </section>
 
           <div v-if="uniqueIssueMessages.length || timeError" class="task-settlement-errors" role="alert" aria-live="assertive">
@@ -502,8 +554,13 @@ onBeforeUnmount(() => deactivateDialog());
           </template>
           <button v-else class="settlement-button primary" type="submit">{{ reuseExisting ? "沿用记录并完成" : "完成并记账" }}</button>
         </footer>
-        <footer v-if="isProgress" class="task-settlement-mobile-progress-footer">
-          <button type="button" @click="submit(false)">仅记录本次，任务继续</button>
+        <footer class="task-settlement-mobile-footer">
+          <button v-if="isProgress" class="secondary" type="button" @click="submit(false)">
+            仅记录本次，任务继续
+          </button>
+          <button class="primary" type="button" @click="submit(true)">
+            {{ mobilePrimaryLabel }}
+          </button>
         </footer>
       </form>
     </div>
@@ -539,8 +596,17 @@ onBeforeUnmount(() => deactivateDialog());
 .task-settlement-mobile-header,
 .task-mobile-settlement-rule,
 .task-mobile-settlement-summary,
-.task-settlement-mobile-progress-footer {
+.task-settlement-mobile-footer {
   display: none;
+}
+.task-settlement-dialog .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .task-settlement-header {
@@ -560,6 +626,13 @@ onBeforeUnmount(() => deactivateDialog());
   font-size: 11px;
   font-weight: 850;
   letter-spacing: .08em;
+}
+.task-settlement-header p .task-settlement-desktop-queue {
+  display: inline;
+  margin: 0 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0;
 }
 .task-settlement-header h2 {
   margin-top: 1px;
@@ -729,11 +802,109 @@ onBeforeUnmount(() => deactivateDialog());
 
 .task-egg-fields {
   display: grid;
+  grid-template-columns: 1fr;
+}
+.task-egg-receipt {
+  padding: 12px 13px 0;
+}
+.task-egg-receipt dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.task-egg-receipt dl > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-subtle);
+}
+.task-egg-receipt dt {
+  margin-bottom: 6px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.task-egg-receipt dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 0;
+  color: var(--color-text);
+  font-size: 12px;
+}
+.task-egg-receipt dd b { color: var(--color-success); font-size: 15px; }
+.task-egg-receipt output {
+  color: var(--color-accent-strong);
+  font-size: 16px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.task-egg-ledger-note {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+  border-radius: 10px;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-accent-soft) 48%, #ffffff);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.task-egg-ledger-note strong { color: var(--color-accent-strong); }
+.task-egg-adjustment,
+.task-settlement-optional {
+  margin: 12px 13px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+.task-egg-adjustment > summary,
+.task-settlement-optional > summary {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  list-style-position: inside;
+}
+.task-egg-adjustment > summary::marker,
+.task-settlement-optional > summary::marker {
+  color: var(--color-accent);
+}
+.task-egg-adjustment > summary:focus-visible,
+.task-settlement-optional > summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+  outline-offset: -3px;
+}
+.task-egg-adjustment > summary small,
+.task-settlement-optional > summary small {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+.task-egg-adjustment[open] > summary,
+.task-settlement-optional[open] > summary {
+  border-bottom: 1px solid var(--color-border);
+}
+.task-egg-adjustment-fields {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.task-egg-fields > label:nth-child(2) { border-top: 0; border-left: 1px solid var(--color-border); }
+.task-egg-adjustment-fields > label + label {
+  border-top: 0;
+  border-left: 1px solid var(--color-border);
+}
 .task-egg-total {
-  grid-column: 1 / -1;
   margin: 0;
   padding: 9px 13px;
   border-top: 1px solid var(--color-border);
@@ -746,7 +917,6 @@ onBeforeUnmount(() => deactivateDialog());
 .task-egg-total b { color: var(--color-success); font-size: 15px; }
 .task-egg-total.invalid { color: var(--color-danger); background: #fff4f3; }
 .task-egg-total.invalid b { color: var(--color-danger); }
-.task-extra-silver { grid-column: 1 / -1; border-top: 1px solid var(--color-border); }
 
 .task-actual-silver > .task-settlement-field { padding-bottom: 10px; }
 .task-zero-confirm {
@@ -786,7 +956,11 @@ onBeforeUnmount(() => deactivateDialog());
 
 .task-settlement-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .task-settlement-meta > header { grid-column: 1 / -1; }
-.task-settlement-meta > label + label { border-top: 0; border-left: 1px solid var(--color-border); }
+.task-settlement-meta > .task-settlement-optional {
+  align-self: start;
+  margin: 12px 13px;
+}
+.task-settlement-meta > .task-settlement-optional .task-settlement-field { padding: 11px 12px; }
 
 .task-settlement-errors {
   margin-top: 12px;
@@ -848,7 +1022,12 @@ html[data-theme="dark"] :is(.task-settlement-header, .task-settlement-footer) {
   background: rgba(36, 36, 38, .92);
 }
 html[data-theme="dark"] .task-settlement-close,
-html[data-theme="dark"] :is(.task-existing-settlement, .task-settlement-section) {
+html[data-theme="dark"] :is(
+  .task-existing-settlement,
+  .task-settlement-section,
+  .task-egg-adjustment,
+  .task-settlement-optional
+) {
   border-color: rgba(255, 255, 255, .11);
   color: #f5f5f7;
   background: #2c2c2e;
@@ -861,6 +1040,26 @@ html[data-theme="dark"] .task-settlement-guidance {
   border-color: rgba(65, 210, 190, .24);
   color: #70e1d0;
   background: rgba(22, 118, 105, .18);
+}
+html[data-theme="dark"] .task-egg-receipt dl > div {
+  border-color: rgba(255, 255, 255, .09);
+  background: #242426;
+}
+html[data-theme="dark"] .task-egg-receipt dd,
+html[data-theme="dark"] :is(.task-egg-adjustment, .task-settlement-optional) > summary {
+  color: #f5f5f7;
+}
+html[data-theme="dark"] .task-egg-receipt output,
+html[data-theme="dark"] .task-egg-ledger-note strong {
+  color: #ffb178;
+}
+html[data-theme="dark"] .task-egg-ledger-note {
+  border-color: rgba(255, 159, 90, .24);
+  color: rgba(235, 235, 245, .62);
+  background: rgba(201, 80, 0, .12);
+}
+html[data-theme="dark"] :is(.task-egg-adjustment, .task-settlement-optional)[open] > summary {
+  border-color: rgba(255, 255, 255, .09);
 }
 html[data-theme="dark"] .task-settlement-field > span,
 html[data-theme="dark"] .task-settlement-section > header h3 {
@@ -973,9 +1172,13 @@ html[data-theme="dark"] .settlement-button.secondary {
     font-weight: 650;
     text-align: left;
   }
-  .task-settlement-mobile-header button.primary {
+  .task-settlement-queue {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
     color: #c95000;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 850;
     text-align: right;
   }
@@ -1074,11 +1277,49 @@ html[data-theme="dark"] .settlement-button.secondary {
     max-width: none;
     text-align: left;
   }
-  .task-egg-fields { grid-template-columns: 1fr; }
-  .task-egg-fields > label:nth-child(2) { border-top: 1px solid var(--color-border); border-left: 0; }
+  .task-egg-receipt { padding: 10px 11px 0; }
+  .task-egg-receipt dl {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .task-egg-receipt dl > div {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+  }
+  .task-egg-receipt dt { margin: 0; }
+  .task-egg-receipt dd {
+    justify-content: flex-end;
+    text-align: right;
+  }
+  .task-egg-receipt output { font-size: 15px; }
+  .task-egg-ledger-note {
+    margin-top: 8px;
+    padding: 9px 10px;
+  }
+  .task-egg-adjustment {
+    margin: 10px 11px;
+  }
+  .task-egg-adjustment-fields { grid-template-columns: 1fr; }
+  .task-egg-adjustment-fields > label + label {
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
   .task-settlement-meta { grid-template-columns: 1fr; }
   .task-settlement-meta > header { grid-column: 1; }
-  .task-settlement-meta > label + label { border-top: 1px solid var(--color-border); border-left: 0; }
+  .task-settlement-time {
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px 10px;
+  }
+  .task-settlement-time > small {
+    grid-column: 2;
+  }
+  .task-settlement-meta > .task-settlement-optional {
+    margin: 0 11px 11px;
+  }
   .task-settlement-section,
   .task-existing-settlement {
     border-color: #dedee3;
@@ -1102,24 +1343,39 @@ html[data-theme="dark"] .settlement-button.secondary {
     color: #9b4200;
     background: #f7f2ee;
   }
-  .task-settlement-mobile-progress-footer {
-    display: block;
+  .task-settlement-mobile-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: grid;
+    gap: 8px;
     padding: 9px 12px max(12px, env(safe-area-inset-bottom));
     border-top: 1px solid rgba(45, 45, 50, .1);
     background: rgba(255, 255, 255, .92);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
     backdrop-filter: blur(20px) saturate(140%);
   }
-  .task-settlement-mobile-progress-footer button {
+  .task-settlement-mobile-footer button {
     width: 100%;
-    min-height: 48px;
-    border: 1px solid #c95000;
-    border-radius: 12px;
-    color: #b64900;
-    background: #fff7f1;
+    min-height: 54px;
+    border: 1px solid transparent;
+    border-radius: 14px;
     font: inherit;
     font-size: 14px;
     font-weight: 850;
+    touch-action: manipulation;
+  }
+  .task-settlement-mobile-footer button.primary {
+    border-color: #9e4707;
+    color: var(--color-text-on-strong);
+    background: var(--color-brand);
+    box-shadow: 0 6px 16px rgba(158, 71, 7, .2);
+  }
+  .task-settlement-mobile-footer button.secondary {
+    min-height: 44px;
+    border-color: #d8a47f;
+    color: #a64500;
+    background: #fff7f1;
   }
 
   html[data-theme="dark"] .task-settlement-backdrop {
@@ -1140,7 +1396,7 @@ html[data-theme="dark"] .settlement-button.secondary {
     background: rgba(235, 235, 245, .28);
   }
   html[data-theme="dark"] .task-settlement-mobile-header,
-  html[data-theme="dark"] .task-settlement-mobile-progress-footer {
+  html[data-theme="dark"] .task-settlement-mobile-footer {
     border-color: rgba(255, 255, 255, .09);
     background: rgba(36, 36, 38, .82);
   }
@@ -1150,7 +1406,7 @@ html[data-theme="dark"] .settlement-button.secondary {
   html[data-theme="dark"] .task-settlement-mobile-header button {
     color: rgba(235, 235, 245, .72);
   }
-  html[data-theme="dark"] .task-settlement-mobile-header button.primary {
+  html[data-theme="dark"] .task-settlement-queue {
     color: #ff9f5a;
   }
   html[data-theme="dark"] .task-mobile-settlement-rule {
@@ -1185,8 +1441,7 @@ html[data-theme="dark"] .settlement-button.secondary {
     background: #242426;
   }
   html[data-theme="dark"] .task-settlement-field + .task-settlement-field,
-  html[data-theme="dark"] .task-egg-fields > label:nth-child(2),
-  html[data-theme="dark"] .task-settlement-meta > label + label {
+  html[data-theme="dark"] .task-egg-adjustment-fields > label + label {
     border-color: rgba(255, 255, 255, .09);
   }
   html[data-theme="dark"] .task-settlement-field :is(input, textarea) {
@@ -1220,7 +1475,7 @@ html[data-theme="dark"] .settlement-button.secondary {
     color: #ff9b95;
     background: rgba(155, 35, 30, .18);
   }
-  html[data-theme="dark"] .task-settlement-mobile-progress-footer button {
+  html[data-theme="dark"] .task-settlement-mobile-footer button.secondary {
     border-color: rgba(255, 159, 90, .48);
     color: #ffb178;
     background: rgba(201, 80, 0, .14);

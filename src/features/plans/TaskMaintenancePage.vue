@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AppIcon from "../../components/AppIcon.vue";
 import TaskSettlementDialog from "../../components/TaskSettlementDialog.vue";
 import { useCatalogStore } from "../../stores/catalog";
@@ -15,6 +15,7 @@ import { accountIds, type AccountId } from "../../domain/types";
 import { useUiStore } from "../../stores/ui";
 
 type TaskStatusFilter = "pending" | "done" | "ALL";
+type MobileTaskStatusFilter = "ready" | "later" | "done";
 
 const catalog = useCatalogStore();
 const accounting = useAccountingStore();
@@ -22,6 +23,7 @@ const inventory = useInventoryStore();
 const settings = useSettingsStore();
 const ui = useUiStore();
 const route = useRoute();
+const router = useRouter();
 const requestedAccount = typeof route.query.account === "string"
   && accountIds.includes(route.query.account as AccountId)
   ? route.query.account as AccountId
@@ -32,13 +34,16 @@ const status = ref<TaskStatusFilter>("pending");
 const query = ref("");
 const mobileAccount = ref<string>(requestedAccount || "ALL");
 const mobileTaskType = ref("ALL");
-const mobileStatus = ref<TaskStatusFilter>("pending");
+const mobileStatus = ref<MobileTaskStatusFilter>("ready");
 const mobileQuery = ref("");
+const mobileBatchMode = ref(false);
+const mobileLaterExpanded = ref(false);
 const selectedTaskIds = ref<string[]>([]);
 const actionFeedback = ref("");
 const secondaryFiltersOpen = ref(false);
 const settlementTask = ref<ScheduledTask | null>(null);
 const settlementQueue = ref<ScheduledTask[]>([]);
+const settlementBatchTotal = ref(0);
 
 interface TaskSettlementPayload {
   draft: TaskSettlementDraft;
@@ -78,9 +83,7 @@ const mobileScopedTasks = computed(() => {
     && (!keyword || [task.accountId, task.typeLabel, task.actionLabel, task.kind].join(" ").toLowerCase().includes(keyword)),
   );
 });
-const mobileTasks = computed(() => mobileScopedTasks.value.filter((task) =>
-  mobileStatus.value === "ALL" || (mobileStatus.value === "done" ? task.done : !task.done),
-));
+const mobileTasks = computed(() => mobileScopedTasks.value.filter((task) => mobileTaskBucket(task) === mobileStatus.value));
 const mobileGroupedTasks = computed(() => catalog.data.accounts.map((item) => ({
   accountId: item.id,
   tasks: mobileTasks.value.filter((task) => task.accountId === item.id),
@@ -91,8 +94,39 @@ const groupedTasks = computed(() => catalog.data.accounts.map((item) => ({
 })).filter((group) => group.tasks.length));
 const pendingTaskCount = computed(() => scopedTasks.value.filter((task) => !task.done).length);
 const doneTaskCount = computed(() => scopedTasks.value.length - pendingTaskCount.value);
-const mobilePendingTaskCount = computed(() => mobileScopedTasks.value.filter((task) => !task.done).length);
-const mobileDoneTaskCount = computed(() => mobileScopedTasks.value.length - mobilePendingTaskCount.value);
+const mobileReadyTaskCount = computed(() => mobileScopedTasks.value.filter((task) => mobileTaskBucket(task) === "ready").length);
+const mobileLaterTaskCount = computed(() => mobileScopedTasks.value.filter((task) => mobileTaskBucket(task) === "later").length);
+const mobileDoneTaskCount = computed(() => mobileScopedTasks.value.filter((task) => mobileTaskBucket(task) === "done").length);
+const mobileDetailReadyTasks = computed(() => mobileScopedTasks.value.filter((task) => mobileTaskBucket(task) === "ready"));
+const mobileDetailLaterTasks = computed(() => mobileScopedTasks.value.filter((task) => mobileTaskBucket(task) === "later"));
+const mobileDetailDoneTasks = computed(() => mobileScopedTasks.value.filter((task) => mobileTaskBucket(task) === "done"));
+const mobileDetailSections = computed(() => {
+  if (mobileStatus.value === "done") {
+    return mobileDetailDoneTasks.value.length
+      ? [{ key: "done", label: "已完成", tasks: mobileDetailDoneTasks.value, collapsible: false }]
+      : [];
+  }
+
+  const sections: Array<{
+    key: "ready" | "later";
+    label: string;
+    tasks: ScheduledTask[];
+    collapsible: boolean;
+  }> = [];
+  if (mobileStatus.value === "ready" && mobileDetailReadyTasks.value.length) {
+    sections.push({ key: "ready", label: "可处理", tasks: mobileDetailReadyTasks.value, collapsible: false });
+  }
+  if (mobileDetailLaterTasks.value.length) {
+    sections.push({ key: "later", label: "后续任务", tasks: mobileDetailLaterTasks.value, collapsible: true });
+  }
+  return sections;
+});
+const mobileDetailVisibleTasks = computed(() => mobileDetailSections.value.flatMap((section) =>
+  section.collapsible && !mobileLaterExpanded.value ? [] : section.tasks,
+));
+const mobileDetailPendingTaskCount = computed(() =>
+  mobileDetailReadyTasks.value.length + mobileDetailLaterTasks.value.length,
+);
 const accountProgress = computed(() => catalog.data.accounts.map((item) => {
   const accountTasks = allTasks.value.filter((task) => task.accountId === item.id);
   const done = accountTasks.filter((task) => task.done).length;
@@ -107,14 +141,21 @@ const accountProgress = computed(() => catalog.data.accounts.map((item) => {
 const completionOverrideCount = computed(() => Object.values(settings.taskOverrides).filter((item) => item.done !== undefined).length);
 const completionByTask = computed(() => new Map(settings.taskCompletions.map((entry) => [entry.taskId, entry])));
 const visiblePendingTasks = computed(() => tasks.value.filter((task) => !task.done));
-const mobileVisiblePendingTasks = computed(() => mobileTasks.value.filter((task) => !task.done));
+const mobileVisiblePendingTasks = computed(() => mobileDetailVisibleTasks.value.filter((task) => !task.done));
 const selectedTaskCount = computed(() => selectedTaskIds.value.length);
 const allVisiblePendingSelected = computed(() => Boolean(visiblePendingTasks.value.length)
   && visiblePendingTasks.value.every((task) => selectedTaskIds.value.includes(task.id)));
-const allMobileVisiblePendingSelected = computed(() => Boolean(mobileVisiblePendingTasks.value.length)
-  && mobileVisiblePendingTasks.value.every((task) => selectedTaskIds.value.includes(task.id)));
+const mobileVisibleSelectedCount = computed(() => mobileVisiblePendingTasks.value
+  .filter((task) => selectedTaskIds.value.includes(task.id)).length);
+const mobileVisibleSelectionState = computed<"none" | "mixed" | "all">(() => {
+  if (!mobileVisibleSelectedCount.value) return "none";
+  return mobileVisibleSelectedCount.value === mobileVisiblePendingTasks.value.length ? "all" : "mixed";
+});
 const settlementProgressWan = computed(() => settlementTask.value
   ? taskRecordedSilverWan(settlementTask.value.id)
+  : 0);
+const settlementQueueIndex = computed(() => settlementTask.value
+  ? settlementBatchTotal.value - settlementQueue.value.length + 1
   : 0);
 
 watch([account, taskType, status, query], () => {
@@ -123,10 +164,18 @@ watch([account, taskType, status, query], () => {
 
 watch([mobileAccount, mobileTaskType, mobileStatus, mobileQuery], () => {
   selectedTaskIds.value = [];
+  mobileBatchMode.value = false;
+  mobileLaterExpanded.value = false;
 });
 
 watch(account, (value) => {
   if (value !== "ALL") ui.recentAccount = value as AccountId;
+});
+
+watch(() => route.query.account, (value) => {
+  mobileAccount.value = typeof value === "string" && accountIds.includes(value as AccountId)
+    ? value
+    : "ALL";
 });
 
 function requirementLabel(task: ScheduledTask) {
@@ -161,11 +210,23 @@ function taskState(task: ScheduledTask) {
   return { label: task.dueDate, tone: "blocked" };
 }
 
+function mobileTaskBucket(task: ScheduledTask): MobileTaskStatusFilter {
+  if (task.done) return "done";
+  if (task.actionKey === "talisman"
+    && (task.dueDate === "待洗护符" || accounting.taskEntries(task.id).length)) {
+    return "ready";
+  }
+  return /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate)
+    && task.dueDate <= planningState.value.asOfDate
+    ? "ready"
+    : "later";
+}
+
 function setStatus(value: TaskStatusFilter) {
   status.value = value;
 }
 
-function setMobileStatus(value: TaskStatusFilter) {
+function setMobileStatus(value: MobileTaskStatusFilter) {
   mobileStatus.value = value;
 }
 
@@ -184,21 +245,56 @@ function clearFilters() {
 }
 
 function clearMobileFilters() {
-  mobileAccount.value = "ALL";
   mobileTaskType.value = "ALL";
-  mobileStatus.value = "pending";
+  mobileStatus.value = "ready";
   mobileQuery.value = "";
   secondaryFiltersOpen.value = false;
+  closeMobileAccount();
 }
 
 function openMobileAccount(accountId: AccountId) {
-  mobileAccount.value = accountId;
   secondaryFiltersOpen.value = false;
   ui.recentAccount = accountId;
+  if (route.query.account === accountId) {
+    mobileAccount.value = accountId;
+    return;
+  }
+  void router.push({ query: { ...route.query, account: accountId } });
 }
 
 function closeMobileAccount() {
-  mobileAccount.value = "ALL";
+  if (!("account" in route.query)) {
+    mobileAccount.value = "ALL";
+    return;
+  }
+  const { account: _account, ...queryWithoutAccount } = route.query;
+  void router.push({ query: queryWithoutAccount });
+}
+
+function changeMobileAccountFilter(value: string) {
+  if (value === "ALL") closeMobileAccount();
+  else openMobileAccount(value as AccountId);
+}
+
+function toggleMobileBatchMode() {
+  mobileBatchMode.value = !mobileBatchMode.value;
+  selectedTaskIds.value = [];
+}
+
+function toggleMobileLaterSection() {
+  mobileLaterExpanded.value = !mobileLaterExpanded.value;
+  if (!mobileLaterExpanded.value) {
+    const laterIds = new Set(mobileDetailLaterTasks.value.map((task) => task.id));
+    selectedTaskIds.value = selectedTaskIds.value.filter((id) => !laterIds.has(id));
+  }
+}
+
+function handleMobileTaskPrimary(task: ScheduledTask) {
+  if (mobileBatchMode.value && !task.done) {
+    toggleTaskSelection(task.id, !selectedTaskIds.value.includes(task.id));
+    return;
+  }
+  handleTaskAction(task);
 }
 
 function toggleTaskSelection(taskId: string, checked: boolean) {
@@ -257,17 +353,20 @@ function taskLedgerSummary(task: ScheduledTask) {
 
 function openSettlement(tasks: ScheduledTask[]) {
   settlementQueue.value = [...tasks];
+  settlementBatchTotal.value = tasks.length;
   settlementTask.value = settlementQueue.value[0] || null;
 }
 
 function closeSettlement() {
   settlementTask.value = null;
   settlementQueue.value = [];
+  settlementBatchTotal.value = 0;
 }
 
 function advanceSettlementQueue() {
   settlementQueue.value = settlementQueue.value.slice(1);
   settlementTask.value = settlementQueue.value[0] || null;
+  if (!settlementTask.value) settlementBatchTotal.value = 0;
 }
 
 function restoreTask(task: ScheduledTask) {
@@ -365,14 +464,14 @@ function resetCompletion() {
     <section class="task-mobile-workspace" aria-label="手机任务工作台">
       <header class="task-mobile-controller">
         <div class="task-mobile-segments" role="group" aria-label="任务状态筛选">
-          <button type="button" :class="{ active: mobileStatus === 'pending' }" :aria-pressed="mobileStatus === 'pending'" @click="setMobileStatus('pending')">
-            待处理 <span>{{ mobilePendingTaskCount }}</span>
+          <button type="button" :class="{ active: mobileStatus === 'ready' }" :aria-pressed="mobileStatus === 'ready'" @click="setMobileStatus('ready')">
+            可处理 <span>{{ mobileReadyTaskCount }}</span>
+          </button>
+          <button type="button" :class="{ active: mobileStatus === 'later' }" :aria-pressed="mobileStatus === 'later'" @click="setMobileStatus('later')">
+            后续 <span>{{ mobileLaterTaskCount }}</span>
           </button>
           <button type="button" :class="{ active: mobileStatus === 'done' }" :aria-pressed="mobileStatus === 'done'" @click="setMobileStatus('done')">
             已完成 <span>{{ mobileDoneTaskCount }}</span>
-          </button>
-          <button type="button" :class="{ active: mobileStatus === 'ALL' }" :aria-pressed="mobileStatus === 'ALL'" @click="setMobileStatus('ALL')">
-            全部 <span>{{ mobileScopedTasks.length }}</span>
           </button>
         </div>
         <button
@@ -395,7 +494,7 @@ function resetCompletion() {
         </label>
         <label>
           <span>账号</span>
-          <select v-model="mobileAccount">
+          <select :value="mobileAccount" @change="changeMobileAccountFilter(($event.target as HTMLSelectElement).value)">
             <option value="ALL">全部账号</option>
             <option v-for="item in catalog.data.accounts" :key="item.id" :value="item.id">{{ item.id }}</option>
           </select>
@@ -410,79 +509,154 @@ function resetCompletion() {
         <button type="button" @click="clearMobileFilters">清除筛选</button>
       </form>
 
-      <div class="task-mobile-selection">
+      <div :class="['task-mobile-selection', { drilldown: mobileAccount !== 'ALL' }]">
         <div v-if="mobileAccount === 'ALL'">
-          <strong>{{ mobileStatus === "pending" ? "按账号处理" : mobileStatus === "done" ? "已完成账号" : "全部账号任务" }}</strong>
+          <strong>{{ mobileStatus === "ready" ? "按账号处理" : mobileStatus === "later" ? "后续安排" : "已完成账号" }}</strong>
         </div>
         <div v-else class="task-mobile-drilldown-head">
-          <button type="button" @click="closeMobileAccount">
-            <span aria-hidden="true">‹</span>
-            全部账号
+          <div>
+            <button type="button" @click="closeMobileAccount">
+              <span aria-hidden="true">‹</span>
+              全部账号
+            </button>
+            <span>{{ mobileAccount }} · {{ mobileScopedTasks.length }} 项</span>
+          </div>
+          <button
+            v-if="mobileStatus !== 'done' && mobileDetailPendingTaskCount"
+            class="task-mobile-batch-toggle"
+            type="button"
+            :aria-pressed="mobileBatchMode"
+            @click="toggleMobileBatchMode"
+          >
+            {{ mobileBatchMode ? "退出批量" : "批量" }}
           </button>
-          <span>{{ mobileAccount }} · {{ mobileTasks.length }} 项</span>
         </div>
-        <label v-if="mobileAccount !== 'ALL' && mobileVisiblePendingTasks.length">
+        <label v-if="mobileAccount !== 'ALL' && mobileBatchMode && mobileVisiblePendingTasks.length" class="task-mobile-select-all">
           <input
             type="checkbox"
-            :checked="allMobileVisiblePendingSelected"
-            aria-label="选择当前全部待处理任务"
+            :checked="mobileVisibleSelectionState === 'all'"
+            :indeterminate="mobileVisibleSelectionState === 'mixed'"
+            :aria-checked="mobileVisibleSelectionState === 'mixed' ? 'mixed' : mobileVisibleSelectionState === 'all'"
+            aria-label="选择当前可见的全部未完成任务"
             @change="toggleMobileVisibleSelection(($event.target as HTMLInputElement).checked)"
           />
-          <span>全选</span>
+          <span>
+            {{ mobileVisibleSelectionState === "all"
+              ? "已全选"
+              : mobileVisibleSelectionState === "mixed"
+                ? `已选 ${mobileVisibleSelectedCount}/${mobileVisiblePendingTasks.length}`
+                : "全选当前" }}
+          </span>
         </label>
       </div>
 
-      <div v-if="mobileTasks.length" class="task-mobile-list">
-        <div v-if="mobileAccount === 'ALL'" class="task-mobile-account-summary-list">
-          <article v-for="group in mobileGroupedTasks" :key="group.accountId" class="task-mobile-summary-row">
-            <div>
-              <button class="task-mobile-summary-main" type="button" @click="openMobileAccount(group.accountId)">
-                <span class="task-mobile-account-mark">{{ group.accountId }}</span>
-                <span>
-                  <strong>{{ group.tasks[0].typeLabel }} · {{ group.tasks[0].actionLabel }}</strong>
-                  <small>{{ group.tasks.length }} 项{{ mobileStatus === "done" ? "已完成" : "待办" }} · {{ requirementLabel(group.tasks[0]) }}</small>
-                </span>
-                <AppIcon name="chevron-right" aria-hidden="true" />
-              </button>
-              <button class="task-mobile-summary-action" type="button" @click="handleTaskAction(group.tasks[0])">
-                {{ group.tasks[0].done ? "恢复" : "处理" }}
-              </button>
-            </div>
-          </article>
-        </div>
-        <section v-else v-for="group in mobileGroupedTasks" :key="group.accountId" class="task-mobile-account-group">
-          <header>
-            <span class="task-mobile-account-mark">{{ group.accountId }}</span>
-            <strong>{{ group.accountId }}</strong>
-            <small>{{ group.tasks.length }} 项</small>
-          </header>
-          <article v-for="task in group.tasks" :key="task.id" :class="{ done: task.done }">
-            <label class="task-mobile-check">
-              <input
-                type="checkbox"
-                :checked="selectedTaskIds.includes(task.id)"
-                :disabled="task.done"
-                :aria-label="`选择 ${task.accountId} ${task.typeLabel} ${task.actionLabel}`"
-                @change="toggleTaskSelection(task.id, ($event.target as HTMLInputElement).checked)"
-              />
-            </label>
-            <span class="task-mobile-row-account">{{ task.accountId }}</span>
-            <button class="task-mobile-row-main" type="button" @click="handleTaskAction(task)">
+      <template v-if="mobileAccount === 'ALL'">
+        <div v-if="mobileTasks.length" class="task-mobile-list task-mobile-account-summary-list">
+          <article
+            v-for="group in mobileGroupedTasks"
+            :key="group.accountId"
+            class="task-mobile-summary-row"
+            :data-account-id="group.accountId"
+          >
+            <button
+              class="task-mobile-summary-main"
+              type="button"
+              :data-account-id="group.accountId"
+              @click="openMobileAccount(group.accountId)"
+            >
+              <span class="task-mobile-account-mark">{{ group.accountId }}</span>
               <span>
-                <strong>{{ task.typeLabel }} · {{ task.actionLabel }}</strong>
-                <small>{{ task.kind }} · {{ requirementLabel(task) }}</small>
-                <em v-if="taskLedgerSummary(task)">{{ taskLedgerSummary(task) }}</em>
-                <em v-else>{{ scheduleLabel(task) }}</em>
+                <small class="task-mobile-next-label">{{ mobileStatus === "done" ? "完成记录" : "下一项" }}</small>
+                <strong>{{ group.tasks[0].typeLabel }} · {{ group.tasks[0].actionLabel }}</strong>
+                <small>{{ group.tasks.length }} 项{{ mobileStatus === "ready" ? "可处理" : mobileStatus === "later" ? "后续" : "已完成" }} · {{ scheduleLabel(group.tasks[0]) }}</small>
               </span>
               <AppIcon name="chevron-right" aria-hidden="true" />
             </button>
-            <button class="task-mobile-row-action" type="button" @click="handleTaskAction(task)">
-              {{ task.done ? "恢复" : "处理" }}
-            </button>
           </article>
-        </section>
-      </div>
-      <p v-else class="task-mobile-empty">没有符合当前筛选条件的任务。</p>
+        </div>
+        <p v-else class="task-mobile-empty">没有符合当前筛选条件的任务。</p>
+      </template>
+
+      <template v-else>
+        <div v-if="mobileDetailSections.length" class="task-mobile-list">
+          <section class="task-mobile-account-group">
+          <header>
+            <span class="task-mobile-account-mark">{{ mobileAccount }}</span>
+            <strong>{{ mobileAccount }}</strong>
+            <small>{{ mobileScopedTasks.length }} 项</small>
+          </header>
+
+            <div
+              v-for="section in mobileDetailSections"
+              :key="section.key"
+              class="task-mobile-detail-section"
+              role="region"
+              :aria-label="section.key === 'later' ? '后续任务' : section.key === 'done' ? '已完成任务' : '可处理任务'"
+            >
+              <button
+                v-if="section.collapsible"
+                class="task-mobile-later-toggle"
+                type="button"
+                :aria-expanded="mobileLaterExpanded"
+                @click="toggleMobileLaterSection"
+              >
+                <span>
+                  <strong>{{ section.label }}</strong>
+                  <small>默认收起，避免误处理</small>
+                </span>
+                <span>
+                  {{ section.tasks.length }} 项
+                  <AppIcon name="chevron-right" aria-hidden="true" :class="{ expanded: mobileLaterExpanded }" />
+                </span>
+              </button>
+              <div v-else class="task-mobile-section-title">
+                <strong>{{ section.label }}</strong>
+                <span>{{ section.tasks.length }} 项</span>
+              </div>
+
+              <div v-if="!section.collapsible || mobileLaterExpanded" class="task-mobile-detail-rows">
+                <article
+                  v-for="task in section.tasks"
+                  :key="task.id"
+                  :class="{ done: task.done, batch: mobileBatchMode }"
+                  :data-task-id="task.id"
+                >
+                  <label v-if="mobileBatchMode && !task.done" class="task-mobile-check">
+                    <input
+                      type="checkbox"
+                      :checked="selectedTaskIds.includes(task.id)"
+                      :aria-label="`选择 ${task.typeLabel} ${task.actionLabel}`"
+                      @change="toggleTaskSelection(task.id, ($event.target as HTMLInputElement).checked)"
+                    />
+                  </label>
+                  <button
+                    class="task-mobile-row-main"
+                    type="button"
+                    :aria-label="mobileBatchMode && !task.done
+                      ? `${selectedTaskIds.includes(task.id) ? '取消选择' : '选择'} ${task.typeLabel} ${task.actionLabel}`
+                      : `${task.typeLabel} ${task.actionLabel} ${taskActionLabel(task)}`"
+                    @click="handleMobileTaskPrimary(task)"
+                  >
+                    <span>
+                      <strong>{{ task.typeLabel }} · {{ task.actionLabel }}</strong>
+                      <small>{{ task.kind }} · {{ requirementLabel(task) }}</small>
+                      <em v-if="taskLedgerSummary(task)">{{ taskLedgerSummary(task) }}</em>
+                      <em v-else>{{ scheduleLabel(task) }}</em>
+                    </span>
+                    <span class="task-mobile-row-tail">
+                      <small>{{ mobileBatchMode && !task.done
+                        ? selectedTaskIds.includes(task.id) ? "已选" : "选择"
+                        : taskActionLabel(task) }}</small>
+                      <AppIcon name="chevron-right" aria-hidden="true" />
+                    </span>
+                  </button>
+                </article>
+              </div>
+            </div>
+          </section>
+        </div>
+        <p v-else class="task-mobile-empty">没有符合当前筛选条件的任务。</p>
+      </template>
     </section>
 
     <header class="task-page-intro task-desktop-only">
@@ -586,6 +760,8 @@ function resetCompletion() {
       :progress-total-wan="settlementProgressWan"
       :existing-entry-count="accounting.taskEntries(settlementTask.id).length"
       :existing-summary="taskLedgerSummary(settlementTask)"
+      :queue-index="settlementQueueIndex"
+      :queue-total="settlementBatchTotal"
       @cancel="closeSettlement"
       @confirm="saveTaskSettlement"
     />
@@ -785,6 +961,10 @@ function resetCompletion() {
     gap: 12px;
     padding: 4px 2px 9px;
   }
+  .task-mobile-selection.drilldown {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
   .task-mobile-selection > div {
     min-width: 0;
     display: grid;
@@ -802,12 +982,17 @@ function resetCompletion() {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .task-mobile-selection > label {
+  .task-mobile-select-all {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
     gap: 5px;
+    min-height: 44px;
+    justify-self: end;
+    padding: 0 8px;
+    border-radius: 10px;
     color: #b64b00;
+    background: #f6eee9;
     font-size: 11px;
     font-weight: 800;
   }
@@ -832,8 +1017,14 @@ function resetCompletion() {
     justify-content: space-between;
     gap: 10px;
   }
-  .task-mobile-drilldown-head > button {
-    min-height: 36px;
+  .task-mobile-drilldown-head > div {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .task-mobile-drilldown-head > div > button {
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -846,36 +1037,46 @@ function resetCompletion() {
     font-size: 12px;
     font-weight: 780;
   }
-  .task-mobile-drilldown-head > button span {
+  .task-mobile-drilldown-head > div > button span {
     color: inherit;
     font-size: 22px;
     line-height: 1;
   }
-  .task-mobile-drilldown-head > span {
+  .task-mobile-drilldown-head > div > span {
+    min-width: 0;
+    overflow: hidden;
     color: #66666e !important;
     font-size: 11px !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .task-mobile-batch-toggle {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 11px;
+    border: 1px solid #d17a3b;
+    border-radius: 10px;
+    color: #a74800;
+    background: #fffaf6;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 820;
+  }
+  .task-mobile-batch-toggle[aria-pressed="true"] {
+    color: var(--color-text-on-strong);
+    background: #c95000;
   }
   .task-mobile-account-summary-list {
     display: grid;
   }
   .task-mobile-summary-row {
-    overflow-x: auto;
-    scrollbar-width: none;
     border-bottom: 1px solid #e8e8ec;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
   }
   .task-mobile-summary-row:last-child { border-bottom: 0; }
-  .task-mobile-summary-row::-webkit-scrollbar { display: none; }
-  .task-mobile-summary-row > div {
-    width: calc(100% + 66px);
-    min-height: 70px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 66px;
-  }
   .task-mobile-summary-main {
+    width: 100%;
     min-width: 0;
-    min-height: 70px;
+    min-height: 78px;
     display: grid;
     grid-template-columns: 40px minmax(0, 1fr) 18px;
     align-items: center;
@@ -886,7 +1087,6 @@ function resetCompletion() {
     background: var(--color-surface);
     font: inherit;
     text-align: left;
-    scroll-snap-align: start;
   }
   .task-mobile-summary-main .task-mobile-account-mark {
     width: 38px;
@@ -896,7 +1096,7 @@ function resetCompletion() {
   .task-mobile-summary-main > span:nth-child(2) {
     min-width: 0;
     display: grid;
-    gap: 3px;
+    gap: 2px;
   }
   .task-mobile-summary-main strong,
   .task-mobile-summary-main small {
@@ -913,19 +1113,16 @@ function resetCompletion() {
     color: #77777f;
     font-size: 10px;
   }
+  .task-mobile-summary-main .task-mobile-next-label {
+    color: #a74800;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .04em;
+  }
   .task-mobile-summary-main :deep(svg) {
     width: 16px;
     height: 16px;
     color: #9b9ba1;
-  }
-  .task-mobile-summary-action {
-    border: 0;
-    color: var(--color-text-on-strong);
-    background: #c95000;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 850;
-    scroll-snap-align: end;
   }
   .task-mobile-account-group + .task-mobile-account-group {
     border-top: 8px solid #f5f5f7;
@@ -939,8 +1136,7 @@ function resetCompletion() {
     border-bottom: 1px solid #e7e7eb;
     background: #fafafc;
   }
-  .task-mobile-account-mark,
-  .task-mobile-row-account {
+  .task-mobile-account-mark {
     display: inline-grid;
     place-items: center;
     border: 1px solid #d17a3b;
@@ -963,15 +1159,73 @@ function resetCompletion() {
     color: #77777f;
     font-size: 10px;
   }
+  .task-mobile-detail-section + .task-mobile-detail-section {
+    border-top: 7px solid #f5f5f7;
+  }
+  .task-mobile-section-title,
+  .task-mobile-later-toggle {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 11px;
+    border: 0;
+    border-bottom: 1px solid #e7e7eb;
+    color: #2b2b30;
+    background: #fafafc;
+    font: inherit;
+    text-align: left;
+  }
+  .task-mobile-section-title strong,
+  .task-mobile-later-toggle strong {
+    font-size: 11px;
+    font-weight: 850;
+  }
+  .task-mobile-section-title > span {
+    color: #77777f;
+    font-size: 10px;
+  }
+  .task-mobile-later-toggle > span {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .task-mobile-later-toggle > span:first-child {
+    display: grid;
+    gap: 1px;
+  }
+  .task-mobile-later-toggle small {
+    color: #77777f;
+    font-size: 9px;
+  }
+  .task-mobile-later-toggle > span:last-child {
+    flex: 0 0 auto;
+    color: #77777f;
+    font-size: 10px;
+  }
+  .task-mobile-later-toggle :deep(svg) {
+    width: 14px;
+    height: 14px;
+    transition: transform .18s ease;
+    transform: rotate(90deg);
+  }
+  .task-mobile-later-toggle :deep(svg.expanded) {
+    transform: rotate(-90deg);
+  }
   .task-mobile-account-group article {
     min-height: 76px;
     display: grid;
-    grid-template-columns: 24px 38px minmax(0, 1fr) 54px;
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
-    gap: 7px;
-    padding-left: 10px;
+    gap: 0;
     border-bottom: 1px solid #e8e8ec;
     background: var(--color-surface);
+  }
+  .task-mobile-account-group article.batch {
+    grid-template-columns: 38px minmax(0, 1fr);
   }
   .task-mobile-account-group article:last-child { border-bottom: 0; }
   .task-mobile-account-group article.done { opacity: .72; }
@@ -980,19 +1234,14 @@ function resetCompletion() {
     display: grid;
     place-items: center;
   }
-  .task-mobile-row-account {
-    align-self: center;
-    width: 38px;
-    height: 34px;
-    font-size: 12px;
-  }
   .task-mobile-row-main {
+    width: 100%;
     min-width: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 4px;
-    padding: 9px 0;
+    gap: 10px;
+    padding: 10px 12px;
     border: 0;
     color: #1d1d1f;
     background: transparent;
@@ -1022,23 +1271,24 @@ function resetCompletion() {
     white-space: nowrap;
   }
   .task-mobile-row-main em { color: #a74800; }
-  .task-mobile-row-main :deep(svg) {
+  .task-mobile-row-tail {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: #a74800;
+  }
+  .task-mobile-row-tail small {
+    color: inherit;
+    font-size: 10px;
+    font-weight: 820;
+    white-space: nowrap;
+  }
+  .task-mobile-row-tail :deep(svg) {
     width: 15px;
     height: 15px;
-    color: #9b9ba1;
+    color: currentColor;
   }
-  .task-mobile-row-action {
-    border: 0;
-    color: var(--color-text-on-strong);
-    background: #c95000;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 850;
-  }
-  .task-mobile-account-group article.done .task-mobile-row-action {
-    color: #55555c;
-    background: #eaeaed;
-  }
+  .task-mobile-account-group article.done .task-mobile-row-tail { color: #66666e; }
   .task-mobile-empty {
     margin: 0;
     padding: 30px 18px;

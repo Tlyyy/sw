@@ -715,11 +715,34 @@ html[data-theme="dark"] {
     background: var(--ios-tertiary-system-background);
   }
 
+  html[data-theme="dark"] body .task-maintenance-page :is(
+    .task-mobile-select-all,
+    .task-mobile-batch-toggle,
+    .task-mobile-section-title,
+    .task-mobile-later-toggle
+  ) {
+    color: var(--ios-primary-label);
+    border-color: var(--ios-separator);
+    background: var(--ios-tertiary-system-background);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-batch-toggle[aria-pressed="true"] {
+    color: var(--color-text-on-strong);
+    border-color: var(--ios-tint);
+    background: var(--ios-tint);
+  }
+
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-detail-section + .task-mobile-detail-section {
+    border-color: var(--ios-system-background);
+  }
+
   html[data-theme="dark"] body .task-maintenance-page .task-mobile-filters > label > span,
   html[data-theme="dark"] body .task-maintenance-page .task-mobile-selection > div span,
   html[data-theme="dark"] body .task-maintenance-page .task-mobile-summary-main small,
   html[data-theme="dark"] body .task-maintenance-page .task-mobile-account-group > header small,
-  html[data-theme="dark"] body .task-maintenance-page .task-mobile-row-main small {
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-row-main small,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-later-toggle small,
+  html[data-theme="dark"] body .task-maintenance-page .task-mobile-later-toggle > span:last-child {
     color: var(--ios-secondary-label);
   }
 
