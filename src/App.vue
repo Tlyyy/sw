@@ -10,6 +10,7 @@ import { useSyncStore } from "./stores/sync";
 import { useUiStore } from "./stores/ui";
 import { useInventoryStore } from "./stores/inventory";
 import { useAccountingStore } from "./stores/accounting";
+import { appearancePreference, resolveAppearance } from "./app/appearance";
 
 const settings = useSettingsStore();
 const auth = useAuthStore();
@@ -17,10 +18,12 @@ const sync = useSyncStore();
 const systemDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
 let planningDayTimer: number | undefined;
 let stopAuthWatch: WatchStopHandle | undefined;
+let stopAppearanceWatch: WatchStopHandle | undefined;
 
 function applySystemTheme() {
-  const resolved = systemDarkTheme.matches ? "dark" : "light";
+  const resolved = resolveAppearance(systemDarkTheme.matches);
   document.documentElement.dataset.theme = resolved;
+  document.documentElement.dataset.appearance = appearancePreference.value;
   document.documentElement.style.colorScheme = resolved;
 }
 
@@ -43,6 +46,7 @@ onMounted(() => {
   usePublishStore().hydrate();
   useUiStore().hydrate();
   systemDarkTheme.addEventListener("change", applySystemTheme);
+  stopAppearanceWatch = watch(appearancePreference, applySystemTheme, { immediate: true });
   stopAuthWatch = watch(
     () => [auth.isUnlocked, auth.credentialKey] as const,
     ([unlocked, credentialKey]) => {
@@ -59,6 +63,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopAuthWatch?.();
+  stopAppearanceWatch?.();
   sync.stop();
   if (planningDayTimer !== undefined) window.clearTimeout(planningDayTimer);
   window.removeEventListener("focus", refreshPlanningDay);

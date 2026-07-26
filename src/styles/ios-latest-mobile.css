@@ -374,6 +374,45 @@
     accent-color: var(--ios-tint);
   }
 
+  .settings-page .appearance-picker {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: 14px;
+    padding: 3px;
+    border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--soft) 82%, transparent);
+  }
+
+  .settings-page .appearance-picker button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9px;
+    color: var(--muted);
+    background: transparent;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 20px;
+    transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .settings-page .appearance-picker button.active {
+    color: var(--ink);
+    background: var(--panel);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.06);
+  }
+
+  .settings-page .appearance-note {
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 18px;
+  }
+
   .settings-page :is(.button, button[type="submit"]) {
     min-height: 44px;
     border-color: var(--ios-separator);

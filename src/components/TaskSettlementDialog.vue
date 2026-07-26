@@ -514,7 +514,7 @@ onBeforeUnmount(() => deactivateDialog());
   </Teleport>
 </template>
 
-<style scoped>
+<style>
 .task-settlement-backdrop {
   position: fixed;
   inset: 0;
@@ -838,6 +838,75 @@ onBeforeUnmount(() => deactivateDialog());
 }
 .settlement-button.primary:hover { filter: brightness(.96); }
 
+html[data-theme="dark"] .task-settlement-dialog,
+html[data-theme="dark"] .task-settlement-body {
+  color: #f5f5f7;
+  background: #1c1c1e;
+}
+html[data-theme="dark"] .task-settlement-dialog {
+  border-color: rgba(255, 255, 255, .12);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, .58);
+}
+html[data-theme="dark"] :is(.task-settlement-header, .task-settlement-footer) {
+  border-color: rgba(255, 255, 255, .09);
+  background: rgba(36, 36, 38, .92);
+}
+html[data-theme="dark"] .task-settlement-close,
+html[data-theme="dark"] :is(.task-existing-settlement, .task-settlement-section) {
+  border-color: rgba(255, 255, 255, .11);
+  color: #f5f5f7;
+  background: #2c2c2e;
+}
+html[data-theme="dark"] :is(.task-existing-settlement, .task-settlement-section) > header {
+  border-color: rgba(255, 255, 255, .09);
+  background: #242426;
+}
+html[data-theme="dark"] .task-settlement-guidance {
+  border-color: rgba(65, 210, 190, .24);
+  color: #70e1d0;
+  background: rgba(22, 118, 105, .18);
+}
+html[data-theme="dark"] .task-settlement-field > span,
+html[data-theme="dark"] .task-settlement-section > header h3 {
+  color: #f5f5f7;
+}
+html[data-theme="dark"] .task-settlement-field :is(input, textarea) {
+  border-color: rgba(255, 255, 255, .14);
+  color: #f5f5f7;
+  background: #1c1c1e;
+  caret-color: #ff9f5a;
+}
+html[data-theme="dark"] .task-settlement-field :is(input, textarea)::placeholder {
+  color: rgba(235, 235, 245, .3);
+}
+html[data-theme="dark"] .task-settlement-field input[readonly] {
+  color: #ffb178;
+  background: rgba(201, 80, 0, .12);
+}
+html[data-theme="dark"] :is(.task-egg-total, .task-progress-total) {
+  border-color: rgba(255, 255, 255, .09);
+  color: rgba(235, 235, 245, .62);
+  background: #242426;
+}
+html[data-theme="dark"] .task-progress-total b {
+  color: #f5f5f7;
+}
+html[data-theme="dark"] .task-zero-confirm {
+  border-color: rgba(255, 190, 92, .3);
+  color: #ffd28a;
+  background: rgba(164, 101, 0, .18);
+}
+html[data-theme="dark"] .task-settlement-errors {
+  border-color: rgba(255, 105, 97, .35);
+  color: #ff9b95;
+  background: rgba(155, 35, 30, .18);
+}
+html[data-theme="dark"] .settlement-button.secondary {
+  border-color: rgba(255, 255, 255, .14);
+  color: #f5f5f7;
+  background: #2c2c2e;
+}
+
 @media (max-width: 720px) {
   .task-settlement-backdrop {
     inset: var(--task-modal-top, 0px) auto auto var(--task-modal-left, 0px);
@@ -853,7 +922,7 @@ onBeforeUnmount(() => deactivateDialog());
     width: 100%;
     max-height: min(
       calc(var(--task-modal-height, 100dvh) - max(10px, env(safe-area-inset-top))),
-      56dvh
+      78dvh
     );
     border-right: 0;
     border-bottom: 0;
@@ -1055,6 +1124,110 @@ onBeforeUnmount(() => deactivateDialog());
     font: inherit;
     font-size: 14px;
     font-weight: 850;
+  }
+
+  html[data-theme="dark"] .task-settlement-backdrop {
+    background: rgba(0, 0, 0, .58);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    backdrop-filter: blur(18px) saturate(135%);
+  }
+  html[data-theme="dark"] .task-settlement-dialog,
+  html[data-theme="dark"] .task-settlement-body {
+    color: #f5f5f7;
+    background: #1c1c1e;
+  }
+  html[data-theme="dark"] .task-settlement-dialog {
+    border-color: rgba(255, 255, 255, .12);
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, .52);
+  }
+  html[data-theme="dark"] .task-settlement-dialog::before {
+    background: rgba(235, 235, 245, .28);
+  }
+  html[data-theme="dark"] .task-settlement-mobile-header,
+  html[data-theme="dark"] .task-settlement-mobile-progress-footer {
+    border-color: rgba(255, 255, 255, .09);
+    background: rgba(36, 36, 38, .82);
+  }
+  html[data-theme="dark"] .task-settlement-mobile-header h2 {
+    color: #f5f5f7;
+  }
+  html[data-theme="dark"] .task-settlement-mobile-header button {
+    color: rgba(235, 235, 245, .72);
+  }
+  html[data-theme="dark"] .task-settlement-mobile-header button.primary {
+    color: #ff9f5a;
+  }
+  html[data-theme="dark"] .task-mobile-settlement-rule {
+    border-color: rgba(65, 210, 190, .26);
+    color: #70e1d0;
+    background: rgba(22, 118, 105, .22);
+  }
+  html[data-theme="dark"] :is(.task-mobile-settlement-summary, .task-settlement-guidance, .task-settlement-section, .task-existing-settlement) {
+    border-color: rgba(255, 255, 255, .11);
+    background: #2c2c2e;
+  }
+  html[data-theme="dark"] .task-mobile-settlement-summary > span {
+    border-color: rgba(255, 159, 90, .48);
+    color: #ff9f5a;
+    background: rgba(201, 80, 0, .14);
+  }
+  html[data-theme="dark"] .task-mobile-settlement-summary strong,
+  html[data-theme="dark"] .task-settlement-field > span {
+    color: #f5f5f7;
+  }
+  html[data-theme="dark"] .task-mobile-settlement-summary small,
+  html[data-theme="dark"] .task-settlement-guidance,
+  html[data-theme="dark"] .task-settlement-field small {
+    color: rgba(235, 235, 245, .62);
+  }
+  html[data-theme="dark"] .task-mobile-settlement-summary > b,
+  html[data-theme="dark"] .task-settlement-section > header > strong {
+    color: #ff9f5a;
+  }
+  html[data-theme="dark"] :is(.task-settlement-section, .task-existing-settlement) > header {
+    border-color: rgba(255, 255, 255, .09);
+    background: #242426;
+  }
+  html[data-theme="dark"] .task-settlement-field + .task-settlement-field,
+  html[data-theme="dark"] .task-egg-fields > label:nth-child(2),
+  html[data-theme="dark"] .task-settlement-meta > label + label {
+    border-color: rgba(255, 255, 255, .09);
+  }
+  html[data-theme="dark"] .task-settlement-field :is(input, textarea) {
+    border-color: rgba(255, 255, 255, .14);
+    color: #f5f5f7;
+    background: #1c1c1e;
+    caret-color: #ff9f5a;
+  }
+  html[data-theme="dark"] .task-settlement-field :is(input, textarea)::placeholder {
+    color: rgba(235, 235, 245, .3);
+  }
+  html[data-theme="dark"] .task-settlement-field input[readonly] {
+    color: #ffb178;
+    background: rgba(201, 80, 0, .12);
+  }
+  html[data-theme="dark"] :is(.task-egg-total, .task-progress-total) {
+    border-color: rgba(255, 255, 255, .09);
+    color: rgba(235, 235, 245, .62);
+    background: #242426;
+  }
+  html[data-theme="dark"] .task-progress-total b {
+    color: #f5f5f7;
+  }
+  html[data-theme="dark"] .task-zero-confirm {
+    border-color: rgba(255, 190, 92, .3);
+    color: #ffd28a;
+    background: rgba(164, 101, 0, .18);
+  }
+  html[data-theme="dark"] .task-settlement-errors {
+    border-color: rgba(255, 105, 97, .35);
+    color: #ff9b95;
+    background: rgba(155, 35, 30, .18);
+  }
+  html[data-theme="dark"] .task-settlement-mobile-progress-footer button {
+    border-color: rgba(255, 159, 90, .48);
+    color: #ffb178;
+    background: rgba(201, 80, 0, .14);
   }
 }
 

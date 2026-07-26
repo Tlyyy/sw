@@ -11,6 +11,11 @@ import { minimumPasswordLength, useAuthStore } from "../../stores/auth";
 import { useSyncStore } from "../../stores/sync";
 import { createWorkspaceBackup, parseWorkspaceBackup } from "../../persistence/state";
 import DataCenterNav from "../data/DataCenterNav.vue";
+import {
+  appearancePreference,
+  setAppearancePreference,
+  type AppearancePreference,
+} from "../../app/appearance";
 
 const catalog = useCatalogStore();
 const inventory = useInventoryStore();
@@ -28,6 +33,11 @@ const passwordNotice = ref("");
 const lastSyncText = computed(() => cloudSync.lastSyncedAt
   ? `上次完成：${new Date(cloudSync.lastSyncedAt).toLocaleString("zh-CN", { hour12: false })}`
   : "尚未完成首次云同步");
+const appearanceOptions: Array<{ value: AppearancePreference; label: string }> = [
+  { value: "system", label: "自动" },
+  { value: "light", label: "浅色" },
+  { value: "dark", label: "深色" },
+];
 
 function confirmAction(message: string, action: () => void) {
   if (confirm(message)) action();
@@ -144,6 +154,21 @@ async function rotatePassword() {
       </form>
       <p v-if="auth.passwordChangeError || passwordNotice" class="password-rotation-message" role="status">{{ auth.passwordChangeError || passwordNotice }}</p>
       <p v-else-if="cloudSync.status !== 'synced'" class="password-rotation-message">请先等待上方显示“云端已同步”。密码轮换必须联网且无待同步修改。</p>
+    </section>
+    <section class="settings-section">
+      <div class="section-head"><div><h2>外观</h2><p>自动模式会实时跟随这台设备的 iOS 外观设置。</p></div></div>
+      <div class="appearance-picker" role="radiogroup" aria-label="外观模式">
+        <button
+          v-for="option in appearanceOptions"
+          :key="option.value"
+          type="button"
+          role="radio"
+          :aria-checked="appearancePreference === option.value"
+          :class="{ active: appearancePreference === option.value }"
+          @click="setAppearancePreference(option.value)"
+        >{{ option.label }}</button>
+      </div>
+      <p class="appearance-note">{{ appearancePreference === "system" ? "当前跟随系统，iPhone 切换深色模式时本页面会同步变化。" : "当前固定使用此外观；选择“自动”可恢复跟随系统。" }}</p>
     </section>
     <section class="settings-section">
       <div class="section-head"><div><h2>默认账号与对比表显示</h2><p>行动推进台始终同时展示五个账号；默认账号只影响“账号详情”的默认入口。</p></div></div>
