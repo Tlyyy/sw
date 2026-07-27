@@ -283,6 +283,8 @@ async function mobileTypographyReport(page: Page) {
           element.matches(".page-intro h2, .inventory-page-head h2, .gem-plan-heading-mobile")
         ) {
           expected = styleContract.title1;
+        } else if (element.matches(".weekly-activity-head h3")) {
+          expected = styleContract.title3;
         } else if (element.tagName === "H2") {
           expected = styleContract.title3;
         } else if (element.matches(".resource-tool-columns h3")) {
@@ -1497,6 +1499,142 @@ test.describe("mobile UX release gate", () => {
     ).toBeLessThanOrEqual(1);
     expect(overflowReport.offenders, "精简后的核算页不应有元素越出手机视口").toEqual([]);
     await page.screenshot({ path: testInfo.outputPath("earnings-share-iphone-16-pro-max.png") });
+  });
+
+  test("周报总览与完整周核算在真机字号下清晰可读", async ({ page }, testInfo) => {
+    await page.clock.setFixedTime(new Date("2026-07-26T16:30:00Z"));
+
+    for (const viewport of [
+      { width: 393, height: 852 },
+      iphone16ProMaxViewport,
+    ] as const) {
+      await test.step(`${viewport.width}×${viewport.height} 周报总览`, async () => {
+        await page.setViewportSize(viewport);
+        await page.goto("/#/week");
+        await waitForApplicationPage(page);
+
+        const typography = await page.locator(".week-mobile-report").evaluate((root) => {
+          const element = (selector: string) => root.querySelector<HTMLElement>(selector)!;
+          const type = (selector: string) => {
+            const style = getComputedStyle(element(selector));
+            return {
+              font: Number.parseFloat(style.fontSize),
+              leading: Number.parseFloat(style.lineHeight),
+            };
+          };
+          const height = (selector: string) => element(selector).getBoundingClientRect().height;
+
+          return {
+            switchDate: type(".week-mobile-switcher strong"),
+            switchState: type(".week-mobile-switcher > div > span"),
+            dayLabel: type(".week-day-strip li span"),
+            dayNumber: type(".week-day-strip li strong"),
+            dayState: type(".week-day-strip li small"),
+            summaryEyebrow: type(".week-summary-card p"),
+            summaryTitle: type(".week-summary-card h2"),
+            summaryBaseline: type(".week-summary-card > header > span"),
+            metricLabel: type(".week-summary-metrics dt"),
+            metricValue: type(".week-summary-metrics dd"),
+            accountTitle: type(".week-account-card h2"),
+            accountHead: type(".week-account-head span"),
+            accountValue: type(".week-account-row > span"),
+            accountBadge: type(".week-account-badge"),
+            supplementTitle: type(".week-supplement-card h2"),
+            supplementAction: type(".week-supplement-card button"),
+            supplementActionHeight: height(".week-supplement-card button"),
+            fullTitle: type(".week-mobile-full-report > summary strong"),
+            fullAction: type(".week-mobile-full-report > summary b"),
+            fullSummaryHeight: height(".week-mobile-full-report > summary"),
+          };
+        });
+
+        expect.soft(typography.switchDate, "周区间应采用 17/22 正文字号").toEqual({ font: 17, leading: 22 });
+        expect.soft(typography.switchState, "周状态不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.dayLabel, "星期标签不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.dayNumber, "日期数字应采用 18/22 强调字号").toEqual({ font: 18, leading: 22 });
+        expect.soft(typography.dayState, "日期状态不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.summaryEyebrow, "周报说明不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.summaryTitle, "周报主标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
+        expect.soft(typography.summaryBaseline, "库存基线说明不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.metricLabel, "汇总指标标签不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.metricValue, "汇总指标值应采用 22/28").toEqual({ font: 22, leading: 28 });
+        expect.soft(typography.accountTitle, "账号结果标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
+        expect.soft(typography.accountHead, "账号表头不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.accountValue, "账号结果值不应小于 15/20").toEqual({ font: 15, leading: 20 });
+        expect.soft(typography.accountBadge, "账号标记不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.supplementTitle, "补充记录标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
+        expect.soft(typography.supplementAction, "补充记录按钮不应小于 15/20").toEqual({ font: 15, leading: 20 });
+        expect.soft(typography.supplementActionHeight, "补充记录按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+        expect.soft(typography.fullTitle, "完整周核算入口标题不应小于 17/24").toEqual({ font: 17, leading: 24 });
+        expect.soft(typography.fullAction, "完整周核算入口操作提示不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.fullSummaryHeight, "完整周核算入口应保持足够触控高度").toBeGreaterThanOrEqual(44);
+
+        const overflow = await pageOverflowReport(page);
+        expect.soft(overflow.documentScrollWidth - overflow.documentClientWidth, "放大周报字号后不应产生整页横向溢出").toBeLessThanOrEqual(1);
+        expect.soft(overflow.offenders, "放大周报字号后不应有元素越出手机视口").toEqual([]);
+      });
+
+      await test.step(`${viewport.width}×${viewport.height} 完整周核算`, async () => {
+        const fullReport = page.locator(".week-mobile-full-report");
+        await fullReport.locator(":scope > summary").tap();
+        await expect(fullReport).toHaveAttribute("open", "");
+
+        const typography = await fullReport.locator(".weekly-activity-panel").evaluate((root) => {
+          const element = (selector: string) => (
+            root.querySelector<HTMLElement>(selector)
+            || root.parentElement?.querySelector<HTMLElement>(selector)
+          )!;
+          const type = (selector: string, pseudo?: string) => {
+            const style = getComputedStyle(element(selector), pseudo);
+            return {
+              font: Number.parseFloat(style.fontSize),
+              leading: Number.parseFloat(style.lineHeight),
+            };
+          };
+          const height = (selector: string) => element(selector).getBoundingClientRect().height;
+
+          return {
+            eyebrow: type(".weekly-activity-head p"),
+            title: type(".weekly-activity-head h3"),
+            meta: type(".weekly-activity-head > div:first-child > span"),
+            action: type(".weekly-activity-actions .button"),
+            actionHeight: height(".weekly-activity-actions .button"),
+            accountLabel: type(".weekly-account-row > span", "::before"),
+            accountValue: type(".weekly-account-row b"),
+            accountHelper: type(".weekly-account-row small"),
+            accountRowHeight: height(".weekly-account-row"),
+            ledgerTitle: type(".weekly-activity-ledgers h4"),
+            ledgerCount: type(".weekly-activity-ledgers header span"),
+            ledgerEmpty: type(".weekly-activity-ledgers section > p"),
+            earningsLink: type(".week-earnings-link"),
+            earningsLinkHeight: height(".week-earnings-link"),
+          };
+        });
+
+        expect.soft(typography.eyebrow, "完整周核算眉题不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.title, "完整周核算主标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
+        expect.soft(typography.meta, "完整周核算日期说明不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.action, "完整周核算操作按钮不应小于 15/20").toEqual({ font: 15, leading: 20 });
+        expect.soft(typography.actionHeight, "完整周核算操作按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+        expect.soft(typography.accountLabel, "账号指标标签不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.accountValue, "账号指标值不应小于 16/22").toEqual({ font: 16, leading: 22 });
+        expect.soft(typography.accountHelper, "账号指标说明不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.accountRowHeight, "账号信息应通过增高容纳清晰字号").toBeGreaterThanOrEqual(160);
+        expect.soft(typography.ledgerTitle, "流水区标题应采用 Headline 语义字号").toEqual({ font: 17, leading: 22 });
+        expect.soft(typography.ledgerCount, "流水区计数不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.ledgerEmpty, "流水空状态不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.earningsLink, "实际所得入口不应小于 15/20").toEqual({ font: 15, leading: 20 });
+        expect.soft(typography.earningsLinkHeight, "实际所得入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+
+        const overflow = await pageOverflowReport(page);
+        expect.soft(overflow.documentScrollWidth - overflow.documentClientWidth, "展开完整周核算后不应产生整页横向溢出").toBeLessThanOrEqual(1);
+        expect.soft(overflow.offenders, "展开完整周核算后不应有元素越出手机视口").toEqual([]);
+        await page.screenshot({
+          path: testInfo.outputPath(`weekly-legibility-${viewport.width}x${viewport.height}.png`),
+          fullPage: true,
+        });
+      });
+    }
   });
 
   test("本周小结可生成 PNG、调用 iPhone 分享并回退下载", async ({ page }) => {
