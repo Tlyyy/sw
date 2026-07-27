@@ -2,6 +2,22 @@ import { expect, test, type Locator } from "@playwright/test";
 
 const inventoryAccountOrder = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
 
+function dateKey(date: Date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function currentShanghaiWeek() {
+  const shanghaiNow = new Date(Date.now() + 8 * 60 * 60 * 1_000);
+  const currentDay = new Date(Date.UTC(shanghaiNow.getUTCFullYear(), shanghaiNow.getUTCMonth(), shanghaiNow.getUTCDate()));
+  const monday = new Date(currentDay.getTime() - ((currentDay.getUTCDay() + 6) % 7) * 86_400_000);
+  const at = (offset: number) => dateKey(new Date(monday.getTime() + offset * 86_400_000));
+  return {
+    monday: at(0),
+    sunday: at(6),
+    today: dateKey(currentDay),
+  };
+}
+
 async function expectInventoryCombinedEntry(dialog: Locator) {
   const combinedEntry = dialog.locator(".snapshot-desktop-entry");
   await expect(combinedEntry).toBeVisible();
@@ -93,7 +109,13 @@ test.describe("desktop application", () => {
 
   test("五账号每日所得与逐账号所得都可以生成分享图", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
-    await page.addInitScript(() => {
+    const week = currentShanghaiWeek();
+    const targetDate = week.today;
+    const targetDateValue = new Date(`${targetDate}T00:00:00.000Z`);
+    const previousDate = dateKey(new Date(targetDateValue.getTime() - 86_400_000));
+    const targetDateLabel = `${Number(targetDate.slice(5, 7))}月${Number(targetDate.slice(8, 10))}日`;
+
+    await page.addInitScript(({ previousDate, targetDate }) => {
       const accountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
       const accounts = (silverWan: number, regularEggs = 11) => Object.fromEntries(accountIds.map((accountId) => [accountId, {
         dedicatedEggs: accountId === "FC" ? 9 : 5,
@@ -104,8 +126,8 @@ test.describe("desktop application", () => {
       localStorage.setItem("sw.app.inventory.v2", JSON.stringify({
         version: 2,
         snapshots: [
-          { effectiveDate: "2026-07-22", recordedAt: "2026-07-22T10:00:00.000Z", accounts: accounts(100) },
-          { effectiveDate: "2026-07-23", recordedAt: "2026-07-23T10:00:00.000Z", accounts: accounts(90, 13) },
+          { effectiveDate: previousDate, recordedAt: `${previousDate}T10:00:00.000Z`, accounts: accounts(100) },
+          { effectiveDate: targetDate, recordedAt: `${targetDate}T10:00:00.000Z`, accounts: accounts(90, 13) },
         ],
       }));
       localStorage.setItem("sw.app.accounting.v1", JSON.stringify({
@@ -113,9 +135,9 @@ test.describe("desktop application", () => {
         entries: [{
           id: "share-test-expense",
           accountId: "FC",
-          effectiveDate: "2026-07-23",
-          occurredAt: "2026-07-23T03:00:00.000Z",
-          recordedAt: "2026-07-23T03:01:00.000Z",
+          effectiveDate: targetDate,
+          occurredAt: `${targetDate}T03:00:00.000Z`,
+          recordedAt: `${targetDate}T03:01:00.000Z`,
           status: "confirmed",
           source: "test",
           note: "测试支出",
@@ -130,7 +152,7 @@ test.describe("desktop application", () => {
           }],
         }],
       }));
-    });
+    }, { previousDate, targetDate });
 
     await page.goto("/#/earnings?account=FC");
     const dailyTable = page.getByRole("region", { name: "五账号每日实际所得" });
@@ -138,14 +160,14 @@ test.describe("desktop application", () => {
     await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银子）" })).toBeVisible();
     await expect(dailyTable.locator("tbody > tr")).toHaveCount(9);
     await expect(page.locator(".earnings-primary-card")).toHaveCount(0);
-    const july23Row = dailyTable.locator("tr[data-date='2026-07-23']");
-    await expect(july23Row.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
+    const targetDateRow = dailyTable.locator(`tr[data-date='${targetDate}']`);
+    await expect(targetDateRow.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
     const accountOverview = page.getByRole("region", { name: "当前库存" });
     await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["90 万", "9 个", "13 个", "32 片"]);
     await expect(dailyTable.locator(".daily-table-share")).toHaveCount(1);
 
     const combinedShareButton = page.getByRole("button", {
-      name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得图片",
+      name: `分享五个账号 ${week.monday} 至 ${week.sunday} 每日实际所得图片`,
       exact: true,
     });
     await expect(combinedShareButton).toBeVisible();
@@ -154,16 +176,17 @@ test.describe("desktop application", () => {
     const combinedDownloadPromise = page.waitForEvent("download");
     await combinedShareButton.click();
     const combinedDownload = await combinedDownloadPromise;
-    expect(combinedDownload.suggestedFilename()).toBe("五号每日实际所得-2026-07-20-2026-07-26.png");
-    await combinedDownload.saveAs(testInfo.outputPath("五号每日实际所得-2026-07-20-2026-07-26.png"));
+    const combinedFilename = `五号每日实际所得-${week.monday}-${week.sunday}.png`;
+    expect(combinedDownload.suggestedFilename()).toBe(combinedFilename);
+    await combinedDownload.saveAs(testInfo.outputPath(combinedFilename));
     await expect(page.getByRole("status")).toContainText("五号每日所得图片已下载");
 
     await dailyTable.getByRole("button", { name: "银+蛋折银", exact: true }).click();
     await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
-    await expect(july23Row.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+    await expect(targetDateRow.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
     await expect(dailyTable).toContainText("专用蛋不参与折算");
     const combinedWithEggsShareButton = page.getByRole("button", {
-      name: "分享五个账号 2026-07-20 至 2026-07-26 每日实际所得银加蛋折银图片",
+      name: `分享五个账号 ${week.monday} 至 ${week.sunday} 每日实际所得银加蛋折银图片`,
       exact: true,
     });
     await expect(combinedWithEggsShareButton).toBeVisible();
@@ -172,19 +195,21 @@ test.describe("desktop application", () => {
     const combinedWithEggsDownloadPromise = page.waitForEvent("download");
     await combinedWithEggsShareButton.click();
     const combinedWithEggsDownload = await combinedWithEggsDownloadPromise;
-    expect(combinedWithEggsDownload.suggestedFilename()).toBe("五号每日实际所得-银加蛋折银-2026-07-20-2026-07-26.png");
-    await combinedWithEggsDownload.saveAs(testInfo.outputPath("五号每日实际所得-银加蛋折银-2026-07-20-2026-07-26.png"));
+    const combinedWithEggsFilename = `五号每日实际所得-银加蛋折银-${week.monday}-${week.sunday}.png`;
+    expect(combinedWithEggsDownload.suggestedFilename()).toBe(combinedWithEggsFilename);
+    await combinedWithEggsDownload.saveAs(testInfo.outputPath(combinedWithEggsFilename));
     await expect(page.getByRole("status")).toContainText("五号银+蛋折银图片已下载");
 
-    const shareButton = accountOverview.getByRole("button", { name: "分享 FC 7月23日 实际所得图片", exact: true });
+    const shareButton = accountOverview.getByRole("button", { name: `分享 FC ${targetDateLabel} 实际所得图片`, exact: true });
     await expect(shareButton).toBeVisible();
     await expect(shareButton).toBeEnabled();
 
     const downloadPromise = page.waitForEvent("download");
     await shareButton.click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe("FC-2026-07-23-每日实际所得.png");
-    await download.saveAs(testInfo.outputPath("FC-2026-07-23-每日实际所得.png"));
+    const accountFilename = `FC-${targetDate}-每日实际所得.png`;
+    expect(download.suggestedFilename()).toBe(accountFilename);
+    await download.saveAs(testInfo.outputPath(accountFilename));
     await expect(page.getByRole("status")).toContainText("实际所得图片已下载");
 
     const accountingRule = page.locator(".accounting-rule");
