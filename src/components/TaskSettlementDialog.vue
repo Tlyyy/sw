@@ -10,6 +10,7 @@ import {
   type TaskSettlementDraft,
   type TaskSettlementValidationField,
 } from "../domain/taskSettlement";
+import { inventoryRegularEggValueWan } from "../domain/inventory";
 import type { InventoryBalance } from "../domain/types";
 import { useVisualViewport } from "../composables/useVisualViewport";
 import AppIcon from "./AppIcon.vue";
@@ -153,16 +154,28 @@ const sameDayInventoryTiming = computed(() => {
   if (!occurrence || occurrence.effectiveDate !== props.inventoryEffectiveDate) return null;
   const recordedAt = Date.parse(props.inventoryRecordedAt);
   const occurredAt = Date.parse(occurrence.occurredAt);
-  return Number.isFinite(recordedAt) && recordedAt > occurredAt ? "after" : "same-day";
+  return Number.isFinite(recordedAt) && recordedAt >= occurredAt
+    ? "snapshot-after-task"
+    : "task-after-snapshot";
 });
 const priorInventoryEstimate = computed(() => {
   if (!isFixedEgg.value || !props.priorInventory) return null;
   const known = suggestTaskEggSplit(props.task.eggCount, props.priorInventory);
   const knownTotal = known.dedicatedEggs + known.regularEggs;
+  const unrecordedRegularEggs = Math.max(0, props.task.eggCount - knownTotal);
   return {
     dedicatedEggs: known.dedicatedEggs,
-    regularEggs: known.regularEggs + Math.max(0, props.task.eggCount - knownTotal),
+    regularEggs: known.regularEggs + unrecordedRegularEggs,
+    knownTotal,
+    unrecordedRegularEggs,
+    incomeWan: unrecordedRegularEggs * inventoryRegularEggValueWan,
   };
+});
+const priorInventoryEstimateApplied = computed(() => {
+  const estimate = priorInventoryEstimate.value;
+  return Boolean(estimate)
+    && numericValue(draft.value.dedicatedEggs) === estimate!.dedicatedEggs
+    && numericValue(draft.value.regularEggs) === estimate!.regularEggs;
 });
 
 function numericValue(value: unknown) {
@@ -183,9 +196,27 @@ function amountLabel(value: number) {
 function applyPriorInventoryEstimate() {
   const estimate = priorInventoryEstimate.value;
   if (!estimate) return;
+  const alignedToSnapshot = alignOccurrenceToInventoryCutoff();
   draft.value.dedicatedEggs = estimate.dedicatedEggs;
   draft.value.regularEggs = estimate.regularEggs;
-  if (!note.value) note.value = "历史存蛋消耗，蛋种按上一份库存估算。";
+  if (!note.value) {
+    note.value = estimate.unrecordedRegularEggs > 0
+      ? `${alignedToSnapshot ? "发生时间已对齐库存盘点；" : ""}库存差额 ${estimate.unrecordedRegularEggs} 个普通蛋按今日收入折银。`
+      : "用蛋按上一份库存估算。";
+  }
+}
+
+function alignOccurrenceToInventoryCutoff() {
+  const occurrence = parseShanghaiDateTime(occurredAtLocal.value);
+  const recordedAt = Date.parse(props.inventoryRecordedAt);
+  if (
+    !occurrence
+    || !Number.isFinite(recordedAt)
+    || occurrence.effectiveDate !== props.inventoryEffectiveDate
+    || Date.parse(occurrence.occurredAt) <= recordedAt
+  ) return false;
+  occurredAtLocal.value = shanghaiDateTimeLocal(recordedAt);
+  return true;
 }
 
 function twoDigits(value: number) {
@@ -436,21 +467,40 @@ onBeforeUnmount(() => deactivateDialog());
               >
                 <div>
                   <strong>
-                    {{ sameDayInventoryTiming === "after"
+                    {{ sameDayInventoryTiming === "snapshot-after-task"
                       ? "当前库存是在任务发生后录入的"
-                      : "任务与当前库存发生在同一天" }}
+                      : "当前任务时间晚于库存盘点" }}
                   </strong>
-                  <p>
+                  <p v-if="priorInventoryEstimate?.unrecordedRegularEggs">
+                    按上一份库存，任务前可确认 {{ priorInventoryEstimate.knownTotal }} 个蛋；
+                    差额 {{ priorInventoryEstimate.unrecordedRegularEggs }} 个暂归普通蛋并计入今日收入，
+                    按 {{ inventoryRegularEggValueWan }} 万/个折算约
+                    {{ amountLabel(priorInventoryEstimate.incomeWan) }} 万。本次不会记购买支出。
+                    <template v-if="sameDayInventoryTiming === 'task-after-snapshot'">
+                      点击后会同时把发生时间对齐到库存盘点时点，确保归入今天结算。
+                    </template>
+                  </p>
+                  <p v-else>
                     当前库存可能已经包含本次消耗，不能直接用来判断是否刚买了蛋。
-                    如果使用的是历史存蛋，请把用蛋合计调到 {{ task.eggCount }} 个，使自动补购变为 0。
+                    可按上一份库存恢复本次实际用蛋，使自动补购变为 0。
                   </p>
                 </div>
                 <button
                   v-if="priorInventoryEstimate"
                   type="button"
+                  :class="{ selected: priorInventoryEstimateApplied }"
+                  :aria-pressed="priorInventoryEstimateApplied"
                   @click="applyPriorInventoryEstimate"
                 >
-                  按上一份库存估算：专用 {{ priorInventoryEstimate.dedicatedEggs }}、普通 {{ priorInventoryEstimate.regularEggs }}
+                  <template v-if="priorInventoryEstimate.unrecordedRegularEggs">
+                    {{ priorInventoryEstimateApplied ? "已按" : "按" }}今日收入处理：
+                    专用 {{ priorInventoryEstimate.dedicatedEggs }}、普通 {{ priorInventoryEstimate.regularEggs }}
+                    （约 +{{ amountLabel(priorInventoryEstimate.incomeWan) }} 万）
+                  </template>
+                  <template v-else>
+                    {{ priorInventoryEstimateApplied ? "已恢复" : "按上一份库存恢复" }}：
+                    专用 {{ priorInventoryEstimate.dedicatedEggs }}、普通 {{ priorInventoryEstimate.regularEggs }}
+                  </template>
                 </button>
               </aside>
 
@@ -896,6 +946,11 @@ onBeforeUnmount(() => deactivateDialog());
   cursor: pointer;
 }
 .task-inventory-timing-note button:hover { background: #fff3d4; }
+.task-inventory-timing-note button.selected {
+  border-color: var(--color-success);
+  color: #0b685d;
+  background: #eef9f6;
+}
 .task-inventory-timing-note button:focus-visible {
   outline: 3px solid color-mix(in srgb, #c98b28 28%, transparent);
   outline-offset: 2px;
