@@ -457,8 +457,12 @@ test.describe("mobile UX release gate", () => {
         activeTintAlpha: colorAlpha(getComputedStyle(activeDockLink, "::before").backgroundColor),
         dockBackdrop: dockStyle.backdropFilter || dockStyle.getPropertyValue("-webkit-backdrop-filter"),
         dockBackgroundAlpha: colorAlpha(dockStyle.backgroundColor),
+        dockShadow: dockStyle.boxShadow,
         dockGlossOpacity: Number.parseFloat(getComputedStyle(dock, "::before").opacity),
-        dockRimShadow: getComputedStyle(dock, "::after").boxShadow,
+        dockGlossShadow: getComputedStyle(dock, "::before").boxShadow,
+        dockSecondaryLayerDisplay: getComputedStyle(dock, "::after").display,
+        searchSecondaryLayerDisplay: getComputedStyle(search, "::after").display,
+        activeSecondaryLayerDisplay: getComputedStyle(activeDockLink, "::after").display,
         dockLabelSize: Number.parseFloat(getComputedStyle(activeDockLink).fontSize),
         dockIconWidth: activeDockLink.querySelector("svg")?.getBoundingClientRect().width || 0,
         searchIconWidth: search.querySelector("svg")?.getBoundingClientRect().width || 0,
@@ -478,8 +482,13 @@ test.describe("mobile UX release gate", () => {
     expect(dockScale.dockBackdrop).toContain("saturate(1.75)");
     expect(dockScale.dockBackdrop).toContain("contrast(1.08)");
     expect(dockScale.dockBackdrop).toContain("brightness(1.01)");
-    expect(dockScale.dockGlossOpacity, "Liquid Glass 应保留克制的迎光高光层").toBeGreaterThanOrEqual(0.5);
-    expect(dockScale.dockRimShadow, "Liquid Glass 应保留折射边缘").toContain("inset");
+    expect(dockScale.dockShadow, "底栏本体不应再叠加内描边").not.toContain("inset");
+    expect(dockScale.dockGlossOpacity, "Liquid Glass 应只保留很淡的单层高光").toBeLessThanOrEqual(0.3);
+    expect(dockScale.dockGlossOpacity).toBeGreaterThan(0);
+    expect(dockScale.dockGlossShadow, "高光层不应再带第二圈内阴影").toBe("none");
+    expect(dockScale.dockSecondaryLayerDisplay, "主胶囊第二层描边应关闭").toBe("none");
+    expect(dockScale.searchSecondaryLayerDisplay, "搜索按钮第二层描边应关闭").toBe("none");
+    expect(dockScale.activeSecondaryLayerDisplay, "选中按钮第二层渐变应关闭").toBe("none");
     expect(dockScale.activeTintAlpha, "选中态应是低浓度 tint 而非实色底板").toBeLessThanOrEqual(0.1);
     expect(await undersizedPrimaryTargets(page), "移动主导航存在不足 44px 的主要触控目标").toEqual([]);
 
