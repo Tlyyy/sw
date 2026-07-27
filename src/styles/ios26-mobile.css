@@ -373,12 +373,6 @@
     line-height: var(--ios26-leading-caption-2) !important;
   }
 
-  .orbit-main .week-summary-card :is(p, header > span),
-  .orbit-main .week-summary-metrics dt {
-    font-size: var(--ios26-type-footnote) !important;
-    line-height: var(--ios26-leading-footnote) !important;
-  }
-
   .orbit-main .week-account-head {
     font-size: var(--ios26-type-caption-1) !important;
     line-height: var(--ios26-leading-caption-1) !important;
@@ -611,11 +605,6 @@
     .inventory-task-head div > p:last-child,
     .inventory-empty-state div > p:last-child
   ) {
-    font-size: var(--ios26-type-footnote) !important;
-    line-height: var(--ios26-leading-footnote) !important;
-  }
-
-  .orbit-main .week-supplement-card p {
     font-size: var(--ios26-type-footnote) !important;
     line-height: var(--ios26-leading-footnote) !important;
   }

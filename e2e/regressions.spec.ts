@@ -394,7 +394,19 @@ test("移动端使用三项悬浮底栏完成核心页面导航", async ({ page 
   await weekLink.click();
   await expect(page).toHaveURL(/#\/week$/);
   await expect(page.getByRole("region", { name: "手机端周报" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "五个账号本周情况", exact: true })).toBeVisible();
+  await expect(page.locator(".week-summary-card")).toHaveCount(0);
+  await expect(page.locator(".week-supplement-card")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "按账号本周结果", exact: true })).toBeVisible();
+  await expect(page.getByText("收支与任务明细", { exact: true })).toBeVisible();
+  await expect(page.getByText("库存变化", { exact: true })).toBeVisible();
+  const weeklyDetails = page.locator(".week-mobile-full-report");
+  await weeklyDetails.locator(":scope > summary").tap();
+  await expect(weeklyDetails).toHaveAttribute("open", "");
+  await expect(weeklyDetails.getByText("本周暂无记录", { exact: true })).toBeVisible();
+  await expect(weeklyDetails.locator(".weekly-account-row")).toHaveCount(0);
+  await expect(weeklyDetails.locator(".weekly-activity-head")).toHaveCount(0);
+  await expect(weeklyDetails.getByRole("button", { name: "补记其他支出", exact: true })).toHaveCount(0);
+  await expect(weeklyDetails.getByRole("button", { name: "生成本周小结", exact: true })).toHaveCount(0);
   await expect(weekLink).toHaveAttribute("aria-current", "page");
   await expect(taskLink).not.toHaveAttribute("aria-current");
 

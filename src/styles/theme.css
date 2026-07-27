@@ -132,10 +132,9 @@ html[data-theme="dark"] :is(
   .record-account-status-list > article,
   .week-mobile-switcher,
   .week-day-strip,
-  .week-summary-card,
   .week-account-table,
   .week-account-card,
-  .week-supplement-card,
+  .week-detail-group,
   .week-mobile-full-report,
   .weekly-activity-panel,
   .weekly-account-breakdown,
@@ -190,7 +189,6 @@ html[data-theme="dark"] :is(
   .progress-grid,
   .today-progress-grid,
   .week-metrics,
-  .week-summary-metrics,
   .record-account-status-list,
   .week-account-head,
   .table-head,
@@ -210,7 +208,6 @@ html[data-theme="dark"] .week-day-strip li.is-current {
 
 html[data-theme="dark"] :is(
   .week-account-card,
-  .week-supplement-card,
   .week-mobile-full-report,
   .weekly-activity-panel,
   .weekly-account-breakdown
@@ -222,7 +219,6 @@ html[data-theme="dark"] :is(
 
 html[data-theme="dark"] :is(
   .week-account-card,
-  .week-supplement-card,
   .week-mobile-full-report,
   .weekly-activity-panel,
   .weekly-account-breakdown
@@ -232,7 +228,6 @@ html[data-theme="dark"] :is(
 
 html[data-theme="dark"] :is(
   .week-account-card,
-  .week-supplement-card,
   .week-mobile-full-report,
   .weekly-activity-panel,
   .weekly-account-breakdown
@@ -240,7 +235,7 @@ html[data-theme="dark"] :is(
   color: var(--color-text-muted);
 }
 
-html[data-theme="dark"] :is(.week-supplement-card > button, .account-pill) {
+html[data-theme="dark"] .account-pill {
   color: var(--color-text);
   border-color: var(--radar-line-strong);
   background: var(--radar-surface-2);
@@ -422,7 +417,7 @@ html[data-theme="dark"] :is(.pending-ledger, .task-state-label.warning, .publish
   background: var(--color-warning-soft);
 }
 
-html[data-theme="dark"] :is(.movement-message.error, .task-state-label.blocked, .form-error) {
+html[data-theme="dark"] :is(.task-state-label.blocked, .form-error) {
   color: #ff6961;
   background: var(--color-danger-soft);
 }

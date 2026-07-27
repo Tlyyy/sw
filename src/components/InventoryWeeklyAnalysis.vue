@@ -85,12 +85,6 @@ function deltaTone(value: number | null) {
   return value > 0 ? "positive" : "negative";
 }
 
-function weeklyBasisLabel() {
-  return props.report.weeklyChangeBasis === "before-week"
-    ? "以上周前最近一份实际记录为基线"
-    : "按本周首份与末份实际记录比较";
-}
-
 function deltaMetricValue(delta: InventoryAccountDelta | null | undefined): number | null {
   if (!delta) return null;
   if (matrixMetric.value === "silverWithRegularEggsWan") return inventorySilverWithRegularEggsWan(delta);
@@ -312,20 +306,8 @@ async function shareInventoryReport() {
     <p v-if="shareNotice" class="inventory-share-notice" role="status">{{ shareNotice }}</p>
 
     <template v-if="reportView === 'summary'">
-      <div class="weekly-change-panel">
-        <header>
-          <h3>本周净变化</h3>
-          <p v-if="report.weeklyChange">
-            {{ weeklyBasisLabel() }} · {{ report.weeklyChange.fromEffectiveDate }} → {{ report.weeklyChange.toEffectiveDate }}（{{ report.weeklyChange.intervalDays }} 天）
-          </p>
-          <p v-if="report.weeklyChange" class="weekly-change-valuation-note">
-            银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × {{ inventoryRegularEggValueWan }} 万/个
-          </p>
-          <p v-else-if="report.recordedDays === 0">本周尚无实际库存记录，周变化暂时留空。</p>
-          <p v-else>本周只有一份记录且没有更早基线，暂时无法计算变化。</p>
-        </header>
-
-        <div v-if="report.weeklyChange" class="weekly-change-table" role="table" aria-label="五账号本周库存净变化">
+      <div v-if="report.weeklyChange" class="weekly-change-panel">
+        <div class="weekly-change-table" role="table" aria-label="五账号本周库存净变化">
           <div class="weekly-change-head" role="row">
             <span role="columnheader">账号</span><span role="columnheader">专</span><span role="columnheader">普</span>
             <span class="weekly-money-header" role="columnheader"><span>银</span><small> / 万</small></span>
@@ -356,12 +338,8 @@ async function shareInventoryReport() {
       </div>
     </template>
 
-    <section v-else class="inventory-daily-matrix" aria-labelledby="inventory-daily-matrix-title">
-      <header class="inventory-matrix-head">
-        <div>
-          <h3 id="inventory-daily-matrix-title">按日净变化</h3>
-          <p>每格为该日期相对上一份实际快照的变化；未记录或没有更早基线时显示“—”。</p>
-        </div>
+    <section v-else class="inventory-daily-matrix" aria-label="按日库存变化">
+      <div class="inventory-matrix-toolbar">
         <div class="segmented matrix-metric-switch" role="group" aria-label="对比指标">
           <button
             v-for="item in matrixMetricOptions"
@@ -374,14 +352,7 @@ async function shareInventoryReport() {
             @click="matrixMetric = item.key"
           >{{ item.label }}</button>
         </div>
-      </header>
-
-      <p class="inventory-matrix-context" aria-live="polite">
-        当前指标：<strong>{{ selectedMatrixMetric.label }}</strong>
-        <span>单位：{{ selectedMatrixMetric.unit }}</span>
-        <span v-if="matrixMetric === 'silverWithRegularEggsWan'" class="matrix-conversion-note">折算：银子 + 普通蛋 × {{ inventoryRegularEggValueWan }} 万/个</span>
-        <span v-if="report.weeklyChange">汇总区间：{{ report.weeklyChange.intervalDays }} 天</span>
-      </p>
+      </div>
 
       <div class="inventory-matrix-scroll" tabindex="0" :aria-label="`${selectedMatrixMetric.label}按日净变化矩阵，可横向滚动`">
         <table class="inventory-matrix-table">
@@ -556,31 +527,10 @@ async function shareInventoryReport() {
   background: var(--color-surface);
 }
 
-.weekly-change-panel > header,
-.inventory-matrix-head {
-  padding: 11px 14px 10px;
+.inventory-matrix-toolbar {
+  padding: 7px 10px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-subtle);
-}
-
-.weekly-change-panel h3,
-.inventory-matrix-head h3 {
-  color: var(--color-text);
-  font-size: 18px;
-  line-height: 1.3;
-}
-
-.weekly-change-panel p,
-.inventory-matrix-head p {
-  margin-top: 3px;
-  color: var(--color-text-muted);
-  font-size: 13px !important;
-  line-height: 1.45;
-}
-
-.weekly-change-panel .weekly-change-valuation-note {
-  color: var(--color-accent-strong);
-  font-weight: 700;
 }
 
 .weekly-change-head,
@@ -636,33 +586,6 @@ async function shareInventoryReport() {
 .positive { color: var(--color-success); }
 .negative { color: var(--color-danger); }
 .neutral { color: var(--color-text-muted); }
-
-.inventory-matrix-head {
-  min-height: 72px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.inventory-matrix-context {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 7px 14px;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  background: color-mix(in srgb, var(--color-accent) 5%, #ffffff);
-  font-size: 13px;
-}
-
-.inventory-matrix-context strong,
-.matrix-conversion-note {
-  color: var(--color-accent-strong);
-  font-weight: 750;
-}
 
 .inventory-matrix-scroll {
   min-width: 0;
@@ -805,14 +728,14 @@ async function shareInventoryReport() {
 @media (max-width: 720px) {
   .inventory-analysis-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-    padding: 8px 10px;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 6px;
+    padding: 6px 10px;
   }
 
   .inventory-analysis-actions {
-    width: 100%;
-    gap: 8px;
+    width: 44px;
+    gap: 0;
   }
 
   .inventory-analysis-actions p {
@@ -832,10 +755,20 @@ async function shareInventoryReport() {
   }
 
   .inventory-report-share-button {
-    width: 100%;
-    min-width: 0;
+    width: 44px;
+    min-width: 44px;
     min-height: 44px;
-    padding-inline: 12px;
+    padding: 0;
+  }
+
+  .inventory-report-share-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .inventory-share-notice {
@@ -847,16 +780,6 @@ async function shareInventoryReport() {
   .weekly-change-panel,
   .inventory-daily-matrix {
     margin: 10px;
-  }
-
-  .weekly-change-panel > header,
-  .inventory-matrix-head {
-    padding: 10px;
-  }
-
-  .weekly-change-panel h3,
-  .inventory-matrix-head h3 {
-    font-size: 17px;
   }
 
   .weekly-change-table {
@@ -872,12 +795,6 @@ async function shareInventoryReport() {
     padding-inline: 9px;
   }
 
-  .inventory-matrix-head {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 10px;
-  }
-
   .matrix-metric-switch {
     width: 100%;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -888,17 +805,6 @@ async function shareInventoryReport() {
     overflow: hidden;
     padding-inline: 6px;
     text-overflow: ellipsis;
-  }
-
-  .inventory-matrix-context {
-    flex-wrap: wrap;
-    gap: 3px 14px;
-    padding: 7px 10px;
-    font-size: 12px;
-  }
-
-  .inventory-matrix-context strong {
-    margin-right: auto;
   }
 
   .inventory-matrix-table {

@@ -13,10 +13,13 @@ import { useSettingsStore } from "../stores/settings";
 import AppIcon from "./AppIcon.vue";
 import { createWeeklyActivityReportImage } from "./weeklyActivityReportImage";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   report: InventoryWeekReport;
   currentDate: string;
-}>();
+  compact?: boolean;
+}>(), {
+  compact: false,
+});
 
 const settings = useSettingsStore();
 const accounts = catalog.accounts;
@@ -42,6 +45,18 @@ const activity = computed(() => buildWeeklyActivitySummary(
   settings.taskCompletions,
   settings.silverExpenses,
   props.currentDate,
+));
+const hasActivityRecords = computed(() => (
+  activity.value.taskCompletions.length > 0
+  || activity.value.manualExpenses.length > 0
+));
+const hasReportContent = computed(() => (
+  hasActivityRecords.value
+  || activity.value.latestInventoryDate !== null
+));
+const hasSingleLedger = computed(() => (
+  props.compact
+  && Boolean(activity.value.taskCompletions.length) !== Boolean(activity.value.manualExpenses.length)
 ));
 
 watch(() => [activity.value.weekStart, activity.value.reportEnd], () => {
@@ -221,12 +236,15 @@ async function sharePreview() {
 </script>
 
 <template>
-  <section class="weekly-activity-panel" aria-labelledby="weekly-activity-title" data-testid="weekly-activity-panel">
-    <header class="weekly-activity-head">
+  <section
+    class="weekly-activity-panel"
+    :aria-label="compact ? '本周收支与任务记录' : undefined"
+    :aria-labelledby="compact ? undefined : 'weekly-activity-title'"
+    data-testid="weekly-activity-panel"
+  >
+    <header v-if="!compact" class="weekly-activity-head">
       <div>
-        <p>本周截至 {{ shortDate(activity.reportEnd) }}</p>
         <h3 id="weekly-activity-title">五个账号本周情况</h3>
-        <span><b>{{ activity.weekStart }} 至 {{ activity.reportEnd }}</b> · {{ activity.latestInventoryDate ? `库存截至 ${activity.latestInventoryDate}` : "库存待建立基线" }}</span>
       </div>
       <div class="weekly-activity-actions">
         <button v-if="!expenseFormOpen" class="button weekly-expense-button" type="button" @click="openExpenseForm">
@@ -240,7 +258,7 @@ async function sharePreview() {
       </div>
     </header>
 
-    <section class="weekly-account-breakdown" aria-label="五账号本周情况">
+    <section v-if="!compact" class="weekly-account-breakdown" aria-label="五账号本周情况">
       <div class="weekly-account-table" role="table" aria-label="五账号本周情况">
         <div class="weekly-account-table-head" role="row">
           <span role="columnheader">账号</span><span role="columnheader">收获</span><span role="columnheader">支出</span><span role="columnheader">完成任务</span><span role="columnheader">当前库存</span>
@@ -250,7 +268,7 @@ async function sharePreview() {
           <span class="account-harvest" data-label="本周收获" role="cell"><b>{{ wanLabel(account.harvestedSilverWan) }}</b><small>库存净变化 {{ wanLabel(account.inventoryNetChangeWan, true) }}</small></span>
           <span class="account-expense" data-label="本周支出" role="cell"><b>{{ wanLabel(account.totalSilverExpenseWan) }}</b><small v-if="account.pendingReconciliationSilverExpenseWan > 0">其中 {{ wanLabel(account.pendingReconciliationSilverExpenseWan) }} 待下次库存结算</small><small v-else>任务 {{ numberLabel(account.taskSilverExpenseWan) }} · 其他 {{ numberLabel(account.manualSilverExpenseWan) }}</small></span>
           <span class="weekly-account-task" data-label="完成任务" role="cell"><b>{{ account.taskCompletions.length }} 项</b><small>{{ accountTaskSummary(account) }}</small></span>
-          <span data-label="当前库存" role="cell"><b>{{ wanLabel(account.currentSilverWan) }}</b><small>{{ activity.latestInventoryDate ? `库存日期 ${activity.latestInventoryDate}` : "尚无库存记录" }}</small></span>
+          <span data-label="当前库存" role="cell"><b>{{ wanLabel(account.currentSilverWan) }}</b><small v-if="!activity.latestInventoryDate">尚无库存记录</small></span>
         </article>
       </div>
       <p v-if="activity.unassignedManualSilverExpenseWan > 0" class="weekly-account-warning">
@@ -258,7 +276,7 @@ async function sharePreview() {
       </p>
     </section>
 
-    <form v-if="expenseFormOpen" class="weekly-expense-form" aria-label="补记其他银子支出" @submit.prevent="saveExpense">
+    <form v-if="!compact && expenseFormOpen" class="weekly-expense-form" aria-label="补记其他银子支出" @submit.prevent="saveExpense">
       <label><span>支出账号</span><select v-model="expenseAccountId" aria-label="其他支出账号" required><option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.label }}</option></select></label>
       <label><span>支出日期</span><input v-model="expenseDate" type="date" :min="activity.weekStart" :max="activity.reportEnd" aria-label="其他支出日期" required /></label>
       <label><span>金额 / 万</span><input v-model.number="expenseAmount" type="number" min="0.01" step="0.01" inputmode="decimal" aria-label="其他支出金额（万）" placeholder="0" required /></label>
@@ -272,8 +290,12 @@ async function sharePreview() {
 
     <p v-if="actionNotice" class="weekly-activity-notice" role="status" aria-live="polite">{{ actionNotice }}</p>
 
-    <div class="weekly-activity-ledgers">
-      <section aria-labelledby="weekly-completed-title">
+    <section v-if="compact && !hasActivityRecords" class="weekly-activity-empty" aria-labelledby="weekly-activity-empty-title">
+      <strong id="weekly-activity-empty-title">本周暂无记录</strong>
+    </section>
+
+    <div v-else class="weekly-activity-ledgers" :class="{ 'is-single': hasSingleLedger }">
+      <section v-if="!compact || activity.taskCompletions.length" aria-labelledby="weekly-completed-title">
         <header><h4 id="weekly-completed-title">完成任务</h4><span>{{ activity.taskCompletions.length }} 项</span></header>
         <ul v-if="activity.taskCompletions.length">
           <li v-for="task in activity.taskCompletions" :key="task.taskId">
@@ -286,7 +308,7 @@ async function sharePreview() {
         <p v-else>本周还没有标记完成的任务。</p>
       </section>
 
-      <section class="manual-expense-ledger" aria-labelledby="weekly-expense-title">
+      <section v-if="!compact || activity.manualExpenses.length" class="manual-expense-ledger" aria-labelledby="weekly-expense-title">
         <header><h4 id="weekly-expense-title">其他银子支出</h4><span>{{ activity.manualExpenses.length }} 笔</span></header>
         <ul v-if="activity.manualExpenses.length">
           <li v-for="expense in activity.manualExpenses" :key="expense.id">
@@ -298,6 +320,13 @@ async function sharePreview() {
         </ul>
         <p v-else>任务外的银子消费，可以用“补记其他支出”记录。</p>
       </section>
+    </div>
+
+    <div v-if="compact && hasReportContent" class="weekly-compact-actions">
+      <button class="button primary weekly-generate-button" type="button" :disabled="generating" :aria-busy="generating" @click="generateWeeklyReport">
+        <AppIcon :name="generating ? 'refresh' : 'report'" />
+        <span>{{ generating ? "正在生成" : `生成${weeklyReportTitle}` }}</span>
+      </button>
     </div>
 
     <Teleport to="body">
@@ -339,29 +368,11 @@ async function sharePreview() {
   background: linear-gradient(105deg, color-mix(in srgb, var(--color-accent) 9%, #ffffff), #ffffff 64%);
 }
 
-.weekly-activity-head p {
-  margin: 0 0 2px;
-  color: var(--color-accent-strong);
-  font-size: 11px !important;
-  font-weight: 850;
-  letter-spacing: .06em;
-}
-
 .weekly-activity-head h3 {
   color: var(--color-text);
   font-size: 19px;
   line-height: 1.3;
 }
-
-.weekly-activity-head > div:first-child > span {
-  display: block;
-  margin-top: 3px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.weekly-activity-head > div:first-child > span b { color: var(--color-text); }
 
 .weekly-activity-actions {
   display: flex;
@@ -475,11 +486,26 @@ async function sharePreview() {
   font-weight: 750;
 }
 
+.weekly-activity-empty {
+  display: grid;
+  justify-items: center;
+  padding: 18px 16px;
+  text-align: center;
+  background: var(--color-surface);
+}
+
+.weekly-activity-empty strong {
+  color: var(--color-text);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
 .weekly-activity-ledgers {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
 }
 
+.weekly-activity-ledgers.is-single { grid-template-columns: 1fr; }
 .weekly-activity-ledgers > section { min-width: 0; }
 .weekly-activity-ledgers > section + section { border-left: 1px solid var(--color-border); }
 .weekly-activity-ledgers section > header {
@@ -526,6 +552,27 @@ async function sharePreview() {
 .weekly-activity-ledgers li > button:hover { color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 8%, #ffffff); }
 .weekly-activity-ledgers li > button :deep(svg) { width: 16px; height: 16px; }
 .weekly-activity-ledgers section > p { min-height: 78px; display: grid; place-items: center; margin: 0; padding: 14px; color: var(--color-text-muted); font-size: 12px !important; text-align: center; }
+
+.weekly-compact-actions {
+  display: flex;
+  padding: 12px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.weekly-compact-actions .button {
+  width: 100%;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.weekly-compact-actions :deep(svg) {
+  width: 17px;
+  height: 17px;
+}
 
 .weekly-report-preview-backdrop {
   position: fixed;

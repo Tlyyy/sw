@@ -36,19 +36,6 @@ const weekDays = computed(() => buildMobileWeekOverview(
   settings.silverExpenses,
 ));
 const dateRangeLabel = computed(() => `${report.value.weekStart} 至 ${report.value.weekEnd}`);
-const latestUpdateDate = computed(() => {
-  const dates = [
-    activity.value.latestInventoryDate,
-    ...activity.value.taskCompletions.map((entry) => entry.completedOn),
-    ...activity.value.manualExpenses.map((entry) => entry.effectiveDate),
-  ].filter((value): value is string => Boolean(value)).sort();
-  return dates.length ? dates[dates.length - 1] : null;
-});
-const baselineLabel = computed(() => {
-  const change = report.value.weeklyChange;
-  if (!change) return "库存待建立基线";
-  return `${shortMonthDay(change.fromEffectiveDate)} → ${shortMonthDay(change.toEffectiveDate)}`;
-});
 const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"] as const;
 
 watch(currentDate, (date, previousDate) => {
@@ -71,11 +58,6 @@ function returnToCurrentWeek() {
   selectedAnchor.value = currentDate.value;
 }
 
-function shortMonthDay(value: string) {
-  const [, month, day] = value.split("-");
-  return `${Number(month)}月${Number(day)}日`;
-}
-
 function dayNumber(value: string) {
   return Number(value.slice(-2));
 }
@@ -85,13 +67,6 @@ function dayStateLabel(day: MobileWeekDayOverview) {
   if (day.state === "recorded") return "已记";
   if (day.state === "future") return "未来";
   return "未记";
-}
-
-function wanLabel(value: number | null, signed = false) {
-  if (value === null) return "—";
-  const normalized = Number(value.toFixed(2));
-  const prefix = signed && normalized > 0 ? "+" : "";
-  return `${prefix}${normalized.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}万`;
 }
 
 function compactWanLabel(value: number | null, signed = false) {
@@ -139,21 +114,21 @@ function openSupplementSheet() {
       @current="returnToCurrentWeek"
     />
 
-    <section class="week-mobile-report" aria-label="手机端周报">
-      <div class="week-mobile-switcher">
-        <button type="button" aria-label="查看上一周" @click="moveWeek(-7)">
-          <AppIcon class="week-switcher-previous" name="chevron-right" />
-        </button>
-        <div>
-          <strong>{{ dateRangeLabel }}</strong>
-          <span v-if="isCurrentWeek">本周</span>
-          <button v-else type="button" @click="returnToCurrentWeek">回到本周</button>
-        </div>
-        <button type="button" aria-label="查看下一周" :disabled="!canViewNextWeek" @click="moveWeek(7)">
-          <AppIcon name="chevron-right" />
-        </button>
+    <div class="week-mobile-switcher">
+      <button type="button" aria-label="查看上一周" @click="moveWeek(-7)">
+        <AppIcon class="week-switcher-previous" name="chevron-right" />
+      </button>
+      <div>
+        <strong>{{ dateRangeLabel }}</strong>
+        <span v-if="isCurrentWeek">本周</span>
+        <button v-else type="button" @click="returnToCurrentWeek">回到本周</button>
       </div>
+      <button type="button" aria-label="查看下一周" :disabled="!canViewNextWeek" @click="moveWeek(7)">
+        <AppIcon name="chevron-right" />
+      </button>
+    </div>
 
+    <section class="week-mobile-report" aria-label="手机端周报">
       <ol class="week-day-strip">
         <li
           v-for="day in weekDays"
@@ -166,30 +141,6 @@ function openSupplementSheet() {
           <small>{{ dayStateLabel(day) }}</small>
         </li>
       </ol>
-
-      <section class="week-summary-card" aria-labelledby="week-summary-title">
-        <header>
-          <div>
-            <p>{{ latestUpdateDate ? `本周更新于 ${shortMonthDay(latestUpdateDate)}` : "本周暂无已保存记录" }}</p>
-            <h2 id="week-summary-title">五个账号本周情况</h2>
-          </div>
-          <span>{{ baselineLabel }}</span>
-        </header>
-        <dl class="week-summary-metrics">
-          <div>
-            <dt>收入</dt>
-            <dd :class="valueTone(activity.harvestedSilverWan)">{{ wanLabel(activity.harvestedSilverWan) }}</dd>
-          </div>
-          <div>
-            <dt>支出</dt>
-            <dd :class="activity.totalSilverExpenseWan > 0 ? 'negative' : 'neutral'">{{ wanLabel(activity.totalSilverExpenseWan) }}</dd>
-          </div>
-          <div>
-            <dt>结余</dt>
-            <dd :class="valueTone(activity.inventoryNetChangeWan)">{{ wanLabel(activity.inventoryNetChangeWan, true) }}</dd>
-          </div>
-        </dl>
-      </section>
 
       <section class="week-account-card" aria-labelledby="week-account-title">
         <h2 id="week-account-title">按账号本周结果</h2>
@@ -231,36 +182,35 @@ function openSupplementSheet() {
         </div>
       </section>
 
-      <section class="week-supplement-card">
-        <div>
-          <h2>补充本周记录</h2>
-        </div>
-        <button type="button" @click="openSupplementSheet">
-          补充记录
-        </button>
-      </section>
-
-      <details class="week-mobile-full-report">
-        <summary>
-          <span><strong>完整周核算</strong></span>
-          <b>查看</b>
-        </summary>
-        <WeeklyActivityPanel :report="report" :current-date="currentDate" />
-        <RouterLink class="week-earnings-link" to="/earnings">查看实际所得</RouterLink>
-      </details>
     </section>
 
     <div class="week-desktop-report">
       <WeeklyActivityPanel :report="report" :current-date="currentDate" />
     </div>
 
-    <details class="week-inventory-details">
-      <summary>
-        <span><strong>按账号查看库存变化</strong></span>
-        <b>{{ report.recordedDays }} / 7 天库存记录</b>
-      </summary>
-      <InventoryWeeklyAnalysis :report="report" :current-date="currentDate" :show-activity="false" initial-view="summary" />
-    </details>
+    <div class="week-detail-group" aria-label="周报详细数据">
+      <details class="week-mobile-full-report">
+        <summary>
+          <strong>收支与任务明细</strong>
+          <span class="week-detail-summary-side" aria-hidden="true">
+            <AppIcon class="week-detail-chevron" name="chevron-right" />
+          </span>
+        </summary>
+        <WeeklyActivityPanel :report="report" :current-date="currentDate" compact />
+        <RouterLink class="week-earnings-link" to="/earnings">查看实际所得</RouterLink>
+      </details>
+
+      <details class="week-inventory-details">
+        <summary>
+          <strong>库存变化</strong>
+          <span class="week-detail-summary-side">
+            <b>{{ report.recordedDays }} / 7 天</b>
+            <AppIcon class="week-detail-chevron" name="chevron-right" aria-hidden="true" />
+          </span>
+        </summary>
+        <InventoryWeeklyAnalysis :report="report" :current-date="currentDate" :show-activity="false" initial-view="summary" />
+      </details>
+    </div>
   </div>
 </template>
 
@@ -280,15 +230,19 @@ function openSupplementSheet() {
 
 .week-page :deep(.inventory-week-switcher) { margin-bottom: 12px; }
 .week-page :deep(.weekly-activity-panel) { margin: 0; border-radius: 14px; box-shadow: 0 7px 20px rgba(17, 24, 39, .06); }
+.week-mobile-switcher { display: none; }
 .week-mobile-report { display: none; }
+.week-mobile-full-report { display: none; }
+.week-detail-group { display: contents; }
 
 .week-inventory-details { margin-top: 14px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
 .week-inventory-details > summary { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 16px; cursor: pointer; list-style: none; }
 .week-inventory-details > summary::-webkit-details-marker { display: none; }
-.week-inventory-details > summary > span { display: grid; gap: 2px; }
 .week-inventory-details > summary strong { font-size: 17px; }
-.week-inventory-details > summary small { color: var(--color-text-muted); font-size: 12px; }
-.week-inventory-details > summary > b { color: var(--color-accent-strong); font-size: 12px; white-space: nowrap; }
+.week-detail-summary-side { display: inline-flex; align-items: center; gap: 8px; color: var(--color-text-muted); }
+.week-detail-summary-side b { color: var(--color-accent-strong); font-size: 12px; white-space: nowrap; }
+.week-detail-chevron { width: 16px; height: 16px; transition: transform .18s ease; }
+.week-detail-group > details[open] > summary .week-detail-chevron { transform: rotate(90deg); }
 .week-inventory-details[open] > summary { border-bottom: 1px solid var(--color-border); }
 .week-inventory-details :deep(.inventory-weekly-analysis) { border: 0; border-radius: 0; }
 
@@ -306,16 +260,22 @@ function openSupplementSheet() {
   }
   .week-mobile-report { display: grid; gap: 10px; }
   .week-mobile-switcher {
+    position: sticky;
+    z-index: 50;
+    top: calc(var(--ios-mobile-header-height, 68px) + env(safe-area-inset-top));
     min-height: 64px;
     display: grid;
     grid-template-columns: 44px 1fr 44px;
     align-items: center;
     gap: 8px;
+    margin-bottom: 10px;
     padding: 8px 10px;
     border: 1px solid var(--week-border);
     border-radius: 13px;
-    background: rgba(255, 255, 255, .88);
-    box-shadow: 0 4px 14px rgba(17, 24, 39, .04);
+    background: rgba(255, 255, 255, .94);
+    box-shadow: 0 6px 18px rgba(17, 24, 39, .09);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
   }
   .week-mobile-switcher > button {
     width: 40px;
@@ -393,48 +353,16 @@ function openSupplementSheet() {
   .week-day-strip .is-current small { color: var(--week-accent); }
   .week-day-strip .is-future { color: #788396; }
 
-  .week-summary-card,
-  .week-account-card,
-  .week-supplement-card,
-  .week-mobile-full-report {
+  .week-account-card {
     overflow: hidden;
     border: 1px solid var(--week-border);
     border-radius: 13px;
     background: rgba(255, 255, 255, .92);
     box-shadow: 0 4px 14px rgba(17, 24, 39, .035);
   }
-  .week-summary-card { padding: 13px; }
-  .week-summary-card > header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 13px;
-  }
-  .week-summary-card > header > div { min-width: 0; display: grid; gap: 5px; }
-  .week-summary-card p { margin: 0; color: var(--ios-secondary-label); font-size: 11px; }
-  .week-summary-card h2,
-  .week-account-card h2,
-  .week-supplement-card h2 { margin: 0; color: #1d2939; font-size: 15px; letter-spacing: -.02em; }
-  .week-summary-card > header > span { color: var(--ios-secondary-label); font-size: 10px; font-weight: 650; white-space: nowrap; }
-  .week-summary-metrics {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    margin: 0;
-    padding: 10px 0;
-    border: 1px solid rgba(60, 60, 67, .12);
-    border-radius: 10px;
-    background: var(--color-surface);
-  }
-  .week-summary-metrics > div { min-width: 0; display: grid; gap: 6px; padding: 0 12px; border-right: 1px solid rgba(60, 60, 67, .12); }
-  .week-summary-metrics > div:last-child { border-right: 0; }
-  .week-summary-metrics dt { color: var(--ios-secondary-label); font-size: 10px; font-weight: 650; }
-  .week-summary-metrics dd { margin: 0; color: var(--week-accent); font-size: 17px; font-weight: 780; white-space: nowrap; }
-  .week-summary-metrics dd.positive,
+  .week-account-card h2 { margin: 0; color: #1d2939; font-size: 15px; letter-spacing: -.02em; }
   .week-account-row .positive { color: var(--week-positive); }
-  .week-summary-metrics dd.negative,
   .week-account-row .negative { color: var(--week-accent); }
-  .week-summary-metrics dd.neutral,
   .week-account-row .neutral { color: #344054; }
 
   .week-account-card { padding: 13px; }
@@ -487,53 +415,41 @@ function openSupplementSheet() {
   .week-account-badge[data-account="LG2"] { border-color: #c79a58; color: #985800; }
   .week-account-badge[data-account="MYT"] { border-color: #78a894; color: #147052; }
 
-  .week-supplement-card {
-    min-height: 66px;
+  .week-detail-group {
+    display: block;
+    margin-top: 10px;
+    overflow: hidden;
+    border: 1px solid var(--week-border);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .92);
+    box-shadow: 0 4px 14px rgba(17, 24, 39, .035);
+  }
+  .week-detail-group > details {
+    margin: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .week-detail-group > .week-mobile-full-report { display: block; }
+  .week-detail-group > details + details { border-top: 1px solid var(--week-border); }
+  .week-detail-group > details > summary {
+    min-height: 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 11px 12px;
-  }
-  .week-supplement-card > div { min-width: 0; display: grid; gap: 3px; }
-  .week-supplement-card p { margin: 0; overflow: hidden; color: var(--ios-secondary-label); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-  .week-supplement-card > button {
-    min-height: 42px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0 12px;
-    border: 1px solid var(--week-accent);
-    border-radius: 9px;
-    color: var(--week-accent);
-    font-size: 12px;
-    font-weight: 750;
-    background: var(--color-surface);
-    white-space: nowrap;
-  }
-  .week-supplement-card :deep(svg) { width: 16px; height: 16px; }
-
-  .week-mobile-full-report { display: block; }
-  .week-mobile-full-report > summary,
-  .week-inventory-details > summary {
-    min-height: 62px;
-    align-items: center;
-    flex-direction: row;
-    gap: 10px;
-    padding: 10px 12px;
-  }
-  .week-mobile-full-report > summary {
-    display: flex;
-    justify-content: space-between;
+    gap: 12px;
+    padding: 0 14px;
     cursor: pointer;
     list-style: none;
   }
-  .week-mobile-full-report > summary::-webkit-details-marker { display: none; }
-  .week-mobile-full-report > summary > span { display: grid; gap: 2px; }
-  .week-mobile-full-report strong { color: #1d2939; font-size: 14px; }
-  .week-mobile-full-report small { color: var(--ios-secondary-label); font-size: 10px; }
-  .week-mobile-full-report b { color: var(--week-accent); font-size: 11px; }
-  .week-mobile-full-report[open] > summary { border-bottom: 1px solid var(--week-border); }
+  .week-detail-group > details > summary::-webkit-details-marker { display: none; }
+  .week-detail-group > details > summary strong { color: #1d2939; font-size: 14px; }
+  .week-detail-summary-side { flex: 0 0 auto; gap: 6px; color: var(--ios-secondary-label); }
+  .week-detail-summary-side b { color: inherit; font-size: 12px; font-weight: 650; }
+  .week-detail-chevron { width: 16px; height: 16px; }
+  .week-detail-group > details[open] > summary { border-bottom: 1px solid var(--week-border); }
   .week-mobile-full-report :deep(.weekly-activity-panel) { border: 0; border-radius: 0; box-shadow: none; }
   .week-earnings-link {
     min-height: 44px;
@@ -546,10 +462,5 @@ function openSupplementSheet() {
     text-decoration: none;
   }
 
-  .week-inventory-details { margin-top: 10px; border-color: var(--week-border); border-radius: 13px; }
-  .week-inventory-details > summary { align-items: center; flex-direction: row; }
-  .week-inventory-details > summary strong { font-size: 14px; }
-  .week-inventory-details > summary small { font-size: 10px; }
-  .week-inventory-details > summary > b { color: var(--week-accent); font-size: 10px; }
 }
 </style>

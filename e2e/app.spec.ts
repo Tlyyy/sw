@@ -154,7 +154,9 @@ test.describe("desktop application", () => {
       }));
     }, { previousDate, targetDate });
 
-    await page.goto("/#/earnings?account=FC");
+    await page.goto("/#/earnings");
+    await expect(page.getByRole("button", { name: "特殊变动", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "查看所有账号实际所得", exact: true })).toHaveAttribute("aria-pressed", "true");
     const dailyTable = page.getByRole("region", { name: "五账号每日实际所得" });
     await expect(dailyTable).toBeVisible();
     await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银子）" })).toBeVisible();
@@ -163,7 +165,7 @@ test.describe("desktop application", () => {
     const targetDateRow = dailyTable.locator(`tr[data-date='${targetDate}']`);
     await expect(targetDateRow.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
     const accountOverview = page.getByRole("region", { name: "当前库存" });
-    await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["90 万", "9 个", "13 个", "32 片"]);
+    await expect(accountOverview).toHaveCount(0);
     await expect(dailyTable.locator(".daily-table-share")).toHaveCount(1);
 
     const combinedShareButton = page.getByRole("button", {
@@ -184,7 +186,7 @@ test.describe("desktop application", () => {
     await dailyTable.getByRole("button", { name: "银+蛋折银", exact: true }).click();
     await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
     await expect(targetDateRow.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
-    await expect(dailyTable).toContainText("专用蛋不参与折算");
+    await expect(dailyTable.getByText(/折算口径|专用蛋不参与折算/)).toHaveCount(0);
     const combinedWithEggsShareButton = page.getByRole("button", {
       name: `分享五个账号 ${week.monday} 至 ${week.sunday} 每日实际所得银加蛋折银图片`,
       exact: true,
@@ -199,6 +201,11 @@ test.describe("desktop application", () => {
     expect(combinedWithEggsDownload.suggestedFilename()).toBe(combinedWithEggsFilename);
     await combinedWithEggsDownload.saveAs(testInfo.outputPath(combinedWithEggsFilename));
     await expect(page.getByRole("status")).toContainText("五号银+蛋折银图片已下载");
+
+    await page.getByRole("button", { name: "查看 FC 实际所得", exact: true }).click();
+    await expect(page).toHaveURL(/#\/earnings\?account=FC$/);
+    await expect(dailyTable).toHaveCount(0);
+    await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["90 万", "9 个", "13 个", "32 片"]);
 
     const shareButton = accountOverview.getByRole("button", { name: `分享 FC ${targetDateLabel} 实际所得图片`, exact: true });
     await expect(shareButton).toBeVisible();
@@ -1060,30 +1067,43 @@ test.describe("week-to-date activity report", () => {
       activity = page.locator(".week-desktop-report").getByTestId("weekly-activity-panel");
     }
     await expect(activity).toBeVisible();
-    await expect(activity.getByText("本周截至 7月22日", { exact: true })).toBeVisible();
-    await expect(activity.getByText("2026-07-20 至 2026-07-22", { exact: true })).toBeVisible();
-    await expect(activity.getByRole("heading", { name: /账号本周情况$/ })).toBeVisible();
-    await expect(activity.getByText(/库存截至 2026-07-22/)).toBeVisible();
+    await expect(activity.getByText("本周截至 7月22日", { exact: true })).toHaveCount(0);
+    await expect(activity.getByText("2026-07-20 至 2026-07-22", { exact: true })).toHaveCount(0);
+    if (usesMobileTaskWorkspace) {
+      await expect(activity.locator(".weekly-activity-head")).toHaveCount(0);
+    } else {
+      await expect(activity.getByRole("heading", { name: /账号本周情况$/ })).toBeVisible();
+    }
+    await expect(activity.getByText(/库存截至 2026-07-22/)).toHaveCount(0);
+    await expect(activity.getByText(/库存日期 2026-07-22/)).toHaveCount(0);
 
-    await activity.getByRole("button", { name: "补记其他支出", exact: true }).click();
-    await activity.getByLabel("其他支出账号").selectOption("LG1");
-    await activity.getByLabel("其他支出金额（万）").fill("10");
-    await activity.getByLabel("其他支出用途").fill("购买材料");
-    await activity.getByRole("button", { name: "保存支出", exact: true }).click();
-    await expect(activity.getByText("购买材料", { exact: true })).toBeVisible();
-    const accountRows = activity.locator(".weekly-account-row");
-    await expect(accountRows).toHaveCount(5);
+    if (!usesMobileTaskWorkspace) {
+      await activity.getByRole("button", { name: "补记其他支出", exact: true }).click();
+      await activity.getByLabel("其他支出账号").selectOption("LG1");
+      await activity.getByLabel("其他支出金额（万）").fill("10");
+      await activity.getByLabel("其他支出用途").fill("购买材料");
+      await activity.getByRole("button", { name: "保存支出", exact: true }).click();
+      await expect(activity.getByText("购买材料", { exact: true })).toBeVisible();
+    }
     const canonicalAccountIds = ["FC", "LG1", "PT", "LG2", "MYT"] as const;
-    await expect(accountRows.locator(".account-pill")).toHaveText(canonicalAccountIds);
     await expect(activity.locator(".weekly-cashflow-metrics")).toHaveCount(0);
-
-    const expectedExpenses = Object.fromEntries(canonicalAccountIds.map((accountId) => [accountId, 0])) as Record<(typeof canonicalAccountIds)[number], number>;
-    expectedExpenses[taskAccountId as (typeof canonicalAccountIds)[number]] += taskExpense;
-    expectedExpenses.LG1 += 10;
-    for (const accountId of canonicalAccountIds) {
-      const accountRow = activity.locator(`.weekly-account-row[data-account-id='${accountId}']`);
-      await expect(accountRow.locator(".account-expense b")).toHaveText(`${expectedExpenses[accountId].toLocaleString("zh-CN")} 万`);
-      await expect(accountRow.locator(".account-harvest b")).toHaveText(`${(4 + expectedExpenses[accountId]).toLocaleString("zh-CN")} 万`);
+    const accountRows = activity.locator(".weekly-account-row");
+    if (usesMobileTaskWorkspace) {
+      await expect(accountRows).toHaveCount(0);
+      await expect(activity.locator(".weekly-account-breakdown")).toHaveCount(0);
+      await expect(activity.getByRole("heading", { name: "完成任务", exact: true })).toBeVisible();
+      await expect(activity.getByRole("heading", { name: "其他银子支出", exact: true })).toHaveCount(0);
+    } else {
+      await expect(accountRows).toHaveCount(5);
+      await expect(accountRows.locator(".account-pill")).toHaveText(canonicalAccountIds);
+      const expectedExpenses = Object.fromEntries(canonicalAccountIds.map((accountId) => [accountId, 0])) as Record<(typeof canonicalAccountIds)[number], number>;
+      expectedExpenses[taskAccountId as (typeof canonicalAccountIds)[number]] += taskExpense;
+      expectedExpenses.LG1 += 10;
+      for (const accountId of canonicalAccountIds) {
+        const accountRow = activity.locator(`.weekly-account-row[data-account-id='${accountId}']`);
+        await expect(accountRow.locator(".account-expense b")).toHaveText(`${expectedExpenses[accountId].toLocaleString("zh-CN")} 万`);
+        await expect(accountRow.locator(".account-harvest b")).toHaveText(`${(4 + expectedExpenses[accountId]).toLocaleString("zh-CN")} 万`);
+      }
     }
 
     await activity.getByRole("button", { name: "生成本周小结", exact: true }).click();

@@ -22,9 +22,8 @@ import {
 } from "./dailyEarningsShareImage";
 import { createEarningsShareImage } from "./earningsShareImage";
 
-type ResourceKey = "silverWan" | "dedicatedEggs" | "regularEggs" | "innerShards";
-type MovementMode = "transfer" | "adjustment";
 type DetailView = "ledger" | "intervals";
+type AccountScope = "all" | AccountId;
 
 const route = useRoute();
 const router = useRouter();
@@ -45,18 +44,10 @@ function queryAccount(value: unknown): AccountId | null {
     : null;
 }
 
-const selectedAccount = ref<AccountId>(queryAccount(route.query.account) || ui.recentAccount);
-const movementOpen = ref(false);
-const movementMode = ref<MovementMode>("transfer");
-const movementAccount = ref<AccountId>(selectedAccount.value);
-const movementTarget = ref<AccountId>(accountIds.find((id) => id !== selectedAccount.value) || "FC");
-const movementDirection = ref<"increase" | "decrease">("increase");
-const movementResource = ref<ResourceKey>("silverWan");
-const movementAmount = ref<number | null>(null);
-const movementTime = ref(shanghaiDateTimeLocal());
-const movementNote = ref("");
-const movementError = ref("");
-const movementNotice = ref("");
+const initialAccount = queryAccount(route.query.account);
+const selectedScope = ref<AccountScope>(initialAccount || "all");
+const selectedAccount = ref<AccountId>(initialAccount || ui.recentAccount);
+const ledgerNotice = ref("");
 const sharingIncome = ref(false);
 const sharingDailyIncome = ref(false);
 const sharingDailyIncomeWithEggs = ref(false);
@@ -145,36 +136,29 @@ const dailyWithEggsShareButtonLabel = computed(() => hasDailyIncomeToShare.value
 const dailyTableShareButtonLabel = computed(() => dailyTableMetric.value === "silverWithRegularEggsWan"
   ? dailyWithEggsShareButtonLabel.value
   : dailyShareButtonLabel.value);
-const movementResourceLabel = computed(() => ({
-  silverWan: "银子",
-  dedicatedEggs: "专用蛋",
-  regularEggs: "普通蛋",
-  innerShards: "内丹碎片",
-})[movementResource.value]);
-
 watch(() => route.query.account, (value) => {
   const next = queryAccount(value);
+  selectedScope.value = next || "all";
   if (next && next !== selectedAccount.value) selectedAccount.value = next;
 });
 
 watch(selectedAccount, (accountId) => {
   ui.recentAccount = accountId;
-  movementAccount.value = accountId;
-  if (movementTarget.value === accountId) {
-    movementTarget.value = accountIds.find((id) => id !== accountId) || "FC";
-  }
-});
-
-watch(movementMode, () => {
-  movementError.value = "";
-  movementNotice.value = "";
 });
 
 onBeforeUnmount(() => {
   if (incomeShareNoticeTimer !== null) window.clearTimeout(incomeShareNoticeTimer);
 });
 
-function selectAccount(accountId: AccountId) {
+function selectAccount(scope: AccountScope) {
+  selectedScope.value = scope;
+  if (scope === "all") {
+    const query = { ...route.query };
+    delete query.account;
+    void router.replace({ query });
+    return;
+  }
+  const accountId = scope;
   selectedAccount.value = accountId;
   void router.replace({
     query: { ...route.query, account: accountId },
@@ -396,117 +380,8 @@ function voidLedgerEntry(entry: AccountingEntry) {
   const linked = entry.groupId ? "，同一笔转账的两端会一起撤销" : "";
   if (!confirm(`确认撤销这笔“${entryKind(entry)}”记录${linked}？库存不会改变。`)) return;
   if (accounting.voidEntry(entry.id)) {
-    movementNotice.value = "已撤销实际流水；库存没有变化。";
+    ledgerNotice.value = "已撤销实际流水；库存没有变化。";
   }
-}
-
-function twoDigits(value: number) {
-  return String(value).padStart(2, "0");
-}
-
-function shanghaiDateTimeLocal(now = Date.now()) {
-  const shanghai = new Date(now + 8 * 60 * 60 * 1_000);
-  return `${shanghai.getUTCFullYear()}-${twoDigits(shanghai.getUTCMonth() + 1)}-${twoDigits(shanghai.getUTCDate())}`
-    + `T${twoDigits(shanghai.getUTCHours())}:${twoDigits(shanghai.getUTCMinutes())}`;
-}
-
-function parseShanghaiDateTime(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
-  if (!match) return null;
-  const [, yearText, monthText, dayText, hourText, minuteText] = match;
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const day = Number(dayText);
-  const hour = Number(hourText);
-  const minute = Number(minuteText);
-  const epoch = Date.UTC(year, month - 1, day, hour - 8, minute);
-  const check = new Date(epoch + 8 * 60 * 60 * 1_000);
-  if (
-    check.getUTCFullYear() !== year
-    || check.getUTCMonth() + 1 !== month
-    || check.getUTCDate() !== day
-    || check.getUTCHours() !== hour
-    || check.getUTCMinutes() !== minute
-  ) return null;
-  return {
-    occurredAt: new Date(epoch).toISOString(),
-    effectiveDate: `${yearText}-${monthText}-${dayText}`,
-  };
-}
-
-function movementResources(): AccountingResources {
-  const resources: AccountingResources = {
-    silverWan: 0,
-    dedicatedEggs: 0,
-    regularEggs: 0,
-    innerShards: 0,
-  };
-  const amount = Number(movementAmount.value);
-  if (movementResource.value === "innerShards") resources.innerShards = amount;
-  else resources[movementResource.value] = amount;
-  return resources;
-}
-
-function resetMovementForm() {
-  movementAmount.value = null;
-  movementNote.value = "";
-  movementTime.value = shanghaiDateTimeLocal();
-  movementError.value = "";
-}
-
-function saveMovement() {
-  movementError.value = "";
-  movementNotice.value = "";
-  const amount = Number(movementAmount.value);
-  const occurrence = parseShanghaiDateTime(movementTime.value);
-  const note = movementNote.value.trim();
-  if (!Number.isFinite(amount) || amount <= 0) {
-    movementError.value = "请输入大于 0 的实际数量。";
-    return;
-  }
-  if (!occurrence) {
-    movementError.value = "请选择有效的发生时间。";
-    return;
-  }
-  if (!note) {
-    movementError.value = "请写明这次变动的原因，方便以后核对。";
-    return;
-  }
-
-  if (movementMode.value === "transfer") {
-    if (movementAccount.value === movementTarget.value) {
-      movementError.value = "转出与转入不能是同一个账号。";
-      return;
-    }
-    const result = accounting.addTransfer({
-      fromAccountId: movementAccount.value,
-      toAccountId: movementTarget.value,
-      effectiveDate: occurrence.effectiveDate,
-      occurredAt: occurrence.occurredAt,
-      resources: movementResources(),
-      note,
-    });
-    if (!result) {
-      movementError.value = "这笔转账没有保存，请检查账号、数量和备注。";
-      return;
-    }
-    movementNotice.value = `已记录 ${movementAccount.value} → ${movementTarget.value} 的${movementResourceLabel.value}转移；不会改库存，也不会被算成所得。`;
-  } else {
-    const result = accounting.addAdjustment({
-      accountId: movementAccount.value,
-      effectiveDate: occurrence.effectiveDate,
-      occurredAt: occurrence.occurredAt,
-      direction: movementDirection.value,
-      resources: movementResources(),
-      note,
-    });
-    if (!result) {
-      movementError.value = "这笔调整没有保存，请检查数量和备注。";
-      return;
-    }
-    movementNotice.value = `已记录 ${movementAccount.value} 的非收益${movementDirection.value === "increase" ? "增加" : "减少"}；不会改库存。`;
-  }
-  resetMovementForm();
 }
 </script>
 
@@ -514,23 +389,28 @@ function saveMovement() {
   <div class="earnings-page" data-testid="earnings-page">
     <header class="earnings-intro">
       <div>
-        <p>独立核算</p>
         <h1>实际所得</h1>
-        <span>库存仍以每天手工录入为准；这里只解释变化，不会自动扣库存。</span>
+        <span>按库存变化核算 · 不改库存</span>
       </div>
-      <button class="movement-toggle" type="button" :aria-expanded="movementOpen" aria-controls="special-movement-form" @click="movementOpen = !movementOpen">
-        <AppIcon name="plus" />
-        <span>记录特殊变动</span>
-      </button>
     </header>
 
     <nav class="earnings-account-tabs" aria-label="选择核算账号">
       <button
+        type="button"
+        :class="{ active: selectedScope === 'all' }"
+        :aria-pressed="selectedScope === 'all'"
+        aria-label="查看所有账号实际所得"
+        @click="selectAccount('all')"
+      >
+        <strong>全部</strong>
+        <span>5 个账号</span>
+      </button>
+      <button
         v-for="account in catalog.data.accounts"
         :key="account.id"
         type="button"
-        :class="[{ active: selectedAccount === account.id }, `account-${account.id.toLowerCase()}`]"
-        :aria-pressed="selectedAccount === account.id"
+        :class="[{ active: selectedScope === account.id }, `account-${account.id.toLowerCase()}`]"
+        :aria-pressed="selectedScope === account.id"
         :aria-label="`查看 ${account.id} 实际所得`"
         @click="selectAccount(account.id)"
       >
@@ -539,37 +419,11 @@ function saveMovement() {
       </button>
     </nav>
 
-    <section v-if="movementOpen" id="special-movement-form" class="movement-panel" aria-labelledby="movement-title">
-      <header>
-        <div><p>只在必要时使用</p><h2 id="movement-title">排除转账或非收益变化</h2></div>
-        <button type="button" aria-label="关闭特殊变动表单" @click="movementOpen = false"><AppIcon name="close" /></button>
-      </header>
-      <p class="movement-explanation">账号间转移和系统调整会改变库存，但不是真实所得。记录后只修正核算口径，不会写回库存。</p>
-      <form @submit.prevent="saveMovement">
-        <fieldset class="movement-mode">
-          <legend>变动类型</legend>
-          <div>
-            <button type="button" :class="{ active: movementMode === 'transfer' }" :aria-pressed="movementMode === 'transfer'" @click="movementMode = 'transfer'">账号间转移</button>
-            <button type="button" :class="{ active: movementMode === 'adjustment' }" :aria-pressed="movementMode === 'adjustment'" @click="movementMode = 'adjustment'">非收益调整</button>
-          </div>
-        </fieldset>
-        <label><span>{{ movementMode === "transfer" ? "转出账号" : "账号" }}</span><select v-model="movementAccount" aria-label="特殊变动账号"><option v-for="account in catalog.data.accounts" :key="account.id" :value="account.id">{{ account.id }}</option></select></label>
-        <label v-if="movementMode === 'transfer'"><span>转入账号</span><select v-model="movementTarget" aria-label="转入账号"><option v-for="account in catalog.data.accounts" :key="account.id" :value="account.id" :disabled="account.id === movementAccount">{{ account.id }}</option></select></label>
-        <label v-else><span>库存变化</span><select v-model="movementDirection" aria-label="调整方向"><option value="increase">增加，但不是所得</option><option value="decrease">减少，但不是支出</option></select></label>
-        <label><span>资源</span><select v-model="movementResource" aria-label="特殊变动资源"><option value="silverWan">银子 / 万</option><option value="dedicatedEggs">专用蛋 / 个</option><option value="regularEggs">普通蛋 / 个</option><option value="innerShards">内丹碎片 / 片</option></select></label>
-        <label><span>实际数量</span><input v-model.number="movementAmount" type="number" min="0.01" step="0.01" inputmode="decimal" aria-label="特殊变动数量" placeholder="请输入数量" /></label>
-        <label><span>发生时间</span><input v-model="movementTime" type="datetime-local" step="60" aria-label="特殊变动发生时间" /></label>
-        <label class="movement-note"><span>原因</span><input v-model="movementNote" type="text" maxlength="120" aria-label="特殊变动原因" placeholder="例如：FC 转给 LG1，或补偿到账" /></label>
-        <button class="movement-save" type="submit">保存核算记录</button>
-      </form>
-      <p v-if="movementError" class="movement-message error" role="alert">{{ movementError }}</p>
-    </section>
-
-    <p v-if="movementNotice" class="movement-message success" role="status">{{ movementNotice }}</p>
+    <p v-if="ledgerNotice" class="ledger-notice" role="status">{{ ledgerNotice }}</p>
 
     <main class="earnings-workspace">
       <section class="earnings-summary" aria-label="实际所得概览">
-        <section class="daily-earnings-table" aria-labelledby="daily-earnings-table-title">
+        <section v-if="selectedScope === 'all'" class="daily-earnings-table" aria-labelledby="daily-earnings-table-title">
           <header>
             <div>
               <p>本周五号 · 单位：万</p>
@@ -676,14 +530,11 @@ function saveMovement() {
               </tbody>
             </table>
           </div>
-          <p v-if="dailyTableData.conversionNote" class="daily-table-note">
-            折算口径：{{ dailyTableData.conversionNote }}；专用蛋不参与折算。
-          </p>
         </section>
 
         <p v-if="incomeShareNotice" class="income-share-notice" role="status">{{ incomeShareNotice }}</p>
 
-        <section class="selected-account-overview" aria-labelledby="selected-account-overview-title">
+        <section v-if="selectedScope !== 'all'" class="selected-account-overview" aria-labelledby="selected-account-overview-title">
           <header>
             <div>
               <p>{{ selectedAccount }} 账号</p>
@@ -732,7 +583,7 @@ function saveMovement() {
         </section>
       </section>
 
-      <details class="accounting-rule">
+      <details v-if="selectedScope !== 'all'" class="accounting-rule">
         <summary>
           <span class="accounting-rule-icon"><AppIcon name="analysis" /></span>
           <span class="accounting-rule-copy">
@@ -752,7 +603,7 @@ function saveMovement() {
       </details>
     </main>
 
-    <section class="earnings-detail-panel" aria-labelledby="earnings-detail-title">
+    <section v-if="selectedScope !== 'all'" class="earnings-detail-panel" aria-labelledby="earnings-detail-title">
       <header>
         <div>
           <p>当前账号明细</p>
@@ -837,48 +688,29 @@ function saveMovement() {
 }
 
 .earnings-intro {
-  min-height: 78px;
+  min-height: 68px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 0 4px 13px;
+  padding: 0 4px 10px;
   border-bottom: 1px solid var(--color-border);
 }
 .earnings-intro > div { min-width: 0; }
-.earnings-intro p,
 .daily-earnings-table > header p,
 .selected-account-overview > header p,
-.earnings-detail-panel > header p,
-.movement-panel > header p {
+.earnings-detail-panel > header p {
   color: var(--color-accent-strong);
   font-size: 10px;
   font-weight: 850;
   letter-spacing: .09em;
 }
-.earnings-intro h1 { margin-top: 1px; font-size: 28px; line-height: 1.2; letter-spacing: -.04em; }
-.earnings-intro > div > span { display: block; margin-top: 3px; color: var(--color-text-muted); font-size: 12px; line-height: 1.45; }
-.movement-toggle {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 14px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 9px;
-  color: var(--color-accent-strong);
-  background: var(--color-surface);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-.movement-toggle :deep(svg) { width: 17px; height: 17px; }
+.earnings-intro h1 { font-size: 26px; line-height: 1.2; letter-spacing: -.04em; }
+.earnings-intro > div > span { display: block; margin-top: 2px; color: var(--color-text-muted); font-size: 12px; line-height: 1.35; white-space: nowrap; }
 
 .earnings-account-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   overflow: hidden;
   margin-top: 14px;
   border: 1px solid var(--color-border);
@@ -909,7 +741,6 @@ function saveMovement() {
 }
 .earnings-account-tabs button.active span { color: var(--color-accent-strong); }
 
-.movement-panel,
 .daily-earnings-table,
 .selected-account-overview,
 .accounting-rule,
@@ -919,8 +750,6 @@ function saveMovement() {
   background: var(--color-surface);
   box-shadow: 0 7px 20px rgba(17, 24, 39, .055);
 }
-.movement-panel { overflow: hidden; margin-top: 12px; }
-.movement-panel > header,
 .selected-account-overview > header,
 .earnings-detail-panel > header {
   min-height: 62px;
@@ -932,60 +761,9 @@ function saveMovement() {
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-subtle);
 }
-.movement-panel > header h2,
 .selected-account-overview > header h2,
 .earnings-detail-panel > header h2 { margin-top: 1px; font-size: 18px; }
-.movement-panel > header > button {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  color: var(--color-text-muted);
-  background: var(--color-surface);
-}
-.movement-explanation { padding: 11px 14px 0; color: var(--color-text-muted); font-size: 12px; }
-.movement-panel form {
-  display: grid;
-  grid-template-columns: 1.1fr repeat(5, minmax(120px, 1fr)) auto;
-  align-items: end;
-  gap: 10px;
-  padding: 12px 14px 14px;
-}
-.movement-panel label { min-width: 0; display: grid; gap: 5px; }
-.movement-panel label > span,
-.movement-mode legend { color: var(--color-text-muted); font-size: 11px; font-weight: 800; }
-.movement-panel :is(input, select) {
-  width: 100%;
-  height: 44px;
-  padding: 0 10px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-  background: var(--color-surface);
-  font-size: 16px;
-}
-.movement-mode { min-width: 0; margin: 0; padding: 0; border: 0; }
-.movement-mode > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); height: 44px; overflow: hidden; margin-top: 5px; border: 1px solid var(--color-border-strong); border-radius: 8px; }
-.movement-mode button { border: 0; border-right: 1px solid var(--color-border); color: var(--color-text-muted); background: var(--color-surface); font: inherit; font-size: 12px; font-weight: 800; }
-.movement-mode button:last-child { border-right: 0; }
-.movement-mode button.active { color: var(--color-accent-strong); background: var(--color-accent-soft); }
-.movement-note { grid-column: span 2; }
-.movement-save {
-  min-height: 44px;
-  padding: 0 14px;
-  border: 1px solid #a84600;
-  border-radius: 8px;
-  color: var(--color-text-on-strong);
-  background: var(--color-brand);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-.movement-message { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 9px; font-size: 12px; font-weight: 750; }
-.movement-message.error { margin: 0 14px 14px; color: var(--color-danger); background: #fff5f4; }
-.movement-message.success { color: var(--color-success); background: #effaf4; }
+.ledger-notice { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-success); background: #effaf4; font-size: 12px; font-weight: 750; }
 
 .earnings-workspace {
   display: grid;
@@ -1187,14 +965,6 @@ function saveMovement() {
 .daily-table-scroll tr.daily-summary-row.average :is(th, td) {
   background: color-mix(in srgb, var(--color-accent-soft) 34%, #ffffff);
 }
-.daily-table-note {
-  padding: 8px 11px;
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  background: #fbfcfc;
-  font-size: 9px;
-  line-height: 1.45;
-}
 .selected-account-overview { min-width: 0; overflow: hidden; }
 .selected-account-overview > header > div { min-width: 0; }
 .account-overview-share { flex: 0 0 auto; }
@@ -1339,28 +1109,15 @@ function saveMovement() {
 .ledger-list article > button { min-width: 52px; min-height: 44px; border: 1px solid var(--color-border); border-radius: 7px; color: var(--color-danger); background: var(--color-surface); font: inherit; font-size: 10px; font-weight: 800; }
 .earnings-empty { padding: 24px 16px; color: var(--color-text-muted); font-size: 12px; text-align: center; }
 
-@media (max-width: 1100px) {
-  .movement-panel form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .movement-mode,
-  .movement-note { grid-column: span 2; }
-  .movement-save { min-height: 44px; }
-}
-
 @media (max-width: 820px) {
   .earnings-page { padding: 10px 12px 34px; }
-  .earnings-intro { min-height: 68px; }
-  .earnings-intro h1 { font-size: 25px; }
-  .earnings-intro > div > span { max-width: 260px; font-size: 11px; }
-  .movement-toggle { width: 46px; padding: 0; }
-  .movement-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .earnings-intro { min-height: 60px; gap: 12px; }
+  .earnings-intro h1 { font-size: 24px; }
+  .earnings-intro > div > span { font-size: 11px; }
   .earnings-account-tabs { margin-top: 10px; border-radius: 11px; }
   .earnings-account-tabs button { min-height: 58px; padding: 5px 2px; }
   .earnings-account-tabs button strong { font-size: 14px; }
   .earnings-account-tabs button span { font-size: 9px; }
-  .movement-panel form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .movement-mode,
-  .movement-note { grid-column: 1 / -1; }
-  .movement-save { grid-column: 1 / -1; min-height: 50px; }
   .earnings-workspace { margin-top: 12px; }
   .earnings-detail-panel { margin-top: 12px; }
 }
@@ -1376,7 +1133,6 @@ function saveMovement() {
   .daily-metric-toggle button { min-height: 44px; padding-inline: 8px; }
   .daily-table-share { min-width: 98px; }
   .daily-table-meta { padding-inline: 8px; }
-  .daily-table-note { padding-inline: 8px; }
   .selected-account-overview > header { min-height: 56px; padding: 6px 8px; }
   .selected-account-overview > header h2 { font-size: 15px; }
   .selected-account-metrics > div { padding: 9px 5px; text-align: center; }
@@ -1401,8 +1157,6 @@ function saveMovement() {
 @media (max-width: 380px) {
   .earnings-page { padding-inline: 9px; }
   .earnings-intro > div > span { max-width: 220px; }
-  .movement-panel form { grid-template-columns: 1fr; }
-  .movement-panel form > * { grid-column: 1 / -1; }
   .daily-table-actions { align-items: stretch; flex-direction: column; }
   .daily-table-share { width: 100%; }
   .selected-account-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }

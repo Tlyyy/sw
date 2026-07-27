@@ -60,9 +60,8 @@ const primaryTargetSelector = [
   "main .task-mobile-later-toggle",
   "main .task-mobile-select-all",
   "main .week-mobile-full-report > summary",
-  "main .earnings-intro .movement-toggle",
+  "main .week-inventory-details > summary",
   "main .earnings-account-tabs button",
-  "main .movement-panel button",
   "main .ledger-list button",
   "main .record-primary-action",
   "main .record-option-card",
@@ -1374,8 +1373,12 @@ test.describe("mobile UX release gate", () => {
       });
     }, { previousDate, targetDate });
 
-    await page.goto("/#/earnings?account=FC");
+    await page.goto("/#/earnings");
     await waitForApplicationPage(page);
+    await expect(page.getByRole("button", { name: "特殊变动", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "排除转账或非收益变化", exact: true })).toHaveCount(0);
+    const allAccountsButton = page.getByRole("button", { name: "查看所有账号实际所得", exact: true });
+    await expect(allAccountsButton).toHaveAttribute("aria-pressed", "true");
     const dailyTable = page.getByRole("region", { name: "五账号每日实际所得" });
     await expect(dailyTable).toBeVisible();
     await expect(dailyTable.locator("tbody > tr")).toHaveCount(9);
@@ -1390,20 +1393,7 @@ test.describe("mobile UX release gate", () => {
     await expect(targetDateRow.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
 
     const accountOverview = page.getByRole("region", { name: "当前库存" });
-    await expect(accountOverview).toBeVisible();
-    await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["90 万", "9 个", "13 个", "32 片"]);
-    const inventoryMetricBoxes = await accountOverview.locator(".selected-account-metrics > div").evaluateAll((elements) => (
-      elements.map((element) => {
-        const rect = element.getBoundingClientRect();
-        return { top: rect.top, right: rect.right, height: rect.height };
-      })
-    ));
-    expect(inventoryMetricBoxes).toHaveLength(4);
-    expect(
-      Math.max(...inventoryMetricBoxes.map(({ top }) => top)) - Math.min(...inventoryMetricBoxes.map(({ top }) => top)),
-      "16 Pro Max 下四项当前库存应保持同一行",
-    ).toBeLessThanOrEqual(1);
-    expect(Math.max(...inventoryMetricBoxes.map(({ right }) => right)), "当前库存不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
+    await expect(accountOverview).toHaveCount(0);
 
     await expect(dailyTable.locator(".daily-table-share")).toHaveCount(1);
     const combinedShareButton = page.getByRole("button", {
@@ -1430,7 +1420,7 @@ test.describe("mobile UX release gate", () => {
     await dailyTable.getByRole("button", { name: "银+蛋折银", exact: true }).tap();
     await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
     await expect(targetDateRow.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
-    await expect(dailyTable).toContainText("专用蛋不参与折算");
+    await expect(dailyTable.getByText(/折算口径|专用蛋不参与折算/)).toHaveCount(0);
     const combinedWithEggsShareButton = page.getByRole("button", {
       name: `分享五个账号 ${week.monday} 至 ${week.sunday} 每日实际所得银加蛋折银图片`,
       exact: true,
@@ -1451,6 +1441,24 @@ test.describe("mobile UX release gate", () => {
       title: "五号每日实际所得 · 银+蛋折银",
     }));
     await expect(page.getByRole("status")).toContainText("五号银+蛋折银图片已打开系统分享");
+
+    await page.getByRole("button", { name: "查看 FC 实际所得", exact: true }).tap();
+    await expect(page).toHaveURL(/#\/earnings\?account=FC$/);
+    await expect(dailyTable).toHaveCount(0);
+    await expect(accountOverview).toBeVisible();
+    await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["90 万", "9 个", "13 个", "32 片"]);
+    const inventoryMetricBoxes = await accountOverview.locator(".selected-account-metrics > div").evaluateAll((elements) => (
+      elements.map((element) => {
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, right: rect.right, height: rect.height };
+      })
+    ));
+    expect(inventoryMetricBoxes).toHaveLength(4);
+    expect(
+      Math.max(...inventoryMetricBoxes.map(({ top }) => top)) - Math.min(...inventoryMetricBoxes.map(({ top }) => top)),
+      "16 Pro Max 下四项当前库存应保持同一行",
+    ).toBeLessThanOrEqual(1);
+    expect(Math.max(...inventoryMetricBoxes.map(({ right }) => right)), "当前库存不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
 
     const shareButton = accountOverview.getByRole("button", { name: `分享 FC ${targetDateLabel} 实际所得图片`, exact: true });
     await expect(shareButton).toBeVisible();
@@ -1501,7 +1509,7 @@ test.describe("mobile UX release gate", () => {
     await page.screenshot({ path: testInfo.outputPath("earnings-share-iphone-16-pro-max.png") });
   });
 
-  test("周报总览与完整周核算在真机字号下清晰可读", async ({ page }, testInfo) => {
+  test("周报总览与详情分组在真机字号下清晰可读", async ({ page }, testInfo) => {
     await page.clock.setFixedTime(new Date("2026-07-26T16:30:00Z"));
 
     for (const viewport of [
@@ -1513,7 +1521,7 @@ test.describe("mobile UX release gate", () => {
         await page.goto("/#/week");
         await waitForApplicationPage(page);
 
-        const typography = await page.locator(".week-mobile-report").evaluate((root) => {
+        const typography = await page.locator(".week-page").evaluate((root) => {
           const element = (selector: string) => root.querySelector<HTMLElement>(selector)!;
           const type = (selector: string) => {
             const style = getComputedStyle(element(selector));
@@ -1530,24 +1538,15 @@ test.describe("mobile UX release gate", () => {
             dayLabel: type(".week-day-strip li span"),
             dayNumber: type(".week-day-strip li strong"),
             dayState: type(".week-day-strip li small"),
-            summaryEyebrow: type(".week-summary-card p"),
-            summaryTitle: type(".week-summary-card h2"),
-            summaryBaseline: type(".week-summary-card > header > span"),
-            metricLabel: type(".week-summary-metrics dt"),
-            metricValue: type(".week-summary-metrics dd"),
             accountTitle: type(".week-account-card h2"),
             accountHead: type(".week-account-head th:first-child"),
             accountMetric: type(".week-account-row > th"),
             accountValue: type(".week-account-row > td"),
             accountBadge: type(".week-account-badge"),
-            supplementTitle: type(".week-supplement-card h2"),
-            supplementAction: type(".week-supplement-card button"),
-            supplementActionHeight: height(".week-supplement-card button"),
             fullTitle: type(".week-mobile-full-report > summary strong"),
-            fullAction: type(".week-mobile-full-report > summary b"),
+            detailMeta: type(".week-inventory-details .week-detail-summary-side b"),
             fullSummaryHeight: height(".week-mobile-full-report > summary"),
             dayStripHeight: height(".week-day-strip"),
-            summaryHeight: height(".week-summary-card"),
             accountCardHeight: height(".week-account-card"),
             documentHeight: document.documentElement.scrollHeight,
           };
@@ -1558,24 +1557,15 @@ test.describe("mobile UX release gate", () => {
         expect.soft(typography.dayLabel, "星期标签不应小于 13/18").toEqual({ font: 13, leading: 18 });
         expect.soft(typography.dayNumber, "日期数字应采用 18/22 强调字号").toEqual({ font: 18, leading: 22 });
         expect.soft(typography.dayState, "日期状态不应小于 13/18").toEqual({ font: 13, leading: 18 });
-        expect.soft(typography.summaryEyebrow, "周报说明不应小于 13/18").toEqual({ font: 13, leading: 18 });
-        expect.soft(typography.summaryTitle, "周报主标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
-        expect.soft(typography.summaryBaseline, "库存基线说明不应小于 14/20").toEqual({ font: 14, leading: 20 });
-        expect.soft(typography.metricLabel, "汇总指标标签不应小于 14/20").toEqual({ font: 14, leading: 20 });
-        expect.soft(typography.metricValue, "汇总指标值应采用 22/28").toEqual({ font: 22, leading: 28 });
         expect.soft(typography.accountTitle, "账号结果标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
         expect.soft(typography.accountHead, "账号表头不应小于 13/18").toEqual({ font: 13, leading: 18 });
         expect.soft(typography.accountMetric, "账号结果指标不应小于 13/18").toEqual({ font: 13, leading: 18 });
         expect.soft(typography.accountValue, "账号结果值不应小于 15/20").toEqual({ font: 15, leading: 20 });
         expect.soft(typography.accountBadge, "账号标记不应小于 14/20").toEqual({ font: 14, leading: 20 });
-        expect.soft(typography.supplementTitle, "补充记录标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
-        expect.soft(typography.supplementAction, "补充记录按钮不应小于 15/20").toEqual({ font: 15, leading: 20 });
-        expect.soft(typography.supplementActionHeight, "补充记录按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
-        expect.soft(typography.fullTitle, "完整周核算入口标题不应小于 17/24").toEqual({ font: 17, leading: 24 });
-        expect.soft(typography.fullAction, "完整周核算入口操作提示不应小于 14/20").toEqual({ font: 14, leading: 20 });
-        expect.soft(typography.fullSummaryHeight, "完整周核算入口应保持足够触控高度").toBeGreaterThanOrEqual(44);
+        expect.soft(typography.fullTitle, "收支任务明细入口标题不应小于 17/24").toEqual({ font: 17, leading: 24 });
+        expect.soft(typography.detailMeta, "库存记录天数不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.fullSummaryHeight, "收支任务明细入口应保持足够触控高度").toBeGreaterThanOrEqual(44);
         expect.soft(typography.dayStripHeight, "七日条应在保留字号时压缩纵向留白").toBeLessThanOrEqual(96);
-        expect.soft(typography.summaryHeight, "周报摘要卡不应消耗过多纵向空间").toBeLessThanOrEqual(170);
         expect.soft(typography.accountCardHeight, "五账号结果应改为三行指标矩阵").toBeLessThanOrEqual(250);
         expect.soft(typography.documentHeight, "折叠状态周报应保持紧凑").toBeLessThanOrEqual(1_080);
 
@@ -1596,7 +1586,7 @@ test.describe("mobile UX release gate", () => {
         await expect(inventoryDetails).not.toHaveAttribute("open", "");
       });
 
-      await test.step(`${viewport.width}×${viewport.height} 完整周核算`, async () => {
+      await test.step(`${viewport.width}×${viewport.height} 收支与任务明细`, async () => {
         const fullReport = page.locator(".week-mobile-full-report");
         await fullReport.locator(":scope > summary").tap();
         await expect(fullReport).toHaveAttribute("open", "");
@@ -1616,41 +1606,58 @@ test.describe("mobile UX release gate", () => {
           const height = (selector: string) => element(selector).getBoundingClientRect().height;
 
           return {
-            eyebrow: type(".weekly-activity-head p"),
-            title: type(".weekly-activity-head h3"),
-            meta: type(".weekly-activity-head > div:first-child > span"),
-            action: type(".weekly-activity-actions .button"),
-            actionHeight: height(".weekly-activity-actions .button"),
-            accountLabel: type(".weekly-account-row > span", "::before"),
-            accountValue: type(".weekly-account-row b"),
-            accountHelper: type(".weekly-account-row small"),
-            accountRowHeight: height(".weekly-account-row"),
-            ledgerTitle: type(".weekly-activity-ledgers h4"),
-            ledgerCount: type(".weekly-activity-ledgers header span"),
-            ledgerEmpty: type(".weekly-activity-ledgers section > p"),
+            emptyTitle: type(".weekly-activity-empty strong"),
+            emptyHeight: height(".weekly-activity-empty"),
             earningsLink: type(".week-earnings-link"),
             earningsLinkHeight: height(".week-earnings-link"),
           };
         });
 
-        expect.soft(typography.eyebrow, "完整周核算眉题不应小于 13/18").toEqual({ font: 13, leading: 18 });
-        expect.soft(typography.title, "完整周核算主标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
-        expect.soft(typography.meta, "完整周核算日期说明不应小于 14/20").toEqual({ font: 14, leading: 20 });
-        expect.soft(typography.action, "完整周核算操作按钮不应小于 15/20").toEqual({ font: 15, leading: 20 });
-        expect.soft(typography.actionHeight, "完整周核算操作按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
-        expect.soft(typography.accountLabel, "账号指标标签不应小于 13/18").toEqual({ font: 13, leading: 18 });
-        expect.soft(typography.accountValue, "账号指标值不应小于 16/22").toEqual({ font: 16, leading: 22 });
-        expect.soft(typography.accountHelper, "账号指标说明不应小于 14/20").toEqual({ font: 14, leading: 20 });
-        expect.soft(typography.accountRowHeight, "账号信息应通过增高容纳清晰字号").toBeGreaterThanOrEqual(160);
-        expect.soft(typography.ledgerTitle, "流水区标题应采用 Headline 语义字号").toEqual({ font: 17, leading: 22 });
-        expect.soft(typography.ledgerCount, "流水区计数不应小于 14/20").toEqual({ font: 14, leading: 20 });
-        expect.soft(typography.ledgerEmpty, "流水空状态不应小于 14/20").toEqual({ font: 14, leading: 20 });
+        expect.soft(typography.emptyTitle, "统一空状态标题应采用 Headline 语义字号").toEqual({ font: 17, leading: 22 });
+        expect.soft(typography.emptyHeight, "统一空状态应保持单行紧凑").toBeLessThanOrEqual(64);
         expect.soft(typography.earningsLink, "实际所得入口不应小于 15/20").toEqual({ font: 15, leading: 20 });
         expect.soft(typography.earningsLinkHeight, "实际所得入口应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+        await expect(fullReport.locator(".weekly-account-breakdown")).toHaveCount(0);
+        await expect(fullReport.locator(".weekly-account-row")).toHaveCount(0);
+        await expect(fullReport.locator(".weekly-activity-ledgers")).toHaveCount(0);
+        await expect(fullReport.locator(".weekly-activity-head")).toHaveCount(0);
+        await expect(fullReport.getByRole("button", { name: "生成本周小结", exact: true })).toHaveCount(0);
+
+        const inventoryDetails = page.locator(".week-inventory-details");
+        await inventoryDetails.locator(":scope > summary").tap();
+        await expect(inventoryDetails).toHaveAttribute("open", "");
+        await page.evaluate(() => window.scrollTo(0, Math.min(900, document.documentElement.scrollHeight)));
+        const stickyRange = await page.locator(".week-mobile-switcher").evaluate((element) => {
+          const header = document.querySelector<HTMLElement>(".ios26-mobile-header")!;
+          const style = getComputedStyle(element);
+          return {
+            position: style.position,
+            top: element.getBoundingClientRect().top,
+            headerBottom: header.getBoundingClientRect().bottom,
+            scrollY: window.scrollY,
+            maxScrollY: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
+          };
+        });
+        expect.soft(stickyRange.position, "周区间应使用吸顶定位").toBe("sticky");
+        if (stickyRange.maxScrollY > 0) {
+          expect.soft(stickyRange.scrollY, "内容溢出时页面应具备真实滚动距离").toBeGreaterThan(0);
+          expect.soft(
+            Math.abs(stickyRange.top - stickyRange.headerBottom),
+            "滚动到长明细时周区间应固定在移动端页头下方",
+          ).toBeLessThanOrEqual(1);
+        } else {
+          expect.soft(stickyRange.scrollY, "内容未溢出时页面不应制造无效滚动").toBe(0);
+          expect.soft(
+            stickyRange.top - stickyRange.headerBottom,
+            "无需滚动时周区间应自然位于移动端页头下方",
+          ).toBeGreaterThanOrEqual(0);
+        }
+        await inventoryDetails.locator(":scope > summary").tap();
+        await expect(inventoryDetails).not.toHaveAttribute("open", "");
 
         const overflow = await pageOverflowReport(page);
-        expect.soft(overflow.documentScrollWidth - overflow.documentClientWidth, "展开完整周核算后不应产生整页横向溢出").toBeLessThanOrEqual(1);
-        expect.soft(overflow.offenders, "展开完整周核算后不应有元素越出手机视口").toEqual([]);
+        expect.soft(overflow.documentScrollWidth - overflow.documentClientWidth, "展开收支任务明细后不应产生整页横向溢出").toBeLessThanOrEqual(1);
+        expect.soft(overflow.offenders, "展开收支任务明细后不应有元素越出手机视口").toEqual([]);
         await page.screenshot({
           path: testInfo.outputPath(`weekly-legibility-${viewport.width}x${viewport.height}.png`),
           fullPage: true,
@@ -1683,18 +1690,23 @@ test.describe("mobile UX release gate", () => {
     await page.goto("/#/week");
     await waitForApplicationPage(page);
 
-    const supplementButton = page.locator(".week-supplement-card")
-      .getByRole("button", { name: "补充记录", exact: true });
-    await expect(supplementButton).toBeVisible();
-    await supplementButton.tap();
+    const quickRecordButton = page.getByRole("button", { name: "快速录入", exact: true });
+    await expect(quickRecordButton).toBeVisible();
+    await quickRecordButton.tap();
     const supplementSheet = page.getByRole("dialog", { name: "记录今日信息" });
     await expect(supplementSheet).toBeVisible();
-    await supplementSheet.getByRole("button", { name: "取消", exact: true }).tap();
-    await expect(supplementSheet).toHaveCount(0);
+    await supplementSheet.getByRole("button", { name: "支出", exact: true }).tap();
+    const expenseSheet = page.getByRole("dialog", { name: "记录支出" });
+    await expect(expenseSheet).toBeVisible();
+    await expenseSheet.getByRole("spinbutton", { name: "支出金额 万银子" }).fill("12");
+    await expenseSheet.getByRole("textbox", { name: "用途", exact: true }).fill("周报分享测试");
+    await expenseSheet.getByRole("button", { name: "保存支出并返回", exact: true }).tap();
+    await expect(expenseSheet).toHaveCount(0);
     const fullReport = page.locator(".week-mobile-full-report");
     await expect(fullReport).not.toHaveAttribute("open", "");
     await fullReport.locator(":scope > summary").tap();
     await expect(fullReport).toHaveAttribute("open", "");
+    await expect(fullReport.getByText("周报分享测试", { exact: true })).toBeVisible();
     await fullReport.getByRole("button", { name: "生成本周小结", exact: true }).tap();
     const preview = page.getByRole("dialog", { name: "本周小结图片" });
     await expect(preview).toBeVisible();
@@ -1735,8 +1747,7 @@ test.describe("mobile UX release gate", () => {
         await waitForApplicationPage(page);
         if (url === "/#/record") await page.locator(".record-option-card[aria-controls='quick-expense-form']").tap();
         if (url === "/#/week") {
-          await page.locator(".week-supplement-card")
-            .getByRole("button", { name: "补充记录", exact: true }).tap();
+          await page.getByRole("button", { name: "快速录入", exact: true }).tap();
           await page.locator(".ios26-record-sheet")
             .getByRole("button", { name: "支出", exact: true }).tap();
         }
@@ -1993,8 +2004,8 @@ test.describe("mobile UX release gate", () => {
     expect(matrixBox?.y, "七天库存表格应排在五账号本周情况之前").toBeLessThan(activityBox?.y || Number.POSITIVE_INFINITY);
 
     await report.getByRole("button", { name: "汇总视图", exact: true }).tap();
-    await expect(report.locator(".weekly-change-panel > header").getByText(`${week.baseline} → ${week.wednesday}`, { exact: false })).toBeVisible();
-    await expect(report.getByText("银 = 纯银子；银+蛋 = 纯银子 + 普通蛋 × 5.5 万/个", { exact: true })).toBeVisible();
+    await expect(report.getByText("本周净变化", { exact: true })).toHaveCount(0);
+    await expect(report.getByText(/以前序库存为基线|本周首末库存对比/)).toHaveCount(0);
 
     await expect(report.getByRole("columnheader")).toHaveText(["账号", "专", "普", "银 / 万", "银+蛋 / 万", "碎"]);
 
@@ -2010,7 +2021,17 @@ test.describe("mobile UX release gate", () => {
 
     const summaryShare = report.getByRole("button", { name: "分享当前库存汇总", exact: true });
     await expect(summaryShare).toBeVisible();
-    expect((await summaryShare.boundingBox())?.height, "库存分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    const summaryShareBox = await summaryShare.boundingBox();
+    const summarySwitchBox = await report.locator(".weekly-view-switch").boundingBox();
+    expect(summaryShareBox?.height, "库存分享按钮应保持 44px 触控高度").toBeGreaterThanOrEqual(44);
+    expect(summaryShareBox?.width, "手机端库存分享应收成图标按钮").toBeLessThanOrEqual(48);
+    expect(
+      (summaryShareBox?.y || 0) + (summaryShareBox?.height || 0) / 2,
+      "视图切换和分享操作应位于同一行",
+    ).toBeCloseTo(
+      (summarySwitchBox?.y || 0) + (summarySwitchBox?.height || 0) / 2,
+      0,
+    );
     await summaryShare.tap();
     await expect.poll(() => page.evaluate(() => (
       window as typeof window & { __inventoryImageShare?: { name: string; type: string; size: number } }
@@ -2035,7 +2056,8 @@ test.describe("mobile UX release gate", () => {
     });
     await convertedSilverButton.tap();
     await expect(convertedSilverButton).toHaveAttribute("aria-pressed", "true");
-    await expect(report.getByText("折算：银子 + 普通蛋 × 5.5 万/个", { exact: true })).toBeVisible();
+    await expect(report.getByText("按日净变化", { exact: true })).toHaveCount(0);
+    await expect(report.getByText("当前指标：", { exact: true })).toHaveCount(0);
 
     await page.evaluate(() => {
       (window as typeof window & { __allowInventoryImageShare?: boolean }).__allowInventoryImageShare = false;
