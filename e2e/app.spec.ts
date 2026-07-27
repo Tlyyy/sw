@@ -159,10 +159,15 @@ test.describe("desktop application", () => {
     await expect(page.getByRole("button", { name: "查看所有账号实际所得", exact: true })).toHaveAttribute("aria-pressed", "true");
     const dailyTable = page.getByRole("region", { name: "五账号每日实际所得" });
     await expect(dailyTable).toBeVisible();
-    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银子）" })).toBeVisible();
     await expect(dailyTable.locator("tbody > tr")).toHaveCount(9);
     await expect(page.locator(".earnings-primary-card")).toHaveCount(0);
     const targetDateRow = dailyTable.locator(`tr[data-date='${targetDate}']`);
+    await expect(dailyTable.getByRole("button", { name: "银+蛋折银", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
+    await expect(targetDateRow.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+
+    await dailyTable.getByRole("button", { name: "银子", exact: true }).click();
+    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银子）" })).toBeVisible();
     await expect(targetDateRow.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
     const accountOverview = page.getByRole("region", { name: "当前库存" });
     await expect(accountOverview).toHaveCount(0);

@@ -1399,6 +1399,12 @@ test.describe("mobile UX release gate", () => {
       "440px 视口下每日所得表格应直接完整展示",
     ).toBe(true);
     const targetDateRow = dailyTable.locator(`tr[data-date='${targetDate}']`);
+    await expect(dailyTable.getByRole("button", { name: "银+蛋折银", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
+    await expect(targetDateRow.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+
+    await dailyTable.getByRole("button", { name: "银子", exact: true }).tap();
+    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银子）" })).toBeVisible();
     await expect(targetDateRow.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
 
     const accountOverview = page.getByRole("region", { name: "当前库存" });
