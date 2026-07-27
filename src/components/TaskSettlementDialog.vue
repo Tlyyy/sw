@@ -4,6 +4,7 @@ import type { ScheduledTask } from "../domain/plans";
 import {
   calculateTaskEggPurchase,
   createTaskSettlementDraft,
+  suggestTaskEggSplit,
   summarizeTaskSettlementDraft,
   validateTaskSettlementDraft,
   type TaskSettlementDraft,
@@ -26,6 +27,9 @@ const props = withDefaults(defineProps<{
   task: ScheduledTask;
   eggUnitPriceWan: number;
   inventory?: InventoryBalance | null;
+  inventoryEffectiveDate?: string;
+  inventoryRecordedAt?: string;
+  priorInventory?: InventoryBalance | null;
   progressTotalWan?: number;
   existingEntryCount?: number;
   existingSummary?: string;
@@ -33,6 +37,9 @@ const props = withDefaults(defineProps<{
   queueTotal?: number;
 }>(), {
   inventory: null,
+  inventoryEffectiveDate: "",
+  inventoryRecordedAt: "",
+  priorInventory: null,
   progressTotalWan: 0,
   existingEntryCount: 0,
   existingSummary: "",
@@ -140,6 +147,23 @@ const guidance = computed(() => {
   if (isFixedEgg.value) return "确认本次实际用蛋数量。";
   return "确认本次消耗。";
 });
+const sameDayInventoryTiming = computed(() => {
+  if (!isFixedEgg.value || !props.inventoryEffectiveDate) return null;
+  const occurrence = parseShanghaiDateTime(occurredAtLocal.value);
+  if (!occurrence || occurrence.effectiveDate !== props.inventoryEffectiveDate) return null;
+  const recordedAt = Date.parse(props.inventoryRecordedAt);
+  const occurredAt = Date.parse(occurrence.occurredAt);
+  return Number.isFinite(recordedAt) && recordedAt > occurredAt ? "after" : "same-day";
+});
+const priorInventoryEstimate = computed(() => {
+  if (!isFixedEgg.value || !props.priorInventory) return null;
+  const known = suggestTaskEggSplit(props.task.eggCount, props.priorInventory);
+  const knownTotal = known.dedicatedEggs + known.regularEggs;
+  return {
+    dedicatedEggs: known.dedicatedEggs,
+    regularEggs: known.regularEggs + Math.max(0, props.task.eggCount - knownTotal),
+  };
+});
 
 function numericValue(value: unknown) {
   const numeric = Number(value);
@@ -154,6 +178,14 @@ function finiteNumberOrNull(value: unknown) {
 
 function amountLabel(value: number) {
   return Number(value.toFixed(2)).toLocaleString("zh-CN", { maximumFractionDigits: 2 });
+}
+
+function applyPriorInventoryEstimate() {
+  const estimate = priorInventoryEstimate.value;
+  if (!estimate) return;
+  draft.value.dedicatedEggs = estimate.dedicatedEggs;
+  draft.value.regularEggs = estimate.regularEggs;
+  if (!note.value) note.value = "历史存蛋消耗，蛋种按上一份库存估算。";
 }
 
 function twoDigits(value: number) {
@@ -396,6 +428,32 @@ onBeforeUnmount(() => deactivateDialog());
             </label>
 
             <div v-else-if="isFixedEgg" class="task-egg-fields">
+              <aside
+                v-if="sameDayInventoryTiming"
+                class="task-inventory-timing-note"
+                role="note"
+                aria-live="polite"
+              >
+                <div>
+                  <strong>
+                    {{ sameDayInventoryTiming === "after"
+                      ? "当前库存是在任务发生后录入的"
+                      : "任务与当前库存发生在同一天" }}
+                  </strong>
+                  <p>
+                    当前库存可能已经包含本次消耗，不能直接用来判断是否刚买了蛋。
+                    如果使用的是历史存蛋，请把用蛋合计调到 {{ task.eggCount }} 个，使自动补购变为 0。
+                  </p>
+                </div>
+                <button
+                  v-if="priorInventoryEstimate"
+                  type="button"
+                  @click="applyPriorInventoryEstimate"
+                >
+                  按上一份库存估算：专用 {{ priorInventoryEstimate.dedicatedEggs }}、普通 {{ priorInventoryEstimate.regularEggs }}
+                </button>
+              </aside>
+
               <div class="task-egg-receipt" aria-label="本次用蛋与自动补购回执">
                 <dl>
                   <div>
@@ -803,6 +861,44 @@ onBeforeUnmount(() => deactivateDialog());
 .task-egg-fields {
   display: grid;
   grid-template-columns: 1fr;
+}
+.task-inventory-timing-note {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 13px 0;
+  padding: 11px 12px;
+  border: 1px solid #e3c17d;
+  border-radius: 10px;
+  color: #6f4300;
+  background: #fff8e8;
+}
+.task-inventory-timing-note strong {
+  display: block;
+  font-size: 12px;
+}
+.task-inventory-timing-note p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.task-inventory-timing-note button {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #c98b28;
+  border-radius: 8px;
+  color: #714200;
+  background: #fffdf7;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.task-inventory-timing-note button:hover { background: #fff3d4; }
+.task-inventory-timing-note button:focus-visible {
+  outline: 3px solid color-mix(in srgb, #c98b28 28%, transparent);
+  outline-offset: 2px;
 }
 .task-egg-receipt {
   padding: 12px 13px 0;
@@ -1278,6 +1374,11 @@ html[data-theme="dark"] .settlement-button.secondary {
     text-align: left;
   }
   .task-egg-receipt { padding: 10px 11px 0; }
+  .task-inventory-timing-note {
+    grid-template-columns: 1fr;
+    margin: 10px 11px 0;
+  }
+  .task-inventory-timing-note button { width: 100%; }
   .task-egg-receipt dl {
     grid-template-columns: 1fr;
     gap: 7px;

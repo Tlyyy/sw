@@ -757,6 +757,11 @@ function resetCompletion() {
       :task="settlementTask"
       :egg-unit-price-wan="settings.taskSettings.eggPriceWan"
       :inventory="inventory.latestSnapshot?.accounts[settlementTask.accountId] || null"
+      :inventory-effective-date="inventory.latestSnapshot?.effectiveDate"
+      :inventory-recorded-at="inventory.latestSnapshot?.recordedAt"
+      :prior-inventory="inventory.snapshots.length > 1
+        ? inventory.snapshots.at(-2)?.accounts[settlementTask.accountId] || null
+        : null"
       :progress-total-wan="settlementProgressWan"
       :existing-entry-count="accounting.taskEntries(settlementTask.id).length"
       :existing-summary="taskLedgerSummary(settlementTask)"
