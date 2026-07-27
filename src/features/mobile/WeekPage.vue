@@ -94,6 +94,13 @@ function wanLabel(value: number | null, signed = false) {
   return `${prefix}${normalized.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}万`;
 }
 
+function compactWanLabel(value: number | null, signed = false) {
+  if (value === null) return "—";
+  const normalized = Number(value.toFixed(2));
+  const prefix = signed && normalized > 0 ? "+" : "";
+  return `${prefix}${normalized.toLocaleString("zh-CN", { maximumFractionDigits: 2 })}`;
+}
+
 function valueTone(value: number | null) {
   if (value === null || value === 0) return "neutral";
   return value > 0 ? "positive" : "negative";
@@ -186,19 +193,41 @@ function openSupplementSheet() {
 
       <section class="week-account-card" aria-labelledby="week-account-title">
         <h2 id="week-account-title">按账号本周结果</h2>
-        <div class="week-account-table">
-          <div class="week-account-head" aria-hidden="true">
-            <span>账号</span>
-            <span>本周收入</span>
-            <span>本周支出</span>
-            <span>结余</span>
-          </div>
-          <article v-for="account in activity.accountSummaries" :key="account.accountId" class="week-account-row">
-            <strong class="week-account-badge" :data-account="account.accountId">{{ account.accountId }}</strong>
-            <span>{{ wanLabel(account.harvestedSilverWan) }}</span>
-            <span>{{ wanLabel(account.totalSilverExpenseWan) }}</span>
-            <span :class="valueTone(account.inventoryNetChangeWan)">{{ wanLabel(account.inventoryNetChangeWan, true) }}</span>
-          </article>
+        <div class="week-account-table-wrap">
+          <table class="week-account-table" aria-label="五个账号的本周收入、支出与结余，金额单位为万">
+            <thead class="week-account-head">
+              <tr>
+                <th scope="col">指标</th>
+                <th v-for="account in activity.accountSummaries" :key="account.accountId" scope="col">
+                  <strong class="week-account-badge" :data-account="account.accountId">{{ account.accountId }}</strong>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="week-account-row">
+                <th scope="row">收入/万</th>
+                <td v-for="account in activity.accountSummaries" :key="account.accountId">
+                  {{ compactWanLabel(account.harvestedSilverWan) }}
+                </td>
+              </tr>
+              <tr class="week-account-row">
+                <th scope="row">支出/万</th>
+                <td v-for="account in activity.accountSummaries" :key="account.accountId">
+                  {{ compactWanLabel(account.totalSilverExpenseWan) }}
+                </td>
+              </tr>
+              <tr class="week-account-row">
+                <th scope="row">结余/万</th>
+                <td
+                  v-for="account in activity.accountSummaries"
+                  :key="account.accountId"
+                  :class="valueTone(account.inventoryNetChangeWan)"
+                >
+                  {{ compactWanLabel(account.inventoryNetChangeWan, true) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -230,7 +259,7 @@ function openSupplementSheet() {
         <span><strong>按账号查看库存变化</strong></span>
         <b>{{ report.recordedDays }} / 7 天库存记录</b>
       </summary>
-      <InventoryWeeklyAnalysis :report="report" :current-date="currentDate" :show-activity="false" initial-view="matrix" />
+      <InventoryWeeklyAnalysis :report="report" :current-date="currentDate" :show-activity="false" initial-view="summary" />
     </details>
   </div>
 </template>
@@ -410,19 +439,41 @@ function openSupplementSheet() {
 
   .week-account-card { padding: 13px; }
   .week-account-card h2 { margin-bottom: 10px; }
-  .week-account-table { border-top: 1px solid rgba(60, 60, 67, .12); }
-  .week-account-head,
-  .week-account-row {
-    display: grid;
-    grid-template-columns: 52px repeat(3, minmax(0, 1fr));
-    align-items: center;
-    gap: 4px;
+  .week-account-table-wrap {
+    overflow-x: auto;
+    border-top: 1px solid rgba(60, 60, 67, .12);
+    overscroll-behavior-inline: contain;
   }
-  .week-account-head { min-height: 31px; color: var(--ios-secondary-label); font-size: 9px; font-weight: 650; }
-  .week-account-row { min-height: 39px; border-top: 1px solid rgba(60, 60, 67, .1); color: #344054; font-size: 11px; }
-  .week-account-row > span { text-align: center; white-space: nowrap; }
+  .week-account-table {
+    width: 100%;
+    min-width: 328px;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .week-account-head { color: var(--ios-secondary-label); font-size: 9px; font-weight: 650; }
+  .week-account-head th {
+    height: 31px;
+    padding: 0 3px;
+    font-weight: inherit;
+    text-align: center;
+  }
+  .week-account-head th:first-child,
+  .week-account-row > th {
+    width: 54px;
+    text-align: left;
+  }
+  .week-account-row { color: #344054; font-size: 11px; }
+  .week-account-row > :is(th, td) {
+    height: 39px;
+    padding: 0 3px;
+    border-top: 1px solid rgba(60, 60, 67, .1);
+  }
+  .week-account-row > th { color: var(--ios-secondary-label); font-weight: 650; white-space: nowrap; }
+  .week-account-row > td { text-align: center; white-space: nowrap; }
   .week-account-badge {
-    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-width: 31px;
     padding: 4px 5px;
     border: 1px solid #5b8fbd;

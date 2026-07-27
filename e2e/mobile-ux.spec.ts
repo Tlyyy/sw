@@ -1536,8 +1536,9 @@ test.describe("mobile UX release gate", () => {
             metricLabel: type(".week-summary-metrics dt"),
             metricValue: type(".week-summary-metrics dd"),
             accountTitle: type(".week-account-card h2"),
-            accountHead: type(".week-account-head span"),
-            accountValue: type(".week-account-row > span"),
+            accountHead: type(".week-account-head th:first-child"),
+            accountMetric: type(".week-account-row > th"),
+            accountValue: type(".week-account-row > td"),
             accountBadge: type(".week-account-badge"),
             supplementTitle: type(".week-supplement-card h2"),
             supplementAction: type(".week-supplement-card button"),
@@ -1545,6 +1546,10 @@ test.describe("mobile UX release gate", () => {
             fullTitle: type(".week-mobile-full-report > summary strong"),
             fullAction: type(".week-mobile-full-report > summary b"),
             fullSummaryHeight: height(".week-mobile-full-report > summary"),
+            dayStripHeight: height(".week-day-strip"),
+            summaryHeight: height(".week-summary-card"),
+            accountCardHeight: height(".week-account-card"),
+            documentHeight: document.documentElement.scrollHeight,
           };
         });
 
@@ -1560,6 +1565,7 @@ test.describe("mobile UX release gate", () => {
         expect.soft(typography.metricValue, "汇总指标值应采用 22/28").toEqual({ font: 22, leading: 28 });
         expect.soft(typography.accountTitle, "账号结果标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
         expect.soft(typography.accountHead, "账号表头不应小于 13/18").toEqual({ font: 13, leading: 18 });
+        expect.soft(typography.accountMetric, "账号结果指标不应小于 13/18").toEqual({ font: 13, leading: 18 });
         expect.soft(typography.accountValue, "账号结果值不应小于 15/20").toEqual({ font: 15, leading: 20 });
         expect.soft(typography.accountBadge, "账号标记不应小于 14/20").toEqual({ font: 14, leading: 20 });
         expect.soft(typography.supplementTitle, "补充记录标题应采用 Title 3 语义字号").toEqual({ font: 20, leading: 25 });
@@ -1568,10 +1574,26 @@ test.describe("mobile UX release gate", () => {
         expect.soft(typography.fullTitle, "完整周核算入口标题不应小于 17/24").toEqual({ font: 17, leading: 24 });
         expect.soft(typography.fullAction, "完整周核算入口操作提示不应小于 14/20").toEqual({ font: 14, leading: 20 });
         expect.soft(typography.fullSummaryHeight, "完整周核算入口应保持足够触控高度").toBeGreaterThanOrEqual(44);
+        expect.soft(typography.dayStripHeight, "七日条应在保留字号时压缩纵向留白").toBeLessThanOrEqual(96);
+        expect.soft(typography.summaryHeight, "周报摘要卡不应消耗过多纵向空间").toBeLessThanOrEqual(170);
+        expect.soft(typography.accountCardHeight, "五账号结果应改为三行指标矩阵").toBeLessThanOrEqual(250);
+        expect.soft(typography.documentHeight, "折叠状态周报应保持紧凑").toBeLessThanOrEqual(1_080);
 
         const overflow = await pageOverflowReport(page);
         expect.soft(overflow.documentScrollWidth - overflow.documentClientWidth, "放大周报字号后不应产生整页横向溢出").toBeLessThanOrEqual(1);
         expect.soft(overflow.offenders, "放大周报字号后不应有元素越出手机视口").toEqual([]);
+
+        const inventoryDetails = page.locator(".week-inventory-details");
+        await inventoryDetails.locator(":scope > summary").tap();
+        await expect(inventoryDetails).toHaveAttribute("open", "");
+        await expect(inventoryDetails.getByRole("button", { name: "汇总视图", exact: true })).toHaveAttribute("aria-pressed", "true");
+        await expect(inventoryDetails.locator(".inventory-daily-matrix")).toHaveCount(0);
+        expect.soft(
+          await inventoryDetails.evaluate((element) => element.getBoundingClientRect().height),
+          "库存详情应先展示紧凑汇总，而不是直接铺开七日表格",
+        ).toBeLessThanOrEqual(360);
+        await inventoryDetails.locator(":scope > summary").tap();
+        await expect(inventoryDetails).not.toHaveAttribute("open", "");
       });
 
       await test.step(`${viewport.width}×${viewport.height} 完整周核算`, async () => {

@@ -975,13 +975,14 @@
   }
 
   body .orbit-main .week-page .week-day-strip {
-    padding-block: 10px;
+    padding-block: 6px;
   }
 
   body .orbit-main .week-page .week-day-strip li {
     min-height: 76px;
-    gap: 4px;
-    padding-block: 6px;
+    box-sizing: border-box;
+    gap: 2px;
+    padding-block: 2px;
   }
 
   body .orbit-main .week-page .week-day-strip span,
@@ -996,11 +997,11 @@
   }
 
   body .orbit-main .week-page .week-summary-card {
-    padding: 16px;
+    padding: 14px;
   }
 
   body .orbit-main .week-page .week-summary-card > header {
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
   body .orbit-main .week-page .week-summary-card p {
@@ -1024,7 +1025,7 @@
   }
 
   body .orbit-main .week-page .week-summary-metrics {
-    padding-block: 14px;
+    padding-block: 10px;
   }
 
   body .orbit-main .week-page .week-summary-metrics dt {
@@ -1037,22 +1038,27 @@
     line-height: 28px !important;
   }
 
-  body .orbit-main .week-page .week-account-head {
-    min-height: 42px;
+  body .orbit-main .week-page .week-account-head th {
+    height: 42px;
   }
 
-  body .orbit-main .week-page .week-account-head span {
+  body .orbit-main .week-page .week-account-head th:first-child {
     font-size: 13px !important;
     line-height: 18px !important;
   }
 
-  body .orbit-main .week-page .week-account-row {
-    min-height: 48px;
+  body .orbit-main .week-page .week-account-row > :is(th, td) {
+    height: 44px;
   }
 
-  body .orbit-main .week-page .week-account-row > span {
+  body .orbit-main .week-page .week-account-row > td {
     font-size: 15px !important;
     line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .week-account-row > th {
+    font-size: 13px !important;
+    line-height: 18px !important;
   }
 
   body .orbit-main .week-page .week-account-badge {
@@ -1624,8 +1630,9 @@ html[data-theme="dark"] {
     .week-summary-card h2,
     .week-account-card h2,
     .week-supplement-card h2,
-    .week-account-table article,
-    .week-account-table article strong,
+    .week-account-table th,
+    .week-account-table td,
+    .week-account-table strong,
     .week-mobile-full-report strong,
     .week-inventory-details strong,
     .week-summary-metrics dd.neutral,
@@ -1664,7 +1671,7 @@ html[data-theme="dark"] {
     .week-summary-card > header,
     .week-summary-metrics,
     .week-account-head,
-    .week-account-table article,
+    .week-account-table :is(th, td),
     .week-mobile-full-report > summary,
     .week-inventory-details > summary
   ) {
