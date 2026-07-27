@@ -17,7 +17,7 @@ import {
 } from "./inventoryReportShareImage";
 
 type InventoryReportView = "summary" | "matrix";
-type InventoryMatrixMetric = "silverWan" | "silverWithRegularEggsWan" | "dedicatedEggs" | "regularEggs" | "innerShardCount";
+type InventoryMatrixMetric = "silverWan" | "silverWithRegularEggsWan" | "regularEggs";
 
 const props = withDefaults(defineProps<{
   report: InventoryWeekReport;
@@ -31,9 +31,7 @@ const weekdayLabels = ["周一", "周二", "周三", "周四", "周五", "周六
 const matrixMetricOptions: Array<{ key: InventoryMatrixMetric; label: string; unit: string }> = [
   { key: "silverWan", label: "银子", unit: "万" },
   { key: "silverWithRegularEggsWan", label: "银+蛋", unit: "万" },
-  { key: "dedicatedEggs", label: "专用蛋", unit: "个" },
   { key: "regularEggs", label: "普通蛋", unit: "个" },
-  { key: "innerShardCount", label: "内丹碎片", unit: "个" },
 ];
 
 const reportView = ref<InventoryReportView>(props.initialView);
@@ -882,19 +880,14 @@ async function shareInventoryReport() {
 
   .matrix-metric-switch {
     width: 100%;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-auto-flow: row;
   }
 
   .matrix-metric-switch button {
-    grid-column: span 2;
     overflow: hidden;
     padding-inline: 6px;
     text-overflow: ellipsis;
-  }
-
-  .matrix-metric-switch button:nth-last-child(-n + 2) {
-    grid-column: span 3;
   }
 
   .inventory-matrix-context {

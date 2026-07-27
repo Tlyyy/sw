@@ -2026,7 +2026,9 @@ test.describe("mobile UX release gate", () => {
 
     await report.getByRole("button", { name: "按日对比", exact: true }).tap();
     const metricSwitch = report.locator(".matrix-metric-switch");
-    await expect(metricSwitch.locator("button")).toHaveText(["银子", "银+蛋", "专用蛋", "普通蛋", "内丹碎片"]);
+    await expect(metricSwitch.locator("button")).toHaveText(["银子", "银+蛋", "普通蛋"]);
+    await expect(metricSwitch.getByRole("button", { name: "专用蛋", exact: true })).toHaveCount(0);
+    await expect(metricSwitch.getByRole("button", { name: "内丹碎片", exact: true })).toHaveCount(0);
     const convertedSilverButton = report.getByRole("button", {
       name: "银子加普通蛋，普通蛋按每个 5.5 万折算",
       exact: true,
