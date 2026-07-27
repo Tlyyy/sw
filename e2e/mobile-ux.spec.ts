@@ -466,11 +466,11 @@ test.describe("mobile UX release gate", () => {
     });
     expect(
       dockScale.activePlateWidth,
-      "选中按钮应随三等分导航列自适应，并向两侧各延展 4px",
-    ).toBeCloseTo(dockScale.activeLinkWidth + 8, 0);
-    expect(dockScale.activePlateHeight, "选中按钮应保持 48px 高度").toBeCloseTo(48, 0);
-    expect(dockScale.dockLabelSize, "底栏文字应采用增强可读性的 12px 基线").toBe(12);
-    expect(dockScale.dockIconWidth, "主导航图标应为 26px").toBeCloseTo(26, 0);
+      "选中按钮应随三等分导航列自适应且不越界",
+    ).toBeCloseTo(dockScale.activeLinkWidth, 0);
+    expect(dockScale.activePlateHeight, "选中按钮应保持 56px 高度").toBeCloseTo(56, 0);
+    expect(dockScale.dockLabelSize, "底栏文字应采用真机清晰的 13px 基线").toBe(13);
+    expect(dockScale.dockIconWidth, "主导航图标应为 24px").toBeCloseTo(24, 0);
     expect(dockScale.searchIconWidth, "搜索图标应为 28px").toBeCloseTo(28, 0);
     expect(dockScale.dockBackgroundAlpha, "Regular Liquid Glass 必须允许内容透过").toBeLessThanOrEqual(0.5);
     expect(dockScale.dockBackgroundAlpha, "Regular Liquid Glass 仍需保持控件可读性").toBeGreaterThanOrEqual(0.28);
@@ -699,15 +699,15 @@ test.describe("mobile UX release gate", () => {
     expect(layout.dockPosition).toBe("fixed");
     expect(layout.dockColumns, "Liquid Glass 底栏应固定为三列").toBe(3);
     expect(layout.dockBackdrop, "Liquid Glass 底栏应保留材质模糊").not.toBe("none");
-    expect(layout.dockRadius, "Liquid Glass 底栏应保持胶囊圆角").toBeGreaterThanOrEqual(28);
+    expect(layout.dockRadius, "Liquid Glass 底栏应保持胶囊圆角").toBeGreaterThanOrEqual(32);
     expect(layout.dockBottomGap, "底栏应与视口底边保留参考图的 16px 悬浮间距").toBeGreaterThanOrEqual(15);
-    expect(layout.dockHeight, "主胶囊应采用参考图的 56px 紧凑高度").toBeCloseTo(56, 0);
-    expect(layout.searchWidth, "独立搜索按钮应为 56px 圆形").toBeCloseTo(56, 0);
-    expect(layout.searchHeight, "独立搜索按钮应为 56px 圆形").toBeCloseTo(56, 0);
-    expect(layout.dockSearchGap, "主胶囊与搜索按钮间距应为 7px").toBeCloseTo(7, 0);
+    expect(layout.dockHeight, "主胶囊应采用真机稳定的 64px 高度").toBeCloseTo(64, 0);
+    expect(layout.searchWidth, "独立搜索按钮应为 64px 圆形").toBeCloseTo(64, 0);
+    expect(layout.searchHeight, "独立搜索按钮应为 64px 圆形").toBeCloseTo(64, 0);
+    expect(layout.dockSearchGap, "主胶囊与搜索按钮间距应为 8px").toBeCloseTo(8, 0);
     expect(layout.dockShellWidth, "底栏左右应各留 18px").toBeCloseTo(440 - 36, 0);
     expect(layout.buttonBottom, "底栏按钮不能超出悬浮容器").toBeLessThanOrEqual(layout.viewportHeight - layout.dockBottomGap + 1);
-    expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(90);
+    expect(layout.mainPaddingBottom, "正文应为固定底栏预留滚动空间").toBeGreaterThanOrEqual(102);
     expect(layout.linkHeight, "更新库存应保持可触控高度").toBeGreaterThanOrEqual(44);
     expect(layout.linkWhiteSpace).toBe("nowrap");
     expect(layout.linkFits, "更新库存不能被挤成两行").toBe(true);

@@ -13,12 +13,13 @@
 @media (max-width: 980px) {
   :root {
     --ios-mobile-header-height: 68px;
-    --ios-mobile-dock-height: 56px;
+    --ios-mobile-dock-height: 64px;
+    --ios-mobile-dock-control-height: 56px;
     --ios-mobile-dock-inset: 18px;
     --ios-mobile-dock-bottom: 16px;
-    --ios-mobile-content-bottom: 90px;
-    --ios26-type-tab-label: 12px;
-    --ios26-leading-tab-label: 14px;
+    --ios-mobile-content-bottom: 102px;
+    --ios26-type-tab-label: 13px;
+    --ios26-leading-tab-label: 16px;
 
     --ios-system-background: var(--color-mobile-canvas);
     --ios-secondary-system-background: var(--color-surface);
@@ -126,6 +127,8 @@
     left: var(--ios-mobile-dock-inset);
     height: var(--ios-mobile-dock-height);
     display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--ios-mobile-dock-height);
+    gap: 8px;
     transform: none;
     transition: none !important;
     will-change: auto;
@@ -133,12 +136,73 @@
 
   .orbit-mobile-dock.ios26-mobile-dock,
   .ios26-mobile-search {
+    box-sizing: border-box;
+    min-height: var(--ios-mobile-dock-height);
     height: var(--ios-mobile-dock-height);
-    border-color: var(--ios-regular-glass-border);
+    border: 1px solid var(--ios-regular-glass-border);
+    border-radius: calc(var(--ios-mobile-dock-height) / 2);
     background: var(--ios-regular-glass-fill);
     box-shadow: var(--ios-regular-glass-shadow);
     -webkit-backdrop-filter: var(--ios-regular-glass-filter);
     backdrop-filter: var(--ios-regular-glass-filter);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock {
+    min-height: var(--ios-mobile-dock-height);
+    grid-auto-rows: var(--ios-mobile-dock-control-height);
+    align-content: center;
+    padding: 3px;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a {
+    min-height: var(--ios-mobile-dock-control-height);
+    height: var(--ios-mobile-dock-control-height);
+    gap: 1px;
+    padding: 4px 3px 3px;
+    border-radius: calc(var(--ios-mobile-dock-control-height) / 2);
+    font-size: var(--ios26-type-tab-label);
+    line-height: var(--ios26-leading-tab-label);
+    white-space: nowrap;
+  }
+
+  .ios26-mobile-dock-icon {
+    width: 30px;
+    height: 25px;
+    flex: 0 0 25px;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a svg,
+  .orbit-mobile-dock.ios26-mobile-dock > a:nth-child(2) svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a.active::before {
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a.active::after {
+    inset: 1px;
+    border-radius: inherit;
+  }
+
+  .orbit-mobile-dock.ios26-mobile-dock > a > span:last-child {
+    max-height: var(--ios26-leading-tab-label);
+    overflow: visible;
+  }
+
+  .ios26-mobile-search {
+    width: var(--ios-mobile-dock-height);
+    min-width: var(--ios-mobile-dock-height);
+    padding: 0;
+    border-radius: 50%;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .orbit-mobile-dock.ios26-mobile-dock::before,

@@ -371,9 +371,9 @@ test("移动端使用三项悬浮底栏完成核心页面导航", async ({ page 
   expect(dockGeometry.dockBottom).toBeLessThanOrEqual(dockGeometry.viewportHeight);
   expect(dockGeometry.shellLeft).toBeCloseTo(18, 0);
   expect(dockGeometry.shellRight).toBeCloseTo(dockGeometry.viewportWidth - 18, 0);
-  expect(dockGeometry.searchWidth).toBeCloseTo(56, 0);
-  expect(dockGeometry.searchHeight).toBeCloseTo(56, 0);
-  expect(dockGeometry.searchGap).toBeCloseTo(7, 0);
+  expect(dockGeometry.searchWidth).toBeCloseTo(64, 0);
+  expect(dockGeometry.searchHeight).toBeCloseTo(64, 0);
+  expect(dockGeometry.searchGap).toBeCloseTo(8, 0);
   expect(dockGeometry.targets).toHaveLength(3);
   for (const target of dockGeometry.targets) {
     expect(target.width).toBeGreaterThanOrEqual(44);
