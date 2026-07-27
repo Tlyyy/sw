@@ -558,11 +558,11 @@
 }
 
 /*
- * Real-device readability pass for the task workflow.
+ * Real-device readability pass for the task and weekly workflows.
  *
- * The base iOS layer keeps dense utility screens compact, but the task flow is
+ * The base iOS layer keeps dense utility screens compact, but these flows are
  * read and acted on repeatedly at arm's length. Keep captions at 13px or above,
- * promote task names to the native Body/Headline scale, and let rows grow
+ * promote primary content to the native Body/Headline scale, and let rows grow
  * instead of squeezing more items above the fold.
  */
 @media (max-width: 720px) {
@@ -954,6 +954,275 @@
 
   body .task-settlement-dialog .task-settlement-mobile-footer button.secondary {
     min-height: 48px;
+  }
+
+  body .orbit-main .week-page .week-mobile-switcher {
+    min-height: 72px;
+  }
+
+  body .orbit-main .week-page .week-mobile-switcher strong {
+    font-size: 17px !important;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .week-page .week-mobile-switcher :is(
+    span,
+    div > button
+  ) {
+    font-size: 13px !important;
+    font-weight: 650;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page .week-day-strip {
+    padding-block: 10px;
+  }
+
+  body .orbit-main .week-page .week-day-strip li {
+    min-height: 76px;
+    gap: 4px;
+    padding-block: 6px;
+  }
+
+  body .orbit-main .week-page .week-day-strip span,
+  body .orbit-main .week-page .week-day-strip small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page .week-day-strip strong {
+    font-size: 18px !important;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .week-page .week-summary-card {
+    padding: 16px;
+  }
+
+  body .orbit-main .week-page .week-summary-card > header {
+    margin-bottom: 14px;
+  }
+
+  body .orbit-main .week-page .week-summary-card p {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page :is(
+    .week-summary-card,
+    .week-account-card,
+    .week-supplement-card
+  ) h2 {
+    font-size: 20px !important;
+    font-weight: 700;
+    line-height: 25px !important;
+  }
+
+  body .orbit-main .week-page .week-summary-card > header > span {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .week-summary-metrics {
+    padding-block: 14px;
+  }
+
+  body .orbit-main .week-page .week-summary-metrics dt {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .week-summary-metrics dd {
+    font-size: 22px !important;
+    line-height: 28px !important;
+  }
+
+  body .orbit-main .week-page .week-account-head {
+    min-height: 42px;
+  }
+
+  body .orbit-main .week-page .week-account-head span {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page .week-account-row {
+    min-height: 48px;
+  }
+
+  body .orbit-main .week-page .week-account-row > span {
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .week-account-badge {
+    min-height: 30px;
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .week-supplement-card {
+    min-height: 76px;
+  }
+
+  body .orbit-main .week-page .week-supplement-card button {
+    min-height: 44px;
+    font-size: 15px !important;
+    font-weight: 650;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .week-mobile-full-report > summary,
+  body .orbit-main .week-page .week-inventory-details > summary {
+    min-height: 64px;
+  }
+
+  body .orbit-main .week-page .week-mobile-full-report > summary strong,
+  body .orbit-main .week-page .week-inventory-details > summary strong {
+    font-size: 17px !important;
+    line-height: 24px !important;
+  }
+
+  body .orbit-main .week-page .week-mobile-full-report > summary b,
+  body .orbit-main .week-page .week-inventory-details > summary :is(small, b) {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-head {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  body .orbit-main .week-page .weekly-activity-head p {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-head h3 {
+    font-size: 20px !important;
+    line-height: 25px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-head > div:first-child > span {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-actions .button {
+    min-height: 44px;
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-actions .button span {
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-account-row {
+    min-height: 160px;
+    gap: 12px 14px;
+    padding: 16px 14px;
+  }
+
+  body .orbit-main .week-page .weekly-account-row > span::before {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page .weekly-account-row b {
+    font-size: 16px !important;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .week-page .weekly-account-row small {
+    font-size: 14px !important;
+    line-height: 20px !important;
+    white-space: normal;
+  }
+
+  body .orbit-main .week-page .weekly-account-row .account-pill {
+    min-height: 44px;
+    font-size: 17px !important;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .week-page :is(
+    .weekly-account-warning,
+    .weekly-activity-notice
+  ) {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-expense-form label > span {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page .weekly-expense-form :is(input, select, textarea) {
+    min-height: 44px;
+    font-size: 16px !important;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .week-page .weekly-expense-form-actions .button {
+    min-height: 44px;
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers section > header {
+    min-height: 50px;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers h4 {
+    font-size: 17px !important;
+    line-height: 22px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers header span,
+  body .orbit-main .week-page .weekly-activity-ledgers section > p {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers li {
+    min-height: 70px;
+    padding-block: 10px;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers time,
+  body .orbit-main .week-page .weekly-activity-ledgers li small {
+    font-size: 13px !important;
+    line-height: 18px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers li b {
+    font-size: 15px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers li em {
+    font-size: 14px !important;
+    line-height: 20px !important;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers li > button {
+    width: 44px;
+    height: 44px;
+  }
+
+  body .orbit-main .week-page .weekly-activity-ledgers .manual-expense-ledger li {
+    grid-template-columns: 42px minmax(0, 1fr) 44px;
+  }
+
+  body .orbit-main .week-page .week-earnings-link {
+    min-height: 44px;
+    font-size: 15px !important;
+    font-weight: 650;
+    line-height: 20px !important;
   }
 
   html[data-theme="dark"] body .task-maintenance-page :is(
