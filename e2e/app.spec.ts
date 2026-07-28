@@ -35,6 +35,383 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("desktop application", () => {
+  test("录入页按端加载独立 UI 并在自动切换时保留支出草稿", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/record");
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='mobile']")).toHaveCount(0);
+    await page.getByLabel("支出账号").selectOption("FC");
+    await page.getByLabel("支出金额（万）").fill("12.5");
+    await page.getByLabel("支出用途").fill("购买材料");
+
+    const desktopResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopResources.some((name) => name.includes("DesktopRecordPage"))).toBe(true);
+    expect(desktopResources.some((name) => name.includes("MobileRecordPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 768, height: 1024 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='desktop']")).toHaveCount(0);
+    await expect(page).toHaveURL(/#\/record$/);
+    await expect(page.getByLabel("支出账号")).toHaveValue("FC");
+    await expect(page.getByLabel("支出金额（万）")).toHaveValue("12.5");
+    await expect(page.getByLabel("支出用途")).toHaveValue("购买材料");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.getByLabel("支出账号")).toHaveValue("FC");
+    await expect(page.getByLabel("支出金额（万）")).toHaveValue("12.5");
+    await expect(page.getByLabel("支出用途")).toHaveValue("购买材料");
+  });
+
+  test("库存录入草稿在桌面与手机界面自动切换时保持", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/record");
+    await page.getByRole("button", { name: /开始录入|检查并更新/ }).click();
+
+    let dialog = page.getByRole("dialog", { name: "录入库存快照" });
+    await expectInventoryCombinedEntry(dialog);
+    await dialog.getByLabel("FC专用蛋库存").fill("17");
+    await dialog.getByLabel("PT银子库存（万）").fill("88.5");
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    dialog = page.getByRole("dialog", { name: "录入库存快照" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("tab")).toHaveCount(5);
+    await expect(dialog.getByLabel("FC专用蛋库存")).toHaveValue("17");
+    await dialog.getByRole("tab", { name: /^PT 账号/ }).click();
+    await expect(dialog.getByLabel("PT银子库存（万）")).toHaveValue("88.5");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    dialog = page.getByRole("dialog", { name: "录入库存快照" });
+    await expectInventoryCombinedEntry(dialog);
+    await expect(dialog.getByLabel("FC专用蛋库存")).toHaveValue("17");
+    await expect(dialog.getByLabel("PT银子库存（万）")).toHaveValue("88.5");
+  });
+
+  test("任务页按端加载独立 UI 并在切端时保留结算草稿", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/plans/tasks");
+
+    await expect(page.getByTestId("desktop-task-page")).toBeVisible();
+    await expect(page.getByTestId("mobile-task-page")).toHaveCount(0);
+    await page.locator(".task-work-row:not(.done)").first().getByRole("button", { name: /标记完成|记录进度/ }).click();
+
+    let dialog = page.getByRole("dialog", { name: /确认任务消耗|完成打书并记账|记录洗护符进度/ });
+    await expect(dialog).toBeVisible();
+    await dialog.locator("summary").filter({ hasText: "备注（可选）" }).click();
+    await dialog.getByPlaceholder("例如：第 2 次洗护符").fill("跨端继续填写");
+
+    const desktopResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopResources.some((name) => name.includes("DesktopTaskPage"))).toBe(true);
+    expect(desktopResources.some((name) => name.includes("MobileTaskPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.getByTestId("mobile-task-page")).toBeVisible();
+    await expect(page.getByTestId("desktop-task-page")).toHaveCount(0);
+    await expect(page).toHaveURL(/#\/plans\/tasks$/);
+    dialog = page.getByRole("dialog", { name: /确认任务消耗|完成打书并记账|记录洗护符进度/ });
+    await expect(dialog.getByPlaceholder("例如：第 2 次洗护符")).toHaveValue("跨端继续填写");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    await expect(page.getByTestId("desktop-task-page")).toBeVisible();
+    dialog = page.getByRole("dialog", { name: /确认任务消耗|完成打书并记账|记录洗护符进度/ });
+    await expect(dialog.getByPlaceholder("例如：第 2 次洗护符")).toHaveValue("跨端继续填写");
+  });
+
+  test("周报按端加载独立 UI 并在切端时保留所选周", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/week");
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='mobile']")).toHaveCount(0);
+    await page.getByRole("button", { name: "查看上一周", exact: true }).click();
+    const selectedWeek = await page.locator(".inventory-week-range strong").innerText();
+
+    const desktopResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopResources.some((name) => name.includes("DesktopWeekPage"))).toBe(true);
+    expect(desktopResources.some((name) => name.includes("MobileWeekPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='desktop']")).toHaveCount(0);
+    await expect(page.locator(".week-mobile-switcher strong")).toHaveText(selectedWeek);
+    await expect(page).toHaveURL(/#\/week$/);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.locator(".inventory-week-range strong")).toHaveText(selectedWeek);
+  });
+
+  test("资料页按端加载独立 UI 并保持同一路由", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/resources");
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='mobile']")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "账号与资料", exact: true })).toBeVisible();
+
+    const desktopResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopResources.some((name) => name.includes("DesktopResourcesPage"))).toBe(true);
+    expect(desktopResources.some((name) => name.includes("MobileResourcesPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='desktop']")).toHaveCount(0);
+    await expect(page.getByTestId("resources-page")).toBeVisible();
+    await expect(page).toHaveURL(/#\/resources$/);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+  });
+
+  test("核算页按端加载独立 UI 并在切端时保留核算视图", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/earnings");
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='mobile']")).toHaveCount(0);
+    await page.getByRole("button", { name: "银子", exact: true }).click();
+    await page.getByRole("button", { name: "查看 FC 实际所得", exact: true }).click();
+    await page.getByRole("tab", { name: /跨天区间/ }).click();
+
+    const desktopResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopResources.some((name) => name.includes("DesktopEarningsPage"))).toBe(true);
+    expect(desktopResources.some((name) => name.includes("MobileEarningsPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='desktop']")).toHaveCount(0);
+    await expect(page).toHaveURL(/#\/earnings\?account=FC$/);
+    await expect(page.getByRole("button", { name: "查看 FC 实际所得", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("tab", { name: "跨天", exact: true })).toHaveAttribute("aria-selected", "true");
+
+    await page.getByRole("button", { name: "查看所有账号实际所得", exact: true }).click();
+    await expect(page.getByRole("button", { name: "银子", exact: true })).toHaveAttribute("aria-pressed", "true");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.getByRole("button", { name: "查看所有账号实际所得", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name: "银子", exact: true })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("账号与资产页按端加载独立 UI 并保留筛选和批量选择", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/assets/pets?account=FC");
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='mobile']")).toHaveCount(0);
+    await page.getByPlaceholder("在宠物、技能、面板和资质中筛选").fill("祸斗");
+    await page.getByRole("checkbox", { name: /选择 FC 的/ }).first().check();
+
+    const desktopResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopResources.some((name) => name.includes("DesktopPetsPage"))).toBe(true);
+    expect(desktopResources.some((name) => name.includes("MobilePetsPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='desktop']")).toHaveCount(0);
+    await expect(page.getByLabel("账号范围")).toHaveValue("FC");
+    await expect(page.getByPlaceholder("在宠物、技能、面板和资质中筛选")).toHaveValue("祸斗");
+    await expect(page.getByRole("checkbox", { name: /选择 FC 的/ }).first()).toBeChecked();
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/assets/evidence");
+    await page.getByPlaceholder("搜索文件、日期或路径").fill("2026");
+    await page.getByRole("combobox").nth(0).selectOption("PUBLIC");
+    await page.getByRole("combobox").nth(1).selectOption("market");
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByPlaceholder("搜索文件、日期或路径")).toHaveValue("2026");
+    await expect(page.getByLabel("证据账号")).toHaveValue("PUBLIC");
+    await expect(page.getByLabel("证据类型")).toHaveValue("market");
+
+    await page.goto("/#/accounts/PT");
+    await expect(page.getByRole("heading", { name: "PT", exact: true })).toBeVisible();
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page).toHaveURL(/#\/accounts\/PT$/);
+  });
+
+  test("计划参数与宝石行情在自动切端时保留未保存输入", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/plans/parameters");
+
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await page.getByLabel("每周银子收入 / 万").fill("72.5");
+
+    const parameterResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(parameterResources.some((name) => name.includes("DesktopPlanParametersPage"))).toBe(true);
+    expect(parameterResources.some((name) => name.includes("MobilePlanParametersPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='desktop']")).toHaveCount(0);
+    await expect(page.getByLabel("每周银子收入 / 万")).toHaveValue("72.5");
+    await expect(page).toHaveURL(/#\/plans\/parameters$/);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/data/market");
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await page.getByLabel("太阳石当前价格").fill("801");
+
+    const marketResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(marketResources.some((name) => name.includes("DesktopDataMarketPage"))).toBe(true);
+    expect(marketResources.some((name) => name.includes("MobileDataMarketPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.locator("[data-platform-page='desktop']")).toHaveCount(0);
+    await expect(page.getByLabel("太阳石当前价格")).toHaveValue("801");
+    await expect(page).toHaveURL(/#\/data\/market$/);
+  });
+
+  test("计划与数据中心按端加载独立 UI 并保持工作状态", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/plans/gems");
+    await page.getByRole("button", { name: "查看 LG1 宝石计划" }).click();
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByRole("button", { name: "查看 LG1 宝石计划" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL(/#\/plans\/gems$/);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/plans/beasts");
+    await page.getByLabel("神兽任务账号筛选").selectOption("PT");
+    await page.getByLabel("神兽任务用途筛选").selectOption("swordSnake");
+
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByLabel("神兽任务账号筛选")).toHaveValue("PT");
+    await expect(page.getByLabel("神兽任务用途筛选")).toHaveValue("swordSnake");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.evaluate(() => performance.clearResourceTimings());
+    await page.goto("/#/data/inventory");
+    await page.getByRole("button", { name: "周报分析", exact: true }).click();
+    await page.getByRole("button", { name: "查看上一周", exact: true }).click();
+    const selectedWeek = await page.locator(".inventory-week-range strong").innerText();
+
+    const desktopResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopResources.some((name) => name.includes("DesktopDataInventoryPage"))).toBe(true);
+    expect(desktopResources.some((name) => name.includes("MobileDataInventoryPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByRole("button", { name: "周报分析", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".inventory-week-range strong")).toHaveText(selectedWeek);
+
+    await page.goto("/#/data/sources");
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "资料分层", exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator("[data-platform-page='desktop']")).toBeVisible();
+    await expect(page).toHaveURL(/#\/data\/sources$/);
+  });
+
+  test("分析、发布与设置按端加载独立 UI 并保持草稿", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/analysis/recommendations");
+    await page.getByPlaceholder("筛选账号、宠物或技能").fill("祸斗");
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByPlaceholder("筛选账号、宠物或技能")).toHaveValue("祸斗");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/analysis/matrix");
+    await page.getByRole("tab", { name: /PK：速度/ }).click();
+    await page.getByRole("checkbox", { name: "技能" }).uncheck();
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "速度", exact: true })).toHaveAttribute("aria-selected", "true");
+    await page.getByText("显示设置 · 2 类信息", { exact: true }).click();
+    await expect(page.getByRole("checkbox", { name: "技能" })).not.toBeChecked();
+    await expect(page).toHaveURL(/#\/analysis\/matrix\?group=PK/);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/#/publish");
+    await page.getByPlaceholder("搜索宠物、技能或定位").fill("祸斗");
+    await page.getByLabel("发布素材账号").selectOption("PT");
+    await page.getByLabel("标题").fill("跨端发布草稿");
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByPlaceholder("搜索宠物、技能或定位")).toHaveValue("祸斗");
+    await expect(page.getByLabel("发布素材账号")).toHaveValue("PT");
+    await expect(page.getByLabel("标题")).toHaveValue("跨端发布草稿");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.evaluate(() => performance.clearResourceTimings());
+    await page.goto("/#/settings");
+    await page.getByLabel("新密码（至少 6 个字符）").fill("secret-a");
+    await page.getByLabel("再次输入新密码").fill("secret-a");
+    const resources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(resources.some((name) => name.includes("DesktopSettingsPage"))).toBe(true);
+    expect(resources.some((name) => name.includes("MobileSettingsPage"))).toBe(false);
+
+    await page.setViewportSize({ width: 440, height: 956 });
+    await expect(page.locator("[data-platform-page='mobile']")).toBeVisible();
+    await expect(page.getByLabel("新密码（至少 6 个字符）")).toHaveValue("secret-a");
+    await expect(page.getByLabel("再次输入新密码")).toHaveValue("secret-a");
+    await expect(page).toHaveURL(/#\/settings$/);
+  });
+
+  test("同一部署会在断点变化时自动切换独立的手机与电脑外壳", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop");
+    await page.goto("/#/");
+
+    await expect(page.getByTestId("desktop-app-shell")).toBeVisible();
+    await expect(page.getByTestId("desktop-week-home")).toBeVisible();
+    await expect(page.getByTestId("mobile-app-shell")).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "主导航" })).toBeVisible();
+    const desktopInitialResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(desktopInitialResources.some((name) => name.includes("DesktopAppShell"))).toBe(true);
+    expect(desktopInitialResources.some((name) => name.includes("MobileAppShell"))).toBe(false);
+    expect(desktopInitialResources.some((name) => /(?:mobile-experience|ios26-mobile|ios-latest-mobile)/.test(name))).toBe(false);
+
+    await page.setViewportSize({ width: 768, height: 1024 });
+
+    await expect(page.getByTestId("mobile-app-shell")).toBeVisible();
+    await expect(page.getByTestId("mobile-week-home")).toBeVisible();
+    await expect(page.getByTestId("desktop-app-shell")).toHaveCount(0);
+    await expect(page.getByRole("navigation", { name: "手机快捷导航" })).toBeVisible();
+    await expect(page).toHaveURL(/#\/$/);
+    const switchedResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+    expect(switchedResources.some((name) => name.includes("MobileAppShell"))).toBe(true);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    await expect(page.getByTestId("desktop-app-shell")).toBeVisible();
+    await expect(page.getByTestId("desktop-week-home")).toBeVisible();
+    await expect(page.getByTestId("mobile-app-shell")).toHaveCount(0);
+  });
+
   test("恢复旧版完成任务时会先保留其历史流水", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop");
     const taskId = "LG1:snake1:skin";
@@ -267,7 +644,7 @@ test.describe("desktop application", () => {
       releaseRecordPage = resolve;
     });
     let recordPageRequested = false;
-    await page.route(/\/(?:src\/features\/mobile\/RecordPage\.vue|assets\/RecordPage-[^/?]+\.js)(?:\?.*)?$/, async (route) => {
+    await page.route(/\/(?:src\/platforms\/desktop\/pages\/DesktopRecordPage\.vue|assets\/DesktopRecordPage-[^/?]+\.js)(?:\?.*)?$/, async (route) => {
       recordPageRequested = true;
       await recordPageGate;
       await route.continue();
@@ -318,7 +695,7 @@ test.describe("desktop application", () => {
       releaseFailedRequest = resolve;
     });
     let recordPageRequested = false;
-    const recordPagePattern = /\/(?:src\/features\/mobile\/RecordPage\.vue|assets\/RecordPage-[^/?]+\.js)(?:\?.*)?$/;
+    const recordPagePattern = /\/(?:src\/platforms\/desktop\/pages\/DesktopRecordPage\.vue|assets\/DesktopRecordPage-[^/?]+\.js)(?:\?.*)?$/;
     await page.route(recordPagePattern, async (route) => {
       recordPageRequested = true;
       await failedRequestGate;
@@ -679,7 +1056,7 @@ test.describe("desktop application", () => {
       await expect(dialog).toBeVisible();
       await expect(dialog).toHaveAccessibleName(`确认任务消耗，第 ${index + 1}/${selectedTasks.length} 项`);
       await expect(dialog.getByLabel("当前结算任务")).toContainText(
-        index === 0 ? "法蛇 · 皮肤" : "隐攻蛇 · 进阶1",
+        index === 0 ? /法蛇.*皮肤/ : /隐攻蛇.*进阶1/,
       );
       await dialog.getByRole("button", { name: "完成并记账", exact: true }).click();
     }
@@ -863,7 +1240,7 @@ test.describe("tablet application", () => {
     test.skip(!testInfo.project.name.startsWith("tablet-"));
     for (const url of ["/#/", "/#/record", "/#/week", "/#/resources", "/#/accounts/PT", "/#/assets/pets", "/#/plans/beasts", "/#/plans/tasks", "/#/plans/parameters", "/#/plans/upgrades", "/#/data/market", "/#/data/resources", "/#/analysis/matrix"]) {
       await page.goto(url);
-      await expect(page.locator("[data-testid='desktop-week-home'], [data-testid='mobile-week-home'], .page-wrap")).toBeVisible();
+      await expect(page.locator("[data-platform-page], [data-testid='desktop-week-home'], [data-testid='mobile-week-home']")).toBeVisible();
       const width = await page.evaluate(() => ({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
       expect(width.scroll, `${url} 不应产生页面级横向滚动`).toBe(width.client);
     }
@@ -939,8 +1316,8 @@ test.describe("schedule completion dates", () => {
 
     await page.goto("/#/accounts/PT");
     const accountTask = page.locator(".task-mini-list > div").filter({ hasText: "剑气蛇 · 进阶2" }).first();
-    await expect(accountTask.locator("small")).toHaveText("预计 7月13日完成");
-    await expect(page.locator(".account-mainline-finish")).toHaveText("整条主线：待洗护符后排期");
+    await expect(accountTask.locator("small")).toContainText("预计 7月13日完成");
+    await expect(page.getByText("整条主线：待洗护符后排期", { exact: true })).toBeVisible();
     await accountTask.scrollIntoViewIfNeeded();
     const accountWidth = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
@@ -956,7 +1333,7 @@ test.describe("standalone gem plan", () => {
     await page.clock.setFixedTime(new Date("2026-07-21T02:00:00Z"));
     await page.goto("/#/plans/gems");
 
-    await expect(page.getByRole("heading", { name: "宝石计划", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "宝石计划", exact: true }).first()).toBeVisible();
     const target = page.getByLabel("目标段位");
     expect(await target.locator("option").count()).toBeGreaterThan(10);
     await target.selectOption("14");
@@ -1069,7 +1446,7 @@ test.describe("week-to-date activity report", () => {
       await expect(fullReport).toHaveAttribute("open", "");
       activity = fullReport.getByTestId("weekly-activity-panel");
     } else {
-      activity = page.locator(".week-desktop-report").getByTestId("weekly-activity-panel");
+      activity = page.locator(".desktop-week-activity").getByTestId("weekly-activity-panel");
     }
     await expect(activity).toBeVisible();
     await expect(activity.getByText("本周截至 7月22日", { exact: true })).toHaveCount(0);

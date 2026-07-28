@@ -62,6 +62,8 @@ const primaryTargetSelector = [
   "main .week-mobile-full-report > summary",
   "main .week-inventory-details > summary",
   "main .earnings-account-tabs button",
+  "main .mobile-account-strip button",
+  "main .mobile-ledger-list button",
   "main .ledger-list button",
   "main .record-primary-action",
   "main .record-option-card",
@@ -94,7 +96,7 @@ function currentShanghaiWeek() {
 }
 
 async function waitForApplicationPage(page: Page) {
-  await expect(page.locator(".today-workbench, .mobile-home-page, .workbench-page, .page-wrap, .matrix-page, .earnings-page").first()).toBeVisible();
+  await expect(page.locator(".today-workbench, .mobile-home-page, .workbench-page, .page-wrap, .matrix-page, [data-testid='earnings-page']").first()).toBeVisible();
 }
 
 async function pageOverflowReport(page: Page) {
@@ -1390,27 +1392,22 @@ test.describe("mobile UX release gate", () => {
     await expect(allAccountsButton).toHaveAttribute("aria-pressed", "true");
     const dailyTable = page.getByRole("region", { name: "五账号每日实际所得" });
     await expect(dailyTable).toBeVisible();
-    await expect(dailyTable.locator("tbody > tr")).toHaveCount(9);
+    await expect(dailyTable.locator(".mobile-day-list > li")).toHaveCount(7);
     const dailyTableBox = await dailyTable.boundingBox();
-    expect((dailyTableBox?.x || 0) + (dailyTableBox?.width || 0), "五账号每日所得表格不应撑出手机视口").toBeLessThanOrEqual(440);
-    const dailyTableScroll = dailyTable.locator(".daily-table-scroll");
-    expect(
-      await dailyTableScroll.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
-      "440px 视口下每日所得表格应直接完整展示",
-    ).toBe(true);
-    const targetDateRow = dailyTable.locator(`tr[data-date='${targetDate}']`);
+    expect((dailyTableBox?.x || 0) + (dailyTableBox?.width || 0), "五账号每日所得卡片不应撑出手机视口").toBeLessThanOrEqual(440);
+    const targetDateRow = dailyTable.locator(`li[data-date='${targetDate}']`);
     await expect(dailyTable.getByRole("button", { name: "银+蛋折银", exact: true })).toHaveAttribute("aria-pressed", "true");
-    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
-    await expect(targetDateRow.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+    await expect(targetDateRow.locator("dd")).toHaveText(["+21", "0", "0", "0", "0"]);
+    await expect(targetDateRow.locator("header > b")).toHaveText("+21");
 
     await dailyTable.getByRole("button", { name: "银子", exact: true }).tap();
-    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银子）" })).toBeVisible();
-    await expect(targetDateRow.locator("td")).toHaveText(["+10", "0", "0", "0", "0", "+10"]);
+    await expect(targetDateRow.locator("dd")).toHaveText(["+10", "0", "0", "0", "0"]);
+    await expect(targetDateRow.locator("header > b")).toHaveText("+10");
 
     const accountOverview = page.getByRole("region", { name: "当前库存" });
     await expect(accountOverview).toHaveCount(0);
 
-    await expect(dailyTable.locator(".daily-table-share")).toHaveCount(1);
+    await expect(dailyTable.locator(".mobile-share")).toHaveCount(1);
     const combinedShareButton = page.getByRole("button", {
       name: `分享五个账号 ${week.monday} 至 ${week.sunday} 每日实际所得图片`,
       exact: true,
@@ -1433,8 +1430,8 @@ test.describe("mobile UX release gate", () => {
     await expect(page.getByRole("status")).toContainText("五号每日所得图片已打开系统分享");
 
     await dailyTable.getByRole("button", { name: "银+蛋折银", exact: true }).tap();
-    await expect(dailyTable.getByRole("table", { name: "五账号本周每日实际所得（银+蛋折银）" })).toBeVisible();
-    await expect(targetDateRow.locator("td")).toHaveText(["+21", "0", "0", "0", "0", "+21"]);
+    await expect(targetDateRow.locator("dd")).toHaveText(["+21", "0", "0", "0", "0"]);
+    await expect(targetDateRow.locator("header > b")).toHaveText("+21");
     await expect(dailyTable.getByText(/折算口径|专用蛋不参与折算/)).toHaveCount(0);
     const combinedWithEggsShareButton = page.getByRole("button", {
       name: `分享五个账号 ${week.monday} 至 ${week.sunday} 每日实际所得银加蛋折银图片`,
@@ -1461,17 +1458,18 @@ test.describe("mobile UX release gate", () => {
     await expect(page).toHaveURL(/#\/earnings\?account=FC$/);
     await expect(dailyTable).toHaveCount(0);
     await expect(accountOverview).toBeVisible();
-    await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["90 万", "9 个", "13 个", "32 片"]);
+    await expect(accountOverview.getByRole("heading", { name: "90 万", exact: true })).toBeVisible();
+    await expect(accountOverview.locator(".selected-account-metrics dd")).toHaveText(["9 个", "13 个", "32 片"]);
     const inventoryMetricBoxes = await accountOverview.locator(".selected-account-metrics > div").evaluateAll((elements) => (
       elements.map((element) => {
         const rect = element.getBoundingClientRect();
         return { top: rect.top, right: rect.right, height: rect.height };
       })
     ));
-    expect(inventoryMetricBoxes).toHaveLength(4);
+    expect(inventoryMetricBoxes).toHaveLength(3);
     expect(
       Math.max(...inventoryMetricBoxes.map(({ top }) => top)) - Math.min(...inventoryMetricBoxes.map(({ top }) => top)),
-      "16 Pro Max 下四项当前库存应保持同一行",
+      "16 Pro Max 下三项辅助库存应保持同一行",
     ).toBeLessThanOrEqual(1);
     expect(Math.max(...inventoryMetricBoxes.map(({ right }) => right)), "当前库存不应超出 16 Pro Max 视口").toBeLessThanOrEqual(440);
 
@@ -1506,14 +1504,14 @@ test.describe("mobile UX release gate", () => {
     expect(accountingSummaryBox?.height, "核算说明入口应保持足够触控高度").toBeGreaterThanOrEqual(44);
     await accountingSummary.tap();
     await expect(accountingRule).toHaveAttribute("open", "");
-    await expect(accountingRule).toContainText("先看真实库存");
+    await expect(accountingRule).toContainText("开始与结束库存计算净变化");
 
-    const ledgerTab = page.getByRole("tab", { name: /实际流水/ });
+    const ledgerTab = page.getByRole("tab", { name: "流水", exact: true });
     await expect(ledgerTab).toHaveAttribute("aria-selected", "true");
-    const intervalTab = page.getByRole("tab", { name: /跨天区间/ });
+    const intervalTab = page.getByRole("tab", { name: "跨天", exact: true });
     await intervalTab.tap();
     await expect(intervalTab).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByRole("tabpanel", { name: /跨天区间/ })).toContainText("每日记录已在上表展示");
+    await expect(page.getByRole("tabpanel", { name: "跨天", exact: true })).toContainText("目前没有跨天区间");
 
     const overflowReport = await pageOverflowReport(page);
     expect(

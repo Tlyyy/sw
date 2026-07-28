@@ -1,27 +1,22 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
-import DesktopHomePage from "./DesktopHomePage.vue";
-import MobileHomePage from "../mobile/MobileHomePage.vue";
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted } from "vue";
+import { useAppDeviceMode } from "../../app/device";
 import { preloadRecordPage } from "./useRecordEntry";
 
-const mobileQuery = window.matchMedia("(max-width: 980px)");
-const isMobileHome = ref(mobileQuery.matches);
+const DesktopHomePage = defineAsyncComponent(() => import("../../platforms/desktop/pages/DesktopHomePage.vue"));
+const MobileHomePage = defineAsyncComponent(() => import("../../platforms/mobile/pages/MobileHomePage.vue"));
+const deviceMode = useAppDeviceMode();
+const isMobileHome = computed(() => deviceMode.value === "mobile");
 let recordPreloadFrame = 0;
 
-function syncViewport(event: MediaQueryListEvent) {
-  isMobileHome.value = event.matches;
-}
-
 onMounted(() => {
-  mobileQuery.addEventListener("change", syncViewport);
   recordPreloadFrame = window.requestAnimationFrame(() => {
     recordPreloadFrame = 0;
-    void preloadRecordPage().catch(() => undefined);
+    void preloadRecordPage(deviceMode.value).catch(() => undefined);
   });
 });
 
 onBeforeUnmount(() => {
-  mobileQuery.removeEventListener("change", syncViewport);
   if (recordPreloadFrame) window.cancelAnimationFrame(recordPreloadFrame);
 });
 </script>

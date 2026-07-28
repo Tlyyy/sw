@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import type { AppDeviceMode } from "../app/device";
 import { canRecordInventoryDate } from "../domain/inventory";
 import { accountIds } from "../domain/types";
 import type { AccountId, InventoryBalance, InventorySnapshot } from "../domain/types";
 import { shanghaiDateKey } from "../domain/plans";
 import { useVisualViewport } from "../composables/useVisualViewport";
+import { useRecordDraftStore } from "../stores/recordDraft";
 import AppIcon from "./AppIcon.vue";
 
 interface InventorySnapshotDraft {
@@ -29,6 +32,7 @@ const inventoryFields: Array<{
 
 const accountOrder: AccountId[] = [...accountIds];
 const props = defineProps<{
+  presentation: AppDeviceMode;
   open: boolean;
   initialDate: string;
   maxDate?: string;
@@ -39,22 +43,25 @@ const emit = defineEmits<{
   save: [draft: InventorySnapshotDraft];
 }>();
 
+const recordDraft = useRecordDraftStore();
+const {
+  inventoryDraftInitialized,
+  inventoryDraftDate: snapshotDate,
+  inventoryDraftDirty: dirty,
+  inventoryDraftActiveAccountIndex: activeAccountIndex,
+  inventoryDraftReviewedAccounts: reviewedAccounts,
+} = storeToRefs(recordDraft);
 const dialog = ref<HTMLFormElement>();
 const closeButton = ref<HTMLButtonElement>();
 const dateInput = ref<HTMLInputElement>();
-const snapshotDate = ref("");
 const submitted = ref(false);
-const dirty = ref(false);
 const entryFieldFocused = ref(false);
 const seedDescription = ref("");
-const activeAccountIndex = ref(0);
-const reviewedAccounts = ref<AccountId[]>([]);
 const accountError = ref("");
 const errorFieldKey = ref<InventoryFieldKey>();
 const flowMessage = ref("");
-const rows = reactive<Record<AccountId, InventoryBalance>>(emptyRows());
-const desktopEntryMedia = window.matchMedia("(min-width: 721px)");
-const combinedDesktopEntry = ref(desktopEntryMedia.matches);
+const rows = recordDraft.inventoryDraftRows;
+const combinedDesktopEntry = computed(() => props.presentation === "desktop");
 const {
   keyboardOpen,
   visualViewportStyle,
@@ -64,18 +71,12 @@ let previousBodyOverflow = "";
 let previousRootOverflow = "";
 let fieldFocusTimer = 0;
 
-desktopEntryMedia.addEventListener("change", handleDesktopEntryChange);
-
 const matchingSnapshot = computed(() => props.snapshots.find((item) => item.effectiveDate === snapshotDate.value) || null);
 const maxDate = computed(() => props.maxDate || shanghaiDateKey());
 const dateOutOfRange = computed(() => Boolean(snapshotDate.value) && !canRecordInventoryDate(snapshotDate.value, maxDate.value));
 const activeAccountId = computed(() => accountOrder[activeAccountIndex.value]);
 const previousAccountId = computed(() => accountOrder[activeAccountIndex.value - 1]);
 const nextAccountId = computed(() => accountOrder[activeAccountIndex.value + 1]);
-
-function handleDesktopEntryChange(event: MediaQueryListEvent) {
-  combinedDesktopEntry.value = event.matches;
-}
 
 function emptyRows(): Record<AccountId, InventoryBalance> {
   return Object.fromEntries(accountOrder.map((accountId) => [accountId, {
@@ -122,6 +123,17 @@ function resetDraft() {
   flowMessage.value = "";
   entryFieldFocused.value = false;
   seedRowsForDate(snapshotDate.value);
+}
+
+function initializeOrRestoreDraft() {
+  if (inventoryDraftInitialized.value) {
+    seedDescription.value = matchingSnapshot.value
+      ? `正在继续编辑 ${snapshotDate.value} 的现有快照。`
+      : `正在继续 ${snapshotDate.value} 的未保存库存录入。`;
+    return;
+  }
+  resetDraft();
+  recordDraft.initializeInventoryDraft(snapshotDate.value, rows);
 }
 
 function normalizedNumber(value: number) {
@@ -293,8 +305,7 @@ async function activateDialog() {
   document.documentElement.style.overflow = "hidden";
   document.querySelector("#app")?.setAttribute("inert", "");
   await nextTick();
-  const usesTouchKeyboard = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-  if (usesTouchKeyboard) closeButton.value?.focus({ preventScroll: true });
+  if (props.presentation === "mobile") closeButton.value?.focus({ preventScroll: true });
   else dateInput.value?.focus();
 }
 
@@ -317,7 +328,7 @@ function keepEntryFieldVisible(event: FocusEvent) {
 
 watch(() => props.open, async (open) => {
   if (open) {
-    resetDraft();
+    initializeOrRestoreDraft();
     await activateDialog();
   } else {
     deactivateDialog();
@@ -326,7 +337,6 @@ watch(() => props.open, async (open) => {
 
 onBeforeUnmount(() => {
   window.clearTimeout(fieldFocusTimer);
-  desktopEntryMedia.removeEventListener("change", handleDesktopEntryChange);
   deactivateDialog(false);
 });
 </script>

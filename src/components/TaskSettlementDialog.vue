@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import type { AppDeviceMode } from "../app/device";
 import type { ScheduledTask } from "../domain/plans";
 import {
   calculateTaskEggPurchase,
@@ -13,6 +15,7 @@ import {
 import { inventoryRegularEggValueWan } from "../domain/inventory";
 import type { InventoryBalance } from "../domain/types";
 import { useVisualViewport } from "../composables/useVisualViewport";
+import { useTaskDraftStore } from "../stores/taskDraft";
 import AppIcon from "./AppIcon.vue";
 
 interface TaskSettlementPayload {
@@ -25,6 +28,7 @@ interface TaskSettlementPayload {
 }
 
 const props = withDefaults(defineProps<{
+  presentation: AppDeviceMode;
   task: ScheduledTask;
   eggUnitPriceWan: number;
   inventory?: InventoryBalance | null;
@@ -56,17 +60,33 @@ const emit = defineEmits<{
 const dialog = ref<HTMLFormElement>();
 const closeButton = ref<HTMLButtonElement>();
 const mobileCloseButton = ref<HTMLButtonElement>();
+const mobileLayout = computed(() => props.presentation === "mobile");
 const initialFocus = ref<HTMLElement>();
-const draft = ref<TaskSettlementDraft>(createTaskSettlementDraft(
-  props.task,
-  props.inventory,
-  props.eggUnitPriceWan,
-));
-const occurredAtLocal = ref(shanghaiDateTimeLocal());
-const note = ref("");
-const submitted = ref(false);
-const timeError = ref("");
-const reuseExisting = ref(props.task.actionKey !== "talisman" && props.existingEntryCount > 0);
+const taskDraftStore = useTaskDraftStore();
+taskDraftStore.initializeSettlementDraft(
+  props.task.id,
+  createTaskSettlementDraft(props.task, props.inventory, props.eggUnitPriceWan),
+  shanghaiDateTimeLocal(),
+  props.task.actionKey !== "talisman" && props.existingEntryCount > 0,
+);
+const {
+  settlementDraft,
+  settlementOccurredAtLocal: occurredAtLocal,
+  settlementNote: note,
+  settlementSubmitted: submitted,
+  settlementTimeError: timeError,
+  settlementReuseExisting: reuseExisting,
+} = storeToRefs(taskDraftStore);
+const draft = computed<TaskSettlementDraft>({
+  get: () => settlementDraft.value || createTaskSettlementDraft(
+    props.task,
+    props.inventory,
+    props.eggUnitPriceWan,
+  ),
+  set: (value) => {
+    taskDraftStore.settlementDraft = value;
+  },
+});
 const {
   keyboardOpen,
   visualViewportStyle,
@@ -258,15 +278,17 @@ function fieldHasIssue(field: TaskSettlementValidationField) {
 }
 
 function resetDraft() {
-  draft.value = createTaskSettlementDraft(props.task, props.inventory, props.eggUnitPriceWan);
-  reuseExisting.value = canReuseExisting.value;
-  occurredAtLocal.value = shanghaiDateTimeLocal();
-  note.value = "";
-  submitted.value = false;
-  timeError.value = "";
+  taskDraftStore.clearSettlementDraft();
+  taskDraftStore.initializeSettlementDraft(
+    props.task.id,
+    createTaskSettlementDraft(props.task, props.inventory, props.eggUnitPriceWan),
+    shanghaiDateTimeLocal(),
+    canReuseExisting.value,
+  );
 }
 
 function requestCancel() {
+  taskDraftStore.clearSettlementDraft();
   emit("cancel");
 }
 
@@ -310,11 +332,7 @@ function handleKeydown(event: KeyboardEvent) {
 
 async function focusDialog() {
   await nextTick();
-  const usesTouchKeyboard = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-  const usesMobileLayout = window.matchMedia("(max-width: 720px)").matches;
-  if (usesTouchKeyboard) {
-    (usesMobileLayout ? mobileCloseButton.value : closeButton.value)?.focus({ preventScroll: true });
-  }
+  if (mobileLayout.value) mobileCloseButton.value?.focus({ preventScroll: true });
   else initialFocus.value?.focus();
 }
 
@@ -358,7 +376,6 @@ watch(() => draft.value.silverWan, (value) => {
 });
 
 onMounted(() => {
-  reuseExisting.value = canReuseExisting.value;
   void activateDialog();
 });
 onBeforeUnmount(() => deactivateDialog());
@@ -384,7 +401,7 @@ onBeforeUnmount(() => deactivateDialog());
         @submit.prevent="submit(isProgress ? false : true)"
         @keydown="handleKeydown"
       >
-        <header class="task-settlement-mobile-header">
+        <header v-if="mobileLayout" class="task-settlement-mobile-header">
           <button ref="mobileCloseButton" type="button" @click="requestCancel">取消</button>
           <h2>任务结算</h2>
           <span
@@ -395,7 +412,11 @@ onBeforeUnmount(() => deactivateDialog());
           >{{ queuePositionLabel }}</span>
         </header>
 
-        <header class="task-settlement-header task-settlement-desktop-header">
+        <header
+          v-else
+          class="task-settlement-header task-settlement-desktop-header"
+          aria-label="当前结算任务"
+        >
           <div>
             <p>
               {{ task.accountId }} · {{ task.typeLabel }}
@@ -410,7 +431,7 @@ onBeforeUnmount(() => deactivateDialog());
         </header>
 
         <div class="task-settlement-body">
-          <section class="task-mobile-settlement-summary" aria-label="当前结算任务">
+          <section v-if="mobileLayout" class="task-mobile-settlement-summary" aria-label="当前结算任务">
             <span>{{ task.accountId }}</span>
             <div>
               <strong>{{ task.typeLabel }} · {{ task.actionLabel }}</strong>
@@ -654,7 +675,7 @@ onBeforeUnmount(() => deactivateDialog());
           </div>
         </div>
 
-        <footer class="task-settlement-footer task-settlement-desktop-footer">
+        <footer v-if="!mobileLayout" class="task-settlement-footer task-settlement-desktop-footer">
           <button class="settlement-button secondary" type="button" @click="requestCancel">取消</button>
           <template v-if="isProgress">
             <button class="settlement-button progress" type="submit">仅记录本次</button>
@@ -662,7 +683,7 @@ onBeforeUnmount(() => deactivateDialog());
           </template>
           <button v-else class="settlement-button primary" type="submit">{{ reuseExisting ? "沿用记录并完成" : "完成并记账" }}</button>
         </footer>
-        <footer class="task-settlement-mobile-footer">
+        <footer v-else class="task-settlement-mobile-footer">
           <button v-if="isProgress" class="secondary" type="button" @click="submit(false)">
             仅记录本次，任务继续
           </button>

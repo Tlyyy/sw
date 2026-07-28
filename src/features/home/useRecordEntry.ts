@@ -1,26 +1,19 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { useAppDeviceMode, type AppDeviceMode } from "../../app/device";
+import { recordPlatformPage } from "../../app/platformPages";
 
-type RecordPageModule = typeof import("../mobile/RecordPage.vue");
-
-let recordPagePromise: Promise<RecordPageModule> | undefined;
-
-export function preloadRecordPage() {
-  if (!recordPagePromise) {
-    recordPagePromise = import("../mobile/RecordPage.vue").catch((error: unknown) => {
-      recordPagePromise = undefined;
-      throw error;
-    });
-  }
-  return recordPagePromise;
+export function preloadRecordPage(mode: AppDeviceMode) {
+  return recordPlatformPage.preload(mode);
 }
 
 export function useRecordEntry() {
   const router = useRouter();
+  const deviceMode = useAppDeviceMode();
   const recordOpening = ref(false);
 
   function warmRecordEntry() {
-    void preloadRecordPage().catch(() => undefined);
+    void preloadRecordPage(deviceMode.value).catch(() => undefined);
   }
 
   async function handleRecordEntryClick(event: MouseEvent) {
@@ -36,7 +29,7 @@ export function useRecordEntry() {
     event.preventDefault();
     recordOpening.value = true;
     try {
-      await preloadRecordPage();
+      await preloadRecordPage(deviceMode.value);
       const navigationFailure = await router.push(target);
       if (navigationFailure) recordOpening.value = false;
     } catch {
